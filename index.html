@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>EcomDrive UI Prototype — Step 1: Shell + Dashboard</title>
+<title>SkaleUp BD — EcomDrive UI Prototype (Step 2: Orders)</title>
 <style>
   :root{
     --primary:#4a1a5e; --primary-dark:#3d0a57; --gradient-end:#6b21a8;
@@ -138,6 +138,26 @@
   .team-chat{position:fixed;right:22px;bottom:22px;background:var(--primary);color:#fff;border:none;border-radius:999px;padding:12px 20px;font-weight:600;font-size:13.5px;cursor:pointer;box-shadow:0 8px 24px rgba(74,26,94,.35);z-index:30;}
   .empty-note{font-size:12.5px;color:var(--muted);background:var(--grey-bg);border-radius:8px;padding:10px 12px;}
 
+
+  /* ===== Mobile layout (phones) ===== */
+  @media (max-width:900px){
+    .sidebar{transform:translateX(-105%);transition:transform .22s ease;z-index:120;box-shadow:none;}
+    .sidebar.mob-open{transform:none;box-shadow:0 0 60px rgba(0,0,0,.3);}
+    .main{margin-left:0 !important;}
+    .topbar{gap:8px;padding:0 12px;overflow-x:auto;}
+    .qlink{font-size:0;gap:0;padding:7px;}
+    .qlink svg{width:19px;height:19px;}
+    .ask-pill{display:none;}
+    .content{padding:14px 12px 70px;}
+    .kpi-grid{grid-template-columns:repeat(2,1fr) !important;}
+    .grid-2,.grid-21{grid-template-columns:1fr !important;}
+    .page-head{flex-wrap:wrap;}
+    .page-head h1{font-size:19px;}
+    table{display:block;overflow-x:auto;white-space:nowrap;}
+    .utabs{gap:14px;overflow-x:auto;}
+    .step-banner{font-size:12px;padding:10px 12px;}
+    .modal-box{max-width:94vw;}
+  }
   /* ===== Step 2 additions ===== */
   .page-panel{display:none;}
   .page-panel.active{display:block;}
@@ -1017,6 +1037,7 @@
   var collapsed = false;
   function collapseSidebar(){
     var sb = document.querySelector('.sidebar');
+    if(window.innerWidth <= 900){ sb.classList.toggle('mob-open'); return; }
     var main = document.getElementById('mainCol');
     collapsed = !collapsed;
     sb.style.width = collapsed ? '74px' : '296px';
@@ -1117,7 +1138,8 @@
     document.querySelectorAll('.view-panel,.page-panel').forEach(function(p){ p.classList.remove('active'); });
     var el = document.getElementById(id);
     if(el){ el.classList.add('active'); }
-    window.scrollTo({top:0});
+    var sb2 = document.querySelector('.sidebar'); if(sb2) sb2.classList.remove('mob-open');
+    window.scrollTo(0,0); document.documentElement.scrollTop = 0; document.body.scrollTop = 0;
   }
   function showDashboard(){
     document.querySelectorAll('.page-panel').forEach(function(p){ p.classList.remove('active'); });
