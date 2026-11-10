@@ -308,15 +308,13 @@
   #page-new-order .fld-l{font-size:12px;font-weight:600;color:#64748B;}
   #page-new-order .fld{height:40px;border-radius:6px;font-size:14px;border-color:#E8E3EE;padding:0 12px;}
   #page-new-order textarea.fld{height:auto;padding:8px 12px;}
-  #page-new-order .grid-21 > div:first-child{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);gap:16px;align-items:start;}
-  #page-new-order .grid-21 > div:first-child > .card{margin-bottom:0 !important;}
-  #page-new-order .grid-21 > div:first-child > .card:first-child{grid-column:1 / -1;}
   #prodGrid{display:grid;grid-template-columns:1fr;gap:0;}
-  #page-new-order .prod-card{display:block;width:100%;text-align:left;background:#fff;border:none;border-bottom:1px solid #EEF2F7;padding:10px 4px;cursor:pointer;position:relative;border-radius:0;}
+  #page-new-order .prod-card{display:block;width:100%;text-align:left;background:#fff;border:none;border-bottom:1px solid #EEF2F7;padding:16px 30px 16px 104px;cursor:pointer;position:relative;border-radius:0;}
   #page-new-order .prod-card:hover{background:#F8F7FB;}
-  #page-new-order .pc-name{font-size:13.5px;font-weight:500;color:#111827;display:block;padding-right:78px;}
-  #page-new-order .prod-card .muted-sm{display:block;font-size:12px;padding-right:78px;}
-  #page-new-order .prod-card::after{content:'No Image';position:absolute;right:4px;top:50%;transform:translateY(-50%);width:64px;height:44px;border:1px solid #EEF2F7;border-radius:6px;color:#94A3B8;font-size:11px;display:flex;align-items:center;justify-content:center;background:#F8F7FB;}
+  #page-new-order .pc-name{font-size:13.5px;font-weight:500;color:#111827;display:block;}
+  #page-new-order .prod-card .muted-sm{display:block;font-size:12px;}
+  #page-new-order .prod-card::before{content:'No Image';position:absolute;left:4px;top:50%;transform:translateY(-50%);width:85px;height:85px;border:1px solid #EEF2F7;border-radius:8px;color:#94A3B8;font-size:11px;display:flex;align-items:center;justify-content:center;background:#F8F7FB;}
+  #page-new-order .prod-card::after{content:'';position:absolute;right:8px;top:16px;width:20px;height:20px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394A3B8' stroke-width='2'%3E%3Cpolygon points='12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26'/%3E%3C/svg%3E") no-repeat center/contain;}
   #page-new-order .pc-fav{font-size:11px;color:#94A3B8;}
   /* Approved Orders — live tab strip is 48px in a rounded-lg card */
   #aoPills{gap:8px;}
@@ -326,10 +324,23 @@
   #page-orders-dashboard{background:linear-gradient(180deg,rgba(244,234,247,.45),rgba(248,247,250,0) 220px);}
 
   /* Auto Call — live uses a bordered segmented tab bar (accent border) and 20px card titles */
-  #page-auto-call .utabs.inner-tabs{display:inline-flex;background:#fff;border:1px solid #E8D8EF;border-radius:12px;padding:4px;gap:2px;}
+  #page-auto-call .utabs.inner-tabs{display:inline-flex;background:#F6F2F9;border:none;border-radius:10px;padding:4px;gap:2px;}
   #page-auto-call .utabs.inner-tabs button{border:none;border-bottom:none;padding:6px 12px;font-size:14px;font-weight:500;border-radius:6px;color:#64748B;background:transparent;}
-  #page-auto-call .utabs.inner-tabs button.active{background:#F4EDF7;color:#411550;}
+  #page-auto-call .utabs.inner-tabs button.active{background:#4C195E;color:#fff;}
   #page-auto-call h3{font-size:20px;font-weight:600;}
+
+  #page-new-order .fld{background:#F8F7FB;border-color:#ECE8F0;}
+  #page-new-order .sum-row.total{background:#F4EDF7;border-radius:8px;padding:10px 12px;border-bottom:none;}
+  #page-new-order .sum-row.total span{color:#411550;font-weight:600;}
+  #page-new-order .sum-row.total b{color:#411550;font-size:16px;font-weight:700;}
+  #sumDisc2,#sumAdv2{color:#009966;}
+  #sumGrand{font-weight:700;}
+  #page-new-order .empty-note{background:transparent;}
+
+  #page-auto-call .filter-grid{grid-template-columns:repeat(5,1fr);}
+  #page-auto-call table{width:100%;}
+  #page-auto-call table th{background:#FAF9FB;text-transform:none;letter-spacing:0;}
+  #page-auto-pick .switch.on{background:#411550;}
 </style>
 </head>
 <body>
@@ -757,7 +768,7 @@
   }
   // Language toggle (visual only)
   var bn = false;
-  function toggleLang(btn){ bn = !bn; btn.textContent = bn ? 'EN · Switch language' : 'BN · ভাষা বদলান'; }
+  function toggleLang(btn){ bn = !bn; for(var ci=0;ci<btn.childNodes.length;ci++){ var nd=btn.childNodes[ci]; if(nd.nodeType===3 && nd.textContent.trim()){ nd.textContent = bn ? ' EN' : ' BN'; } } }
   // Header actions menu
   function toggleActions(e){
     e.stopPropagation();
