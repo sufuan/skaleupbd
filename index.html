@@ -20,6 +20,7 @@
   }
   *{margin:0;padding:0;box-sizing:border-box;font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;}
   body{background:var(--page-bg);color:var(--text);font-size:14px;}
+  html,body{overflow-x:hidden;overflow-anchor:none;}
   .layout{display:flex;min-height:100vh;}
 
   /* ============ SIDEBAR ============ */
@@ -191,6 +192,7 @@
   .sr-ring.green-ring{border-color:#86efac;color:var(--green-tx);}
   .fav-on{background:var(--amber-bg) !important;border-color:var(--amber-tx) !important;}
   /* ===== Step 2 additions ===== */
+  .card table{display:block;overflow-x:auto;max-width:100%;}
   .page-panel{display:none;}
   .page-panel.active{display:block;}
   .fld{width:100%;border:1px solid var(--input-border);border-radius:8px;padding:9px 12px;font-size:13.5px;background:#fff;color:var(--text);font-family:inherit;}
@@ -1452,7 +1454,8 @@
     var el = document.getElementById(id);
     if(el){ el.classList.add('active'); }
     var sb2 = document.querySelector('.sidebar'); if(sb2) sb2.classList.remove('mob-open');
-    window.scrollTo(0,0); document.documentElement.scrollTop = 0; document.body.scrollTop = 0;
+    var _st = function(){ window.scrollTo(0,0); document.documentElement.scrollTop = 0; document.body.scrollTop = 0; };
+    _st(); if(window.requestAnimationFrame) requestAnimationFrame(_st); setTimeout(_st, 60);
   }
   function showDashboard(){
     document.querySelectorAll('.page-panel').forEach(function(p){ p.classList.remove('active'); });
