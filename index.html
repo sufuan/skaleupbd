@@ -34,7 +34,7 @@
   .quicksearch{margin:6px 14px 10px;background:var(--grey-bg);border:1px solid var(--card-border);border-radius:8px;padding:8px 10px;display:flex;align-items:center;gap:8px;color:var(--muted);font-size:13px;cursor:pointer;}
   .quicksearch kbd{margin-left:auto;background:#fff;border:1px solid var(--input-border);border-radius:4px;padding:1px 5px;font-size:10px;color:var(--muted);}
   .side-nav{padding:2px 10px 10px;flex:1;}
-  .nav-item{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:8px;color:var(--grey-tx);font-size:14px;font-weight:500;cursor:pointer;margin-bottom:2px;}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;color:var(--grey-tx);font-size:14px;font-weight:500;cursor:pointer;margin-bottom:2px;}
   .nav-item:hover{background:var(--active-bg);}
   .nav-item.active{background:var(--active-bg);color:var(--primary);font-weight:600;}
   .nav-item .ico{width:18px;text-align:center;flex-shrink:0;font-size:14px;}
@@ -86,13 +86,13 @@
   .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-bottom:18px;}
   .kpi-grid.c3{grid-template-columns:repeat(3,1fr);}
   .card{background:#fff;border:1px solid #E5E7EB;border-radius:12px;padding:24px;box-shadow:0 1px 2px rgba(17,24,39,.03);}
-  .kpi .kpi-top{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+  .kpi .kpi-top{display:flex;align-items:center;gap:10px;margin-bottom:6px;}
   .kpi .chip{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:17px;}
   .kpi .lbl{font-size:13px;color:var(--muted);font-weight:500;}
   .kpi .dots{margin-left:auto;color:var(--muted2);cursor:pointer;}
-  .kpi{padding:16px 20px 16px 16px;min-height:112px;}
-  .kpi .val{font-size:30px;font-weight:700;color:#111827;}
-  .kpi .sub{font-size:12.5px;color:var(--muted);margin-top:4px;}
+  .kpi{padding:14px 20px 12px 16px;}
+  .kpi .val{font-size:30px;font-weight:700;color:#111827;line-height:34px;}
+  .kpi .sub{font-size:12.5px;color:var(--muted);margin-top:2px;}
   .up{color:#1CA477;font-weight:600;}
   .down{color:var(--red-tx);font-weight:700;}
 
@@ -265,7 +265,10 @@
   .seg-light button.on{background:#F4EDF7;color:#411550;}
   .legend-box{display:inline-flex;align-items:center;gap:7px;border:1px solid #E5E7EB;background:#fff;border-radius:8px;padding:7px 12px;font-size:12.5px;font-weight:600;color:#374151;cursor:pointer;}
   .legend-box.on{background:#F4EDF7;border-color:#E9DFF5;color:#411550;}
-  @media (min-width:1151px){.topbar [onclick*="collapseSidebar"]{display:none;}}
+  .legend-big{display:inline-flex;flex-direction:column;align-items:flex-start;border:1px solid #E5E7EB;background:#fff;border-radius:10px;padding:6px 14px;cursor:pointer;min-width:104px;}
+  .legend-big.on{background:#F4EDF7;border-color:#E9DFF5;}
+  .lb-lbl{font-size:11.5px;font-weight:600;color:#64748B;}
+  .lb-num{font-size:20px;font-weight:700;color:#111827;line-height:1.15;}
 </style>
 </head>
 <body>
@@ -281,7 +284,7 @@
     <div class="quicksearch"><span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg></span> Quick Search <kbd>CTRL K</kbd></div>
 
     <nav class="side-nav">
-      <div class="nav-item active" onclick="showDashboard()"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><line x1="3" y1="22" x2="21" y2="22"/><line x1="6" y1="18" x2="6" y2="11"/><line x1="11" y1="18" x2="11" y2="6"/><line x1="16" y1="18" x2="16" y2="9"/><line x1="21" y1="18" x2="21" y2="3" transform="translate(-3 0)"/></svg></span> Dashboard</div>
+      <div class="nav-item active" onclick="showDashboard()"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></span> Dashboard</div>
       <div class="nav-item"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg></span> Search</div>
 
       <div class="group-label">Operations</div>
@@ -399,14 +402,14 @@
   <!-- ================= MAIN ================= -->
   <div class="main" id="mainCol">
     <header class="topbar">
-      <button class="icon-btn" onclick="collapseSidebar()" title="Collapse sidebar"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg></button>
+      <button class="icon-btn" onclick="collapseSidebar()" title="Collapse sidebar"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg></button>
       <span class="qlink" onclick="openSearch()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg> Search</span>
       <span class="qlink" onclick="showPage('page-new-order')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><circle cx="9" cy="21" r="1.6"/><circle cx="19" cy="21" r="1.6"/><path d="M2.5 3h2l2.6 12.5a2 2 0 0 0 2 1.5h8.7a2 2 0 0 0 2-1.6L21.5 7H6"/></svg> New Order</span>
       <span class="qlink" onclick="showPage('page-web-orders')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg> Web Order List</span>
       <span class="qlink" onclick="showPage('page-approved-orders')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg> Order List</span>
       <span class="qlink" onclick="alert('Send Message (UI prototype)')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><rect x="2.5" y="5" width="19" height="14" rx="2"/><polyline points="3 7 12 13 21 7"/></svg>️ Send Message</span>
       <div class="spacer"></div>
-      <button class="bn-btn" onclick="toggleLang(this)">BN · ভাষা বদলান</button>
+      <button class="bn-btn" onclick="toggleLang(this)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg> BN</button>
       <button class="ask-btn" onclick="alert('Ask EcomDrive — AI Assistant (UI prototype)')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><path d="M12 3l1.9 5.6L19.5 10l-5.6 1.9L12 17.5l-1.9-5.6L4.5 10l5.6-1.4z"/></svg> Ask EcomDrive</button>
       <button class="icon-btn" title="What's New"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><path d="M3 11l14-6v14L3 13v-2z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg></button>
       <button class="icon-btn" onclick="alert('Feedback and bug reports (UI prototype)')" title="Feedback and bug reports"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><path d="M9 18h6"/><path d="M10 21h4"/><path d="M12 3a6 6 0 0 0-3.6 10.8c.7.6 1.1 1.3 1.3 2.2h4.6c.2-.9.6-1.6 1.3-2.2A6 6 0 0 0 12 3z"/></svg></button>
@@ -447,7 +450,7 @@
           <button data-view="activity">Activity</button>
         </div>
         <div class="head-row" style="margin-bottom:18px;">
-          <div style="text-align:right;"><div style="font-size:10px;letter-spacing:.14em;color:var(--muted2);font-weight:700;">DHAKA TIME</div><div id="dhakaClock" style="font-size:13px;font-weight:600;color:var(--primary);">--:--:--</div></div>
+          <div style="text-align:right;background:#fff;border:1px solid #E5E7EB;border-radius:10px;padding:5px 12px;"><div style="font-size:10px;letter-spacing:.14em;color:var(--muted2);font-weight:700;">DHAKA TIME</div><div id="dhakaClock" style="font-size:13px;font-weight:600;color:var(--primary);">--:--:--</div></div>
           <button class="ctl-btn" title="Previous day">‹</button>
           <button class="ctl-btn" onclick="alert('Date picker — Quick: Today / Yesterday / Last 7 days / Last 30 days · Extended: This month / Last month / This year / Last year / Lifetime · Custom: Select a date / Custom range')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><rect x="3" y="5" width="18" height="16" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/></svg> Today</button>
           <button class="ctl-btn" onclick="location.reload()" title="Refresh" style="padding:7px 9px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg></button>
@@ -464,10 +467,10 @@
       <!-- ===== MY DASHBOARD ===== -->
       <section class="view-panel active" id="panel-my">
         <div class="kpi-grid">
-          <div class="card kpi"><div class="kpi-top"><span class="kpi-lbl">Total Orders</span><span class="kpi-controls"><button class="funnel-btn" onclick="funnelMenu(event)" title="Counted on Approved date"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h18l-7 8v6l-4 2v-8L3 4z"/></svg></button><button class="today-pill">Today</button></span></div><div class="val">8</div><div class="sub"><span class="up">↗ 700.0%</span> &nbsp;Previous 1</div></div>
-          <div class="card kpi"><div class="kpi-top"><span class="kpi-lbl">Revenue</span><span class="kpi-controls"><button class="funnel-btn" onclick="funnelMenu(event)" title="Counted on Approved date"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h18l-7 8v6l-4 2v-8L3 4z"/></svg></button><button class="today-pill">Today</button></span></div><div class="val">৳4,342</div><div class="sub"><span class="up">↗ 985.5%</span> &nbsp;Previous ৳400</div></div>
-          <div class="card kpi"><div class="kpi-top"><span class="kpi-lbl">Profit</span><span class="kpi-controls"><button class="funnel-btn" onclick="funnelMenu(event)" title="Counted on Approved date"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h18l-7 8v6l-4 2v-8L3 4z"/></svg></button><button class="today-pill">Today</button></span></div><div class="val">৳2,942</div><div class="sub"><span class="up">↗ 2263.8%</span> &nbsp;Previous ৳124</div></div>
-          <div class="card kpi"><div class="kpi-top"><span class="kpi-lbl">Pending Web Orders</span><span class="kpi-controls"><button class="today-pill">Today</button></span></div><div class="val">0</div><div class="sub">&nbsp;</div></div>
+          <div class="card kpi"><div class="kpi-top"><span class="kpi-lbl">Total Orders</span><span class="kpi-controls"><button class="funnel-btn" onclick="funnelMenu(event)" title="Counted on Approved date"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h18l-7 8v6l-4 2v-8L3 4z"/></svg></button><button class="today-pill"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg> Today</button></span></div><div class="val">8</div><div class="sub"><span class="up">↗ 700.0%</span> &nbsp;Previous 1</div></div>
+          <div class="card kpi"><div class="kpi-top"><span class="kpi-lbl">Revenue</span><span class="kpi-controls"><button class="funnel-btn" onclick="funnelMenu(event)" title="Counted on Approved date"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h18l-7 8v6l-4 2v-8L3 4z"/></svg></button><button class="today-pill"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg> Today</button></span></div><div class="val">৳4,342</div><div class="sub"><span class="up">↗ 985.5%</span> &nbsp;Previous ৳400</div></div>
+          <div class="card kpi"><div class="kpi-top"><span class="kpi-lbl">Profit</span><span class="kpi-controls"><button class="funnel-btn" onclick="funnelMenu(event)" title="Counted on Approved date"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h18l-7 8v6l-4 2v-8L3 4z"/></svg></button><button class="today-pill"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg> Today</button></span></div><div class="val">৳2,942</div><div class="sub"><span class="up">↗ 2263.8%</span> &nbsp;Previous ৳124</div></div>
+          <div class="card kpi"><div class="kpi-top"><span class="kpi-lbl">Pending Web Orders</span><span class="kpi-controls"><button class="today-pill"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg> Today</button></span></div><div class="val">0</div><div class="sub">&nbsp;</div></div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px;">
           <div class="card"><div style="display:flex;align-items:center;"><h3>Web Order Report</h3><span style="margin-left:auto;"><button class="ctl-btn">Today</button></span></div>
@@ -479,11 +482,9 @@
             </div>
             <div class="dashed-empty" id="worEmpty"><div style="font-size:26px;"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><path d="M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M3 7h18"/><path d="M9 5V3.5A1.5 1.5 0 0 1 10.5 2h3A1.5 1.5 0 0 1 15 3.5V5"/></svg></div><b style="color:var(--text);">No web orders in this period</b><br>The selected date range has no web orders to chart.</div>
           </div>
-          <div class="card"><div style="display:flex;align-items:center;flex-wrap:wrap;gap:8px;"><h3>Orders by Source</h3><span style="margin-left:auto;display:flex;gap:6px;"><button class="ctl-btn" onclick="funnelMenu(event)">⧩ Approved</button><button class="today-pill">Today</button></span></div>
-            <div style="display:flex;align-items:center;gap:10px;margin:12px 0;flex-wrap:wrap;">
-              <span style="font-size:11px;letter-spacing:.1em;color:var(--muted2);font-weight:700;">VIEW</span>
-              <span class="seg-light"><button class="on" onclick="segOn(this)">Group by source</button><button onclick="segOn(this)">Group by channel</button></span>
-              <span class="seg-light"><button class="on" onclick="segOn(this);sourceView('chart')">Chart view</button><button onclick="segOn(this);sourceView('table')">Table view</button></span>
+          <div class="card"><div style="display:flex;align-items:center;flex-wrap:wrap;gap:8px;"><h3>Orders by Source</h3><span style="margin-left:auto;display:flex;gap:6px;"><button class="ctl-btn" onclick="funnelMenu(event)">⧩ Approved</button><button class="today-pill"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg> Today</button></span></div>
+            <div style="display:flex;align-items:center;margin:12px 0;flex-wrap:wrap;">
+              <span class="seg-light" style="gap:2px;align-items:center;"><span style="font-size:11px;letter-spacing:.08em;color:var(--muted2);font-weight:700;padding:0 6px 0 8px;">VIEW</span><span class="seg-light" style="background:transparent;padding:0;"><button class="on" onclick="segOn(this)">Source</button><button onclick="segOn(this)">Channel</button></span><span style="width:1px;align-self:stretch;background:#E2E8F0;margin:3px 3px;"></span><span class="seg-light" style="background:transparent;padding:0;"><button class="on" onclick="segOn(this);sourceView('chart')">Chart</button><button onclick="segOn(this);sourceView('table')">Table</button></span></span>
             </div>
             <div id="sourceChart" style="display:flex;align-items:flex-start;gap:24px;">
               <div><div class="donut-blue"><i></i></div><div style="text-align:center;margin-top:12px;"><b style="font-size:13.5px;">Total Orders: 8</b><br><span style="font-size:12.5px;color:var(--muted);">Total Value: ৳4,342</span></div></div>
@@ -496,7 +497,7 @@
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px;">
           <div class="card"><div style="display:flex;align-items:flex-start;flex-wrap:wrap;gap:8px;"><div><h3>Order Counts</h3><div class="card-sub" style="margin:2px 0 0;">Orders created vs sent to courier in the selected range</div></div>
-            <span style="margin-left:auto;display:flex;gap:8px;align-items:center;"><span class="legend-box on"><span style="width:9px;height:9px;background:#2563eb;border-radius:2px;display:inline-block;"></span>Created <b>15</b></span><span class="legend-box"><span style="width:9px;height:9px;background:#bbf7d0;border-radius:2px;display:inline-block;"></span>Sent to Courier <b>0</b></span><select class="ctl-btn"><option>Last 30 days</option><option>Last 7 days</option><option>Today</option></select></span></div>
+            <span style="margin-left:auto;display:flex;gap:8px;align-items:center;"><select class="ctl-btn"><option>Last 30 days</option><option>Last 7 days</option><option>Today</option></select><span class="legend-big on"><span class="lb-lbl">Created</span><span class="lb-num" style="color:#2563EB;">15</span></span><span class="legend-big"><span class="lb-lbl">Sent to Courier</span><span class="lb-num">0</span></span></span></div>
             <div style="height:14px;"></div>
             <div style="display:flex;align-items:flex-end;gap:5px;height:110px;border-bottom:1px solid var(--card-border);">
               <div style="flex:1;"></div><div style="flex:1;"></div><div style="flex:1;"></div><div style="flex:1;"></div><div style="flex:1;"></div><div style="flex:1;"></div>
@@ -521,9 +522,9 @@
               </div>
               <div style="display:flex;gap:6px;margin-top:12px;">
                 <div style="display:flex;flex-direction:column;justify-content:space-between;font-size:9.5px;color:var(--muted2);height:86px;padding:1px 0;"><span>4</span><span>3</span><span>2</span><span>1</span><span>0</span></div>
-                <svg viewBox="0 0 300 86" style="flex:1;height:86px;"><line x1="0" y1="10" x2="300" y2="10" stroke="#eef2f7"/><line x1="0" y1="29" x2="300" y2="29" stroke="#eef2f7"/><line x1="0" y1="48" x2="300" y2="48" stroke="#eef2f7"/><line x1="0" y1="67" x2="300" y2="67" stroke="#eef2f7"/><line x1="0" y1="84" x2="300" y2="84" stroke="#e5e7eb"/><line x1="0" y1="82" x2="300" y2="82" stroke="#16a34a" stroke-width="2"/></svg>
+                <svg viewBox="0 0 300 86" preserveAspectRatio="none" style="flex:1;height:86px;"><line x1="0" y1="10" x2="300" y2="10" stroke="#eef2f7"/><line x1="0" y1="29" x2="300" y2="29" stroke="#eef2f7"/><line x1="0" y1="48" x2="300" y2="48" stroke="#eef2f7"/><line x1="0" y1="67" x2="300" y2="67" stroke="#eef2f7"/><line x1="0" y1="84" x2="300" y2="84" stroke="#e5e7eb"/><line x1="0" y1="82" x2="300" y2="82" stroke="#16a34a" stroke-width="2"/></svg>
               </div>
-              <div style="display:flex;justify-content:space-between;font-size:9.5px;color:var(--muted2);margin-left:16px;"><span>12 AM</span><span>2 AM</span><span>4 AM</span><span>6 AM</span><span>8 AM</span><span>10 AM</span><span>12 PM</span><span>2 PM</span><span>4 PM</span><span>6 PM</span><span>8 PM</span><span>11 PM</span></div>
+              <div style="display:flex;justify-content:space-between;font-size:8.5px;color:var(--muted2);margin-left:16px;"><span>12 AM</span><span>1 AM</span><span>2 AM</span><span>3 AM</span><span>4 AM</span><span>5 AM</span><span>6 AM</span><span>7 AM</span><span>8 AM</span><span>9 AM</span><span>10 AM</span><span>11 AM</span><span>12 PM</span><span>1 PM</span><span>2 PM</span><span>3 PM</span><span>4 PM</span><span>5 PM</span><span>6 PM</span><span>7 PM</span><span>8 PM</span><span>9 PM</span><span>10 PM</span><span>11 PM</span></div>
             </div>
           </div>
         </div>
