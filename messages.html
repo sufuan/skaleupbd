@@ -1,0 +1,1024 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SkaleUp BD — Messages (Step 4)</title>
+<style>
+  :root{
+    --primary:#4a1a5e; --primary-dark:#3d0a57; --gradient-end:#6b21a8;
+    --active-bg:#f3e8ff; --focus:#7c3aed; --page-bg:#f8f7fc;
+    --card-border:#e5e7eb; --input-border:#d1d5db;
+    --text:#111827; --muted:#6b7280; --muted2:#9ca3af;
+    --green-bg:#dcfce7; --green-tx:#15803d; --green-solid:#16a34a;
+    --amber-bg:#fef3c7; --amber-tx:#92400e;
+    --red-bg:#fee2e2; --red-tx:#dc2626;
+    --blue-bg:#dbeafe; --blue-tx:#1d4ed8;
+    --mint-bg:#ecfdf5; --mint-tx:#065f46;
+    --pink-bg:#fce7f3; --pink-tx:#be185d;
+    --grey-bg:#f3f4f6; --grey-tx:#374151;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;}
+  body{background:var(--page-bg);color:var(--text);font-size:14px;}
+  html,body{overflow-x:hidden;overflow-anchor:none;}
+  .layout{display:flex;min-height:100vh;}
+
+  /* ============ SIDEBAR ============ */
+  .sidebar{width:296px;background:#fff;border-right:1px solid var(--card-border);position:fixed;top:0;bottom:0;left:0;overflow-y:auto;display:flex;flex-direction:column;z-index:20;}
+  .ws-switcher{display:flex;align-items:center;gap:10px;padding:16px 16px 10px;cursor:pointer;}
+  .ws-chip{width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,var(--primary),var(--gradient-end));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px;flex-shrink:0;}
+  .ws-name{font-weight:700;font-size:13px;letter-spacing:.02em;}
+  .ws-sub{font-size:11px;color:var(--muted);}
+  .ws-chev{margin-left:auto;color:var(--muted);}
+  .quicksearch{margin:6px 14px 10px;background:var(--grey-bg);border:1px solid var(--card-border);border-radius:8px;padding:8px 10px;display:flex;align-items:center;gap:8px;color:var(--muted);font-size:13px;cursor:pointer;}
+  .quicksearch kbd{margin-left:auto;background:#fff;border:1px solid var(--input-border);border-radius:4px;padding:1px 5px;font-size:10px;color:var(--muted);}
+  .side-nav{padding:2px 10px 10px;flex:1;}
+  .nav-item{display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:10px;color:var(--grey-tx);font-size:14px;cursor:pointer;margin-bottom:2px;}
+  .nav-item:hover{background:var(--active-bg);}
+  .nav-item.active{background:var(--active-bg);color:var(--primary);font-weight:600;}
+  .nav-item .ico{width:18px;text-align:center;flex-shrink:0;font-size:14px;}
+  .nav-item .chev{margin-left:auto;font-size:10px;color:var(--muted2);}
+  .nav-item .badge{margin-left:auto;background:var(--red-bg);color:var(--red-tx);font-size:10.5px;font-weight:700;border-radius:999px;padding:1px 7px;}
+  .group-label{font-size:11px;letter-spacing:.12em;color:var(--muted2);font-weight:700;text-transform:uppercase;padding:20px 12px 8px;}
+  .sub-items{margin-left:16px;border-left:1px solid var(--card-border);padding-left:6px;display:none;}
+  .sub-items.open{display:block;}
+  .sub-items .nav-item{font-size:13.5px;padding:8px 10px;}
+  .side-footer{padding:12px 16px;border-top:1px solid var(--card-border);display:flex;align-items:center;gap:8px;}
+  .pro-pill{background:var(--primary);color:#fff;font-size:11px;font-weight:700;border-radius:999px;padding:3px 10px;letter-spacing:.05em;}
+  .side-footer span{font-size:12px;color:var(--muted);}
+
+  /* ============ MAIN ============ */
+  .main{flex:1;margin-left:296px;display:flex;flex-direction:column;min-width:0;}
+  .topbar{height:62px;background:#fff;border-bottom:1px solid var(--card-border);display:flex;align-items:center;gap:14px;padding:0 20px;position:sticky;top:0;z-index:15;}
+  .topbar .icon-btn{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--grey-tx);cursor:pointer;font-size:16px;border:none;background:transparent;}
+  .topbar .icon-btn:hover{background:var(--active-bg);}
+  .top-search{background:var(--grey-bg);border:1px solid var(--card-border);border-radius:8px;padding:7px 12px;display:flex;gap:8px;align-items:center;color:var(--muted);font-size:13px;width:230px;cursor:pointer;}
+  .top-search kbd{margin-left:auto;background:#fff;border:1px solid var(--input-border);border-radius:4px;padding:1px 5px;font-size:10px;}
+  .ask-btn{border:1.5px solid var(--focus);color:var(--primary);border-radius:999px;padding:7px 14px;font-weight:600;font-size:13px;background:#fff;cursor:pointer;white-space:nowrap;}
+  .bell-wrap{position:relative;}
+  .bell-badge{position:absolute;top:2px;right:2px;background:#f97316;color:#fff;font-size:9.5px;font-weight:700;border-radius:999px;padding:1px 5px;}
+  .avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--gradient-end));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;cursor:pointer;}
+  .bn-btn{font-weight:600;color:var(--grey-tx);cursor:pointer;background:none;border:none;font-size:13px;white-space:nowrap;}
+  .spacer{flex:1;}
+
+  .content{padding:30px 34px 120px;}
+  .step-banner{background:linear-gradient(90deg,#f3eff9,#ece5f5);border:1px solid var(--card-border);border-radius:12px;padding:12px 18px;display:flex;align-items:center;gap:12px;margin-bottom:20px;font-size:13px;}
+  .step-banner b{color:var(--primary);}
+  .step-dots{margin-left:auto;display:flex;gap:6px;}
+  .step-dots i{width:26px;height:8px;border-radius:99px;background:#d8cdea;display:block;}
+  .step-dots i.on{background:var(--primary);}
+  .page-head{display:flex;align-items:flex-start;gap:14px;margin-bottom:16px;}
+  .page-head h1{font-size:24px;font-weight:700;}
+  .page-head p{color:var(--muted);font-size:13px;margin-top:3px;}
+  .dhaka-clock{margin-left:auto;background:#fff;border:1px solid var(--card-border);border-radius:10px;padding:8px 14px;text-align:right;}
+  .dhaka-clock .lbl{font-size:10px;letter-spacing:.14em;color:var(--muted2);font-weight:700;}
+  .dhaka-clock .time{font-size:16px;font-weight:700;color:var(--primary);}
+
+  /* view tabs */
+  .view-tabs{display:flex;gap:6px;background:#fff;border:1px solid var(--card-border);border-radius:12px;padding:5px;width:max-content;margin-bottom:20px;flex-wrap:wrap;}
+  .view-tabs button{border:none;background:transparent;padding:8px 16px;border-radius:8px;font-size:13.5px;font-weight:600;color:var(--grey-tx);cursor:pointer;}
+  .view-tabs button.active{background:var(--primary);color:#fff;}
+  .view-panel{display:none;}
+  .view-panel.active{display:block;}
+
+  /* KPI cards */
+  .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:18px;}
+  .kpi-grid.c3{grid-template-columns:repeat(3,1fr);}
+  .card{background:#fff;border:1px solid #e8e3f1;border-radius:16px;padding:22px 24px;box-shadow:0 1px 2px rgba(61,10,87,.04);}
+  .kpi .kpi-top{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+  .kpi .chip{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:17px;}
+  .kpi .lbl{font-size:13px;color:var(--muted);font-weight:500;}
+  .kpi .dots{margin-left:auto;color:var(--muted2);cursor:pointer;}
+  .kpi .val{font-size:24px;font-weight:800;}
+  .kpi .sub{font-size:12px;color:var(--muted);margin-top:4px;}
+  .up{color:var(--green-tx);font-weight:700;}
+  .down{color:var(--red-tx);font-weight:700;}
+
+  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px;}
+  .grid-21{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:18px;}
+  .card h3{font-size:16.5px;font-weight:700;margin-bottom:4px;letter-spacing:-.01em;}
+  .card .card-sub{font-size:12.5px;color:var(--muted);margin-bottom:12px;}
+  table{width:100%;border-collapse:collapse;}
+  th{font-size:11.5px;text-transform:uppercase;letter-spacing:.07em;color:#6f6890;text-align:left;padding:12px 16px;border-bottom:1px solid #e3dcf0;font-weight:600;background:#f4f0fa;white-space:nowrap;}
+  td{font-size:13.5px;padding:15px 16px;border-bottom:1px solid #f0edf6;vertical-align:top;}
+  tr:last-child td{border-bottom:none;}
+  .pill{display:inline-block;border-radius:999px;padding:4px 11px;font-size:12px;font-weight:600;line-height:1.35;}
+  .pill.purple{background:var(--primary);color:#fff;}
+  .pill.lpurple{background:var(--active-bg);color:var(--primary);}
+  .pill.green{background:var(--green-bg);color:var(--green-tx);}
+  .pill.amber{background:var(--amber-bg);color:var(--amber-tx);}
+  .pill.red{background:var(--red-bg);color:var(--red-tx);}
+  .pill.blue{background:var(--blue-bg);color:var(--blue-tx);}
+  .pill.grey{background:var(--grey-bg);color:var(--grey-tx);}
+  .pill.mint{background:var(--mint-bg);color:var(--mint-tx);}
+  .pill.pink{background:var(--pink-bg);color:var(--pink-tx);}
+  .bar-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;font-size:13px;}
+  .bar-row .nm{width:170px;flex-shrink:0;}
+  .bar-track{flex:1;background:#f1f0f6;border-radius:99px;height:10px;overflow:hidden;}
+  .bar-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--primary),var(--gradient-end));}
+  .bar-row .amt{width:80px;text-align:right;font-weight:600;}
+  .heatmap{display:grid;grid-template-columns:repeat(12,1fr);gap:4px;}
+  .heatmap div{height:26px;border-radius:5px;background:#f1f0f6;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--muted);}
+  .heatmap .h1{background:#99f6e4;} .heatmap .h2{background:#5eead4;} .heatmap .h3{background:#14b8a6;color:#fff;font-weight:700;}
+  .feed-item{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid #f1f0f6;font-size:13px;}
+  .feed-item:last-child{border-bottom:none;}
+  .feed-dot{width:9px;height:9px;border-radius:50%;background:var(--focus);margin-top:5px;flex-shrink:0;}
+  .feed-item .t{color:var(--muted2);font-size:12px;margin-left:auto;white-space:nowrap;}
+  .decision-box{background:linear-gradient(135deg,var(--primary),var(--gradient-end));color:#fff;border-radius:12px;padding:22px;}
+  .decision-box h3{color:#fff;}
+  .decision-box .big{font-size:30px;font-weight:800;margin:8px 0 4px;}
+  .stuck-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:18px;}
+  .stuck{background:#fff;border:1px solid var(--card-border);border-radius:12px;padding:14px;text-align:center;}
+  .stuck .n{font-size:22px;font-weight:800;}
+  .stuck .l{font-size:12px;color:var(--muted);margin-top:2px;}
+  .donut-wrap{display:flex;align-items:center;gap:18px;}
+  .donut{width:120px;height:120px;border-radius:50%;background:conic-gradient(var(--primary) 0 60%,#a855f7 60% 77%,#e9d5ff 77% 100%);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .donut i{width:78px;height:78px;background:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-style:normal;font-weight:800;font-size:15px;}
+  .legend div{font-size:13px;margin-bottom:7px;display:flex;gap:8px;align-items:center;}
+  .legend i{width:11px;height:11px;border-radius:3px;display:block;}
+  .team-chat{position:fixed;right:22px;bottom:22px;background:var(--primary);color:#fff;border:none;border-radius:999px;padding:10px 16px;font-weight:600;font-size:13px;cursor:pointer;box-shadow:0 8px 24px rgba(74,26,94,.35);z-index:30;}
+  .empty-note{font-size:12.5px;color:var(--muted);background:var(--grey-bg);border-radius:8px;padding:10px 12px;}
+
+
+  /* ===== Mobile layout (phones) ===== */
+  @media (max-width:1150px){
+    .sidebar{transform:translateX(-105%);transition:transform .22s ease;z-index:120;box-shadow:none;}
+    .sidebar.mob-open{transform:none;box-shadow:0 0 60px rgba(0,0,0,.3);}
+    .main{margin-left:0 !important;}
+    .topbar{gap:8px;padding:0 12px;overflow-x:auto;}
+    .qlink{font-size:0;gap:0;padding:7px;}
+    .qlink svg{width:19px;height:19px;}
+    .ask-pill{display:none;}
+    .content{padding:14px 12px 70px;}
+    .kpi-grid{grid-template-columns:repeat(2,1fr) !important;}
+    .grid-2,.grid-21{grid-template-columns:1fr !important;}
+    .page-head{flex-wrap:wrap;}
+    .page-head h1{font-size:19px;}
+    table{display:block;overflow-x:auto;white-space:nowrap;}
+    .utabs{gap:14px;overflow-x:auto;}
+    .step-banner{font-size:12px;padding:10px 12px;}
+    .modal-box{max-width:94vw;}
+  }
+
+  /* ===== Web Orders rebuild additions ===== */
+  .opt-tag{font-size:10px;letter-spacing:.08em;color:var(--muted2);font-weight:700;}
+  .pop-panel{border:1px solid #e8e3f1;border-radius:14px;padding:18px;margin-top:14px;background:#fff;box-shadow:0 6px 18px rgba(61,10,87,.05);}
+  .tag-cloud{display:flex;gap:6px;flex-wrap:wrap;}
+  .tag-cloud span{background:var(--grey-bg);border-radius:99px;padding:4px 10px;font-size:12px;cursor:pointer;}
+  .tag-cloud span:hover{background:var(--active-bg);}
+  .prod-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px;}
+  .prod-card{display:flex;flex-direction:column;gap:4px;text-align:left;background:#fff;border:1px solid #e8e3f1;border-radius:12px;padding:14px;cursor:pointer;font-family:inherit;}
+  .prod-card:hover{border-color:var(--focus);}
+  .prod-card:disabled{opacity:.45;cursor:default;}
+  .pc-name{font-weight:600;font-size:13px;color:var(--text);}
+  .pc-fav{font-size:11px;color:var(--amber-tx);}
+  .ord-row{display:flex;align-items:center;gap:16px;padding:11px 0;border-bottom:1px solid #f3f4f6;flex-wrap:wrap;}
+  .queue-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:14px;}
+  .queue-card{text-align:left;}
+  .q-count{font-size:26px;font-weight:800;margin:10px 0;}
+  .filter-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px;}
+  .menu-list{display:flex;flex-direction:column;}
+  .menu-list span{padding:7px 8px;border-radius:6px;cursor:pointer;font-size:13.5px;}
+  .menu-list span:hover{background:var(--active-bg);}
+  .cfg-list{display:grid;grid-template-columns:1fr 1fr;gap:4px 18px;margin-top:10px;}
+  .cfg-list span{display:flex;align-items:center;font-size:13px;padding:3px 0;}
+  .cfg-list .switch{margin-left:auto;width:36px;height:20px;}
+  .cfg-list .switch::after{width:14px;height:14px;}
+  .cfg-list .switch.on::after{left:19px;}
+  .icon-btns button{border:none;background:#f2eefb;border-radius:8px;font-size:11px;padding:4px 8px;cursor:pointer;color:#57506e;}
+  .icon-btns button:disabled{opacity:.4;}
+  .sr-ring{display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:50%;font-size:11px;font-weight:700;border:3.5px solid var(--card-border);}
+  .sr-ring.red-ring{border-color:#fca5a5;color:var(--red-tx);}
+  .sr-ring.green-ring{border-color:#86efac;color:var(--green-tx);}
+  .fav-on{background:var(--amber-bg) !important;border-color:var(--amber-tx) !important;}
+  /* ===== Step 2 additions ===== */
+  .card table{display:block;overflow-x:auto;max-width:100%;}
+  .page-panel{display:none;}
+  .page-panel.active{display:block;}
+  .fld{width:100%;border:1px solid #d9d3e6;border-radius:10px;padding:12px 14px;font-size:14px;background:#fff;color:var(--text);font-family:inherit;}
+  .fld:focus{outline:2px solid var(--focus);outline-offset:-1px;border-color:transparent;}
+  .fld-l{display:block;font-size:13px;font-weight:600;color:#45405c;}
+  .fld-l .fld{margin-top:7px;font-weight:400;}
+  .btn-primary{background:var(--primary);color:#fff;border:none;border-radius:10px;padding:11px 20px;font-size:14px;font-weight:600;cursor:pointer;}
+  .btn-primary:hover{background:var(--primary2);}
+  .pill-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
+  .wo-pill{border:1px solid #e0daf0;background:#fff;border-radius:99px;padding:9px 16px;font-size:13px;font-weight:600;color:#57506e;cursor:pointer;}
+  .wo-pill b{opacity:.6;font-weight:700;margin-left:2px;}
+  .wo-pill.active{border-color:transparent;}
+  .wo-pill.active b{opacity:.85;}
+  .wo-pill.active{background:var(--primary);border-color:var(--primary);color:#fff;}
+  .wo-pill b{font-weight:700;}
+  .pager{font-size:12.5px;color:var(--muted);margin-top:12px;}
+  .sum-row{display:flex;justify-content:space-between;align-items:center;font-size:13.5px;padding:7px 0;border-bottom:1px solid #f3f4f6;gap:14px;}
+  .sum-row span{color:var(--muted);}
+  .sum-row.total{border-bottom:none;font-size:15px;}
+  .sum-row.total span{color:var(--text);font-weight:700;}
+  .prod-line{display:flex;align-items:center;gap:14px;padding:11px 0;border-bottom:1px solid #f3f4f6;}
+  .prod-line:last-child{border-bottom:none;}
+  .qty{display:inline-flex;align-items:center;gap:9px;margin-left:auto;}
+  .qty button{width:26px;height:26px;border-radius:7px;border:1px solid var(--card-border);background:#fff;cursor:pointer;font-size:15px;}
+  .muted-sm{font-size:12px;color:var(--muted);}
+  .row-menu{position:absolute;right:0;top:34px;background:#fff;border:1px solid var(--card-border);border-radius:10px;box-shadow:0 12px 30px rgba(0,0,0,.13);padding:5px;z-index:50;min-width:170px;}
+  .row-menu a{display:block;padding:7px 10px;border-radius:6px;font-size:13px;cursor:pointer;color:var(--text);}
+  .row-menu a:hover{background:var(--active-bg);}
+  .row-menu a.danger{color:var(--red-tx);}
+  .modal-overlay{position:fixed;inset:0;background:rgba(17,24,39,.5);display:flex;align-items:center;justify-content:center;z-index:200;padding:18px;}
+  .modal-box{background:#fff;border-radius:18px;padding:26px;width:100%;max-width:440px;max-height:88vh;overflow:auto;box-shadow:0 24px 60px rgba(30,10,50,.25);}
+  .switch{width:42px;height:23px;border-radius:99px;background:var(--toggle-off);border:none;cursor:pointer;position:relative;flex-shrink:0;}
+  .switch::after{content:"";position:absolute;top:3px;left:3px;width:17px;height:17px;border-radius:50%;background:#fff;transition:left .15s;}
+  .switch.on{background:var(--focus);}
+  .switch.on::after{left:22px;}
+  .sum-chip{background:var(--grey-bg);border-radius:8px;padding:8px 12px;font-size:13px;}
+  #toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%);background:#111827;color:#fff;font-size:13.5px;padding:11px 18px;border-radius:10px;display:none;z-index:300;box-shadow:0 12px 30px rgba(0,0,0,.25);}
+  .utabs.inner-tabs{margin-bottom:16px;}
+  /* verification-fix additions (matched to live my_setup, 2026-11-10) */
+  .utabs{display:flex;gap:22px;border-bottom:1px solid var(--card-border);margin-bottom:18px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;}
+  .utabs::-webkit-scrollbar{display:none;}
+  .utabs button{white-space:nowrap;flex-shrink:0;}
+  .utabs button{border:none;background:transparent;padding:12px 2px;font-size:14px;font-weight:600;color:var(--grey-tx);cursor:pointer;border-bottom:2.5px solid transparent;margin-bottom:-1px;}
+  .utabs button.active{color:var(--primary);border-bottom-color:var(--primary);}
+  .head-row{display:flex;align-items:center;gap:10px;margin-left:auto;}
+  .ctl-btn{background:#fff;border:1px solid #ddd7ea;border-radius:10px;padding:9px 14px;font-size:13px;font-weight:600;color:#45405c;cursor:pointer;display:inline-flex;align-items:center;gap:6px;}
+  .ctl-btn:hover{background:var(--active-bg);}
+  .kpi .val{text-decoration:underline dotted;text-underline-offset:4px;cursor:pointer;}
+  .kpi-controls{display:flex;gap:6px;margin-left:auto;}
+  .donut-blue{width:150px;height:150px;border-radius:50%;background:conic-gradient(#4f46e5 0 100%);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .donut-blue i{width:104px;height:104px;background:#fff;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;font-style:normal;text-align:center;padding:6px;}
+  .seg{display:inline-flex;background:#efeaf8;border-radius:12px;padding:4px;gap:3px;}
+  .seg button{border:none;background:transparent;padding:8px 18px;border-radius:9px;font-size:13px;font-weight:600;color:#57506e;cursor:pointer;}
+  .seg button.on{background:var(--primary);color:#fff;box-shadow:0 2px 6px rgba(61,10,87,.25);}
+  .dashed-empty{border:1.5px dashed #d9d3e6;border-radius:14px;padding:38px 20px;text-align:center;color:var(--muted);}
+  .qlink{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:500;color:var(--grey-tx);cursor:pointer;padding:7px 9px;border-radius:8px;white-space:nowrap;}
+  .qlink:hover{background:var(--active-bg);}
+  .dropdown{position:absolute;background:#fff;border:1px solid var(--card-border);border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.12);padding:6px;z-index:60;min-width:210px;}
+  .dropdown div{padding:8px 10px;border-radius:6px;font-size:13px;cursor:pointer;}
+  .dropdown div:hover{background:var(--active-bg);}
+  @media (max-width:1100px){.kpi-grid{grid-template-columns:repeat(2,1fr);}.stuck-grid{grid-template-columns:repeat(3,1fr);}.grid-2,.grid-21{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- ================= SIDEBAR ================= -->
+  <aside class="sidebar">
+    <div class="ws-switcher">
+      <div class="ws-chip">O</div>
+      <div><div class="ws-name">ONLINE BUSINESS</div><div class="ws-sub">Workspace</div></div>
+      <span class="ws-chev">▾</span>
+    </div>
+    <div class="quicksearch"><span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg></span> Quick Search <kbd>CTRL K</kbd></div>
+
+    <nav class="side-nav">
+      <div class="nav-item active" onclick="location.href='index.html'"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><line x1="3" y1="22" x2="21" y2="22"/><line x1="6" y1="18" x2="6" y2="11"/><line x1="11" y1="18" x2="11" y2="6"/><line x1="16" y1="18" x2="16" y2="9"/><line x1="21" y1="18" x2="21" y2="3" transform="translate(-3 0)"/></svg></span> Dashboard</div>
+      <div class="nav-item"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg></span> Search</div>
+
+      <div class="group-label">Operations</div>
+      <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></span> Web Orders <span class="chev">›</span></div>
+      <div class="sub-items">
+        <div class="nav-item" onclick="showPage('page-new-order')">New Order</div><div class="nav-item" onclick="showPage('page-web-orders')">Web Order List</div>
+        <div class="nav-item" onclick="showPage('page-auto-pick')">Auto Pick Orders</div><div class="nav-item" onclick="showPage('page-auto-call')">Auto Call Center</div>
+        <div class="nav-item" onclick="showPage('page-block-list')">Order Block List</div>
+      </div>
+      <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><circle cx="12" cy="12" r="10"/><polyline points="8 12.5 11 15.5 16 9.5"/></svg></span> Approved Orders <span class="chev">›</span></div>
+      <div class="sub-items">
+        <div class="nav-item" onclick="showPage('page-approved-orders')">Order List</div><div class="nav-item" onclick="showPage('page-orders-dashboard')">Orders Dashboard</div>
+        <div class="nav-item" onclick="showPage('page-preorders')">Preorders</div><div class="nav-item" onclick="showPage('page-super-edit')">Super Edit</div>
+        <div class="nav-item" onclick="showPage('page-scan-update')">Scan To Update</div><div class="nav-item" onclick="showPage('page-courier-invoice')">Courier Invoice Upload</div>
+        <div class="nav-item" onclick="showPage('page-courier-mgmt')">Courier Management</div>
+      </div>
+      <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><path d="M21 8l-9-5-9 5v8l9 5 9-5V8z"/><path d="M3 8l9 5 9-5"/><path d="M12 13v8"/></svg></span> Inventory <span class="chev">›</span></div>
+      <div class="sub-items">
+        <div class="nav-item" onclick="location.href='inventory.html#dashboard'">Inventory Dashboard</div><div class="nav-item" onclick="location.href='inventory.html#products'">Products</div>
+        <div class="nav-item" onclick="location.href='inventory.html#add'">Add Product</div><div class="nav-item" onclick="location.href='inventory.html#ledger'">Stock Ledger</div>
+        <div class="nav-item" onclick="location.href='inventory.html#branches'">Branches</div><div class="nav-item" onclick="location.href='inventory.html#warranty'">Warranty</div>
+        <div class="nav-item" onclick="location.href='inventory.html#transfer'">Stock Transfer</div><div class="nav-item" onclick="location.href='inventory.html#lowstock'">Low Stock Alert</div>
+      </div>
+      <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></span> Messages <span class="chev">›</span></div>
+      <div class="sub-items">
+        <div class="nav-item" onclick="showPage('msg-inbox')">Inbox</div><div class="nav-item" onclick="showPage('msg-comments')">Comments</div>
+        <div class="nav-item" onclick="showPage('msg-autoreply')">Auto Replies</div><div class="nav-item" onclick="showPage('msg-ai')">AI Reply</div>
+        <div class="nav-item" onclick="showPage('msg-report')">Report</div>
+      </div>
+      <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><circle cx="9" cy="21" r="1.6"/><circle cx="19" cy="21" r="1.6"/><path d="M2.5 3h2l2.6 12.5a2 2 0 0 0 2 1.5h8.7a2 2 0 0 0 2-1.6L21.5 7H6"/></svg></span> Purchase <span class="chev">›</span></div>
+      <div class="sub-items">
+        <div class="nav-item" onclick="location.href='purchase.html#dashboard'">Purchase Dashboard</div><div class="nav-item" onclick="location.href='purchase.html#list'">Purchase List</div>
+        <div class="nav-item" onclick="location.href='purchase.html#new'">New Purchase</div><div class="nav-item" onclick="location.href='purchase.html#receive'">Purchase Receive</div>
+        <div class="nav-item" onclick="location.href='purchase.html#ledger'">Supplier Ledger</div><div class="nav-item" onclick="location.href='purchase.html#suppliers'">Suppliers</div>
+        <div class="nav-item" onclick="location.href='purchase.html#quotation'">Ask for Quotation</div>
+      </div>
+      <div class="nav-item" onclick="toggleSub(this)"><span class="ico">✔️</span> Task &amp; Follow-up <span class="chev">›</span></div>
+      <div class="sub-items">
+        <div class="nav-item" onclick="location.href='task.html#board'">Task Board</div><div class="nav-item" onclick="location.href='task.html#cockpit'">Agent Cockpit</div>
+        <div class="nav-item" onclick="location.href='followup.html#manage'">Follow-up Management</div><div class="nav-item" onclick="location.href='followup.html#my'">My Follow-ups</div>
+        <div class="nav-item" onclick="location.href='followup.html#perf'">Follow-up Performance</div>
+      </div>
+      <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><path d="M3 14v-2a9 9 0 0 1 18 0v2"/><rect x="3" y="14" width="4" height="7" rx="1.5"/><rect x="17" y="14" width="4" height="7" rx="1.5"/></svg></span> Call Center <span class="chev">›</span></div>
+      <div class="sub-items">
+        <div class="nav-item">Dashboard</div><div class="nav-item">Reports</div><div class="nav-item">Contacts</div>
+      </div>
+
+      <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.5 5.1L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.5-6.9A2 2 0 0 0 16.7 4H7.3a2 2 0 0 0-1.8 1.1z"/></svg></span> Work Inbox <span class="chev">›</span></div>
+      <div class="sub-items">
+        <div class="nav-item">My Work</div><div class="nav-item">Work Control</div><div class="nav-item">Settings</div>
+      </div>
+
+      <div class="group-label">Growth</div>
+      <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><path d="M3 11l14-6v14L3 13v-2z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg></span> Ads <span class="chev">›</span></div>
+      <div class="sub-items">
+        <div class="nav-item">Ads Dashboard</div><div class="nav-item">Meta Ads</div>
+        <div class="nav-item">Record Ad Spend</div><div class="nav-item">Ad Profit Analysis</div>
+        <div class="nav-item">TikTok Ads</div><div class="nav-item">Google Ads</div>
+      </div>
+      <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><path d="M3 11l14-6v14L3 13v-2z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg></span> Marketing <span class="chev">›</span></div>
+      <div class="sub-items">
+        <div class="nav-item">Automation</div><div class="nav-item">Email Marketing</div>
+        <div class="nav-item">SMS Marketing</div><div class="nav-item">Voice Marketing</div>
+        <div class="nav-item">Campaign List</div><div class="nav-item">Templates</div>
+      </div>
+      <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.2 3.4-5 6.5-5s5.7 1.8 6.5 5"/><path d="M16 5a3.5 3.5 0 0 1 0 6.6"/><path d="M17.5 15.3c2 .6 3.4 2.1 4 4.7"/></svg></span> Customers <span class="chev">›</span></div>
+      <div class="sub-items">
+        <div class="nav-item" onclick="location.href='customers.html#list'">Customer List</div><div class="nav-item" onclick="location.href='customers.html#upload'">Bulk Upload</div>
+      </div>
+
+      <div class="group-label">Business Control</div>
+      <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><circle cx="10" cy="8" r="3.5"/><path d="M3.5 20c.7-3.2 3.2-5 6.5-5s5.8 1.8 6.5 5"/><rect x="16" y="13" width="6" height="8" rx="1"/><path d="M16 16.5h6"/></svg></span> HRM <span class="chev">›</span></div>
+      <div class="sub-items">
+        <div class="nav-item">HR Dashboard</div><div class="nav-item">Attendance</div>
+        <div class="nav-item">Attendance Report</div><div class="nav-item">Shift Management</div>
+        <div class="nav-item">Departments &amp; SOP</div><div class="nav-item">User &amp; Role</div>
+        <div class="nav-item">Settings</div>
+      </div>
+      <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><rect x="2.5" y="6" width="19" height="13" rx="2.5"/><circle cx="12" cy="12.5" r="2.8"/><path d="M6 9.5h.01M18 15.5h.01"/></svg></span> Finance <span class="chev">›</span></div>
+      <div class="sub-items">
+        <div class="nav-item">Finance Dashboard</div><div class="nav-item">Accounts &amp; Bank</div>
+        <div class="nav-item">Income &amp; Expense</div><div class="nav-item" onclick="showPage('page-courier-settlement')">Courier Settlement</div>
+        <div class="nav-item">Cash Flow</div><div class="nav-item">Asset Management</div>
+      </div>
+      <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="15 7 21 7 21 13"/></svg></span> Reports <span class="chev">›</span></div>
+      <div class="sub-items">
+        <div class="nav-item">Profit &amp; Loss</div><div class="nav-item">Order Report</div>
+        <div class="nav-item" onclick="showPage('page-courier-settlement')">Courier Report</div><div class="nav-item">Product Report</div>
+        <div class="nav-item">Employee Report</div><div class="nav-item">Call Center Report</div>
+        <div class="nav-item">Customer Report</div><div class="nav-item">Business Reports</div>
+        <div class="nav-item">My Limits</div>
+      </div>
+
+      <div class="group-label">System</div>
+      <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v3M12 18.2v3M2.8 12h3M18.2 12h3M5.2 5.2l2.1 2.1M16.7 16.7l2.1 2.1M18.8 5.2l-2.1 2.1M7.3 16.7l-2.1 2.1"/></svg>️</span> Settings <span class="chev">›</span></div>
+      <div class="sub-items">
+        <div class="nav-item">Business Profile</div><div class="nav-item">Merchant Profile</div>
+        <div class="nav-item">Device Approvals</div><div class="nav-item">Website Integration</div>
+        <div class="nav-item">Courier Integration</div><div class="nav-item">App Integration</div>
+        <div class="nav-item">Messaging Channels</div><div class="nav-item">VoiceDrive PBX</div>
+        <div class="nav-item">Templates</div><div class="nav-item">Order Sources</div>
+        <div class="nav-item">Deletion Logs</div><div class="nav-item">Advanced Settings</div>
+      </div>
+      <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><circle cx="12" cy="12" r="9.5"/><circle cx="12" cy="12" r="4"/><path d="M5.6 5.6l3.4 3.4M15 15l3.4 3.4M18.4 5.6L15 9M9 15l-3.4 3.4"/></svg></span> Support <span class="chev">›</span></div>
+      <div class="sub-items">
+        <div class="nav-item">Help Center</div><div class="nav-item">Updates</div>
+        <div class="nav-item">My Bug Reports</div><div class="nav-item">My Feedback</div>
+        <div class="nav-item">System Status</div>
+      </div>
+    </nav>
+
+    <div class="side-footer"><span class="pro-pill">PRO</span><span>Expires 2027-12-31</span></div>
+  </aside>
+
+  <!-- ================= MAIN ================= -->
+  <div class="main" id="mainCol">
+    <header class="topbar">
+      <button class="icon-btn" onclick="collapseSidebar()" title="Collapse sidebar"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg></button>
+      <span class="qlink" onclick="openSearch()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg> Search</span>
+      <span class="qlink" onclick="showPage('page-new-order')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><circle cx="9" cy="21" r="1.6"/><circle cx="19" cy="21" r="1.6"/><path d="M2.5 3h2l2.6 12.5a2 2 0 0 0 2 1.5h8.7a2 2 0 0 0 2-1.6L21.5 7H6"/></svg> New Order</span>
+      <span class="qlink" onclick="showPage('page-web-orders')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg> Web Order List</span>
+      <span class="qlink" onclick="showPage('page-approved-orders')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg> Order List</span>
+      <span class="qlink" onclick="alert('Send Message (UI prototype)')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><rect x="2.5" y="5" width="19" height="14" rx="2"/><polyline points="3 7 12 13 21 7"/></svg>️ Send Message</span>
+      <div class="spacer"></div>
+      <button class="bn-btn" onclick="toggleLang(this)">BN · ভাষা বদলান</button>
+      <button class="ask-btn" onclick="alert('Ask EcomDrive — AI Assistant (UI prototype)')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><path d="M12 3l1.9 5.6L19.5 10l-5.6 1.9L12 17.5l-1.9-5.6L4.5 10l5.6-1.4z"/></svg> Ask EcomDrive</button>
+      <button class="icon-btn" title="What's New"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><path d="M3 11l14-6v14L3 13v-2z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg></button>
+      <button class="icon-btn" onclick="alert('Feedback and bug reports (UI prototype)')" title="Feedback and bug reports"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><path d="M9 18h6"/><path d="M10 21h4"/><path d="M12 3a6 6 0 0 0-3.6 10.8c.7.6 1.1 1.3 1.3 2.2h4.6c.2-.9.6-1.6 1.3-2.2A6 6 0 0 0 12 3z"/></svg></button>
+      <div class="bell-wrap"><button class="icon-btn" onclick="toggleNotif()" title="Notifications (Alt+T)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 8-3 8h18s-3-1-3-8"/><path d="M10.3 21a2 2 0 0 0 3.4 0"/></svg></button><span class="bell-badge">11</span></div>
+      <button class="icon-btn" onclick="toggleTheme(this)" title="Theme"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></button>
+      <div class="avatar" title="Jodu doe — test@gmail.com">JD</div>
+    </header>
+
+    <!-- Notifications drawer -->
+    <div id="notifDrawer" style="display:none;position:fixed;top:62px;right:0;width:340px;max-height:80vh;overflow:auto;background:#fff;border-left:1px solid var(--card-border);box-shadow:-8px 0 24px rgba(0,0,0,.08);z-index:40;padding:16px;">
+      <h3 style="font-size:15px;margin-bottom:10px;">Notifications <span class="pill red">Urgent 2</span> <span class="pill amber">Warning 5</span> <span class="pill blue">Info 4</span></h3>
+      <div class="feed-item"><span class="feed-dot" style="background:#dc2626"></span><div><b>WooCommerce sync failed</b> ×3<br><span style="color:var(--muted);font-size:12px;">HTTP 401 — check connection credentials</span></div><span class="t">2h ago</span></div>
+      <div class="feed-item"><span class="feed-dot" style="background:#f59e0b"></span><div><b>Low Stock Products</b> ×18<br><span style="color:var(--muted);font-size:12px;">Stock below alert quantity</span></div><span class="t">5h ago</span></div>
+      <div class="feed-item"><span class="feed-dot" style="background:#f59e0b"></span><div><b>Shipped 15+ days</b> ×2<br><span style="color:var(--muted);font-size:12px;">Parcels not delivered yet</span></div><span class="t">1d ago</span></div>
+      <div class="feed-item"><span class="feed-dot"></span><div><b>View all notifications</b><br><span style="color:var(--muted);font-size:12px;">Open the full notification list</span></div></div>
+    </div>
+
+    <!-- Quick Search modal -->
+    <div id="searchModal" style="display:none;position:fixed;inset:0;background:rgba(20,10,30,.45);z-index:50;" onclick="if(event.target===this)closeSearch()">
+      <div style="background:#fff;border-radius:16px;max-width:560px;margin:90px auto;padding:18px;">
+        <input id="searchInput" placeholder="Search menus, orders, products…" style="width:100%;height:46px;border:1px solid var(--input-border);border-radius:8px;padding:0 14px;font-size:14px;outline:none;" oninput="filterSearch(this.value)">
+        <div id="searchResults" style="margin-top:12px;max-height:300px;overflow:auto;"></div>
+      </div>
+    </div>
+
+    <div class="content">
+      <div class="step-banner"><span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><path d="M14 3h-4v3a2 2 0 1 1-2 2H5v6h3a2 2 0 1 1 0 4h5v-4a2 2 0 1 1 2-2h4V5a2 2 0 0 0-2-2h-3z" transform="translate(0 1)"/></svg></span><div><b>UI Prototype — Step 4 of 5:</b> Messages — separate file per menu, sub-pages inside this file. UI only — no backend.</div><span class="step-dots"><i></i><i></i><i></i><i class="on"></i><i></i></span></div>
+
+      <section class="page-panel active" id="msg-inbox">
+        <h3 style="font-size:19px;margin-bottom:18px;">Inbox</h3>
+        <div style="display:grid;grid-template-columns:320px 1fr;gap:18px;" class="grid-21x">
+          <div class="card" style="padding:14px;">
+            <input class="fld" placeholder="Search conversations...">
+            <div style="margin-top:12px;">
+              <div class="sum-row" style="cursor:pointer;background:#f4f0fa;border-radius:10px;padding:10px;"><span><b>Rahim Uddin</b> <span class="pill blue">Messenger</span><br><span class="muted-sm">আপু, এই শাড়িটার দাম কত?</span></span><span class="muted-sm">2m</span></div>
+              <div class="sum-row" style="cursor:pointer;padding:10px;"><span><b>Sharmin Akter</b> <span class="pill pink">Instagram</span><br><span class="muted-sm">Delivery charge koto?</span></span><span class="muted-sm">18m</span></div>
+              <div class="sum-row" style="cursor:pointer;padding:10px;"><span><b>+880 1712-XXXXXX</b> <span class="pill green">WhatsApp</span><br><span class="muted-sm">Order confirm korlam</span></span><span class="muted-sm">1h</span></div>
+            </div>
+          </div>
+          <div class="card">
+            <div style="display:flex;align-items:center;gap:10px;"><b>Rahim Uddin</b><span class="pill blue">Messenger</span><span style="margin-left:auto;"><button class="ctl-btn" onclick="toast('Order created from chat (UI prototype)')">Create Order</button></span></div>
+            <div style="margin:18px 0;display:flex;flex-direction:column;gap:10px;">
+              <div style="align-self:flex-start;background:#f2eefb;border-radius:14px;padding:11px 15px;max-width:75%;">আপু, এই শাড়িটার দাম কত?</div>
+              <div style="align-self:flex-end;background:var(--primary);color:#fff;border-radius:14px;padding:11px 15px;max-width:75%;">আসসালামু আলাইকুম! Kumkum Ikkat শাড়িটার দাম ৳699। অর্ডার করতে চাইলে নাম, ঠিকানা আর ফোন নম্বরটা দিন।</div>
+              <div style="align-self:flex-start;background:#f2eefb;border-radius:14px;padding:11px 15px;max-width:75%;">দামটা একটু কমানো যাবে না?</div>
+            </div>
+            <div style="background:#fdf6e3;border:1px solid #f0dfa0;border-radius:12px;padding:12px 14px;margin-bottom:12px;"><b>AI Suggested Reply</b> <span class="pill amber">Shadow Mode — needs your approval</span><p style="margin-top:6px;">বুঝতে পারছি আপু। আপনার জন্য ডেলিভারি চার্জ ফ্রি করে দিচ্ছি, সাথে 5% ডিসকাউন্ট কুপন — মোট ৳664-তে পেয়ে যাবেন।</p><div style="display:flex;gap:8px;margin-top:10px;"><button class="btn-primary" onclick="toast('Reply sent (UI prototype)')">Approve &amp; Send</button><button class="ctl-btn">Edit</button><button class="ctl-btn">Reject</button></div></div>
+            <div style="display:flex;gap:10px;"><input class="fld" placeholder="Type a message..."><button class="btn-primary" onclick="toast('Message sent (UI prototype)')">Send</button></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="page-panel" id="msg-comments">
+        <h3 style="font-size:19px;margin-bottom:18px;">Comments</h3>
+        <div class="card">
+          <div class="sum-row"><span><b>Nusrat J.</b> — "Price please" <span class="muted-sm">on Kumkum Ikkat post · Facebook · 5m ago</span></span><span><button class="ctl-btn">Reply</button> <button class="ctl-btn">Hide</button></span></div>
+          <div class="sum-row"><span><b>Tanvir H.</b> — "Dhaka te delivery hobe?" <span class="muted-sm">on Jeans Pant post · Facebook · 22m ago</span></span><span><button class="ctl-btn">Reply</button> <button class="ctl-btn">Hide</button></span></div>
+          <div class="sum-row"><span><b>Mim Chowdhury</b> — "Cash on delivery ache?" <span class="muted-sm">on 30L Bag post · Facebook · 1h ago</span></span><span><button class="ctl-btn">Reply</button> <button class="ctl-btn">Hide</button></span></div>
+        </div>
+      </section>
+
+      <section class="page-panel" id="msg-autoreply">
+        <div style="display:flex;align-items:center;gap:12px;"><h3 style="font-size:19px;">Auto Replies</h3><span style="margin-left:auto;"><button class="btn-primary" onclick="toast('Add rule (UI prototype)')">Add Rule</button></span></div>
+        <div class="card" style="margin-top:18px;">
+          <table><tr><th>When message contains</th><th>Reply with</th><th>Channel</th><th>Status</th></tr>
+          <tr><td>দাম / price / koto</td><td>প্রোডাক্টের দাম + অর্ডারের নিয়ম পাঠাও</td><td>Messenger</td><td><button class="switch on" onclick="this.classList.toggle('on')"></button></td></tr>
+          <tr><td>delivery charge</td><td>ঢাকার ভিতরে ৳60, বাইরে ৳120</td><td>All</td><td><button class="switch on" onclick="this.classList.toggle('on')"></button></td></tr>
+          <tr><td>offer / discount</td><td>চলমান অফারের তালিকা পাঠাও</td><td>WhatsApp</td><td><button class="switch" onclick="this.classList.toggle('on')"></button></td></tr></table>
+        </div>
+      </section>
+
+      <section class="page-panel" id="msg-ai">
+        <h3 style="font-size:19px;margin-bottom:18px;">AI Reply</h3>
+        <div class="card">
+          <div class="sum-row"><span><b>AI Auto Reply</b><br><span class="muted-sm">AI answers common questions on Messenger, Instagram and WhatsApp</span></span><button class="switch on" onclick="this.classList.toggle('on')"></button></div>
+          <div class="sum-row"><span><b>Shadow Mode (first week)</b><br><span class="muted-sm">AI only drafts replies — you approve before anything is sent</span></span><button class="switch on" onclick="this.classList.toggle('on')"></button></div>
+          <div class="sum-row"><span><b>AI can change prices (negotiation)</b><br><span class="muted-sm">AI may bargain down to each product's floor price — never below it</span></span><button class="switch" onclick="this.classList.toggle('on')"></button></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:16px;">
+            <label class="fld-l">Reply Tone<select class="fld"><option>Friendly (Bangla + English mix)</option><option>Formal Bangla</option><option>English</option></select></label>
+            <label class="fld-l">AI Model<select class="fld"><option>Free AI (auto)</option><option>Rule Brain only — no AI</option></select></label>
+          </div>
+          <button class="btn-primary" style="margin-top:18px;" onclick="toast('AI settings saved (UI prototype)')">Save Settings</button>
+        </div>
+      </section>
+
+      <section class="page-panel" id="msg-report">
+        <h3 style="font-size:19px;margin-bottom:18px;">Messages Report</h3>
+        <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr);">
+          <div class="card kpi"><div class="lbl">CONVERSATIONS</div><div class="val">128</div><div class="sub">Last 30 days</div></div>
+          <div class="card kpi"><div class="lbl">AVG RESPONSE TIME</div><div class="val">3m 40s</div><div class="sub">All channels</div></div>
+          <div class="card kpi"><div class="lbl">AI REPLIES</div><div class="val">342</div><div class="sub">86 approved in shadow mode</div></div>
+          <div class="card kpi"><div class="lbl">ORDERS FROM CHAT</div><div class="val">57</div><div class="sub">৳38,940 revenue</div></div>
+        </div>
+      </section>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /layout -->
+
+<button class="team-chat" onclick="alert('Open Team Chat (UI prototype)')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg> Open Team Chat</button>
+
+
+<div class="modal-overlay" id="approveModal" style="display:none;">
+  <div class="modal-box">
+    <h3 style="font-size:17px;">Approve this order?</h3>
+    <p style="color:var(--muted);font-size:13.5px;margin:10px 0;">OB273 will move to Approved Orders. Stock for 1 item will be reserved, and the order becomes ready to ship.</p>
+    <div class="sum-row"><span>Customer</span><b>M. Fahim</b></div>
+    <div class="sum-row"><span>Total (COD)</span><b>৳599</b></div>
+    <div style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end;">
+      <button class="ctl-btn" onclick="closeModal('approveModal')">Cancel</button>
+      <button class="btn-primary" onclick="confirmApprove()">Confirm Approve</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="orderModal" style="display:none;">
+  <div class="modal-box" style="max-width:640px;">
+    <div style="display:flex;align-items:center;"><h3 style="font-size:17px;">Order Details — OB266</h3><button class="icon-btn" style="margin-left:auto;" onclick="closeModal('orderModal')">✕</button></div>
+    <div class="sum-row" style="margin-top:10px;"><span>Customer</span><b>M. Fahim · 01712-445566</b></div>
+    <div class="sum-row"><span>Address</span><b>House 12, Road 5, Mirpur 10, Dhaka</b></div>
+    <div class="sum-row"><span>Status</span><b><span class="pill amber">Pending</span></b></div>
+    <div class="sum-row"><span>Courier</span><b>Steadfast — Inside Dhaka</b></div>
+    <table style="margin-top:10px;"><tr><th>Product</th><th>Qty</th><th>Total</th></tr>
+    <tr><td>Mentara Roll On Balm COMBO (MENT-COMBO)</td><td>1</td><td>৳539</td></tr></table>
+    <div class="sum-row" style="margin-top:10px;"><span>Delivery Charge</span><b>৳60</b></div>
+    <div class="sum-row total"><span>COD Total</span><b>৳599</b></div>
+    <div style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end;">
+      <button class="ctl-btn" onclick="toast('Print sent — invoice renders in a hidden print frame')">Print</button>
+      <button class="btn-primary" onclick="closeModal('orderModal')">Close</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="methodModal" style="display:none;">
+  <div class="modal-box" style="max-width:560px;">
+    <div style="display:flex;align-items:center;"><h3 style="font-size:17px;" id="methodTitle">Add Delivery Method</h3><button class="icon-btn" style="margin-left:auto;" onclick="closeModal('methodModal')">✕</button></div>
+    <label class="fld-l" style="margin-top:12px;">Method Name<input class="fld" id="mName" placeholder="e.g. Steadfast — Inside Dhaka"></label>
+    <label class="fld-l" style="margin-top:12px;">Courier Type<select class="fld" id="mType" onchange="methodFields(this.value)">
+      <option>PATHAO</option><option>STEADFAST</option><option>REDX</option><option>CARRYBEE</option><option>PAPERFLY</option><option>ECOURIER</option><option>BAHOK</option><option>OTHERS (Manual)</option></select></label>
+    <div id="mFields" style="margin-top:6px;"></div>
+    <label class="fld-l" style="margin-top:12px;">Default Shipping Note<input class="fld" placeholder="Optional"></label>
+    <div class="sum-row" style="margin-top:12px;"><span>Active</span><button class="switch on" onclick="this.classList.toggle('on')"></button></div>
+    <div style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end;">
+      <button class="ctl-btn" onclick="closeModal('methodModal')">Cancel</button>
+      <button class="btn-primary" onclick="closeModal('methodModal');toast('Delivery method saved (UI prototype)')">Save Method</button>
+    </div>
+  </div>
+</div>
+
+
+<div class="modal-overlay" id="layoutsModal" style="display:none;">
+  <div class="modal-box" style="max-width:640px;">
+    <div style="display:flex;align-items:center;"><h3 style="font-size:17px;">Order Form Options</h3><button class="icon-btn" style="margin-left:auto;" onclick="closeModal('layoutsModal')">✕</button></div>
+    <div class="utabs inner-tabs" style="margin-top:10px;"><button class="active">Layouts</button><button>Fields</button><button>Courier Cards</button></div>
+    <p class="muted-sm">Layouts apply on wider screens. On a phone every layout stacks into one column.</p>
+    <div class="card" style="box-shadow:none;border:1px solid var(--focus);margin-top:12px;"><b>V2 Default</b> <span class="pill green">ACTIVE</span><p class="muted-sm" style="margin-top:6px;">Two columns with the calculation details pinned in a sticky rail on the right, so the total and the submit button stay on screen.</p></div>
+    <div class="card" style="box-shadow:none;border:1px solid var(--card-border);margin-top:10px;"><b>V2 Full Width Stacked</b><p class="muted-sm" style="margin-top:6px;">Like V2 Default, but the product picker gets a full-width row with the ordered products below it, the way a phone shows them.</p></div>
+    <div class="card" style="box-shadow:none;border:1px solid var(--card-border);margin-top:10px;"><b>V1 Classic</b><p class="muted-sm" style="margin-top:6px;">The legacy arrangement: full width, ordered products beside the picker, and the money fields in a band across the bottom. Scroll down to submit.</p></div>
+    <p class="muted-sm" style="margin-top:12px;">Fields templates: Default Template (ACTIVE), Compact Template, Wholesale Template, Pre-Order Template, Call Center Fast Entry Template. Courier Cards order: Overall, Pathao, Steadfast, RedX, CarryBee.</p>
+    <div style="display:flex;gap:10px;margin-top:14px;justify-content:space-between;align-items:center;"><span class="muted-sm">Active: V2 Default + Default Template</span><button class="btn-primary" onclick="closeModal('layoutsModal')">Close</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="customProductModal" style="display:none;">
+  <div class="modal-box">
+    <div style="display:flex;align-items:center;"><h3 style="font-size:17px;">Add Custom Product</h3><button class="icon-btn" style="margin-left:auto;" onclick="closeModal('customProductModal')">✕</button></div>
+    <label class="fld-l" style="margin-top:12px;">Product Name *<input class="fld" placeholder="e.g. Special Offer Box"></label>
+    <label class="fld-l" style="margin-top:12px;">SKU (optional)<input class="fld" placeholder="Auto-generated if left blank"></label>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;">
+      <label class="fld-l">Price (৳) *<input class="fld" type="number" value="0"></label>
+      <label class="fld-l">Quantity *<input class="fld" type="number" value="1"></label>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end;"><button class="ctl-btn" onclick="closeModal('customProductModal')">Cancel</button><button class="btn-primary" onclick="closeModal('customProductModal');toast('Custom product added (UI prototype)')">Add Product</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="filterModal" style="display:none;">
+  <div class="modal-box" style="max-width:520px;">
+    <div style="display:flex;align-items:center;"><h3 style="font-size:17px;">Filter Orders</h3><button class="icon-btn" style="margin-left:auto;" onclick="closeModal('filterModal')">✕</button></div>
+    <label class="fld-l" style="margin-top:12px;">Date range counts on<select class="fld"><option>Order date</option><option>Status change date</option></select></label>
+    <label class="fld-l" style="margin-top:12px;">Date Range<button class="ctl-btn" style="width:100%;justify-content:center;margin-top:5px;" onclick="toast('Date picker — Today / Yesterday / Last 7 days / Last 30 days / This month / Last month / This year / Last year / Lifetime / Custom range')">All dates</button></label>
+    <label class="fld-l" style="margin-top:12px;">Filter Field<select class="fld"><option>Reference</option><option>Incomplete Orders</option><option>Web Source</option><option>Tags</option><option>Previous Status</option><option>Employees</option><option>Product Code</option><option>Product Quantity</option><option>Order Value</option><option>Total Orders</option><option>Success Orders</option><option>Assignee</option></select></label>
+    <div style="display:flex;gap:16px;margin-top:12px;font-size:13px;"><label><input type="checkbox"> Show Only Incomplete Order</label><label><input type="checkbox"> Hide Incomplete Order</label></div>
+    <div style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end;"><button class="ctl-btn" onclick="closeModal('filterModal')">Cancel</button><button class="btn-primary" onclick="closeModal('filterModal');toast('Filter applied (UI prototype)')">Apply Filter</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="alertsModal" style="display:none;">
+  <div class="modal-box" style="max-width:520px;">
+    <div style="display:flex;align-items:center;"><h3 style="font-size:17px;">New web order alerts</h3><button class="icon-btn" style="margin-left:auto;" onclick="closeModal('alertsModal')">✕</button></div>
+    <p style="font-size:13.5px;margin-top:10px;">Play a sound when a new web order arrives in the selected order types.</p>
+    <div class="sum-row"><span>Play a sound when a new web order comes<br><span class="muted-sm">The alert works from the order list and keeps checking while this browser tab is open.</span></span><button class="switch" onclick="this.classList.toggle('on')"></button></div>
+    <b style="display:block;margin-top:12px;">Order types</b><span class="muted-sm">Choose which new orders should play the alert.</span>
+    <label style="display:block;margin-top:8px;font-size:13.5px;"><input type="checkbox" checked> Processing orders — <span class="muted-sm">New confirmed web orders that need team action.</span></label>
+    <label style="display:block;margin-top:6px;font-size:13.5px;"><input type="checkbox"> Incomplete orders — <span class="muted-sm">New checkout attempts that were not completed.</span></label>
+    <b style="display:block;margin-top:12px;">Alert sound</b><span class="muted-sm">Pick the volume for the new order sound.</span>
+    <div style="display:flex;gap:14px;margin-top:8px;font-size:13.5px;"><label><input type="radio" name="vol"> Low</label><label><input type="radio" name="vol" checked> Medium</label><label><input type="radio" name="vol"> High</label><button class="ctl-btn">Test sound</button></div>
+    <p class="muted-sm" style="margin-top:10px;">Your browser will ask for permission when you turn this on.</p>
+    <div style="display:flex;gap:10px;margin-top:14px;justify-content:flex-end;"><button class="ctl-btn" onclick="closeModal('alertsModal')">Cancel</button><button class="btn-primary" onclick="closeModal('alertsModal');toast('Alert settings saved (UI prototype)')">Save changes</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="ruleModal" style="display:none;">
+  <div class="modal-box" style="max-width:560px;">
+    <div style="display:flex;align-items:center;"><h3 style="font-size:17px;">Create Rule</h3><button class="icon-btn" style="margin-left:auto;" onclick="closeModal('ruleModal')">✕</button></div>
+    <label class="fld-l" style="margin-top:12px;">Rule Name<input class="fld" placeholder="Hold orders follow-up"></label>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;">
+      <label class="fld-l">Order Type<select class="fld"><option>Web Order</option><option>Approved Order</option></select></label>
+      <label class="fld-l">Order Status<select class="fld"><option>Processing</option><option>Incomplete</option><option>Good But No Response</option><option>No Response</option><option>Advance Payment</option><option>On Hold</option><option>Stock Out</option><option>Approved</option><option>Cancel</option></select></label>
+      <label class="fld-l">Schedule Type<select class="fld"><option>Everyday</option><option>Today Only</option></select></label>
+      <label class="fld-l">Call Limit<input class="fld" value="3" readonly></label>
+    </div>
+    <label class="fld-l" style="margin-top:12px;">Time Slots <button class="ctl-btn" style="margin-left:8px;">Add Time</button><input class="fld" type="time" value="10:00" style="margin-top:6px;"></label>
+    <div class="sum-row"><span>Rule Active<br><span class="muted-sm">Disabled rules will not auto-trigger.</span></span><button class="switch on" onclick="this.classList.toggle('on')"></button></div>
+    <div class="sum-row"><span>Custom Voices For This Rule<br><span class="muted-sm">Using global Auto Call Center voices for this rule.</span></span><button class="switch" onclick="this.classList.toggle('on')"></button></div>
+    <div style="margin-top:12px;"><b>Keypad Actions</b> <button class="ctl-btn">Add Key</button><p class="muted-sm" style="margin-top:6px;">No key actions configured. Press results will still be logged.</p></div>
+    <div style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end;"><button class="ctl-btn" onclick="closeModal('ruleModal')">Cancel</button><button class="btn-primary" onclick="closeModal('ruleModal');toast('Rule created (UI prototype)')">Create Rule</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="blockIpModal" style="display:none;">
+  <div class="modal-box">
+    <div style="display:flex;align-items:center;"><h3 style="font-size:17px;">Block IP Address</h3><button class="icon-btn" style="margin-left:auto;" onclick="closeModal('blockIpModal')">✕</button></div>
+    <label class="fld-l" style="margin-top:12px;">IP Address<input class="fld" placeholder="Enter IP address"></label>
+    <label class="fld-l" style="margin-top:12px;">Duration (minutes)<input class="fld" type="number" placeholder="Enter duration in minutes"></label>
+    <div style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end;"><button class="btn-primary" onclick="closeModal('blockIpModal');toast('IP blocked (UI prototype)')">Block IP</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="blockMobileModal" style="display:none;">
+  <div class="modal-box">
+    <div style="display:flex;align-items:center;"><h3 style="font-size:17px;">Block Mobile Number</h3><button class="icon-btn" style="margin-left:auto;" onclick="closeModal('blockMobileModal')">✕</button></div>
+    <label class="fld-l" style="margin-top:12px;">Mobile Number<input class="fld" placeholder="Enter mobile number"></label>
+    <div class="sum-row"><span>Permanent Block</span><button class="switch" onclick="this.classList.toggle('on')"></button></div>
+    <label class="fld-l" style="margin-top:12px;">Duration (minutes)<input class="fld" type="number" placeholder="Enter duration in minutes"></label>
+    <div style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end;"><button class="btn-primary" onclick="closeModal('blockMobileModal');toast('Mobile number blocked (UI prototype)')">Block Mobile</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="blockDeviceModal" style="display:none;">
+  <div class="modal-box">
+    <div style="display:flex;align-items:center;"><h3 style="font-size:17px;">Block Device</h3><button class="icon-btn" style="margin-left:auto;" onclick="closeModal('blockDeviceModal')">✕</button></div>
+    <label class="fld-l" style="margin-top:12px;">Device Key<input class="fld" placeholder="Enter device key"></label>
+    <div class="sum-row"><span>Permanent Block</span><button class="switch on" onclick="this.classList.toggle('on')"></button></div>
+    <div style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end;"><button class="btn-primary" onclick="closeModal('blockDeviceModal');toast('Device blocked (UI prototype)')">Block Device</button></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+  // Sidebar submenu expand/collapse
+  function toggleSub(el){
+    var sub = el.nextElementSibling;
+    var chev = el.querySelector('.chev');
+    if(sub && sub.classList.contains('sub-items')){
+      sub.classList.toggle('open');
+      if(chev) chev.textContent = sub.classList.contains('open') ? '⌄' : '›';
+    }
+  }
+  // Sidebar collapse to icon rail
+  var collapsed = false;
+  function collapseSidebar(){
+    var sb = document.querySelector('.sidebar');
+    if(window.innerWidth <= 1150){ sb.classList.toggle('mob-open'); return; }
+    var main = document.getElementById('mainCol');
+    collapsed = !collapsed;
+    sb.style.width = collapsed ? '74px' : '296px';
+    main.style.marginLeft = collapsed ? '74px' : '296px';
+    document.querySelectorAll('.sidebar .nav-item, .sidebar .group-label, .sidebar .ws-name, .sidebar .ws-sub, .sidebar .quicksearch, .sidebar .side-footer span:last-child').forEach(function(n){
+      n.style.display = collapsed ? 'none' : '';
+    });
+    document.querySelectorAll('.sidebar .nav-item .ico').forEach(function(n){ n.style.display=''; });
+  }
+  // Dashboard view tabs
+  document.getElementById('viewTabs').addEventListener('click', function(e){
+    if(e.target.tagName !== 'BUTTON') return;
+    this.querySelectorAll('button').forEach(function(b){ b.classList.remove('active'); });
+    e.target.classList.add('active');
+    var v = e.target.getAttribute('data-view');
+    document.querySelectorAll('.view-panel').forEach(function(p){ p.classList.remove('active'); });
+    document.querySelectorAll('.page-panel').forEach(function(p){ p.classList.remove('active'); });
+    document.getElementById('panel-' + v).classList.add('active');
+    currentDashPanel = 'panel-' + v;
+  });
+  // Notifications drawer
+  function toggleNotif(){
+    var d = document.getElementById('notifDrawer');
+    d.style.display = (d.style.display === 'none' || !d.style.display) ? 'block' : 'none';
+  }
+  document.addEventListener('keydown', function(e){
+    if(e.altKey && (e.key === 't' || e.key === 'T')){ e.preventDefault(); toggleNotif(); }
+    if((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')){ e.preventDefault(); openSearch(); }
+    if(e.key === 'Escape'){ closeSearch(); }
+  });
+  // Quick Search (Ctrl+K)
+  var menuNames = ['Dashboard','Search Orders','New Order','Web Order List','Auto Pick Orders','Auto Call Center','Order Block List','Order List','Orders Dashboard','Preorders','Super Edit','Scan To Update','Courier Invoice Upload','Courier Management','Inventory Dashboard','Products','Add Product','Stock Ledger','Branches','Warranty','Stock Transfer','Low Stock Alert','Inbox','Comments','Auto Replies','AI Reply','Messages Report','Purchase Dashboard','Purchase List','New Purchase','Purchase Receive','Supplier Ledger','Suppliers','Ask for Quotation','Task Board','Agent Cockpit','Follow-up Management','My Follow-ups','Follow-up Performance','Call Center Dashboard','Call Center Reports','Contacts','My Work','Work Control','Ads Dashboard','Meta Ads','Record Ad Spend','Ad Profit Analysis','TikTok Ads','Google Ads','Automation','Email Marketing','SMS Marketing','Voice Marketing','Campaign List','Templates','Customer List','Bulk Upload','HR Dashboard','Attendance','Attendance Report','Shift Management','Departments & SOP','User & Role','Finance Dashboard','Accounts & Bank','Income & Expense','Courier Settlement','Cash Flow','Asset Management','Profit & Loss','Order Report','Courier Report','Product Report','Employee Report','Call Center Report','Customer Report','Business Reports','My Limits','Business Profile','Merchant Profile','Device Approvals','Website Integration','Courier Integration','App Integration','Messaging Channels','VoiceDrive PBX','Order Sources','Deletion Logs','Advanced Settings','Help Center','Updates','My Bug Reports','My Feedback','System Status'];
+  function openSearch(){
+    document.getElementById('searchModal').style.display = 'block';
+    filterSearch('');
+    setTimeout(function(){ document.getElementById('searchInput').focus(); }, 50);
+  }
+  function closeSearch(){ document.getElementById('searchModal').style.display = 'none'; }
+  function filterSearch(q){
+    var box = document.getElementById('searchResults');
+    var list = menuNames.filter(function(n){ return n.toLowerCase().indexOf(q.toLowerCase()) !== -1; }).slice(0, 14);
+    box.innerHTML = list.length ? list.map(function(n){ return '<div class="nav-item" onclick="closeSearch()"><span class="ico">›</span> ' + n + '</div>'; }).join('') : '<p style="color:var(--muted);font-size:13px;padding:8px;">No results</p>';
+  }
+  // Theme toggle (visual only)
+  var dark = false;
+  function toggleTheme(btn){
+    dark = !dark;
+    btn.textContent = dark ? '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/></svg>' : '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>';
+    document.body.style.background = dark ? '#171021' : '';
+    document.querySelectorAll('.card,.topbar,.sidebar,.view-tabs,.stuck,.dhaka-clock').forEach(function(c){
+      c.style.background = dark ? '#241533' : '';
+      c.style.color = dark ? '#f3e8ff' : '';
+      c.style.borderColor = dark ? '#3b2354' : '';
+    });
+  }
+  // Language toggle (visual only)
+  var bn = false;
+  function toggleLang(btn){ bn = !bn; btn.textContent = bn ? 'EN · Switch language' : 'BN · ভাষা বদলান'; }
+  // Header actions menu
+  function toggleActions(e){
+    e.stopPropagation();
+    var m = document.getElementById('actionsMenu');
+    m.style.display = (m.style.display === 'block') ? 'none' : 'block';
+  }
+  document.addEventListener('click', function(){ var m = document.getElementById('actionsMenu'); if(m) m.style.display = 'none'; });
+  // Date-basis funnel dropdown (shared)
+  function funnelMenu(e){
+    e.stopPropagation();
+    alert('Counted on: ✓ Approved date · Web order date · Courier date');
+  }
+  // Segmented controls
+  function segOn(btn){
+    var parent = btn.parentElement;
+    parent.querySelectorAll('button').forEach(function(b){ b.classList.remove('on'); b.style.background=''; b.style.color=''; });
+    btn.classList.add('on');
+  }
+  // Web Order Report inner tabs
+  function worTab(btn, which){
+    btn.parentElement.querySelectorAll('button').forEach(function(b){ b.classList.remove('active'); });
+    btn.classList.add('active');
+    var box = document.getElementById('worEmpty');
+    box.innerHTML = which === 'web'
+      ? '<div style="font-size:26px;"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><path d="M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M3 7h18"/><path d="M9 5V3.5A1.5 1.5 0 0 1 10.5 2h3A1.5 1.5 0 0 1 15 3.5V5"/></svg></div><b style="color:var(--text);">No web orders in this period</b><br>The selected date range has no web orders to chart.'
+      : '<div style="font-size:26px;"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><path d="M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M3 7h18"/><path d="M9 5V3.5A1.5 1.5 0 0 1 10.5 2h3A1.5 1.5 0 0 1 15 3.5V5"/></svg></div><b style="color:var(--text);">No incomplete orders in this period</b><br>The selected date range has no incomplete orders to chart.';
+  }
+  // Orders by Source chart/table switch
+  function sourceView(v){
+    document.getElementById('sourceChart').style.display = v === 'chart' ? 'flex' : 'none';
+    document.getElementById('sourceTable').style.display = v === 'table' ? 'block' : 'none';
+  }
+  // Earning Reports load on demand
+  function loadEarnings(){
+    document.getElementById('earnBox').innerHTML = '<b style="color:var(--text);">Earning Reports — 2026</b><br><br>No earnings data in the selected range yet. Connect a sales channel and orders will appear here.';
+  }
+  // ===== Step 2: page routing =====
+  var currentDashPanel = 'panel-my';
+  function showPage(id){
+    document.querySelectorAll('.view-panel,.page-panel').forEach(function(p){ p.classList.remove('active'); });
+    var el = document.getElementById(id);
+    if(el){ el.classList.add('active'); }
+    var sb2 = document.querySelector('.sidebar'); if(sb2) sb2.classList.remove('mob-open');
+    var _st = function(){ window.scrollTo(0,0); document.documentElement.scrollTop = 0; document.body.scrollTop = 0; };
+    _st(); if(window.requestAnimationFrame) requestAnimationFrame(_st); setTimeout(_st, 60);
+  }
+  function showDashboard(){
+    document.querySelectorAll('.page-panel').forEach(function(p){ p.classList.remove('active'); });
+    document.querySelectorAll('.view-panel').forEach(function(p){ p.classList.remove('active'); });
+    document.getElementById(currentDashPanel).classList.add('active');
+    window.scrollTo({top:0});
+  }
+  function toast(msg){
+    var t = document.getElementById('toast');
+    t.textContent = msg; t.style.display = 'block';
+    clearTimeout(t._h); t._h = setTimeout(function(){ t.style.display = 'none'; }, 2600);
+  }
+  function openModal(id){ document.getElementById(id).style.display = 'flex'; }
+  function closeModal(id){ document.getElementById(id).style.display = 'none'; }
+  function confirmApprove(){
+    closeModal('approveModal');
+    var s = document.getElementById('wodStatus');
+    if(s){ s.textContent = 'Approved'; s.className = 'pill green'; }
+    toast('Order OB273 approved — moved to Approved Orders');
+  }
+  // Web order pill filter
+  document.querySelectorAll('#woPills .wo-pill').forEach(function(b){
+    b.addEventListener('click', function(){
+      document.querySelectorAll('#woPills .wo-pill').forEach(function(x){ x.classList.remove('active'); });
+      b.classList.add('active');
+      var f = b.getAttribute('data-f');
+      document.querySelectorAll('#woTable tr[data-status]').forEach(function(r){
+        r.style.display = (f === 'all' || r.getAttribute('data-status') === f) ? '' : 'none';
+      });
+    });
+  });
+  function woSearch(inp){
+    var q = inp.value.toLowerCase();
+    document.querySelectorAll('#woTable tr[data-status]').forEach(function(r){
+      r.style.display = r.textContent.toLowerCase().indexOf(q) > -1 ? '' : 'none';
+    });
+  }
+  // Approved order pill filter
+  document.querySelectorAll('#aoPills .wo-pill').forEach(function(b){
+    b.addEventListener('click', function(){
+      document.querySelectorAll('#aoPills .wo-pill').forEach(function(x){ x.classList.remove('active'); });
+      b.classList.add('active');
+      var f = b.getAttribute('data-f');
+      document.querySelectorAll('#aoTable tr[data-status]').forEach(function(r){
+        r.style.display = (r.getAttribute('data-status') === f) ? '' : 'none';
+      });
+    });
+  });
+  // Row action menu
+  function rowMenu(btn){
+    var m = btn.parentElement.querySelector('.row-menu');
+    var show = m.style.display !== 'block';
+    document.querySelectorAll('.row-menu').forEach(function(x){ x.style.display = 'none'; });
+    m.style.display = show ? 'block' : 'none';
+  }
+  document.addEventListener('click', function(e){
+    if(!e.target.closest('.row-menu') && !e.target.closest('td')){ document.querySelectorAll('.row-menu').forEach(function(x){ x.style.display = 'none'; }); }
+  });
+  // Inner tab groups (Courier Management)
+  document.querySelectorAll('.utabs.inner-tabs[data-tabs]').forEach(function(bar){
+    bar.addEventListener('click', function(e){
+      if(e.target.tagName !== 'BUTTON') return;
+      bar.querySelectorAll('button').forEach(function(b){ b.classList.remove('active'); });
+      e.target.classList.add('active');
+      var group = bar.getAttribute('data-tabs');
+      document.querySelectorAll('[id^="' + group + '-"]').forEach(function(p){ p.style.display = 'none'; });
+      var pane = document.getElementById(e.target.getAttribute('data-t'));
+      if(pane) pane.style.display = 'block';
+    });
+  });
+  // Simple inner tabs without panes (visual only groups)
+  document.querySelectorAll('.utabs.inner-tabs:not([data-tabs])').forEach(function(bar){
+    bar.addEventListener('click', function(e){
+      if(e.target.tagName !== 'BUTTON') return;
+      bar.querySelectorAll('button').forEach(function(b){ b.classList.remove('active'); });
+      e.target.classList.add('active');
+    });
+  });
+  // Scan to update
+  var scanN = 0;
+  function scanAdd(inp){
+    var v = inp.value.trim(); if(!v) return;
+    scanN++;
+    document.getElementById('scanCount').textContent = scanN;
+    var tb = document.getElementById('scanList');
+    if(scanN === 1) tb.innerHTML = '';
+    var tr = document.createElement('tr');
+    tr.innerHTML = '<td>' + v + '</td><td>OB2' + (60 + scanN) + '</td><td><span class="pill green">Updated to Shipped</span></td><td>Just now</td>';
+    tb.appendChild(tr);
+    inp.value = '';
+  }
+  // New order qty + totals
+  function qtyCh(btn, d, price){
+    var b = btn.parentElement.querySelector('b');
+    var q = Math.max(0, parseInt(b.textContent) + d);
+    b.textContent = q;
+    btn.closest('.prod-line').querySelector('.line-amt').textContent = '৳' + (q * price).toLocaleString('en-IN');
+    calcOrder();
+  }
+  function calcOrder(){
+    var sub = 0;
+    document.querySelectorAll('#page-new-order .line-amt').forEach(function(a){ sub += parseInt(a.textContent.replace(/[^0-9]/g, '')) || 0; });
+    var del = parseInt(document.getElementById('noDel').value) || 0;
+    var disc = parseInt(document.getElementById('noDisc').value) || 0;
+    var adv = parseInt(document.getElementById('noAdv').value) || 0;
+    document.getElementById('sumSub').textContent = '৳' + sub.toLocaleString('en-IN');
+    document.getElementById('sumDel').textContent = '৳' + del.toLocaleString('en-IN');
+    document.getElementById('sumDisc').textContent = '৳' + disc.toLocaleString('en-IN');
+    document.getElementById('sumAdv').textContent = '৳' + adv.toLocaleString('en-IN');
+    document.getElementById('sumTotal').textContent = '৳' + (sub + del - disc - adv).toLocaleString('en-IN');
+  }
+  // Delivery method credential fields per courier
+  var METHOD_FIELDS = {
+    'PATHAO': ['Account Mobile Number','Client Id','Client Secret','Client Email','Password','Store Id','Item Type'],
+    'STEADFAST': ['ApiKey','Api Secret','Webhook Token (Optional)','Account Email (Optional)','Account Password (Optional)'],
+    'REDX': ['Access Token','Pickup Store'],
+    'CARRYBEE': ['Client ID','Client Secret','Client Context','Store ID','Product Type','Delivery Type'],
+    'PAPERFLY': ['API Key','API Secret','Username','Password'],
+    'ECOURIER': ['API Key','API Secret','User ID','Default Package Code (Optional)','Pickup Hub ID (Optional)'],
+    'BAHOK': ['API Key','API Secret','Shop ID'],
+    'OTHERS (Manual)': []
+  };
+  function methodFields(type){
+    var box = document.getElementById('mFields');
+    var fields = METHOD_FIELDS[type] || [];
+    box.innerHTML = fields.map(function(f){
+      return '<label class="fld-l" style="margin-top:10px;">' + f + '<input class="fld" type="' + (/Secret|Password|Token|Key/i.test(f) ? 'password' : 'text') + '" placeholder="' + f + '"></label>';
+    }).join('') || '<p class="empty-note" style="margin-top:10px;">Manual method — no courier credentials needed.</p>';
+  }
+  function openMethod(name){
+    document.getElementById('methodTitle').textContent = name ? ('Edit Method — ' + name) : 'Add Delivery Method';
+    var map = {'Steadfast':'STEADFAST','Pathao':'PATHAO','RedX':'REDX','Carrybee':'CARRYBEE','Paperfly':'PAPERFLY','eCourier':'ECOURIER','Manual':'OTHERS (Manual)'};
+    var t = map[name] || 'STEADFAST';
+    document.getElementById('mType').value = t;
+    methodFields(t);
+    openModal('methodModal');
+  }
+  // ===== Web Orders rebuild: New Order products + modes + popovers =====
+  var PRODUCTS = [
+    {name:'Mobile Phone Umbrella Cute Phone Holder', sku:'11143', price:400, stock:153, feat:1},
+    {name:'Kumkum Ikkat 1', sku:'KIK-1', price:699, stock:2084, feat:1},
+    {name:'Kumkum Ikkat 2', sku:'KIK-2', price:699, stock:195, feat:1},
+    {name:'Neela Pankh 2', sku:'NP-2', price:699, stock:198, feat:1},
+    {name:'Jeans Pant', sku:'1001', price:1000, stock:53},
+    {name:'30L Bag', sku:'109', price:320, stock:1001},
+    {name:'Student Penknife', sku:'11142', price:350, stock:148},
+    {name:'Computer Arm Rest', sku:'11144', price:750, stock:151},
+    {name:'Pink Minnie Kids Plush Bag', sku:'11145', price:300, stock:null},
+    {name:'Kids Backpack', sku:'11146', price:350, stock:151},
+    {name:'Spider man bag', sku:'11147', price:350, stock:151},
+    {name:'Memory Cotton U-shaped Pillow', sku:'11148', price:650, stock:151},
+    {name:'Washing machine cover', sku:'11149', price:400, stock:151},
+    {name:'Carat Key Ring', sku:'11150', price:300, stock:10005},
+    {name:'Kitchen Watermelon Slicer', sku:'11151', price:499, stock:151},
+    {name:'Tactical waist Bag', sku:'11152', price:600, stock:150},
+    {name:'মিনি পকেট ক্যারাবিনার ফোল্ডিং নাইফ', sku:'11153', price:200, stock:150},
+    {name:'ক্যাট & ডগ গ্রুমিং হ্যামক', sku:'11154', price:400, stock:150},
+    {name:'Door bottom sealing strip', sku:'11212', price:310, stock:null},
+    {name:'Door bottom sealing strip', sku:'11213', price:380, stock:150},
+    {name:'30L Bag', sku:'11310', price:320, stock:150},
+    {name:'শিশুদের ইলেকট্রনিক লার্নিং মেশিন', sku:'11323', price:1400, stock:150},
+    {name:'রেফ্রিজারেটর ওয়াটারপ্রুফ প্যাড', sku:'11324', price:900, stock:150},
+    {name:'ফিশ শেপ মিনি নাইফ', sku:'11325', price:300, stock:150},
+    {name:'মাইক্রোফাইবার মহিলা বাথ ড্রেস টাওয়েল', sku:'11326', price:1400, stock:150},
+    {name:'মাল্টিফাংশনাল ফোল্ডিং কাঁচি', sku:'11327', price:250, stock:150},
+    {name:'বি-পিলার কার ওয়েদারস্ট্রিপস', sku:'11370', price:1000, stock:150},
+    {name:'মাল্টি-পারপাস স্ট্যাকেবল র‍্যাক', sku:'11371', price:700, stock:150},
+    {name:'ম্যানুফ্যাকচার এপিডিএম রাবার ওয়েদারস্ট্রিপ', sku:'11372', price:900, stock:150},
+    {name:'K-American Birthday Cake (Pink)', sku:'001', price:1890, stock:0}
+  ];
+  var orderedItems = {};
+  function renderProducts(){
+    var g = document.getElementById('prodGrid');
+    if(!g) return;
+    g.innerHTML = PRODUCTS.map(function(pr, i){
+      var dis = (orderedItems[i] || (pr.stock === 0 && currentOrderMode !== 'preorder')) ? ' disabled' : '';
+      return '<button class="prod-card" data-name="' + pr.name.toLowerCase() + '" data-sku="' + pr.sku.toLowerCase() + '" onclick="addToOrder(' + i + ')"' + dis + '>'
+        + '<span class="pc-name">' + pr.name + '</span>'
+        + '<span class="muted-sm">SKU: ' + pr.sku + '</span>'
+        + '<span class="muted-sm">Price: ৳' + pr.price + ' · Stock: ' + (pr.stock === null ? '—' : pr.stock) + (pr.stock === 0 ? ' — Pre-order allowed' : '') + '</span>'
+        + '<span class="pc-fav">' + (pr.feat ? 'Remove from featured' : 'Mark as featured') + '</span></button>';
+    }).join('');
+  }
+  function prodSearch(){
+    var inputs = document.querySelectorAll('#page-new-order .card input[placeholder*="Type to Search"]');
+    var q1 = inputs[0] ? inputs[0].value.toLowerCase() : '';
+    var q2 = inputs[1] ? inputs[1].value.toLowerCase() : '';
+    document.querySelectorAll('.prod-card').forEach(function(c){
+      var okSku = !q1 || c.getAttribute('data-sku').indexOf(q1) > -1;
+      var okName = !q2 || c.getAttribute('data-name').indexOf(q2) > -1;
+      c.style.display = (okSku && okName) ? '' : 'none';
+    });
+  }
+  function addToOrder(i){
+    orderedItems[i] = { qty: 1, price: PRODUCTS[i].price };
+    renderOrdered(); renderProducts();
+  }
+  function removeFromOrder(i){ delete orderedItems[i]; renderOrdered(); renderProducts(); }
+  function ordQty(i, d){ orderedItems[i].qty = Math.max(1, orderedItems[i].qty + d); renderOrdered(); }
+  function ordPrice(i, d){ orderedItems[i].price = Math.max(0, orderedItems[i].price + d); renderOrdered(); }
+  function renderOrdered(){
+    var keys = Object.keys(orderedItems);
+    document.getElementById('ordCount').textContent = keys.length + 'item(s)';
+    document.getElementById('ordEmpty').style.display = keys.length ? 'none' : '';
+    document.getElementById('ordList').innerHTML = keys.map(function(k){
+      var pr = PRODUCTS[k], it = orderedItems[k];
+      return '<div class="ord-row"><span><b>' + pr.name + '</b><br><span class="muted-sm">SKU ' + pr.sku + ' · ৳' + pr.price + ' · Stock:' + (pr.stock === null ? '—' : pr.stock) + '</span></span>'
+        + '<span class="qty">Qty <button onclick="ordQty(' + k + ',-1)">−</button><b>' + it.qty + '</b><button onclick="ordQty(' + k + ',1)">+</button></span>'
+        + '<span class="qty">Price <button onclick="ordPrice(' + k + ',-10)">−</button><b>' + it.price + '</b><button onclick="ordPrice(' + k + ',10)">+</button></span>'
+        + '<b>Total ৳' + (it.qty * it.price).toFixed(2) + '</b>'
+        + '<button class="ctl-btn" onclick="removeFromOrder(' + k + ')">×</button></div>';
+    }).join('');
+    calcSummary();
+  }
+  function calcSummary(){
+    var items = 0;
+    Object.keys(orderedItems).forEach(function(k){ items += orderedItems[k].qty * orderedItems[k].price; });
+    var disc = parseInt((document.getElementById('calcDisc') || {}).value) || 0;
+    var del = parseInt((document.getElementById('calcDel') || {}).value) || 0;
+    var adv = parseInt((document.getElementById('calcAdv') || {}).value) || 0;
+    var grand = items - disc + del;
+    document.getElementById('sumItems').textContent = '৳' + items.toLocaleString('en-IN');
+    document.getElementById('sumDisc2').textContent = '৳' + disc.toLocaleString('en-IN');
+    document.getElementById('sumDel2').textContent = '৳' + del.toLocaleString('en-IN');
+    document.getElementById('sumGrand').textContent = '৳' + grand.toLocaleString('en-IN');
+    document.getElementById('sumAdv2').textContent = '৳' + adv.toLocaleString('en-IN');
+    document.getElementById('sumDue').textContent = '৳' + (grand - adv).toLocaleString('en-IN');
+  }
+  var currentOrderMode = 'approved';
+  function orderMode(btn, mode){
+    currentOrderMode = mode;
+    btn.parentElement.querySelectorAll('button').forEach(function(b){ b.classList.remove('on'); });
+    btn.classList.add('on');
+    document.getElementById('dmWrap').style.display = mode === 'manual' ? 'none' : '';
+    document.getElementById('dmHelp').style.display = mode === 'manual' ? '' : 'none';
+    document.getElementById('preReason').style.display = mode === 'preorder' ? '' : 'none';
+    document.getElementById('preDate').style.display = mode === 'preorder' ? '' : 'none';
+    document.getElementById('createOrderBtn').textContent = mode === 'manual' ? 'Create Order' : (mode === 'preorder' ? 'Create Pre-Order' : 'Create Approved Order');
+    renderProducts();
+  }
+  function popToggle(id){
+    var el = document.getElementById(id);
+    var show = el.style.display !== 'block';
+    document.querySelectorAll('.pop-panel').forEach(function(x){ x.style.display = 'none'; });
+    el.style.display = show ? 'block' : 'none';
+  }
+  renderProducts();
+  // Live Dhaka clock
+  function tickClock(){
+    try{
+      var t = new Date().toLocaleTimeString('en-GB', { timeZone: 'Asia/Dhaka', hour12: true });
+      document.getElementById('dhakaClock').textContent = t.toUpperCase();
+    }catch(e){}
+  }
+  tickClock(); setInterval(tickClock, 1000);
+</script>
+<script>(function(){var m={inbox:'msg-inbox',comments:'msg-comments',autoreply:'msg-autoreply',ai:'msg-ai',report:'msg-report'};var h=location.hash.replace('#','');if(m[h])showPage(m[h]);})();</script>
+</body>
+</html>
