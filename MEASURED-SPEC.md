@@ -44,3 +44,14 @@ Source: portal.ecomdrivebd.com demo workspace, measured 2026-11-10 ~20:59 +06 at
 - Body text: #111827; muted text: #64748B
 - Borders: #E5E7EB (main), #EEF2F7 (rim/top-bar)
 - Success green: #1CA477 / #009966
+
+## Page 2 — Web Order List (measured 2026-11-10 ~22:21 +06, 1920px)
+- No heading; EVERYTHING (status tabs + toolbar + table + pagination) inside ONE white card: border 1px #E5E7EB, radius ~12px, card top ~9px below topbar; tabs/toolbar padding ~8px; table content inset ~22px.
+- Status row = TABS, not filled pills: label 14px (active 600 / inactive 500) + count badge ~24×18px pill. Active: text #42174F, 2px underline #42174F spanning tab incl. badge, NO fill; badge bg #E3DCE5, text #411550. Inactive: text #64748B; badge bg #F1F5F9, text #64748B. Gap 13–16px; row ~40px.
+- Toolbar controls ~30px tall, radius ~8px, border 1px #E5E7EB: search input 340px wide, bg #F8F7FB, placeholder #64748B 14px; Filter btn bg #F8F7FB text #111827; New btn bg #FFFBEE; Bulk Actions bg #F8F7FB; sliders + gear icon buttons bg #F8F7FB.
+- Call-status button: one button holding 5 chips ~26px, font 12–13px: Not Called bg #FEF4F4 text #B91C1C; Tried 1× bg #FFFBEE; Tried 2× bg #FFFBEB; Tried 3+ bg #FFF8F0; Talked bg #EFFDF6 text #16A34A.
+- Table header: bg #E8E3EA, height ~42px, font 13–14px weight 600, colour #411550; sort controls on Created At + Success Rate.
+- Body: font 12–13px, colour #111827, muted #64748B; standard row ~83px tall; cell padding ~16px; divider 1px #E5E7EB; hover bg #F7F2F8.
+- Success gauge: ring 28px + 3 lines of 12px text right ("Success: 11%" red #EF4444 low / green #16A34A high, "Order: 1/9", "Rating: 36"); no history = "0".
+- Actions "Open": bordered pill button, bg #FFFFFF, border #E5E7EB, text #42174F, ~26px tall, ~85px wide, external-link icon.
+- Pagination inside card: "Page 1" left, 13–14px #64748B; "Rows per page" + select 26px tall ~55px wide bg #F8F7FB border #E8E3EE value 20; right: "Page 1" bold #111827, "‹ Previous" #9CA3AF disabled, "Next ›" #111827.
