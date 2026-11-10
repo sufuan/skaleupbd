@@ -137,6 +137,43 @@
   .legend i{width:11px;height:11px;border-radius:3px;display:block;}
   .team-chat{position:fixed;right:22px;bottom:22px;background:var(--primary);color:#fff;border:none;border-radius:999px;padding:12px 20px;font-weight:600;font-size:13.5px;cursor:pointer;box-shadow:0 8px 24px rgba(74,26,94,.35);z-index:30;}
   .empty-note{font-size:12.5px;color:var(--muted);background:var(--grey-bg);border-radius:8px;padding:10px 12px;}
+
+  /* ===== Step 2 additions ===== */
+  .page-panel{display:none;}
+  .page-panel.active{display:block;}
+  .fld{width:100%;border:1px solid var(--input-border);border-radius:8px;padding:9px 12px;font-size:13.5px;background:#fff;color:var(--text);font-family:inherit;}
+  .fld:focus{outline:2px solid var(--focus);outline-offset:-1px;border-color:transparent;}
+  .fld-l{display:block;font-size:12.5px;font-weight:600;color:var(--grey-tx);}
+  .fld-l .fld{margin-top:5px;font-weight:400;}
+  .btn-primary{background:var(--primary);color:#fff;border:none;border-radius:8px;padding:9px 16px;font-size:13.5px;font-weight:600;cursor:pointer;}
+  .btn-primary:hover{background:var(--primary2);}
+  .pill-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
+  .wo-pill{border:1px solid var(--card-border);background:#fff;border-radius:99px;padding:7px 13px;font-size:12.5px;font-weight:600;color:var(--grey-tx);cursor:pointer;}
+  .wo-pill.active{background:var(--primary);border-color:var(--primary);color:#fff;}
+  .wo-pill b{font-weight:700;}
+  .pager{font-size:12.5px;color:var(--muted);margin-top:12px;}
+  .sum-row{display:flex;justify-content:space-between;align-items:center;font-size:13.5px;padding:7px 0;border-bottom:1px solid #f3f4f6;gap:14px;}
+  .sum-row span{color:var(--muted);}
+  .sum-row.total{border-bottom:none;font-size:15px;}
+  .sum-row.total span{color:var(--text);font-weight:700;}
+  .prod-line{display:flex;align-items:center;gap:14px;padding:11px 0;border-bottom:1px solid #f3f4f6;}
+  .prod-line:last-child{border-bottom:none;}
+  .qty{display:inline-flex;align-items:center;gap:9px;margin-left:auto;}
+  .qty button{width:26px;height:26px;border-radius:7px;border:1px solid var(--card-border);background:#fff;cursor:pointer;font-size:15px;}
+  .muted-sm{font-size:12px;color:var(--muted);}
+  .row-menu{position:absolute;right:0;top:34px;background:#fff;border:1px solid var(--card-border);border-radius:10px;box-shadow:0 12px 30px rgba(0,0,0,.13);padding:5px;z-index:50;min-width:170px;}
+  .row-menu a{display:block;padding:7px 10px;border-radius:6px;font-size:13px;cursor:pointer;color:var(--text);}
+  .row-menu a:hover{background:var(--active-bg);}
+  .row-menu a.danger{color:var(--red-tx);}
+  .modal-overlay{position:fixed;inset:0;background:rgba(17,24,39,.5);display:flex;align-items:center;justify-content:center;z-index:200;padding:18px;}
+  .modal-box{background:#fff;border-radius:16px;padding:22px;width:100%;max-width:440px;max-height:88vh;overflow:auto;}
+  .switch{width:42px;height:23px;border-radius:99px;background:var(--toggle-off);border:none;cursor:pointer;position:relative;flex-shrink:0;}
+  .switch::after{content:"";position:absolute;top:3px;left:3px;width:17px;height:17px;border-radius:50%;background:#fff;transition:left .15s;}
+  .switch.on{background:var(--focus);}
+  .switch.on::after{left:22px;}
+  .sum-chip{background:var(--grey-bg);border-radius:8px;padding:8px 12px;font-size:13px;}
+  #toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%);background:#111827;color:#fff;font-size:13.5px;padding:11px 18px;border-radius:10px;display:none;z-index:300;box-shadow:0 12px 30px rgba(0,0,0,.25);}
+  .utabs.inner-tabs{margin-bottom:16px;}
   /* verification-fix additions (matched to live my_setup, 2026-11-10) */
   .utabs{display:flex;gap:22px;border-bottom:1px solid var(--card-border);margin-bottom:18px;flex-wrap:wrap;}
   .utabs button{border:none;background:transparent;padding:10px 2px;font-size:14px;font-weight:600;color:var(--grey-tx);cursor:pointer;border-bottom:2.5px solid transparent;margin-bottom:-1px;}
@@ -173,22 +210,22 @@
     <div class="quicksearch"><span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg></span> Quick Search <kbd>CTRL K</kbd></div>
 
     <nav class="side-nav">
-      <div class="nav-item active"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><line x1="3" y1="22" x2="21" y2="22"/><line x1="6" y1="18" x2="6" y2="11"/><line x1="11" y1="18" x2="11" y2="6"/><line x1="16" y1="18" x2="16" y2="9"/><line x1="21" y1="18" x2="21" y2="3" transform="translate(-3 0)"/></svg></span> Dashboard</div>
+      <div class="nav-item active" onclick="showDashboard()"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><line x1="3" y1="22" x2="21" y2="22"/><line x1="6" y1="18" x2="6" y2="11"/><line x1="11" y1="18" x2="11" y2="6"/><line x1="16" y1="18" x2="16" y2="9"/><line x1="21" y1="18" x2="21" y2="3" transform="translate(-3 0)"/></svg></span> Dashboard</div>
       <div class="nav-item"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg></span> Search</div>
 
       <div class="group-label">Operations</div>
       <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></span> Web Orders <span class="chev">›</span></div>
       <div class="sub-items">
-        <div class="nav-item">New Order</div><div class="nav-item">Web Order List</div>
-        <div class="nav-item">Auto Pick Orders</div><div class="nav-item">Auto Call Center</div>
-        <div class="nav-item">Order Block List</div>
+        <div class="nav-item" onclick="showPage('page-new-order')">New Order</div><div class="nav-item" onclick="showPage('page-web-orders')">Web Order List</div>
+        <div class="nav-item" onclick="showPage('page-auto-pick')">Auto Pick Orders</div><div class="nav-item" onclick="showPage('page-auto-call')">Auto Call Center</div>
+        <div class="nav-item" onclick="showPage('page-block-list')">Order Block List</div>
       </div>
       <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><circle cx="12" cy="12" r="10"/><polyline points="8 12.5 11 15.5 16 9.5"/></svg></span> Approved Orders <span class="chev">›</span></div>
       <div class="sub-items">
-        <div class="nav-item">Order List</div><div class="nav-item">Orders Dashboard</div>
-        <div class="nav-item">Preorders</div><div class="nav-item">Super Edit</div>
-        <div class="nav-item">Scan To Update</div><div class="nav-item">Courier Invoice Upload</div>
-        <div class="nav-item">Courier Management</div>
+        <div class="nav-item" onclick="showPage('page-approved-orders')">Order List</div><div class="nav-item" onclick="showPage('page-orders-dashboard')">Orders Dashboard</div>
+        <div class="nav-item" onclick="showPage('page-preorders')">Preorders</div><div class="nav-item" onclick="showPage('page-super-edit')">Super Edit</div>
+        <div class="nav-item" onclick="showPage('page-scan-update')">Scan To Update</div><div class="nav-item" onclick="showPage('page-courier-invoice')">Courier Invoice Upload</div>
+        <div class="nav-item" onclick="showPage('page-courier-mgmt')">Courier Management</div>
       </div>
       <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><path d="M21 8l-9-5-9 5v8l9 5 9-5V8z"/><path d="M3 8l9 5 9-5"/><path d="M12 13v8"/></svg></span> Inventory <span class="chev">›</span></div>
       <div class="sub-items">
@@ -255,13 +292,13 @@
       <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><rect x="2.5" y="6" width="19" height="13" rx="2.5"/><circle cx="12" cy="12.5" r="2.8"/><path d="M6 9.5h.01M18 15.5h.01"/></svg></span> Finance <span class="chev">›</span></div>
       <div class="sub-items">
         <div class="nav-item">Finance Dashboard</div><div class="nav-item">Accounts &amp; Bank</div>
-        <div class="nav-item">Income &amp; Expense</div><div class="nav-item">Courier Settlement</div>
+        <div class="nav-item">Income &amp; Expense</div><div class="nav-item" onclick="showPage('page-courier-settlement')">Courier Settlement</div>
         <div class="nav-item">Cash Flow</div><div class="nav-item">Asset Management</div>
       </div>
       <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="15 7 21 7 21 13"/></svg></span> Reports <span class="chev">›</span></div>
       <div class="sub-items">
         <div class="nav-item">Profit &amp; Loss</div><div class="nav-item">Order Report</div>
-        <div class="nav-item">Courier Report</div><div class="nav-item">Product Report</div>
+        <div class="nav-item" onclick="showPage('page-courier-settlement')">Courier Report</div><div class="nav-item">Product Report</div>
         <div class="nav-item">Employee Report</div><div class="nav-item">Call Center Report</div>
         <div class="nav-item">Customer Report</div><div class="nav-item">Business Reports</div>
         <div class="nav-item">My Limits</div>
@@ -293,9 +330,9 @@
     <header class="topbar">
       <button class="icon-btn" onclick="collapseSidebar()" title="Collapse sidebar"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg></button>
       <span class="qlink" onclick="openSearch()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg> Search</span>
-      <span class="qlink"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><circle cx="9" cy="21" r="1.6"/><circle cx="19" cy="21" r="1.6"/><path d="M2.5 3h2l2.6 12.5a2 2 0 0 0 2 1.5h8.7a2 2 0 0 0 2-1.6L21.5 7H6"/></svg> New Order</span>
-      <span class="qlink"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg> Web Order List</span>
-      <span class="qlink"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg> Order List</span>
+      <span class="qlink" onclick="showPage('page-new-order')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><circle cx="9" cy="21" r="1.6"/><circle cx="19" cy="21" r="1.6"/><path d="M2.5 3h2l2.6 12.5a2 2 0 0 0 2 1.5h8.7a2 2 0 0 0 2-1.6L21.5 7H6"/></svg> New Order</span>
+      <span class="qlink" onclick="showPage(\'page-web-orders\')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg> Web Order List</span>
+      <span class="qlink" onclick="showPage(\'page-approved-orders\')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg> Order List</span>
       <span class="qlink" onclick="alert('Send Message (UI prototype)')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><rect x="2.5" y="5" width="19" height="14" rx="2"/><polyline points="3 7 12 13 21 7"/></svg>️ Send Message</span>
       <div class="spacer"></div>
       <button class="bn-btn" onclick="toggleLang(this)">BN · ভাষা বদলান</button>
@@ -325,8 +362,8 @@
     </div>
 
     <div class="content">
-      <div class="step-banner"><span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><path d="M14 3h-4v3a2 2 0 1 1-2 2H5v6h3a2 2 0 1 1 0 4h5v-4a2 2 0 1 1 2-2h4V5a2 2 0 0 0-2-2h-3z" transform="translate(0 1)"/></svg></span><div><b>UI Prototype — Step 1 of 5:</b> App Shell + Dashboard (Command Center). UI only — no backend, all interactions run in the browser.</div>
-        <div class="step-dots"><i class="on"></i><i></i><i></i><i></i><i></i></div></div>
+      <div class="step-banner"><span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><path d="M14 3h-4v3a2 2 0 1 1-2 2H5v6h3a2 2 0 1 1 0 4h5v-4a2 2 0 1 1 2-2h4V5a2 2 0 0 0-2-2h-3z" transform="translate(0 1)"/></svg></span><div><b>UI Prototype — Step 2 of 5:</b> Orders — Web Orders, Approved Orders, Courier. UI only — no backend, all interactions run in the browser.</div>
+        <div class="step-dots"><i></i><i class="on"></i><i></i><i></i><i></i></div></div>
 
       <div style="display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap;">
         <div class="utabs" id="viewTabs" style="flex:1;min-width:420px;">
@@ -592,7 +629,379 @@
     </div><!-- /content -->
   </div><!-- /main -->
 </div><!-- /layout -->
+
+      <!-- ===== STEP 2: ORDERS PAGES ===== -->
+      <section class="page-panel" id="page-new-order">
+        <div class="page-head"><div><h1>New Order</h1><p>Create a manual order — it lands in Web Orders as Processing</p></div></div>
+        <div class="grid-21">
+          <div>
+            <div class="card" style="margin-bottom:16px;"><h3>Customer</h3>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;">
+                <label class="fld-l">Customer Name<input class="fld" id="noName" placeholder="e.g. Md. Rahim Uddin"></label>
+                <label class="fld-l">Phone<input class="fld" id="noPhone" placeholder="01XXXXXXXXX"></label>
+              </div>
+              <label class="fld-l" style="margin-top:12px;">Address<textarea class="fld" rows="2" placeholder="House, Road, Area"></textarea></label>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;">
+                <label class="fld-l">District<select class="fld"><option>Dhaka</option><option>Gazipur</option><option>Narayanganj</option><option>Chattogram</option></select></label>
+                <label class="fld-l">Order Source<select class="fld"><option>Phone Call</option><option>Messenger</option><option>WhatsApp</option><option>Walk-in</option></select></label>
+              </div>
+              <label class="fld-l" style="margin-top:12px;">Note<input class="fld" placeholder="Delivery note (optional)"></label>
+            </div>
+            <div class="card"><h3>Products</h3>
+              <input class="fld" placeholder="Search product by name or SKU" style="margin:12px 0;">
+              <div class="prod-line"><span><b>Mentara Roll On Balm COMBO</b><br><span class="muted-sm">SKU MENT-COMBO · Stock 150</span></span><span class="qty"><button onclick="qtyCh(this,-1,599)">−</button><b>1</b><button onclick="qtyCh(this,1,599)">+</button></span><b class="line-amt">৳599</b></div>
+              <div class="prod-line"><span><b>Mentara Roll On Balm Single</b><br><span class="muted-sm">SKU MNT-SINGLE · Stock 320</span></span><span class="qty"><button onclick="qtyCh(this,-1,374)">−</button><b>1</b><button onclick="qtyCh(this,1,374)">+</button></span><b class="line-amt">৳374</b></div>
+            </div>
+          </div>
+          <div>
+            <div class="card" style="margin-bottom:16px;"><h3>Delivery</h3>
+              <label class="fld-l" style="margin-top:12px;">Delivery Method<select class="fld" id="noCourier"><option>Steadfast — Inside Dhaka</option><option>Pathao — Inside Dhaka</option><option>RedX</option><option>Manual / Own Delivery</option></select></label>
+              <label class="fld-l" style="margin-top:12px;">Delivery Charge<input class="fld" id="noDel" type="number" value="60" oninput="calcOrder()"></label>
+              <label class="fld-l" style="margin-top:12px;">Discount<input class="fld" id="noDisc" type="number" value="0" oninput="calcOrder()"></label>
+              <label class="fld-l" style="margin-top:12px;">Advance Paid<input class="fld" id="noAdv" type="number" value="0" oninput="calcOrder()"></label>
+            </div>
+            <div class="card"><h3>Summary</h3>
+              <div class="sum-row"><span>Subtotal</span><b id="sumSub">৳973</b></div>
+              <div class="sum-row"><span>Delivery Charge</span><b id="sumDel">৳60</b></div>
+              <div class="sum-row"><span>Discount</span><b id="sumDisc">৳0</b></div>
+              <div class="sum-row"><span>Advance</span><b id="sumAdv">৳0</b></div>
+              <div class="sum-row total"><span>Total (COD Due)</span><b id="sumTotal">৳1,033</b></div>
+              <button class="btn-primary" style="width:100%;margin-top:14px;" onclick="toast('Order created — added to Web Orders (UI prototype)')">Create Order</button>
+              <button class="ctl-btn" style="width:100%;margin-top:8px;justify-content:center;" onclick="showPage('page-web-orders')">Cancel</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="page-panel" id="page-web-orders">
+        <div class="page-head"><div><h1>Web Order List</h1><p>Every incoming order lands here first — confirm to move it to Approved Orders</p></div>
+        <span style="margin-left:auto;display:flex;gap:8px;"><button class="ctl-btn" onclick="showPage('page-new-order')">+ New Order</button><button class="ctl-btn">Export</button></span></div>
+        <div class="pill-row" id="woPills">
+          <button class="wo-pill active" data-f="all">All <b>71</b></button>
+          <button class="wo-pill" data-f="Processing">Processing <b>23</b></button>
+          <button class="wo-pill" data-f="Incomplete">Incomplete <b>3</b></button>
+          <button class="wo-pill" data-f="Good But No Response">Good But No Response <b>1</b></button>
+          <button class="wo-pill" data-f="No Response">No Response <b>0</b></button>
+          <button class="wo-pill" data-f="Advance Payment">Advance Payment <b>1</b></button>
+          <button class="wo-pill" data-f="On Hold">On Hold <b>0</b></button>
+          <button class="wo-pill" data-f="Stock Out">Stock Out <b>0</b></button>
+          <button class="wo-pill" data-f="Approved">Approved <b>40</b></button>
+          <button class="wo-pill" data-f="Cancel">Cancel <b>3</b></button>
+        </div>
+        <div class="card">
+          <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;"><input class="fld" style="max-width:280px;" placeholder="Search invoice, name or phone" oninput="woSearch(this)"><select class="fld" style="max-width:190px;"><option>All Sources</option><option>Website</option><option>Messenger</option><option>WhatsApp</option><option>Phone</option></select><select class="fld" style="max-width:170px;"><option>Today</option><option>Last 7 days</option><option>Last 30 days</option></select></div>
+          <table id="woTable"><tr><th></th><th>Invoice</th><th>Date</th><th>Customer</th><th>Phone</th><th>Product</th><th>Source</th><th>Total</th><th>Status</th><th></th></tr>
+          <tr data-status="Processing"><td><input type="checkbox"></td><td><b>OB273</b></td><td>10 Nov, 4:12 PM</td><td>M. Fahim</td><td>01712-445566</td><td>Mentara Roll On Balm COMBO ×1</td><td>Website</td><td>৳599</td><td><span class="pill lpurple">Processing</span></td><td><button class="ctl-btn" onclick="showPage('page-web-order-detail')">View</button></td></tr>
+          <tr data-status="Processing"><td><input type="checkbox"></td><td><b>OB272</b></td><td>10 Nov, 3:48 PM</td><td>Shakil Ahmed</td><td>01819-223344</td><td>Mentara Roll On Balm Single ×2</td><td>Messenger</td><td>৳748</td><td><span class="pill lpurple">Processing</span></td><td><button class="ctl-btn" onclick="showPage('page-web-order-detail')">View</button></td></tr>
+          <tr data-status="Incomplete"><td><input type="checkbox"></td><td><b>OB269</b></td><td>10 Nov, 2:05 PM</td><td>Unknown</td><td>01611-987654</td><td>Mentara Roll On Balm COMBO ×1</td><td>Website</td><td>৳599</td><td><span class="pill amber">Incomplete</span></td><td><button class="ctl-btn" onclick="showPage('page-web-order-detail')">View</button></td></tr>
+          <tr data-status="Good But No Response"><td><input type="checkbox"></td><td><b>OB268</b></td><td>10 Nov, 1:31 PM</td><td>Ruma Akter</td><td>01922-334455</td><td>Mentara Roll On Balm Single ×1</td><td>WhatsApp</td><td>৳434</td><td><span class="pill blue">Good But No Response</span></td><td><button class="ctl-btn" onclick="showPage('page-web-order-detail')">View</button></td></tr>
+          <tr data-status="Advance Payment"><td><input type="checkbox"></td><td><b>OB267</b></td><td>10 Nov, 12:20 PM</td><td>Tanvir Hasan</td><td>01555-667788</td><td>Mentara Roll On Balm COMBO ×2</td><td>Website</td><td>৳1,198</td><td><span class="pill pink">Advance Payment</span></td><td><button class="ctl-btn" onclick="showPage('page-web-order-detail')">View</button></td></tr>
+          <tr data-status="Approved"><td><input type="checkbox"></td><td><b>OB266</b></td><td>10 Nov, 11:02 AM</td><td>M. Fahim</td><td>01712-445566</td><td>Mentara Roll On Balm COMBO ×1</td><td>Website</td><td>৳599</td><td><span class="pill green">Approved</span></td><td><button class="ctl-btn" onclick="showPage('page-web-order-detail')">View</button></td></tr>
+          <tr data-status="Cancel"><td><input type="checkbox"></td><td><b>OB259</b></td><td>9 Nov, 6:44 PM</td><td>Duplicate Order</td><td>01712-445566</td><td>Mentara Roll On Balm Single ×1</td><td>Website</td><td>৳374</td><td><span class="pill red">Cancel</span></td><td><button class="ctl-btn" onclick="showPage('page-web-order-detail')">View</button></td></tr>
+          </table>
+          <div class="pager">Page 1 of 9 · 71 orders</div>
+        </div>
+      </section>
+
+      <section class="page-panel" id="page-web-order-detail">
+        <div class="page-head"><div><h1>Web Order — OB273</h1><p>10 Nov 2026, 4:12 PM · Source: Website</p></div>
+        <span style="margin-left:auto;display:flex;gap:8px;align-items:center;"><span class="pill lpurple" id="wodStatus">Processing</span><button class="btn-primary" onclick="openModal('approveModal')">Approve Order (599৳)</button></span></div>
+        <div class="grid-21">
+          <div>
+            <div class="card" style="margin-bottom:16px;"><h3>Customer</h3>
+              <div class="sum-row"><span>Name</span><b>M. Fahim</b></div>
+              <div class="sum-row"><span>Phone</span><b>01712-445566</b></div>
+              <div class="sum-row"><span>Address</span><b>House 12, Road 5, Mirpur 10, Dhaka</b></div>
+              <div class="sum-row"><span>Customer History</span><b>8 orders · Success rate 75%</b></div>
+            </div>
+            <div class="card"><h3>Items</h3>
+              <table><tr><th>Product</th><th>Qty</th><th>Price</th><th>Total</th></tr>
+              <tr><td>Mentara Roll On Balm COMBO <span class="muted-sm">(MENT-COMBO)</span></td><td>1</td><td>৳539</td><td>৳539</td></tr></table>
+              <div class="sum-row" style="margin-top:12px;"><span>Subtotal</span><b>৳539</b></div>
+              <div class="sum-row"><span>Delivery Charge</span><b>৳60</b></div>
+              <div class="sum-row"><span>Discount</span><b>৳0</b></div>
+              <div class="sum-row total"><span>Total</span><b>৳599</b></div>
+            </div>
+          </div>
+          <div>
+            <div class="card" style="margin-bottom:16px;"><h3>Process Order</h3>
+              <label class="fld-l" style="margin-top:12px;">Change Status<select class="fld" onchange="document.getElementById('wodStatus').textContent=this.value"><option>Processing</option><option>Good But No Response</option><option>No Response</option><option>Advance Payment</option><option>On Hold</option><option>Stock Out</option><option>Cancel</option></select></label>
+              <label class="fld-l" style="margin-top:12px;">Delivery Method<select class="fld"><option>Steadfast — Inside Dhaka</option><option>Pathao — Inside Dhaka</option><option>RedX — Dhaka</option><option>Carrybee</option><option>Manual</option></select></label>
+              <label class="fld-l" style="margin-top:12px;">Delivery Note<textarea class="fld" rows="2" placeholder="Note for courier"></textarea></label>
+              <button class="ctl-btn" style="width:100%;justify-content:center;margin-top:12px;" onclick="toast('Status saved (UI prototype)')">Save Changes</button>
+              <button class="ctl-btn" style="width:100%;justify-content:center;margin-top:8px;" onclick="showPage('page-web-orders')">Back to List</button>
+            </div>
+            <div class="card"><h3>Timeline</h3>
+              <div class="sum-row"><span>Order created via External API</span><b>4:12 PM</b></div>
+              <div class="sum-row"><span>Status: Processing</span><b>4:12 PM</b></div>
+              <div class="sum-row"><span>Auto task check (Work Inbox)</span><b>4:15 PM</b></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="page-panel" id="page-auto-pick">
+        <div class="page-head"><div><h1>Auto Pick Orders</h1><p>Automatically pick and prepare confirmed orders for courier handover</p></div></div>
+        <div class="card">
+          <div style="display:flex;align-items:center;gap:12px;"><b>Auto Pick</b><button class="switch on" onclick="this.classList.toggle('on')"></button><span class="muted-sm">When ON, approved orders are auto-assigned to the default warehouse pick list.</span></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:18px;">
+            <label class="fld-l">Warehouse<select class="fld"><option>Main Warehouse — Dhaka</option><option>Warehouse 2 — Gazipur</option></select></label>
+            <label class="fld-l">Pick Strategy<select class="fld"><option>First In, First Out</option><option>Nearest Expiry First</option></select></label>
+          </div>
+          <p class="empty-note" style="margin-top:14px;">This page has no separate Rules or Settings tabs in the original — the controls above are the whole feature.</p>
+        </div>
+      </section>
+
+      <section class="page-panel" id="page-auto-call">
+        <div class="page-head"><div><h1>Auto Call Center</h1><p>Automatic order-confirmation calls — billed ৳1.00 per minute</p></div></div>
+        <div class="utabs inner-tabs"><button class="active">Rules</button><button>Integration Setup</button><button>Call Logs</button><button>Reports</button></div>
+        <div class="kpi-grid" style="grid-template-columns:repeat(3,1fr);">
+          <div class="card kpi"><div class="lbl">Wallet Balance</div><div class="val">৳250</div><div class="sub">Hold ৳0 · Available ৳250</div></div>
+          <div class="card kpi"><div class="lbl">Rate</div><div class="val">৳1.00<span style="font-size:14px;">/min</span></div><div class="sub">Per connected call minute</div></div>
+          <div class="card kpi"><div class="lbl">Call Settings</div><div class="val" style="font-size:17px;">2 attempts · 15 min gap</div><div class="sub">Max duration per call: 3 min</div></div>
+        </div>
+        <div class="card"><div style="display:flex;align-items:center;"><h3>Rules</h3><button class="btn-primary" style="margin-left:auto;" onclick="toast('Create Rule dialog (UI prototype)')">+ Create Rule</button></div>
+          <table style="margin-top:12px;"><tr><th>Rule</th><th>Trigger</th><th>Script</th><th>Status</th><th></th></tr>
+          <tr><td>Order Confirmation Call</td><td>New Web Order (Processing)</td><td>Confirm order + address</td><td><span class="pill green">Active</span></td><td><button class="ctl-btn">Edit</button></td></tr>
+          <tr><td>Incomplete Order Recovery</td><td>Incomplete over 30 min</td><td>Complete your order</td><td><span class="pill grey">Paused</span></td><td><button class="ctl-btn">Edit</button></td></tr></table>
+          <p class="empty-note" style="margin-top:12px;">WooCommerce stores trigger the same calls through the verify-order API; the result returns by webhook.</p>
+        </div>
+      </section>
+
+      <section class="page-panel" id="page-block-list">
+        <div class="page-head"><div><h1>Order Block List</h1><p>Blocked entries cannot place orders</p></div></div>
+        <div class="kpi-grid" style="grid-template-columns:repeat(3,1fr);">
+          <div class="card kpi"><div class="lbl">Blocked IPs</div><div class="val">0 <span style="font-size:14px;color:var(--muted);">/ 2500</span></div><div class="sub">Add an IP below</div></div>
+          <div class="card kpi"><div class="lbl">Blocked Mobile Numbers</div><div class="val">0 <span style="font-size:14px;color:var(--muted);">/ 2500</span></div><div class="sub">Add a number below</div></div>
+          <div class="card kpi"><div class="lbl">Blocked Devices</div><div class="val">0 <span style="font-size:14px;color:var(--muted);">/ 2500</span></div><div class="sub">Device fingerprints</div></div>
+        </div>
+        <div class="card"><div style="display:flex;gap:10px;flex-wrap:wrap;"><select class="fld" style="max-width:180px;"><option>IP Address</option><option>Mobile Number</option><option>Device</option></select><input class="fld" style="max-width:320px;" placeholder="Enter value to block"><button class="btn-primary" onclick="toast('Entry blocked (UI prototype)')">Block</button></div>
+        <p class="empty-note" style="margin-top:14px;">No blocked entries yet.</p></div>
+      </section>
+
+      <section class="page-panel" id="page-approved-orders">
+        <div class="page-head"><div><h1>Approved Order List</h1><p>Confirmed orders — ready to ship, ship, track and close</p></div>
+        <span style="margin-left:auto;display:flex;gap:8px;"><button class="ctl-btn" onclick="toast('Bulk print started — labels render in a hidden print frame')">Bulk Print</button><button class="ctl-btn">Export</button></span></div>
+        <div class="pill-row" id="aoPills">
+          <button class="wo-pill active" data-f="Pending">Pending <b>59</b></button>
+          <button class="wo-pill" data-f="RTS">RTS <b>9</b></button>
+          <button class="wo-pill" data-f="Shipped">Shipped <b>8</b></button>
+          <button class="wo-pill" data-f="Delivered">Delivered <b>30</b></button>
+          <button class="wo-pill" data-f="Pending Return">Pending Return <b>0</b></button>
+          <button class="wo-pill" data-f="Returned">Returned <b>7</b></button>
+          <button class="wo-pill" data-f="Partial">Partial <b>4</b></button>
+          <button class="wo-pill" data-f="Cancelled">Cancelled <b>41</b></button>
+          <button class="wo-pill" data-f="Pending Cancel">Pending Cancel <b>0</b></button>
+          <button class="wo-pill" data-f="Preorder">Preorder <b>0</b></button>
+          <button class="wo-pill" data-f="Lost">Lost <b>0</b></button>
+        </div>
+        <div class="card">
+          <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;align-items:center;"><input class="fld" style="max-width:280px;" placeholder="Search invoice, name or phone"><select class="fld" style="max-width:210px;"><option>Bulk Actions</option><option>Print Invoices</option><option>Send to RTS</option><option>Create Task</option><option>Cancel Orders</option></select><button class="ctl-btn">Apply</button>
+          <span class="muted-sm" style="margin-left:auto;">Stock is reserved when an order is confirmed</span></div>
+          <table id="aoTable"><tr><th></th><th>Invoice</th><th>Approved</th><th>Customer</th><th>Product</th><th>Courier</th><th>COD</th><th>Status</th><th></th></tr>
+          <tr data-status="Pending"><td><input type="checkbox"></td><td><b>OB266</b></td><td>10 Nov, 11:20 AM</td><td>M. Fahim · 01712-445566</td><td>Mentara COMBO ×1</td><td>Steadfast</td><td>৳599</td><td><span class="pill amber">Pending</span></td><td style="position:relative;"><button class="ctl-btn" onclick="rowMenu(this)">⋮</button><span class="row-menu" style="display:none;"><a onclick="openModal('orderModal')">Order Details</a><a onclick="toast('Print sent — invoice renders in a hidden print frame')">Print</a><a onclick="toast('JPG exported (UI prototype)')">JPG Export</a><a onclick="toast('Edit order (UI prototype)')">Edit</a><a onclick="toast('Sent to RTS (UI prototype)')">Send to RTS</a><a onclick="toast('Create Task (UI prototype)')">Create Task</a><a onclick="toast('Add Note (UI prototype)')">Add Note</a><a class="danger" onclick="toast('Order cancelled (UI prototype)')">Cancel</a></span></td></tr>
+          <tr data-status="Pending"><td><input type="checkbox"></td><td><b>OB265</b></td><td>10 Nov, 10:41 AM</td><td>Shakil Ahmed · 01819-223344</td><td>Mentara Single ×2</td><td>Pathao</td><td>৳748</td><td><span class="pill amber">Pending</span></td><td style="position:relative;"><button class="ctl-btn" onclick="rowMenu(this)">⋮</button><span class="row-menu" style="display:none;"><a onclick="openModal('orderModal')">Order Details</a><a onclick="toast('Print sent — invoice renders in a hidden print frame')">Print</a><a onclick="toast('JPG exported (UI prototype)')">JPG Export</a><a onclick="toast('Edit order (UI prototype)')">Edit</a><a onclick="toast('Sent to RTS (UI prototype)')">Send to RTS</a><a onclick="toast('Create Task (UI prototype)')">Create Task</a><a onclick="toast('Add Note (UI prototype)')">Add Note</a><a class="danger" onclick="toast('Order cancelled (UI prototype)')">Cancel</a></span></td></tr>
+          <tr data-status="RTS"><td><input type="checkbox"></td><td><b>OB261</b></td><td>9 Nov, 5:12 PM</td><td>Ruma Akter · 01922-334455</td><td>Mentara Single ×1</td><td>Steadfast</td><td>৳434</td><td><span class="pill blue">RTS</span></td><td style="position:relative;"><button class="ctl-btn" onclick="rowMenu(this)">⋮</button><span class="row-menu" style="display:none;"><a onclick="openModal('orderModal')">Order Details</a><a onclick="toast('Print sent — invoice renders in a hidden print frame')">Print</a><a onclick="toast('JPG exported (UI prototype)')">JPG Export</a><a onclick="toast('Edit order (UI prototype)')">Edit</a><a onclick="toast('Create Task (UI prototype)')">Create Task</a><a onclick="toast('Add Note (UI prototype)')">Add Note</a><a class="danger" onclick="toast('Order cancelled (UI prototype)')">Cancel</a></span></td></tr>
+          <tr data-status="Shipped"><td><input type="checkbox"></td><td><b>OB258</b></td><td>9 Nov, 2:03 PM</td><td>Tanvir Hasan · 01555-667788</td><td>Mentara COMBO ×2</td><td>RedX</td><td>৳1,198</td><td><span class="pill lpurple">Shipped</span></td><td style="position:relative;"><button class="ctl-btn" onclick="rowMenu(this)">⋮</button><span class="row-menu" style="display:none;"><a onclick="openModal('orderModal')">Order Details</a><a onclick="toast('Print sent — invoice renders in a hidden print frame')">Print</a><a onclick="toast('JPG exported (UI prototype)')">JPG Export</a><a onclick="toast('Add Note (UI prototype)')">Add Note</a></span></td></tr>
+          <tr data-status="Delivered"><td><input type="checkbox"></td><td><b>OB252</b></td><td>8 Nov, 1:15 PM</td><td>Nusrat Jahan · 01311-998877</td><td>Mentara COMBO ×1</td><td>Steadfast</td><td>৳599</td><td><span class="pill green">Delivered</span></td><td style="position:relative;"><button class="ctl-btn" onclick="rowMenu(this)">⋮</button><span class="row-menu" style="display:none;"><a onclick="openModal('orderModal')">Order Details</a><a onclick="toast('Print sent — invoice renders in a hidden print frame')">Print</a><a onclick="toast('JPG exported (UI prototype)')">JPG Export</a><a onclick="toast('Add Note (UI prototype)')">Add Note</a></span></td></tr>
+          <tr data-status="Returned"><td><input type="checkbox"></td><td><b>OB247</b></td><td>7 Nov, 4:50 PM</td><td>Arif Chowdhury · 01799-112233</td><td>Mentara Single ×1</td><td>Pathao</td><td>৳434</td><td><span class="pill red">Returned</span></td><td style="position:relative;"><button class="ctl-btn" onclick="rowMenu(this)">⋮</button><span class="row-menu" style="display:none;"><a onclick="openModal('orderModal')">Order Details</a><a onclick="toast('Print sent — invoice renders in a hidden print frame')">Print</a><a onclick="toast('Add Note (UI prototype)')">Add Note</a></span></td></tr>
+          <tr data-status="Cancelled"><td><input type="checkbox"></td><td><b>OB240</b></td><td>6 Nov, 9:26 AM</td><td>Wrong Number</td><td>Mentara Single ×1</td><td>—</td><td>৳374</td><td><span class="pill grey">Cancelled</span></td><td style="position:relative;"><button class="ctl-btn" onclick="rowMenu(this)">⋮</button><span class="row-menu" style="display:none;"><a onclick="openModal('orderModal')">Order Details</a><a onclick="toast('Add Note (UI prototype)')">Add Note</a></span></td></tr>
+          </table>
+          <div class="pager">Showing sample rows · counts from the live demo</div>
+        </div>
+      </section>
+
+      <section class="page-panel" id="page-orders-dashboard">
+        <div class="page-head"><div><h1>Orders Dashboard</h1><p>Source: Website · last 30 days</p></div>
+        <span style="margin-left:auto;display:flex;gap:8px;"><button class="ctl-btn" onclick="toast('Excel export queued — appears in Export Center')">Export Excel</button><button class="ctl-btn" onclick="toast('Main Report Template export queued')">Export as Main Report Template</button><button class="ctl-btn" onclick="toast('Export Center (UI prototype)')">Export Center</button></span></div>
+        <div class="kpi-grid">
+          <div class="card kpi"><div class="lbl">Orders</div><div class="val">65</div><div class="sub">Website source</div></div>
+          <div class="card kpi"><div class="lbl">Revenue</div><div class="val">৳72,108</div><div class="sub">Website source</div></div>
+          <div class="card kpi"><div class="lbl">Delivered</div><div class="val">16</div><div class="sub">Delivery rate tracked per courier</div></div>
+          <div class="card kpi"><div class="lbl">Returned</div><div class="val">7</div><div class="sub">Return rate on delivered base</div></div>
+        </div>
+        <div class="card"><h3>Orders by Status</h3>
+          <div class="bar-row"><span class="nm">Delivered</span><span class="bar-track"><span class="bar-fill" style="width:46%"></span></span><span class="amt">30</span></div>
+          <div class="bar-row"><span class="nm">Pending</span><span class="bar-track"><span class="bar-fill" style="width:91%"></span></span><span class="amt">59</span></div>
+          <div class="bar-row"><span class="nm">Cancelled</span><span class="bar-track"><span class="bar-fill" style="width:63%"></span></span><span class="amt">41</span></div>
+          <div class="bar-row"><span class="nm">Shipped</span><span class="bar-track"><span class="bar-fill" style="width:12%"></span></span><span class="amt">8</span></div>
+          <div class="bar-row"><span class="nm">Returned</span><span class="bar-track"><span class="bar-fill" style="width:11%"></span></span><span class="amt">7</span></div>
+        </div>
+      </section>
+
+      <section class="page-panel" id="page-preorders">
+        <div class="page-head"><div><h1>Preorders</h1><p>Orders placed for products not yet in stock</p></div></div>
+        <div class="card"><div class="dashed-empty"><b style="color:var(--text);">No preorders right now</b><br>Preorders appear here when a customer orders a product marked as preorder on the website.</div></div>
+      </section>
+
+      <section class="page-panel" id="page-super-edit">
+        <div class="page-head"><div><h1>Super Edit</h1><p>Find any order by invoice and edit every field directly</p></div></div>
+        <div class="card" style="margin-bottom:16px;"><div style="display:flex;gap:10px;flex-wrap:wrap;"><input class="fld" style="max-width:280px;" id="seInvoice" value="OB265"><button class="btn-primary" onclick="document.getElementById('seForm').style.display='block'">Search Order</button></div></div>
+        <div class="card" id="seForm" style="display:none;"><h3>Editing OB265</h3>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:12px;">
+            <label class="fld-l">Customer Name<input class="fld" value="Shakil Ahmed"></label>
+            <label class="fld-l">Phone<input class="fld" value="01819-223344"></label>
+            <label class="fld-l">Status<select class="fld"><option>Pending</option><option>RTS</option><option>Shipped</option><option>Delivered</option><option>Cancelled</option></select></label>
+            <label class="fld-l">Courier<select class="fld"><option>Pathao</option><option>Steadfast</option><option>RedX</option></select></label>
+            <label class="fld-l">COD Amount<input class="fld" value="748"></label>
+            <label class="fld-l">Delivery Charge<input class="fld" value="60"></label>
+          </div>
+          <label class="fld-l" style="margin-top:12px;">Address<textarea class="fld" rows="2">Block C, Road 9, Uttara, Dhaka</textarea></label>
+          <button class="btn-primary" style="margin-top:14px;" onclick="toast('Order updated (UI prototype)')">Save Changes</button>
+        </div>
+      </section>
+
+      <section class="page-panel" id="page-scan-update">
+        <div class="page-head"><div><h1>Scan To Update</h1><p>Scan a parcel barcode or use the phone camera to update status in bulk</p></div></div>
+        <div class="utabs inner-tabs"><button class="active">Shipping</button><button>Return</button><button>RTS</button></div>
+        <div class="card">
+          <input class="fld" style="font-size:16px;padding:14px;" placeholder="Scan or type tracking ID, then press Enter" onkeydown="if(event.key==='Enter'){scanAdd(this);}">
+          <div style="display:flex;gap:16px;margin-top:16px;flex-wrap:wrap;">
+            <span class="sum-chip">Session scanned: <b id="scanCount">0</b></span>
+            <span class="sum-chip">Mode: <b>Shipping</b></span>
+            <span class="sum-chip">Updated to: <b>Shipped</b></span>
+          </div>
+          <table style="margin-top:14px;"><tr><th>Tracking ID</th><th>Invoice</th><th>Result</th><th>Time</th></tr><tbody id="scanList"><tr><td colspan="4" class="muted-sm">Nothing scanned yet in this session.</td></tr></tbody></table>
+        </div>
+      </section>
+
+      <section class="page-panel" id="page-courier-invoice">
+        <div class="page-head"><div><h1>Courier Invoice Upload</h1><p>Upload the courier's invoice file to reconcile delivery charges and COD</p></div></div>
+        <div class="card">
+          <div class="dashed-empty" style="padding:44px 16px;"><b style="color:var(--text);font-size:15px;">Drop the courier invoice file here</b><br>CSV or Excel from Pathao, Steadfast, RedX, Carrybee, Paperfly or eCourier<br><br><button class="btn-primary" onclick="toast('File picker (UI prototype)')">Browse File</button></div>
+          <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;"><select class="fld" style="max-width:200px;"><option>Steadfast</option><option>Pathao</option><option>RedX</option><option>Carrybee</option><option>Paperfly</option><option>eCourier</option></select><button class="ctl-btn" onclick="toast('Column mapping (UI prototype)')">Map Columns</button><span class="muted-sm" style="align-self:center;">Uploaded invoices feed Courier Settlement reconciliation.</span></div>
+        </div>
+      </section>
+
+      <section class="page-panel" id="page-courier-mgmt">
+        <div class="page-head"><div><h1>Courier Management</h1><p>Every parcel, return and courier permission in one place</p></div>
+        <span style="margin-left:auto;"><button class="ctl-btn" onclick="showPage('page-delivery-methods')">Delivery Methods</button></span></div>
+        <div class="utabs inner-tabs" data-tabs="cm"><button class="active" data-t="cm-parcels">All Parcels</button><button data-t="cm-returns">Return Management</button><button data-t="cm-analysis">Return Analysis</button><button data-t="cm-entry">Courier Entry</button><button data-t="cm-settings">Courier Settings</button></div>
+        <div id="cm-parcels" class="inner-pane">
+          <div class="card">
+            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;"><select class="fld" style="max-width:230px;"><option>In Transit (76)</option><option>Assigned for Delivery</option><option>Cancelled</option><option>Pending Entry</option><option>Return Pending</option><option>Returned</option><option>Damage and Lost</option></select><span class="muted-sm" style="align-self:center;">A parcel-status filter is required before the list loads.</span></div>
+            <table><tr><th>Tracking</th><th>Invoice</th><th>Customer</th><th>Courier</th><th>Day</th><th>Customer Call Slot</th><th>Status</th></tr>
+            <tr><td>SF-88231</td><td>OB252</td><td>Nusrat Jahan</td><td>Steadfast</td><td><span class="pill blue">Day 1</span></td><td><span class="pill grey">10 AM</span> <span class="pill grey">1 PM</span> <span class="pill grey">4 PM</span> <span class="pill grey">7 PM</span></td><td><span class="pill lpurple">In Transit</span></td></tr>
+            <tr><td>PA-55210</td><td>OB249</td><td>Arif Chowdhury</td><td>Pathao</td><td><span class="pill blue">Day 2</span></td><td><span class="pill grey">10 AM</span> <span class="pill grey">1 PM</span> <span class="pill grey">4 PM</span> <span class="pill grey">7 PM</span></td><td><span class="pill lpurple">In Transit</span></td></tr>
+            <tr><td>SF-87990</td><td>OB247</td><td>Arif Chowdhury</td><td>Steadfast</td><td><span class="pill amber">Day 3</span></td><td><span class="pill grey">10 AM</span> <span class="pill grey">4 PM</span></td><td><span class="pill red">Return Pending</span></td></tr></table>
+            <p class="empty-note" style="margin-top:12px;">Working method: 10 AM pre-delivery confirmation calls, 6 PM status monitoring. Returns are auto-tagged — Returned with Delivery Charge, Customer Fraud, Courier Fraud.</p>
+          </div>
+        </div>
+        <div id="cm-returns" class="inner-pane" style="display:none;">
+          <div class="card"><h3>Return Management</h3>
+          <table style="margin-top:12px;"><tr><th>Invoice</th><th>Customer</th><th>Reason Tag</th><th>Delivery Charge</th><th>Status</th></tr>
+          <tr><td>OB247</td><td>Arif Chowdhury</td><td><span class="pill red">Customer Fraud</span></td><td>৳60</td><td><span class="pill amber">Return Pending</span></td></tr>
+          <tr><td>OB238</td><td>Salma Khatun</td><td><span class="pill amber">Returned with Delivery Charge</span></td><td>৳60</td><td><span class="pill green">Received</span></td></tr></table></div>
+        </div>
+        <div id="cm-analysis" class="inner-pane" style="display:none;">
+          <div class="card"><h3>Return Analysis</h3>
+          <div class="bar-row" style="margin-top:12px;"><span class="nm">Steadfast</span><span class="bar-track"><span class="bar-fill" style="width:38%"></span></span><span class="amt">Return 12%</span></div>
+          <div class="bar-row"><span class="nm">Pathao</span><span class="bar-track"><span class="bar-fill" style="width:55%"></span></span><span class="amt">Return 18%</span></div>
+          <div class="bar-row"><span class="nm">RedX</span><span class="bar-track"><span class="bar-fill" style="width:24%"></span></span><span class="amt">Return 8%</span></div></div>
+        </div>
+        <div id="cm-entry" class="inner-pane" style="display:none;">
+          <div class="card"><h3>Courier Entry</h3>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:12px;">
+            <label class="fld-l">Invoice<input class="fld" placeholder="OB..."></label>
+            <label class="fld-l">Courier<select class="fld"><option>Steadfast</option><option>Pathao</option><option>RedX</option></select></label>
+            <label class="fld-l">Tracking ID<input class="fld" placeholder="Tracking ID"></label>
+          </div>
+          <button class="btn-primary" style="margin-top:14px;" onclick="toast('Parcel entry saved (UI prototype)')">Save Entry</button></div>
+        </div>
+        <div id="cm-settings" class="inner-pane" style="display:none;">
+          <div class="card"><h3>Courier Settings — Permissions</h3>
+          <div class="sum-row" style="margin-top:10px;"><span>View Courier Financial Data</span><button class="switch on" onclick="this.classList.toggle('on')"></button></div>
+          <div class="sum-row"><span>Manage Damage and Lost Claims</span><button class="switch" onclick="this.classList.toggle('on')"></button></div>
+          <div class="sum-row"><span>Edit Courier Entries</span><button class="switch on" onclick="this.classList.toggle('on')"></button></div>
+          <p class="empty-note" style="margin-top:12px;">Revoked permissions stay visible for audit. Damage/Lost claims: Pending, Paid or Rejected, compensation in BDT.</p></div>
+        </div>
+      </section>
+
+      <section class="page-panel" id="page-delivery-methods">
+        <div class="page-head"><div><h1>Delivery Methods</h1><p>30 methods · 21 active · 9 inactive — each courier uses your own merchant account</p></div>
+        <span style="margin-left:auto;"><button class="btn-primary" onclick="openMethod()">+ Add Method</button></span></div>
+        <div class="card">
+          <table><tr><th>Method Name</th><th>Courier</th><th>Default Shipping Note</th><th>Status</th><th></th></tr>
+          <tr><td><b>Steadfast — Inside Dhaka</b></td><td>STEADFAST</td><td>Handle with care</td><td><span class="pill green">Active</span></td><td><button class="ctl-btn" onclick="openMethod('Steadfast')">Edit</button></td></tr>
+          <tr><td><b>Pathao — Inside Dhaka</b></td><td>PATHAO</td><td>Call before delivery</td><td><span class="pill green">Active</span></td><td><button class="ctl-btn" onclick="openMethod('Pathao')">Edit</button></td></tr>
+          <tr><td><b>RedX — Dhaka</b></td><td>REDX</td><td>—</td><td><span class="pill green">Active</span></td><td><button class="ctl-btn" onclick="openMethod('RedX')">Edit</button></td></tr>
+          <tr><td><b>Carrybee — Standard</b></td><td>CARRYBEE</td><td>—</td><td><span class="pill green">Active</span></td><td><button class="ctl-btn" onclick="openMethod('Carrybee')">Edit</button></td></tr>
+          <tr><td><b>Paperfly — Nationwide</b></td><td>PAPERFLY</td><td>—</td><td><span class="pill grey">Inactive</span></td><td><button class="ctl-btn" onclick="openMethod('Paperfly')">Edit</button></td></tr>
+          <tr><td><b>eCourier — Standard</b></td><td>ECOURIER</td><td>—</td><td><span class="pill green">Active</span></td><td><button class="ctl-btn" onclick="openMethod('eCourier')">Edit</button></td></tr>
+          <tr><td><b>Own Delivery (Manual)</b></td><td>OTHERS</td><td>Office pickup available</td><td><span class="pill green">Active</span></td><td><button class="ctl-btn" onclick="openMethod('Manual')">Edit</button></td></tr></table>
+          <div class="pager">Showing 7 of 30 methods</div>
+        </div>
+      </section>
+
+      <section class="page-panel" id="page-courier-settlement">
+        <div class="page-head"><div><h1>Courier Settlement</h1><p>Same page as Courier Report — COD and charge reconciliation per courier</p></div></div>
+        <div class="kpi-grid">
+          <div class="card kpi"><div class="lbl">Total COD Receivable</div><div class="val">৳18,450</div><div class="sub">Sum of Expected COD on unsettled delivered parcels</div></div>
+          <div class="card kpi"><div class="lbl">COD Difference</div><div class="val">৳120</div><div class="sub">Actual minus Expected COD</div></div>
+          <div class="card kpi"><div class="lbl">Delivery Subsidy</div><div class="val">৳340</div><div class="sub">Actual charge minus what the customer paid</div></div>
+          <div class="card kpi"><div class="lbl">Charge Difference</div><div class="val">৳85</div><div class="sub">Actual minus Committed (rate card) charge</div></div>
+        </div>
+        <div class="utabs inner-tabs"><button class="active">Overview</button><button>COD Receivable</button><button>Differences</button><button>Reconciliation</button><button>Rate Card</button><button>Issues</button></div>
+        <div class="card">
+          <table><tr><th>Courier</th><th>Delivered</th><th>Expected COD</th><th>Actual COD</th><th>COD Difference</th><th>Committed Charge</th><th>Actual Charge</th><th>Status</th></tr>
+          <tr><td>Steadfast</td><td>18</td><td>৳10,240</td><td>৳10,240</td><td>৳0</td><td>৳1,080</td><td>৳1,080</td><td><span class="pill green">Settled</span></td></tr>
+          <tr><td>Pathao</td><td>9</td><td>৳5,610</td><td>৳5,490</td><td><span class="pill red">−৳120</span></td><td>৳560</td><td>৳645</td><td><span class="pill amber">Difference Found</span></td></tr>
+          <tr><td>RedX</td><td>3</td><td>৳2,600</td><td>৳2,600</td><td>৳0</td><td>৳210</td><td>৳210</td><td><span class="pill green">Settled</span></td></tr></table>
+          <p class="empty-note" style="margin-top:12px;">Committed charge is estimated from the rate card: zone Dhaka means Inside, anything else Outside; weight assumed up to 0.5 kg. Issue types tracked: COD Difference, Charge Mismatch, Duplicate Tracking, Invoice Line Missing, Charge Overcharge.</p>
+        </div>
+      </section>
+
 <button class="team-chat" onclick="alert('Open Team Chat (UI prototype)')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg> Open Team Chat</button>
+
+
+<div class="modal-overlay" id="approveModal" style="display:none;">
+  <div class="modal-box">
+    <h3 style="font-size:17px;">Approve this order?</h3>
+    <p style="color:var(--muted);font-size:13.5px;margin:10px 0;">OB273 will move to Approved Orders. Stock for 1 item will be reserved, and the order becomes ready to ship.</p>
+    <div class="sum-row"><span>Customer</span><b>M. Fahim</b></div>
+    <div class="sum-row"><span>Total (COD)</span><b>৳599</b></div>
+    <div style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end;">
+      <button class="ctl-btn" onclick="closeModal('approveModal')">Cancel</button>
+      <button class="btn-primary" onclick="confirmApprove()">Confirm Approve</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="orderModal" style="display:none;">
+  <div class="modal-box" style="max-width:640px;">
+    <div style="display:flex;align-items:center;"><h3 style="font-size:17px;">Order Details — OB266</h3><button class="icon-btn" style="margin-left:auto;" onclick="closeModal('orderModal')">✕</button></div>
+    <div class="sum-row" style="margin-top:10px;"><span>Customer</span><b>M. Fahim · 01712-445566</b></div>
+    <div class="sum-row"><span>Address</span><b>House 12, Road 5, Mirpur 10, Dhaka</b></div>
+    <div class="sum-row"><span>Status</span><b><span class="pill amber">Pending</span></b></div>
+    <div class="sum-row"><span>Courier</span><b>Steadfast — Inside Dhaka</b></div>
+    <table style="margin-top:10px;"><tr><th>Product</th><th>Qty</th><th>Total</th></tr>
+    <tr><td>Mentara Roll On Balm COMBO (MENT-COMBO)</td><td>1</td><td>৳539</td></tr></table>
+    <div class="sum-row" style="margin-top:10px;"><span>Delivery Charge</span><b>৳60</b></div>
+    <div class="sum-row total"><span>COD Total</span><b>৳599</b></div>
+    <div style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end;">
+      <button class="ctl-btn" onclick="toast('Print sent — invoice renders in a hidden print frame')">Print</button>
+      <button class="btn-primary" onclick="closeModal('orderModal')">Close</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="methodModal" style="display:none;">
+  <div class="modal-box" style="max-width:560px;">
+    <div style="display:flex;align-items:center;"><h3 style="font-size:17px;" id="methodTitle">Add Delivery Method</h3><button class="icon-btn" style="margin-left:auto;" onclick="closeModal('methodModal')">✕</button></div>
+    <label class="fld-l" style="margin-top:12px;">Method Name<input class="fld" id="mName" placeholder="e.g. Steadfast — Inside Dhaka"></label>
+    <label class="fld-l" style="margin-top:12px;">Courier Type<select class="fld" id="mType" onchange="methodFields(this.value)">
+      <option>PATHAO</option><option>STEADFAST</option><option>REDX</option><option>CARRYBEE</option><option>PAPERFLY</option><option>ECOURIER</option><option>BAHOK</option><option>OTHERS (Manual)</option></select></label>
+    <div id="mFields" style="margin-top:6px;"></div>
+    <label class="fld-l" style="margin-top:12px;">Default Shipping Note<input class="fld" placeholder="Optional"></label>
+    <div class="sum-row" style="margin-top:12px;"><span>Active</span><button class="switch on" onclick="this.classList.toggle('on')"></button></div>
+    <div style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end;">
+      <button class="ctl-btn" onclick="closeModal('methodModal')">Cancel</button>
+      <button class="btn-primary" onclick="closeModal('methodModal');toast('Delivery method saved (UI prototype)')">Save Method</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
 
 <script>
   // Sidebar submenu expand/collapse
@@ -624,7 +1033,9 @@
     e.target.classList.add('active');
     var v = e.target.getAttribute('data-view');
     document.querySelectorAll('.view-panel').forEach(function(p){ p.classList.remove('active'); });
+    document.querySelectorAll('.page-panel').forEach(function(p){ p.classList.remove('active'); });
     document.getElementById('panel-' + v).classList.add('active');
+    currentDashPanel = 'panel-' + v;
   });
   // Notifications drawer
   function toggleNotif(){
@@ -699,6 +1110,150 @@
   // Earning Reports load on demand
   function loadEarnings(){
     document.getElementById('earnBox').innerHTML = '<b style="color:var(--text);">Earning Reports — 2026</b><br><br>No earnings data in the selected range yet. Connect a sales channel and orders will appear here.';
+  }
+  // ===== Step 2: page routing =====
+  var currentDashPanel = 'panel-my';
+  function showPage(id){
+    document.querySelectorAll('.view-panel,.page-panel').forEach(function(p){ p.classList.remove('active'); });
+    var el = document.getElementById(id);
+    if(el){ el.classList.add('active'); }
+    window.scrollTo({top:0});
+  }
+  function showDashboard(){
+    document.querySelectorAll('.page-panel').forEach(function(p){ p.classList.remove('active'); });
+    document.querySelectorAll('.view-panel').forEach(function(p){ p.classList.remove('active'); });
+    document.getElementById(currentDashPanel).classList.add('active');
+    window.scrollTo({top:0});
+  }
+  function toast(msg){
+    var t = document.getElementById('toast');
+    t.textContent = msg; t.style.display = 'block';
+    clearTimeout(t._h); t._h = setTimeout(function(){ t.style.display = 'none'; }, 2600);
+  }
+  function openModal(id){ document.getElementById(id).style.display = 'flex'; }
+  function closeModal(id){ document.getElementById(id).style.display = 'none'; }
+  function confirmApprove(){
+    closeModal('approveModal');
+    var s = document.getElementById('wodStatus');
+    if(s){ s.textContent = 'Approved'; s.className = 'pill green'; }
+    toast('Order OB273 approved — moved to Approved Orders');
+  }
+  // Web order pill filter
+  document.querySelectorAll('#woPills .wo-pill').forEach(function(b){
+    b.addEventListener('click', function(){
+      document.querySelectorAll('#woPills .wo-pill').forEach(function(x){ x.classList.remove('active'); });
+      b.classList.add('active');
+      var f = b.getAttribute('data-f');
+      document.querySelectorAll('#woTable tr[data-status]').forEach(function(r){
+        r.style.display = (f === 'all' || r.getAttribute('data-status') === f) ? '' : 'none';
+      });
+    });
+  });
+  function woSearch(inp){
+    var q = inp.value.toLowerCase();
+    document.querySelectorAll('#woTable tr[data-status]').forEach(function(r){
+      r.style.display = r.textContent.toLowerCase().indexOf(q) > -1 ? '' : 'none';
+    });
+  }
+  // Approved order pill filter
+  document.querySelectorAll('#aoPills .wo-pill').forEach(function(b){
+    b.addEventListener('click', function(){
+      document.querySelectorAll('#aoPills .wo-pill').forEach(function(x){ x.classList.remove('active'); });
+      b.classList.add('active');
+      var f = b.getAttribute('data-f');
+      document.querySelectorAll('#aoTable tr[data-status]').forEach(function(r){
+        r.style.display = (r.getAttribute('data-status') === f) ? '' : 'none';
+      });
+    });
+  });
+  // Row action menu
+  function rowMenu(btn){
+    var m = btn.parentElement.querySelector('.row-menu');
+    var show = m.style.display !== 'block';
+    document.querySelectorAll('.row-menu').forEach(function(x){ x.style.display = 'none'; });
+    m.style.display = show ? 'block' : 'none';
+  }
+  document.addEventListener('click', function(e){
+    if(!e.target.closest('.row-menu') && !e.target.closest('td')){ document.querySelectorAll('.row-menu').forEach(function(x){ x.style.display = 'none'; }); }
+  });
+  // Inner tab groups (Courier Management)
+  document.querySelectorAll('.utabs.inner-tabs[data-tabs]').forEach(function(bar){
+    bar.addEventListener('click', function(e){
+      if(e.target.tagName !== 'BUTTON') return;
+      bar.querySelectorAll('button').forEach(function(b){ b.classList.remove('active'); });
+      e.target.classList.add('active');
+      var group = bar.getAttribute('data-tabs');
+      document.querySelectorAll('[id^="' + group + '-"]').forEach(function(p){ p.style.display = 'none'; });
+      var pane = document.getElementById(e.target.getAttribute('data-t'));
+      if(pane) pane.style.display = 'block';
+    });
+  });
+  // Simple inner tabs without panes (visual only groups)
+  document.querySelectorAll('.utabs.inner-tabs:not([data-tabs])').forEach(function(bar){
+    bar.addEventListener('click', function(e){
+      if(e.target.tagName !== 'BUTTON') return;
+      bar.querySelectorAll('button').forEach(function(b){ b.classList.remove('active'); });
+      e.target.classList.add('active');
+    });
+  });
+  // Scan to update
+  var scanN = 0;
+  function scanAdd(inp){
+    var v = inp.value.trim(); if(!v) return;
+    scanN++;
+    document.getElementById('scanCount').textContent = scanN;
+    var tb = document.getElementById('scanList');
+    if(scanN === 1) tb.innerHTML = '';
+    var tr = document.createElement('tr');
+    tr.innerHTML = '<td>' + v + '</td><td>OB2' + (60 + scanN) + '</td><td><span class="pill green">Updated to Shipped</span></td><td>Just now</td>';
+    tb.appendChild(tr);
+    inp.value = '';
+  }
+  // New order qty + totals
+  function qtyCh(btn, d, price){
+    var b = btn.parentElement.querySelector('b');
+    var q = Math.max(0, parseInt(b.textContent) + d);
+    b.textContent = q;
+    btn.closest('.prod-line').querySelector('.line-amt').textContent = '৳' + (q * price).toLocaleString('en-IN');
+    calcOrder();
+  }
+  function calcOrder(){
+    var sub = 0;
+    document.querySelectorAll('#page-new-order .line-amt').forEach(function(a){ sub += parseInt(a.textContent.replace(/[^0-9]/g, '')) || 0; });
+    var del = parseInt(document.getElementById('noDel').value) || 0;
+    var disc = parseInt(document.getElementById('noDisc').value) || 0;
+    var adv = parseInt(document.getElementById('noAdv').value) || 0;
+    document.getElementById('sumSub').textContent = '৳' + sub.toLocaleString('en-IN');
+    document.getElementById('sumDel').textContent = '৳' + del.toLocaleString('en-IN');
+    document.getElementById('sumDisc').textContent = '৳' + disc.toLocaleString('en-IN');
+    document.getElementById('sumAdv').textContent = '৳' + adv.toLocaleString('en-IN');
+    document.getElementById('sumTotal').textContent = '৳' + (sub + del - disc - adv).toLocaleString('en-IN');
+  }
+  // Delivery method credential fields per courier
+  var METHOD_FIELDS = {
+    'PATHAO': ['Account Mobile Number','Client Id','Client Secret','Client Email','Password','Store Id','Item Type'],
+    'STEADFAST': ['ApiKey','Api Secret','Webhook Token (Optional)','Account Email (Optional)','Account Password (Optional)'],
+    'REDX': ['Access Token','Pickup Store'],
+    'CARRYBEE': ['Client ID','Client Secret','Client Context','Store ID','Product Type','Delivery Type'],
+    'PAPERFLY': ['API Key','API Secret','Username','Password'],
+    'ECOURIER': ['API Key','API Secret','User ID','Default Package Code (Optional)','Pickup Hub ID (Optional)'],
+    'BAHOK': ['API Key','API Secret','Shop ID'],
+    'OTHERS (Manual)': []
+  };
+  function methodFields(type){
+    var box = document.getElementById('mFields');
+    var fields = METHOD_FIELDS[type] || [];
+    box.innerHTML = fields.map(function(f){
+      return '<label class="fld-l" style="margin-top:10px;">' + f + '<input class="fld" type="' + (/Secret|Password|Token|Key/i.test(f) ? 'password' : 'text') + '" placeholder="' + f + '"></label>';
+    }).join('') || '<p class="empty-note" style="margin-top:10px;">Manual method — no courier credentials needed.</p>';
+  }
+  function openMethod(name){
+    document.getElementById('methodTitle').textContent = name ? ('Edit Method — ' + name) : 'Add Delivery Method';
+    var map = {'Steadfast':'STEADFAST','Pathao':'PATHAO','RedX':'REDX','Carrybee':'CARRYBEE','Paperfly':'PAPERFLY','eCourier':'ECOURIER','Manual':'OTHERS (Manual)'};
+    var t = map[name] || 'STEADFAST';
+    document.getElementById('mType').value = t;
+    methodFields(t);
+    openModal('methodModal');
   }
   // Live Dhaka clock
   function tickClock(){
