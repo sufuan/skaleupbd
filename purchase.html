@@ -224,7 +224,7 @@
   .row-menu a.danger{color:var(--red-tx);}
   .modal-overlay{position:fixed;inset:0;background:rgba(17,24,39,.5);display:flex;align-items:center;justify-content:center;z-index:200;padding:18px;}
   .modal-box{background:#fff;border-radius:18px;padding:26px;width:100%;max-width:440px;max-height:88vh;overflow:auto;box-shadow:0 24px 60px rgba(30,10,50,.25);}
-  .switch{width:42px;height:23px;border-radius:99px;background:var(--toggle-off);border:none;cursor:pointer;position:relative;flex-shrink:0;}
+  .switch{width:42px;height:23px;border-radius:99px;background:var(--toggle-off);border:1px solid #c4bce0;cursor:pointer;position:relative;flex-shrink:0;}
   .switch::after{content:"";position:absolute;top:3px;left:3px;width:17px;height:17px;border-radius:50%;background:#fff;transition:left .15s;}
   .switch.on{background:var(--focus);}
   .switch.on::after{left:22px;}
@@ -295,9 +295,9 @@
       </div>
       <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></span> Messages <span class="chev">›</span></div>
       <div class="sub-items">
-        <div class="nav-item">Inbox</div><div class="nav-item">Comments</div>
-        <div class="nav-item">Auto Replies</div><div class="nav-item">AI Reply</div>
-        <div class="nav-item">Report</div>
+        <div class="nav-item" onclick="location.href='messages.html#inbox'">Inbox</div><div class="nav-item" onclick="location.href='messages.html#comments'">Comments</div>
+        <div class="nav-item" onclick="location.href='messages.html#autoreply'">Auto Replies</div><div class="nav-item" onclick="location.href='messages.html#ai'">AI Reply</div>
+        <div class="nav-item" onclick="location.href='messages.html#report'">Report</div>
       </div>
       <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><circle cx="9" cy="21" r="1.6"/><circle cx="19" cy="21" r="1.6"/><path d="M2.5 3h2l2.6 12.5a2 2 0 0 0 2 1.5h8.7a2 2 0 0 0 2-1.6L21.5 7H6"/></svg></span> Purchase <span class="chev">›</span></div>
       <div class="sub-items">
@@ -308,32 +308,32 @@
       </div>
       <div class="nav-item" onclick="toggleSub(this)"><span class="ico">✔️</span> Task &amp; Follow-up <span class="chev">›</span></div>
       <div class="sub-items">
-        <div class="nav-item">Task Board</div><div class="nav-item">Agent Cockpit</div>
-        <div class="nav-item">Follow-up Management</div><div class="nav-item">My Follow-ups</div>
-        <div class="nav-item">Follow-up Performance</div>
+        <div class="nav-item" onclick="location.href='task.html#board'">Task Board</div><div class="nav-item" onclick="location.href='task.html#cockpit'">Agent Cockpit</div>
+        <div class="nav-item" onclick="location.href='followup.html#manage'">Follow-up Management</div><div class="nav-item" onclick="location.href='followup.html#my'">My Follow-ups</div>
+        <div class="nav-item" onclick="location.href='followup.html#perf'">Follow-up Performance</div>
       </div>
       <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><path d="M3 14v-2a9 9 0 0 1 18 0v2"/><rect x="3" y="14" width="4" height="7" rx="1.5"/><rect x="17" y="14" width="4" height="7" rx="1.5"/></svg></span> Call Center <span class="chev">›</span></div>
       <div class="sub-items">
-        <div class="nav-item">Dashboard</div><div class="nav-item">Reports</div><div class="nav-item">Contacts</div>
+        <div class="nav-item" onclick="location.href='callcenter.html#dashboard'">Dashboard</div><div class="nav-item" onclick="location.href='callcenter.html#reports'">Reports</div><div class="nav-item" onclick="location.href='callcenter.html#contacts'">Contacts</div>
       </div>
 
       <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.5 5.1L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.5-6.9A2 2 0 0 0 16.7 4H7.3a2 2 0 0 0-1.8 1.1z"/></svg></span> Work Inbox <span class="chev">›</span></div>
       <div class="sub-items">
-        <div class="nav-item">My Work</div><div class="nav-item">Work Control</div><div class="nav-item">Settings</div>
+        <div class="nav-item" onclick="location.href='workinbox.html#my'">My Work</div><div class="nav-item" onclick="location.href='workinbox.html#control'">Work Control</div><div class="nav-item" onclick="location.href='workinbox.html#settings'">Settings</div>
       </div>
 
       <div class="group-label">Growth</div>
       <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><path d="M3 11l14-6v14L3 13v-2z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg></span> Ads <span class="chev">›</span></div>
       <div class="sub-items">
-        <div class="nav-item">Ads Dashboard</div><div class="nav-item">Meta Ads</div>
-        <div class="nav-item">Record Ad Spend</div><div class="nav-item">Ad Profit Analysis</div>
-        <div class="nav-item">TikTok Ads</div><div class="nav-item">Google Ads</div>
+        <div class="nav-item" onclick="location.href='ads.html#dash'">Ads Dashboard</div><div class="nav-item" onclick="location.href='ads.html#meta'">Meta Ads</div>
+        <div class="nav-item" onclick="location.href='ads.html#record'">Record Ad Spend</div><div class="nav-item" onclick="location.href='ads.html#profit'">Ad Profit Analysis</div>
+        <div class="nav-item" onclick="location.href='ads.html#tiktok'">TikTok Ads</div><div class="nav-item" onclick="location.href='ads.html#google'">Google Ads</div>
       </div>
       <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><path d="M3 11l14-6v14L3 13v-2z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg></span> Marketing <span class="chev">›</span></div>
       <div class="sub-items">
-        <div class="nav-item">Automation</div><div class="nav-item">Email Marketing</div>
-        <div class="nav-item">SMS Marketing</div><div class="nav-item">Voice Marketing</div>
-        <div class="nav-item">Campaign List</div><div class="nav-item">Templates</div>
+        <div class="nav-item" onclick="location.href='marketing.html#auto'">Automation</div><div class="nav-item" onclick="location.href='marketing.html#email'">Email Marketing</div>
+        <div class="nav-item" onclick="location.href='marketing.html#sms'">SMS Marketing</div><div class="nav-item" onclick="location.href='marketing.html#voice'">Voice Marketing</div>
+        <div class="nav-item" onclick="location.href='marketing.html#campaigns'">Campaign List</div><div class="nav-item" onclick="location.href='marketing.html#templates'">Templates</div>
       </div>
       <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.2 3.4-5 6.5-5s5.7 1.8 6.5 5"/><path d="M16 5a3.5 3.5 0 0 1 0 6.6"/><path d="M17.5 15.3c2 .6 3.4 2.1 4 4.7"/></svg></span> Customers <span class="chev">›</span></div>
       <div class="sub-items">
@@ -343,41 +343,41 @@
       <div class="group-label">Business Control</div>
       <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><circle cx="10" cy="8" r="3.5"/><path d="M3.5 20c.7-3.2 3.2-5 6.5-5s5.8 1.8 6.5 5"/><rect x="16" y="13" width="6" height="8" rx="1"/><path d="M16 16.5h6"/></svg></span> HRM <span class="chev">›</span></div>
       <div class="sub-items">
-        <div class="nav-item">HR Dashboard</div><div class="nav-item">Attendance</div>
-        <div class="nav-item">Attendance Report</div><div class="nav-item">Shift Management</div>
-        <div class="nav-item">Departments &amp; SOP</div><div class="nav-item">User &amp; Role</div>
-        <div class="nav-item">Settings</div>
+        <div class="nav-item" onclick="location.href='hrm.html#dash'">HR Dashboard</div><div class="nav-item" onclick="location.href='hrm.html#attendance'">Attendance</div>
+        <div class="nav-item" onclick="location.href='hrm.html#attreport'">Attendance Report</div><div class="nav-item" onclick="location.href='hrm.html#shift'">Shift Management</div>
+        <div class="nav-item" onclick="location.href='hrm.html#dept'">Departments &amp; SOP</div><div class="nav-item" onclick="location.href='hrm.html#userrole'">User &amp; Role</div>
+        <div class="nav-item" onclick="location.href='hrm.html#settings'">Settings</div>
       </div>
       <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><rect x="2.5" y="6" width="19" height="13" rx="2.5"/><circle cx="12" cy="12.5" r="2.8"/><path d="M6 9.5h.01M18 15.5h.01"/></svg></span> Finance <span class="chev">›</span></div>
       <div class="sub-items">
-        <div class="nav-item">Finance Dashboard</div><div class="nav-item">Accounts &amp; Bank</div>
-        <div class="nav-item">Income &amp; Expense</div><div class="nav-item" onclick="showPage('page-courier-settlement')">Courier Settlement</div>
-        <div class="nav-item">Cash Flow</div><div class="nav-item">Asset Management</div>
+        <div class="nav-item" onclick="location.href='finance.html#dash'">Finance Dashboard</div><div class="nav-item" onclick="location.href='finance.html#accounts'">Accounts &amp; Bank</div>
+        <div class="nav-item" onclick="location.href='finance.html#ie'">Income &amp; Expense</div><div class="nav-item" onclick="location.href='finance.html#settlement'">Courier Settlement</div>
+        <div class="nav-item" onclick="location.href='finance.html#cashflow'">Cash Flow</div><div class="nav-item" onclick="location.href='finance.html#assets'">Asset Management</div>
       </div>
       <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="15 7 21 7 21 13"/></svg></span> Reports <span class="chev">›</span></div>
       <div class="sub-items">
-        <div class="nav-item">Profit &amp; Loss</div><div class="nav-item">Order Report</div>
-        <div class="nav-item" onclick="showPage('page-courier-settlement')">Courier Report</div><div class="nav-item">Product Report</div>
-        <div class="nav-item">Employee Report</div><div class="nav-item">Call Center Report</div>
-        <div class="nav-item">Customer Report</div><div class="nav-item">Business Reports</div>
-        <div class="nav-item">My Limits</div>
+        <div class="nav-item" onclick="location.href='reports.html#pl'">Profit &amp; Loss</div><div class="nav-item" onclick="location.href='reports.html#order'">Order Report</div>
+        <div class="nav-item" onclick="location.href='reports.html#courier'">Courier Report</div><div class="nav-item" onclick="location.href='reports.html#product'">Product Report</div>
+        <div class="nav-item" onclick="location.href='reports.html#employee'">Employee Report</div><div class="nav-item" onclick="location.href='reports.html#call'">Call Center Report</div>
+        <div class="nav-item" onclick="location.href='reports.html#customer'">Customer Report</div><div class="nav-item" onclick="location.href='reports.html#business'">Business Reports</div>
+        <div class="nav-item" onclick="location.href='reports.html#limits'">My Limits</div>
       </div>
 
       <div class="group-label">System</div>
       <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v3M12 18.2v3M2.8 12h3M18.2 12h3M5.2 5.2l2.1 2.1M16.7 16.7l2.1 2.1M18.8 5.2l-2.1 2.1M7.3 16.7l-2.1 2.1"/></svg>️</span> Settings <span class="chev">›</span></div>
       <div class="sub-items">
-        <div class="nav-item">Business Profile</div><div class="nav-item">Merchant Profile</div>
-        <div class="nav-item">Device Approvals</div><div class="nav-item">Website Integration</div>
-        <div class="nav-item">Courier Integration</div><div class="nav-item">App Integration</div>
-        <div class="nav-item">Messaging Channels</div><div class="nav-item">VoiceDrive PBX</div>
-        <div class="nav-item">Templates</div><div class="nav-item">Order Sources</div>
-        <div class="nav-item">Deletion Logs</div><div class="nav-item">Advanced Settings</div>
+        <div class="nav-item" onclick="location.href='settings.html#business'">Business Profile</div><div class="nav-item" onclick="location.href='settings.html#merchant'">Merchant Profile</div>
+        <div class="nav-item" onclick="location.href='settings.html#devices'">Device Approvals</div><div class="nav-item" onclick="location.href='settings.html#website'">Website Integration</div>
+        <div class="nav-item" onclick="location.href='settings.html#courier'">Courier Integration</div><div class="nav-item" onclick="location.href='settings.html#app'">App Integration</div>
+        <div class="nav-item" onclick="location.href='settings.html#channels'">Messaging Channels</div><div class="nav-item" onclick="location.href='settings.html#pbx'">VoiceDrive PBX</div>
+        <div class="nav-item" onclick="location.href='settings.html#templates'">Templates</div><div class="nav-item" onclick="location.href='settings.html#sources'">Order Sources</div>
+        <div class="nav-item" onclick="location.href='settings.html#deletion'">Deletion Logs</div><div class="nav-item" onclick="location.href='settings.html#advanced'">Advanced Settings</div>
       </div>
       <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><circle cx="12" cy="12" r="9.5"/><circle cx="12" cy="12" r="4"/><path d="M5.6 5.6l3.4 3.4M15 15l3.4 3.4M18.4 5.6L15 9M9 15l-3.4 3.4"/></svg></span> Support <span class="chev">›</span></div>
       <div class="sub-items">
-        <div class="nav-item">Help Center</div><div class="nav-item">Updates</div>
-        <div class="nav-item">My Bug Reports</div><div class="nav-item">My Feedback</div>
-        <div class="nav-item">System Status</div>
+        <div class="nav-item" onclick="location.href='support.html#help'">Help Center</div><div class="nav-item" onclick="location.href='support.html#updates'">Updates</div>
+        <div class="nav-item" onclick="location.href='support.html#bugs'">My Bug Reports</div><div class="nav-item" onclick="location.href='support.html#feedback'">My Feedback</div>
+        <div class="nav-item" onclick="location.href='support.html#status'">System Status</div>
       </div>
     </nav>
 
