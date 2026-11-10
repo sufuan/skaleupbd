@@ -140,7 +140,7 @@
 
 
   /* ===== Mobile layout (phones) ===== */
-  @media (max-width:900px){
+  @media (max-width:1150px){
     .sidebar{transform:translateX(-105%);transition:transform .22s ease;z-index:120;box-shadow:none;}
     .sidebar.mob-open{transform:none;box-shadow:0 0 60px rgba(0,0,0,.3);}
     .main{margin-left:0 !important;}
@@ -1350,7 +1350,7 @@
   var collapsed = false;
   function collapseSidebar(){
     var sb = document.querySelector('.sidebar');
-    if(window.innerWidth <= 900){ sb.classList.toggle('mob-open'); return; }
+    if(window.innerWidth <= 1150){ sb.classList.toggle('mob-open'); return; }
     var main = document.getElementById('mainCol');
     collapsed = !collapsed;
     sb.style.width = collapsed ? '74px' : '296px';
