@@ -2,21 +2,22 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SkaleUp BD — Settings (Step 5)</title>
 <style>
   :root{
-    --primary:#4a1a5e; --primary-dark:#3d0a57; --gradient-end:#6b21a8;
-    --active-bg:#f3e8ff; --focus:#7c3aed;--toggle-off:#d1d5db; --page-bg:#f8f7fc;
+    --primary:#411550; --primary-dark:#3d0a57; --gradient-end:#6b21a8;
+    --active-bg:#F4EDF7; --focus:#7c3aed;--toggle-off:#d1d5db; --page-bg:#F8F7FB;
     --card-border:#e5e7eb; --input-border:#d1d5db;
-    --text:#111827; --muted:#6b7280; --muted2:#9ca3af;
+    --text:#111827; --muted:#64748B; --muted2:#94A3B8;
     --green-bg:#dcfce7; --green-tx:#15803d; --green-solid:#16a34a;
     --amber-bg:#fef3c7; --amber-tx:#92400e;
     --red-bg:#fee2e2; --red-tx:#dc2626;
     --blue-bg:#dbeafe; --blue-tx:#1d4ed8;
     --mint-bg:#ecfdf5; --mint-tx:#065f46;
     --pink-bg:#fce7f3; --pink-tx:#be185d;
-    --grey-bg:#f3f4f6; --grey-tx:#374151;
+    --grey-bg:#f3f4f6; --grey-tx:#111827;
   }
   *{margin:0;padding:0;box-sizing:border-box;font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;}
   body{background:var(--page-bg);color:var(--text);font-size:14px;}
@@ -24,7 +25,7 @@
   .layout{display:flex;min-height:100vh;}
 
   /* ============ SIDEBAR ============ */
-  .sidebar{width:296px;background:#fff;border-right:1px solid var(--card-border);position:fixed;top:0;bottom:0;left:0;overflow-y:auto;display:flex;flex-direction:column;z-index:20;}
+  .sidebar{width:260px;background:#fff;border-right:1px solid var(--card-border);position:fixed;top:0;bottom:0;left:0;overflow-y:auto;display:flex;flex-direction:column;z-index:20;}
   .ws-switcher{display:flex;align-items:center;gap:10px;padding:16px 16px 10px;cursor:pointer;}
   .ws-chip{width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,var(--primary),var(--gradient-end));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px;flex-shrink:0;}
   .ws-name{font-weight:700;font-size:13px;letter-spacing:.02em;}
@@ -33,23 +34,23 @@
   .quicksearch{margin:6px 14px 10px;background:var(--grey-bg);border:1px solid var(--card-border);border-radius:8px;padding:8px 10px;display:flex;align-items:center;gap:8px;color:var(--muted);font-size:13px;cursor:pointer;}
   .quicksearch kbd{margin-left:auto;background:#fff;border:1px solid var(--input-border);border-radius:4px;padding:1px 5px;font-size:10px;color:var(--muted);}
   .side-nav{padding:2px 10px 10px;flex:1;}
-  .nav-item{display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:10px;color:var(--grey-tx);font-size:14px;cursor:pointer;margin-bottom:2px;}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:8px;color:var(--grey-tx);font-size:14px;font-weight:500;cursor:pointer;margin-bottom:2px;}
   .nav-item:hover{background:var(--active-bg);}
   .nav-item.active{background:var(--active-bg);color:var(--primary);font-weight:600;}
   .nav-item .ico{width:18px;text-align:center;flex-shrink:0;font-size:14px;}
   .nav-item .chev{margin-left:auto;font-size:10px;color:var(--muted2);}
   .nav-item .badge{margin-left:auto;background:var(--red-bg);color:var(--red-tx);font-size:10.5px;font-weight:700;border-radius:999px;padding:1px 7px;}
-  .group-label{font-size:11px;letter-spacing:.12em;color:var(--muted2);font-weight:700;text-transform:uppercase;padding:20px 12px 8px;}
+  .group-label{font-size:11px;letter-spacing:.05em;color:var(--muted2);font-weight:600;text-transform:uppercase;padding:20px 12px 8px;}
   .sub-items{margin-left:16px;border-left:1px solid var(--card-border);padding-left:6px;display:none;}
   .sub-items.open{display:block;}
-  .sub-items .nav-item{font-size:13.5px;padding:8px 10px;}
+  .sub-items .nav-item{font-size:14px;}
   .side-footer{padding:12px 16px;border-top:1px solid var(--card-border);display:flex;align-items:center;gap:8px;}
   .pro-pill{background:var(--primary);color:#fff;font-size:11px;font-weight:700;border-radius:999px;padding:3px 10px;letter-spacing:.05em;}
   .side-footer span{font-size:12px;color:var(--muted);}
 
   /* ============ MAIN ============ */
-  .main{flex:1;margin-left:296px;display:flex;flex-direction:column;min-width:0;}
-  .topbar{height:62px;background:#fff;border-bottom:1px solid var(--card-border);display:flex;align-items:center;gap:14px;padding:0 20px;position:sticky;top:0;z-index:15;}
+  .main{flex:1;margin-left:268px;display:flex;flex-direction:column;min-width:0;}
+  .topbar{height:56px;background:#F8F7FB;border-bottom:1px solid #EEF2F7;display:flex;align-items:center;gap:14px;padding:0 20px;position:sticky;top:0;z-index:15;}
   .topbar .icon-btn{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--grey-tx);cursor:pointer;font-size:16px;border:none;background:transparent;}
   .topbar .icon-btn:hover{background:var(--active-bg);}
   .top-search{background:var(--grey-bg);border:1px solid var(--card-border);border-radius:8px;padding:7px 12px;display:flex;gap:8px;align-items:center;color:var(--muted);font-size:13px;width:230px;cursor:pointer;}
@@ -61,7 +62,7 @@
   .bn-btn{font-weight:600;color:var(--grey-tx);cursor:pointer;background:none;border:none;font-size:13px;white-space:nowrap;}
   .spacer{flex:1;}
 
-  .content{padding:30px 34px 120px;}
+  .content{padding:32px 52px 120px;}
   .step-banner{background:linear-gradient(90deg,#f3eff9,#ece5f5);border:1px solid var(--card-border);border-radius:12px;padding:12px 18px;display:flex;align-items:center;gap:12px;margin-bottom:20px;font-size:13px;}
   .step-banner b{color:var(--primary);}
   .step-dots{margin-left:auto;display:flex;gap:6px;}
@@ -82,16 +83,17 @@
   .view-panel.active{display:block;}
 
   /* KPI cards */
-  .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:18px;}
+  .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-bottom:18px;}
   .kpi-grid.c3{grid-template-columns:repeat(3,1fr);}
-  .card{background:#fff;border:1px solid #e8e3f1;border-radius:16px;padding:22px 24px;box-shadow:0 1px 2px rgba(61,10,87,.04);}
+  .card{background:#fff;border:1px solid #E5E7EB;border-radius:12px;padding:24px;box-shadow:0 1px 2px rgba(17,24,39,.03);}
   .kpi .kpi-top{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
   .kpi .chip{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:17px;}
   .kpi .lbl{font-size:13px;color:var(--muted);font-weight:500;}
   .kpi .dots{margin-left:auto;color:var(--muted2);cursor:pointer;}
-  .kpi .val{font-size:24px;font-weight:800;}
-  .kpi .sub{font-size:12px;color:var(--muted);margin-top:4px;}
-  .up{color:var(--green-tx);font-weight:700;}
+  .kpi{padding:16px 20px 16px 16px;min-height:112px;}
+  .kpi .val{font-size:30px;font-weight:700;color:#111827;}
+  .kpi .sub{font-size:12.5px;color:var(--muted);margin-top:4px;}
+  .up{color:#1CA477;font-weight:600;}
   .down{color:var(--red-tx);font-weight:700;}
 
   .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px;}
@@ -232,7 +234,7 @@
   #toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%);background:#111827;color:#fff;font-size:13.5px;padding:11px 18px;border-radius:10px;display:none;z-index:300;box-shadow:0 12px 30px rgba(0,0,0,.25);}
   .utabs.inner-tabs{margin-bottom:16px;}
   /* verification-fix additions (matched to live my_setup, 2026-11-10) */
-  .utabs{display:flex;gap:22px;border-bottom:1px solid var(--card-border);margin-bottom:18px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;}
+  .utabs{display:flex;gap:26px;border-bottom:1px solid var(--card-border);margin-bottom:18px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;}
   .utabs::-webkit-scrollbar{display:none;}
   .utabs button{white-space:nowrap;flex-shrink:0;}
   .utabs button{border:none;background:transparent;padding:12px 2px;font-size:14px;font-weight:600;color:var(--grey-tx);cursor:pointer;border-bottom:2.5px solid transparent;margin-bottom:-1px;}
