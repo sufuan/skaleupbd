@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EcomDrive UI Prototype — Step 1: Shell + Dashboard</title>
+<style>
+  :root{
+    --primary:#4a1a5e; --primary-dark:#3d0a57; --gradient-end:#6b21a8;
+    --active-bg:#f3e8ff; --focus:#7c3aed; --page-bg:#f8f7fc;
+    --card-border:#e5e7eb; --input-border:#d1d5db;
+    --text:#111827; --muted:#6b7280; --muted2:#9ca3af;
+    --green-bg:#dcfce7; --green-tx:#15803d; --green-solid:#16a34a;
+    --amber-bg:#fef3c7; --amber-tx:#92400e;
+    --red-bg:#fee2e2; --red-tx:#dc2626;
+    --blue-bg:#dbeafe; --blue-tx:#1d4ed8;
+    --mint-bg:#ecfdf5; --mint-tx:#065f46;
+    --pink-bg:#fce7f3; --pink-tx:#be185d;
+    --grey-bg:#f3f4f6; --grey-tx:#374151;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;}
+  body{background:var(--page-bg);color:var(--text);font-size:14px;}
+  .layout{display:flex;min-height:100vh;}
+
+  /* ============ SIDEBAR ============ */
+  .sidebar{width:296px;background:#fff;border-right:1px solid var(--card-border);position:fixed;top:0;bottom:0;left:0;overflow-y:auto;display:flex;flex-direction:column;z-index:20;}
+  .ws-switcher{display:flex;align-items:center;gap:10px;padding:16px 16px 10px;cursor:pointer;}
+  .ws-chip{width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,var(--primary),var(--gradient-end));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px;flex-shrink:0;}
+  .ws-name{font-weight:700;font-size:13px;letter-spacing:.02em;}
+  .ws-sub{font-size:11px;color:var(--muted);}
+  .ws-chev{margin-left:auto;color:var(--muted);}
+  .quicksearch{margin:6px 14px 10px;background:var(--grey-bg);border:1px solid var(--card-border);border-radius:8px;padding:8px 10px;display:flex;align-items:center;gap:8px;color:var(--muted);font-size:13px;cursor:pointer;}
+  .quicksearch kbd{margin-left:auto;background:#fff;border:1px solid var(--input-border);border-radius:4px;padding:1px 5px;font-size:10px;color:var(--muted);}
+  .side-nav{padding:2px 10px 10px;flex:1;}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;color:var(--grey-tx);font-size:13.5px;cursor:pointer;margin-bottom:1px;}
+  .nav-item:hover{background:var(--active-bg);}
+  .nav-item.active{background:var(--active-bg);color:var(--primary);font-weight:600;}
+  .nav-item .ico{width:18px;text-align:center;flex-shrink:0;font-size:14px;}
+  .nav-item .chev{margin-left:auto;font-size:10px;color:var(--muted2);}
+  .nav-item .badge{margin-left:auto;background:var(--red-bg);color:var(--red-tx);font-size:10.5px;font-weight:700;border-radius:999px;padding:1px 7px;}
+  .group-label{font-size:11px;letter-spacing:.12em;color:var(--muted2);font-weight:700;text-transform:uppercase;padding:14px 10px 6px;}
+  .sub-items{margin-left:16px;border-left:1px solid var(--card-border);padding-left:6px;display:none;}
+  .sub-items.open{display:block;}
+  .sub-items .nav-item{font-size:13px;padding:6px 10px;}
+  .side-footer{padding:12px 16px;border-top:1px solid var(--card-border);display:flex;align-items:center;gap:8px;}
+  .pro-pill{background:var(--primary);color:#fff;font-size:11px;font-weight:700;border-radius:999px;padding:3px 10px;letter-spacing:.05em;}
+  .side-footer span{font-size:12px;color:var(--muted);}
+
+  /* ============ MAIN ============ */
+  .main{flex:1;margin-left:296px;display:flex;flex-direction:column;min-width:0;}
+  .topbar{height:62px;background:#fff;border-bottom:1px solid var(--card-border);display:flex;align-items:center;gap:14px;padding:0 20px;position:sticky;top:0;z-index:15;}
+  .topbar .icon-btn{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--grey-tx);cursor:pointer;font-size:16px;border:none;background:transparent;}
+  .topbar .icon-btn:hover{background:var(--active-bg);}
+  .top-search{background:var(--grey-bg);border:1px solid var(--card-border);border-radius:8px;padding:7px 12px;display:flex;gap:8px;align-items:center;color:var(--muted);font-size:13px;width:230px;cursor:pointer;}
+  .top-search kbd{margin-left:auto;background:#fff;border:1px solid var(--input-border);border-radius:4px;padding:1px 5px;font-size:10px;}
+  .ask-btn{border:1.5px solid var(--focus);color:var(--primary);border-radius:999px;padding:7px 14px;font-weight:600;font-size:13px;background:#fff;cursor:pointer;white-space:nowrap;}
+  .bell-wrap{position:relative;}
+  .bell-badge{position:absolute;top:2px;right:2px;background:#f97316;color:#fff;font-size:9.5px;font-weight:700;border-radius:999px;padding:1px 5px;}
+  .avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--gradient-end));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;cursor:pointer;}
+  .bn-btn{font-weight:600;color:var(--grey-tx);cursor:pointer;background:none;border:none;font-size:13px;white-space:nowrap;}
+  .spacer{flex:1;}
+
+  .content{padding:26px 28px 60px;}
+  .step-banner{background:linear-gradient(90deg,#f3eff9,#ece5f5);border:1px solid var(--card-border);border-radius:12px;padding:12px 18px;display:flex;align-items:center;gap:12px;margin-bottom:20px;font-size:13px;}
+  .step-banner b{color:var(--primary);}
+  .step-dots{margin-left:auto;display:flex;gap:6px;}
+  .step-dots i{width:26px;height:8px;border-radius:99px;background:#d8cdea;display:block;}
+  .step-dots i.on{background:var(--primary);}
+  .page-head{display:flex;align-items:flex-start;gap:14px;margin-bottom:16px;}
+  .page-head h1{font-size:24px;font-weight:700;}
+  .page-head p{color:var(--muted);font-size:13px;margin-top:3px;}
+  .dhaka-clock{margin-left:auto;background:#fff;border:1px solid var(--card-border);border-radius:10px;padding:8px 14px;text-align:right;}
+  .dhaka-clock .lbl{font-size:10px;letter-spacing:.14em;color:var(--muted2);font-weight:700;}
+  .dhaka-clock .time{font-size:16px;font-weight:700;color:var(--primary);}
+
+  /* view tabs */
+  .view-tabs{display:flex;gap:6px;background:#fff;border:1px solid var(--card-border);border-radius:12px;padding:5px;width:max-content;margin-bottom:20px;flex-wrap:wrap;}
+  .view-tabs button{border:none;background:transparent;padding:8px 16px;border-radius:8px;font-size:13.5px;font-weight:600;color:var(--grey-tx);cursor:pointer;}
+  .view-tabs button.active{background:var(--primary);color:#fff;}
+  .view-panel{display:none;}
+  .view-panel.active{display:block;}
+
+  /* KPI cards */
+  .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:18px;}
+  .kpi-grid.c3{grid-template-columns:repeat(3,1fr);}
+  .card{background:#fff;border:1px solid var(--card-border);border-radius:12px;padding:18px;}
+  .kpi .kpi-top{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+  .kpi .chip{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:17px;}
+  .kpi .lbl{font-size:13px;color:var(--muted);font-weight:500;}
+  .kpi .dots{margin-left:auto;color:var(--muted2);cursor:pointer;}
+  .kpi .val{font-size:24px;font-weight:800;}
+  .kpi .sub{font-size:12px;color:var(--muted);margin-top:4px;}
+  .up{color:var(--green-tx);font-weight:700;}
+  .down{color:var(--red-tx);font-weight:700;}
+
+  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px;}
+  .grid-21{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:18px;}
+  .card h3{font-size:16px;font-weight:700;margin-bottom:4px;}
+  .card .card-sub{font-size:12.5px;color:var(--muted);margin-bottom:12px;}
+  table{width:100%;border-collapse:collapse;}
+  th{font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);text-align:left;padding:8px 8px;border-bottom:1px solid var(--card-border);font-weight:600;}
+  td{font-size:13.5px;padding:9px 8px;border-bottom:1px solid #f1f0f6;}
+  tr:last-child td{border-bottom:none;}
+  .pill{display:inline-block;border-radius:999px;padding:2.5px 10px;font-size:12px;font-weight:600;}
+  .pill.purple{background:var(--primary);color:#fff;}
+  .pill.lpurple{background:var(--active-bg);color:var(--primary);}
+  .pill.green{background:var(--green-bg);color:var(--green-tx);}
+  .pill.amber{background:var(--amber-bg);color:var(--amber-tx);}
+  .pill.red{background:var(--red-bg);color:var(--red-tx);}
+  .pill.blue{background:var(--blue-bg);color:var(--blue-tx);}
+  .pill.grey{background:var(--grey-bg);color:var(--grey-tx);}
+  .pill.mint{background:var(--mint-bg);color:var(--mint-tx);}
+  .pill.pink{background:var(--pink-bg);color:var(--pink-tx);}
+  .bar-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;font-size:13px;}
+  .bar-row .nm{width:170px;flex-shrink:0;}
+  .bar-track{flex:1;background:#f1f0f6;border-radius:99px;height:10px;overflow:hidden;}
+  .bar-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--primary),var(--gradient-end));}
+  .bar-row .amt{width:80px;text-align:right;font-weight:600;}
+  .heatmap{display:grid;grid-template-columns:repeat(12,1fr);gap:4px;}
+  .heatmap div{height:26px;border-radius:5px;background:#f1f0f6;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--muted);}
+  .heatmap .h1{background:#99f6e4;} .heatmap .h2{background:#5eead4;} .heatmap .h3{background:#14b8a6;color:#fff;font-weight:700;}
+  .feed-item{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid #f1f0f6;font-size:13px;}
+  .feed-item:last-child{border-bottom:none;}
+  .feed-dot{width:9px;height:9px;border-radius:50%;background:var(--focus);margin-top:5px;flex-shrink:0;}
+  .feed-item .t{color:var(--muted2);font-size:12px;margin-left:auto;white-space:nowrap;}
+  .decision-box{background:linear-gradient(135deg,var(--primary),var(--gradient-end));color:#fff;border-radius:12px;padding:22px;}
+  .decision-box h3{color:#fff;}
+  .decision-box .big{font-size:30px;font-weight:800;margin:8px 0 4px;}
+  .stuck-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:18px;}
+  .stuck{background:#fff;border:1px solid var(--card-border);border-radius:12px;padding:14px;text-align:center;}
+  .stuck .n{font-size:22px;font-weight:800;}
+  .stuck .l{font-size:12px;color:var(--muted);margin-top:2px;}
+  .donut-wrap{display:flex;align-items:center;gap:18px;}
+  .donut{width:120px;height:120px;border-radius:50%;background:conic-gradient(var(--primary) 0 60%,#a855f7 60% 77%,#e9d5ff 77% 100%);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .donut i{width:78px;height:78px;background:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-style:normal;font-weight:800;font-size:15px;}
+  .legend div{font-size:13px;margin-bottom:7px;display:flex;gap:8px;align-items:center;}
+  .legend i{width:11px;height:11px;border-radius:3px;display:block;}
+  .team-chat{position:fixed;right:22px;bottom:22px;background:var(--primary);color:#fff;border:none;border-radius:999px;padding:12px 20px;font-weight:600;font-size:13.5px;cursor:pointer;box-shadow:0 8px 24px rgba(74,26,94,.35);z-index:30;}
+  .empty-note{font-size:12.5px;color:var(--muted);background:var(--grey-bg);border-radius:8px;padding:10px 12px;}
+  @media (max-width:1100px){.kpi-grid{grid-template-columns:repeat(2,1fr);}.stuck-grid{grid-template-columns:repeat(3,1fr);}.grid-2,.grid-21{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- ================= SIDEBAR ================= -->
+  <aside class="sidebar">
+    <div class="ws-switcher">
+      <div class="ws-chip">O</div>
+      <div><div class="ws-name">ONLINE BUSINESS</div><div class="ws-sub">Workspace</div></div>
+      <span class="ws-chev">▾</span>
+    </div>
+    <div class="quicksearch"><span>🔍</span> Quick Search <kbd>CTRL K</kbd></div>
+
+    <nav class="side-nav">
+      <div class="nav-item active"><span class="ico">📊</span> Dashboard</div>
+      <div class="nav-item"><span class="ico">🔎</span> Search Orders</div>
+
+      <div class="group-label">Operations</div>
+      <div class="nav-item" onclick="toggleSub(this)"><span class="ico">🌐</span> Web Orders <span class="chev">›</span></div>
+      <div class="sub-items">
+        <div class="nav-item">New Order</div><div class="nav-item">Web Order List</div>
+        <div class="nav-item">Auto Pick Orders</div><div class="nav-item">Auto Call Center</div>
+        <div class="nav-item">Order Block List</div>
+      </div>
+      <div class="nav-item" onclick="toggleSub(this)"><span class="ico">✅</span> Approved Orders <span class="chev">›</span></div>
+      <div class="sub-items">
+        <div class="nav-item">Order List</div><div class="nav-item">Orders Dashboard</div>
+        <div class="nav-item">Preorders</div><div class="nav-item">Super Edit</div>
+        <div class="nav-item">Scan To Update</div><div class="nav-item">Courier Invoice Upload</div>
+        <div class="nav-item">Courier Management</div>
+      </div>
+      <div class="nav-item" onclick="toggleSub(this)"><span class="ico">📦</span> Inventory <span class="chev">›</span></div>
+      <div class="sub-items">
+        <div class="nav-item">Inventory Dashboard</div><div class="nav-item">Products</div>
+        <div class="nav-item">Add Product</div><div class="nav-item">Stock Ledger</div>
+        <div class="nav-item">Branches</div><div class="nav-item">Warranty</div>
+        <div class="nav-item">Stock Transfer</div><div class="nav-item">Low Stock Alert</div>
+      </div>
+      <div class="nav-item" onclick="toggleSub(this)"><span class="ico">💬</span> Messages <span class="chev">›</span></div>
+      <div class="sub-items">
+        <div class="nav-item">Inbox</div><div class="nav-item">Comments</div>
+        <div class="nav-item">Auto Replies</div><div class="nav-item">AI Reply</div>
+        <div class="nav-item">Report</div>
+      </div>
+      <div class="nav-item" onclick="toggleSub(this)"><span class="ico">🛒</span> Purchase <span class="chev">›</span></div>
+      <div class="sub-items">
+        <div class="nav-item">Purchase Dashboard</div><div class="nav-item">Purchase List</div>
+        <div class="nav-item">New Purchase</div><div class="nav-item">Purchase Receive</div>
+        <div class="nav-item">Supplier Ledger</div><div class="nav-item">Suppliers</div>
+        <div class="nav-item">Ask for Quotation</div>
+      </div>
+      <div class="nav-item" onclick="toggleSub(this)"><span class="ico">✔️</span> Task &amp; Follow-up <span class="chev">›</span></div>
+      <div class="sub-items">
+        <div class="nav-item">Task Board</div><div class="nav-item">Agent Cockpit</div>
+        <div class="nav-item">Follow-up Management</div><div class="nav-item">My Follow-ups</div>
+        <div class="nav-item">Follow-up Performance</div>
+      </div>
+      <div class="nav-item" onclick="toggleSub(this)"><span class="ico">🎧</span> Call Center <span class="chev">›</span></div>
+      <div class="sub-items">
+        <div class="nav-item">Dashboard</div><div class="nav-item">Reports</div><div class="nav-item">Contacts</div>
+      </div>
+
+      <div class="group-label">Workflow</div>
+      <div class="nav-item" onclick="toggleSub(this)"><span class="ico">📥</span> Work Inbox <span class="chev">›</span></div>
+      <div class="sub-items">
+        <div class="nav-item">My Work</div><div class="nav-item">Work Control</div><div class="nav-item">Settings</div>
+      </div>
+
+      <div class="group-label">Growth</div>
+      <div class="nav-item" onclick="toggleSub(this)"><span class="ico">📣</span> Ads <span class="chev">›</span></div>
+      <div class="sub-items">
+        <div class="nav-item">Ads Dashboard</div><div class="nav-item">Meta Ads</div>
+        <div class="nav-item">Record Ad Spend</div><div class="nav-item">Ad Profit Analysis</div>
+        <div class="nav-item">TikTok Ads</div><div class="nav-item">Google Ads</div>
+      </div>
+      <div class="nav-item" onclick="toggleSub(this)"><span class="ico">📢</span> Marketing <span class="chev">›</span></div>
+      <div class="sub-items">
+        <div class="nav-item">Automation</div><div class="nav-item">Email Marketing</div>
+        <div class="nav-item">SMS Marketing</div><div class="nav-item">Voice Marketing</div>
+        <div class="nav-item">Campaign List</div><div class="nav-item">Templates</div>
+      </div>
+      <div class="nav-item" onclick="toggleSub(this)"><span class="ico">👥</span> Customers <span class="chev">›</span></div>
+      <div class="sub-items">
+        <div class="nav-item">Customer List</div><div class="nav-item">Bulk Upload</div>
+      </div>
+
+      <div class="group-label">Business Control</div>
+      <div class="nav-item" onclick="toggleSub(this)"><span class="ico">🧑‍💼</span> HRM <span class="chev">›</span></div>
+      <div class="sub-items">
+        <div class="nav-item">HR Dashboard</div><div class="nav-item">Attendance</div>
+        <div class="nav-item">Attendance Report</div><div class="nav-item">Shift Management</div>
+        <div class="nav-item">Departments &amp; SOP</div><div class="nav-item">User &amp; Role</div>
+        <div class="nav-item">Settings</div>
+      </div>
+      <div class="nav-item" onclick="toggleSub(this)"><span class="ico">💰</span> Finance <span class="chev">›</span></div>
+      <div class="sub-items">
+        <div class="nav-item">Finance Dashboard</div><div class="nav-item">Accounts &amp; Bank</div>
+        <div class="nav-item">Income &amp; Expense</div><div class="nav-item">Courier Settlement</div>
+        <div class="nav-item">Cash Flow</div><div class="nav-item">Asset Management</div>
+      </div>
+      <div class="nav-item" onclick="toggleSub(this)"><span class="ico">📈</span> Reports <span class="chev">›</span></div>
+      <div class="sub-items">
+        <div class="nav-item">Profit &amp; Loss</div><div class="nav-item">Order Report</div>
+        <div class="nav-item">Courier Report</div><div class="nav-item">Product Report</div>
+        <div class="nav-item">Employee Report</div><div class="nav-item">Call Center Report</div>
+        <div class="nav-item">Customer Report</div><div class="nav-item">Business Reports</div>
+        <div class="nav-item">My Limits</div>
+      </div>
+
+      <div class="group-label">System</div>
+      <div class="nav-item" onclick="toggleSub(this)"><span class="ico">⚙️</span> Settings <span class="chev">›</span></div>
+      <div class="sub-items">
+        <div class="nav-item">Business Profile</div><div class="nav-item">Merchant Profile</div>
+        <div class="nav-item">Device Approvals</div><div class="nav-item">Website Integration</div>
+        <div class="nav-item">Courier Integration</div><div class="nav-item">App Integration</div>
+        <div class="nav-item">Messaging Channels</div><div class="nav-item">VoiceDrive PBX</div>
+        <div class="nav-item">Templates</div><div class="nav-item">Order Sources</div>
+        <div class="nav-item">Deletion Logs</div><div class="nav-item">Advanced Settings</div>
+      </div>
+      <div class="nav-item" onclick="toggleSub(this)"><span class="ico">🛟</span> Support <span class="chev">›</span></div>
+      <div class="sub-items">
+        <div class="nav-item">Help Center</div><div class="nav-item">Updates</div>
+        <div class="nav-item">My Bug Reports</div><div class="nav-item">My Feedback</div>
+        <div class="nav-item">System Status</div>
+      </div>
+    </nav>
+
+    <div class="side-footer"><span class="pro-pill">PRO</span><span>Expires 2027-12-31</span></div>
+  </aside>
+
+  <!-- ================= MAIN ================= -->
+  <div class="main" id="mainCol">
+    <header class="topbar">
+      <button class="icon-btn" onclick="collapseSidebar()" title="Collapse sidebar">☰</button>
+      <div class="top-search" onclick="openSearch()"><span>🔍</span> Quick Search <kbd>CTRL K</kbd></div>
+      <div class="spacer"></div>
+      <button class="icon-btn" title="Cart">🛒</button>
+      <button class="icon-btn" title="Language / Website">🌐</button>
+      <button class="icon-btn" title="Shortcuts">📋</button>
+      <button class="icon-btn" title="Messages">✉️</button>
+      <button class="bn-btn" onclick="toggleLang(this)">BN · ভাষা বদলান</button>
+      <button class="ask-btn" onclick="alert('Ask EcomDrive — AI Assistant (UI prototype)')">✦ Ask EcomDrive</button>
+      <button class="icon-btn" title="What's New">📣</button>
+      <button class="icon-btn" onclick="alert('Feedback and bug reports (UI prototype)')" title="Feedback and bug reports">💡</button>
+      <div class="bell-wrap"><button class="icon-btn" onclick="toggleNotif()" title="Notifications (Alt+T)">🔔</button><span class="bell-badge">11</span></div>
+      <button class="icon-btn" onclick="toggleTheme(this)" title="Theme">☀️</button>
+      <div class="avatar" title="Jodu doe — test@gmail.com">JD</div>
+    </header>
+
+    <!-- Notifications drawer -->
+    <div id="notifDrawer" style="display:none;position:fixed;top:62px;right:0;width:340px;max-height:80vh;overflow:auto;background:#fff;border-left:1px solid var(--card-border);box-shadow:-8px 0 24px rgba(0,0,0,.08);z-index:40;padding:16px;">
+      <h3 style="font-size:15px;margin-bottom:10px;">Notifications <span class="pill red">Urgent 2</span> <span class="pill amber">Warning 5</span> <span class="pill blue">Info 4</span></h3>
+      <div class="feed-item"><span class="feed-dot" style="background:#dc2626"></span><div><b>WooCommerce sync failed</b> ×3<br><span style="color:var(--muted);font-size:12px;">HTTP 401 — check connection credentials</span></div><span class="t">2h ago</span></div>
+      <div class="feed-item"><span class="feed-dot" style="background:#f59e0b"></span><div><b>Low Stock Products</b> ×18<br><span style="color:var(--muted);font-size:12px;">Stock below alert quantity</span></div><span class="t">5h ago</span></div>
+      <div class="feed-item"><span class="feed-dot" style="background:#f59e0b"></span><div><b>Shipped 15+ days</b> ×2<br><span style="color:var(--muted);font-size:12px;">Parcels not delivered yet</span></div><span class="t">1d ago</span></div>
+      <div class="feed-item"><span class="feed-dot"></span><div><b>View all notifications</b><br><span style="color:var(--muted);font-size:12px;">Open the full notification list</span></div></div>
+    </div>
+
+    <!-- Quick Search modal -->
+    <div id="searchModal" style="display:none;position:fixed;inset:0;background:rgba(20,10,30,.45);z-index:50;" onclick="if(event.target===this)closeSearch()">
+      <div style="background:#fff;border-radius:16px;max-width:560px;margin:90px auto;padding:18px;">
+        <input id="searchInput" placeholder="Search menus, orders, products…" style="width:100%;height:46px;border:1px solid var(--input-border);border-radius:8px;padding:0 14px;font-size:14px;outline:none;" oninput="filterSearch(this.value)">
+        <div id="searchResults" style="margin-top:12px;max-height:300px;overflow:auto;"></div>
+      </div>
+    </div>
+
+    <div class="content">
+      <div class="step-banner"><span>🧩</span><div><b>UI Prototype — Step 1 of 5:</b> App Shell + Dashboard (Command Center). UI only — no backend, all interactions run in the browser.</div>
+        <div class="step-dots"><i class="on"></i><i></i><i></i><i></i><i></i></div></div>
+
+      <div class="page-head">
+        <div><h1>Dashboard</h1><p>Command Center — ONLINE BUSINESS</p></div>
+        <div class="dhaka-clock"><div class="lbl">DHAKA TIME</div><div class="time" id="dhakaClock">--:--:--</div></div>
+      </div>
+
+      <div class="view-tabs" id="viewTabs">
+        <button class="active" data-view="my">My Dashboard</button>
+        <button data-view="decision">Decision</button>
+        <button data-view="operations">Operations</button>
+        <button data-view="products">Products</button>
+        <button data-view="marketing">Marketing</button>
+        <button data-view="customers">Customers &amp; Team</button>
+        <button data-view="activity">Activity</button>
+      </div>
+
+      <!-- ===== MY DASHBOARD ===== -->
+      <section class="view-panel active" id="panel-my">
+        <div class="kpi-grid">
+          <div class="card kpi"><div class="kpi-top"><span class="chip" style="background:var(--active-bg)">🧾</span><span class="lbl">Total Orders</span><span class="dots">⋯</span></div><div class="val">8</div><div class="sub">Counted on Approved date · <span class="up">+700%</span> vs prev 1</div></div>
+          <div class="card kpi"><div class="kpi-top"><span class="chip" style="background:var(--green-bg)">💵</span><span class="lbl">Revenue</span><span class="dots">⋯</span></div><div class="val">৳4,342</div><div class="sub">Any time · <span class="up">+985.5%</span> vs prev ৳400</div></div>
+          <div class="card kpi"><div class="kpi-top"><span class="chip" style="background:var(--mint-bg)">📈</span><span class="lbl">Profit</span><span class="dots">👁</span></div><div class="val">৳2,942</div><div class="sub">Estimated · delivery likelihood 77.8%</div></div>
+          <div class="card kpi"><div class="kpi-top"><span class="chip" style="background:var(--amber-bg)">⏳</span><span class="lbl">Pending Web Orders</span><span class="dots">⋯</span></div><div class="val">0</div><div class="sub">Free Web Orders counter · Processing 23 in queue</div></div>
+        </div>
+        <div class="grid-21">
+          <div class="card"><h3>Orders by Source</h3><div class="card-sub">Chart / Table toggle · grouped by Source</div>
+            <div class="bar-row"><span class="nm">Manual Website Source</span><span class="bar-track"><span class="bar-fill" style="width:100%"></span></span><span class="amt">8 · ৳4,342</span></div>
+            <div class="bar-row"><span class="nm">Facebook</span><span class="bar-track"><span class="bar-fill" style="width:0%"></span></span><span class="amt">0</span></div>
+            <div class="bar-row"><span class="nm">Instagram</span><span class="bar-track"><span class="bar-fill" style="width:0%"></span></span><span class="amt">0</span></div>
+            <div class="bar-row"><span class="nm">WhatsApp</span><span class="bar-track"><span class="bar-fill" style="width:0%"></span></span><span class="amt">0</span></div>
+          </div>
+          <div class="card"><h3>Order Delivery Calculator</h3><div class="card-sub">Delivery rate preview</div>
+            <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px;"><span>Delivered</span><b>16</b></div>
+            <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px;"><span>Returned</span><b>0</b></div>
+            <div style="display:flex;justify-content:space-between;font-size:13px;"><span>Delivery rate</span><b class="up">—</b></div>
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="card"><h3>Web Order Report</h3><div class="card-sub">Status counts — all web orders</div>
+            <table><tr><th>Status</th><th>Count</th><th></th></tr>
+            <tr><td><span class="pill lpurple">Processing</span></td><td>23</td><td></td></tr>
+            <tr><td><span class="pill amber">Incomplete</span></td><td>3</td><td></td></tr>
+            <tr><td><span class="pill blue">Good But No Response</span></td><td>1</td><td></td></tr>
+            <tr><td><span class="pill grey">No Response</span></td><td>0</td><td></td></tr>
+            <tr><td><span class="pill pink">Advance Payment</span></td><td>1</td><td></td></tr>
+            <tr><td><span class="pill green">Approved</span></td><td>40</td><td></td></tr>
+            <tr><td><span class="pill red">Cancel</span></td><td>3</td><td></td></tr></table>
+          </div>
+          <div class="card"><h3>Top Selling Products</h3><div class="card-sub">Today</div>
+            <table><tr><th>Product</th><th>Units</th><th>Revenue</th></tr>
+            <tr><td>Mentara Roll On Balm COMBO (6X)</td><td>6</td><td>৳3,594</td></tr>
+            <tr><td>Mentara Roll On Balm Single</td><td>2</td><td>৳748</td></tr></table>
+            <p class="empty-note" style="margin-top:12px;">Hourly Combined chart (Today vs Yesterday) and Earning Reports (load on demand, yearly) sit below in the original — included as part of this panel's scroll area in the full build.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== DECISION ===== -->
+      <section class="view-panel" id="panel-decision">
+        <div class="decision-box"><div style="font-size:12px;letter-spacing:.12em;opacity:.85;font-weight:700;">DECISION BOX</div><div class="big">No major rule breach</div><div style="opacity:.9;">Confidence 65% · All operational rules within limits today.</div></div>
+      </section>
+
+      <!-- ===== OPERATIONS ===== -->
+      <section class="view-panel" id="panel-operations">
+        <div class="stuck-grid">
+          <div class="stuck"><div class="n">0</div><div class="l">Web orders stuck</div></div>
+          <div class="stuck"><div class="n">0</div><div class="l">RTS not sent</div></div>
+          <div class="stuck"><div class="n">0</div><div class="l">Courier hold</div></div>
+          <div class="stuck"><div class="n">0</div><div class="l">Pending return</div></div>
+          <div class="stuck"><div class="n">0</div><div class="l">Shipped too long</div></div>
+          <div class="stuck"><div class="n">0</div><div class="l">Callback missed</div></div>
+          <div class="stuck"><div class="n">0</div><div class="l">Unassigned work</div></div>
+          <div class="stuck"><div class="n">0</div><div class="l">Chat follow-up</div></div>
+          <div class="stuck"><div class="n">0</div><div class="l">Warranty overdue</div></div>
+          <div class="stuck"><div class="n">0</div><div class="l">Courier issue</div></div>
+        </div>
+        <div class="card"><h3>Courier Table — Orders Not Sent To Courier</h3><div class="card-sub">8 orders · all assigned to M. Fahim · steadfast</div>
+          <table><tr><th>Invoice</th><th>Customer</th><th>Assigned To</th><th>Courier</th><th>Status</th></tr>
+          <tr><td>OB273</td><td>—</td><td>M. Fahim</td><td>steadfast</td><td><span class="pill amber">Pending</span></td></tr>
+          <tr><td>OB272</td><td>—</td><td>M. Fahim</td><td>steadfast</td><td><span class="pill amber">Pending</span></td></tr>
+          <tr><td>OB271</td><td>—</td><td>M. Fahim</td><td>steadfast</td><td><span class="pill amber">Pending</span></td></tr>
+          <tr><td>OB270</td><td>—</td><td>M. Fahim</td><td>steadfast</td><td><span class="pill amber">Pending</span></td></tr>
+          <tr><td>OB269</td><td>—</td><td>M. Fahim</td><td>steadfast</td><td><span class="pill amber">Pending</span></td></tr>
+          <tr><td>OB268</td><td>—</td><td>M. Fahim</td><td>steadfast</td><td><span class="pill amber">Pending</span></td></tr>
+          <tr><td>OB267</td><td>—</td><td>M. Fahim</td><td>steadfast</td><td><span class="pill amber">Pending</span></td></tr>
+          <tr><td>OB266</td><td>—</td><td>M. Fahim</td><td>steadfast</td><td><span class="pill amber">Pending</span></td></tr></table>
+        </div>
+      </section>
+
+      <!-- ===== PRODUCTS ===== -->
+      <section class="view-panel" id="panel-products">
+        <div class="grid-2">
+          <div class="card"><h3>Top Selling</h3><div class="card-sub">Units sold</div>
+            <div class="bar-row"><span class="nm">COMBO (6X)</span><span class="bar-track"><span class="bar-fill" style="width:100%"></span></span><span class="amt">6</span></div>
+            <div class="bar-row"><span class="nm">Single</span><span class="bar-track"><span class="bar-fill" style="width:33%"></span></span><span class="amt">2</span></div>
+          </div>
+          <div class="card"><h3>Low And Dead Stock</h3><div class="card-sub">Stock 150 · alert 0 · sold 0</div>
+            <table><tr><th>Product</th><th>Stock</th><th>Sold</th></tr>
+            <tr><td>Scissors</td><td>150</td><td>0</td></tr>
+            <tr><td>Fan</td><td>150</td><td>0</td></tr>
+            <tr><td>Faucet</td><td>150</td><td>0</td></tr>
+            <tr><td>Slicer</td><td>150</td><td>0</td></tr>
+            <tr><td>Storage boxes</td><td>150</td><td>0</td></tr></table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== MARKETING ===== -->
+      <section class="view-panel" id="panel-marketing">
+        <div class="grid-2">
+          <div class="card"><h3>Ad Spend Vs Profit</h3><div class="card-sub">Nov 10 · No campaign data</div>
+            <div style="display:flex;align-items:flex-end;gap:8px;height:120px;padding-top:10px;">
+              <div style="flex:1;background:var(--active-bg);height:18%;border-radius:6px 6px 0 0;"></div>
+              <div style="flex:1;background:var(--active-bg);height:26%;border-radius:6px 6px 0 0;"></div>
+              <div style="flex:1;background:linear-gradient(180deg,var(--gradient-end),var(--primary));height:64%;border-radius:6px 6px 0 0;"></div>
+              <div style="flex:1;background:var(--active-bg);height:30%;border-radius:6px 6px 0 0;"></div>
+              <div style="flex:1;background:var(--active-bg);height:14%;border-radius:6px 6px 0 0;"></div>
+            </div>
+            <p style="font-size:12.5px;color:var(--muted);">Ad Spend ৳0 · Revenue from ads ৳0 · True ROAS —</p>
+          </div>
+          <div class="card"><h3>Hourly Order Heatmap</h3><div class="card-sub">Tuesday · orders per hour</div>
+            <div class="heatmap">
+              <div>12a</div><div>1a</div><div>2a</div><div>3a</div><div>4a</div><div>5a</div>
+              <div>6a</div><div>7a</div><div class="h1">8a · 1</div><div class="h3">9a · 6</div><div>10a</div><div>11a</div>
+              <div class="h1">12p · 1</div><div>1p</div><div>2p</div><div>3p</div><div>4p</div><div>5p</div>
+              <div>6p</div><div>7p</div><div>8p</div><div>9p</div><div>10p</div><div>11p</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== CUSTOMERS & TEAM ===== -->
+      <section class="view-panel" id="panel-customers">
+        <div class="grid-2">
+          <div class="card"><h3>Agent Performance</h3><div class="card-sub">Ranked by assigned orders</div>
+            <table><tr><th>Rank</th><th>Agent</th><th>Assigned</th><th>Confirmed</th><th>Revenue</th></tr>
+            <tr><td>1</td><td>M. Fahim</td><td>8</td><td>0%</td><td>৳4,342</td></tr></table>
+          </div>
+          <div class="card"><h3>Customer Details</h3><div class="card-sub">Customer quality</div>
+            <div class="donut-wrap"><div class="donut"><i>6 seg</i></div>
+              <div class="legend">
+                <div><i style="background:var(--primary)"></i> Segment matches — 6</div>
+                <div><i style="background:#a855f7"></i> Repeat rate — 16.7%</div>
+                <div><i style="background:#e9d5ff"></i> District: Unknown — 8</div>
+              </div></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== ACTIVITY ===== -->
+      <section class="view-panel" id="panel-activity">
+        <div class="grid-21">
+          <div class="card"><h3>Live Activity Feed</h3><div class="card-sub">Latest events</div>
+            <div class="feed-item"><span class="feed-dot"></span><div>Order created via External API by test@gmail.com — <b>OB273</b></div><span class="t">Today</span></div>
+            <div class="feed-item"><span class="feed-dot"></span><div>Order created via External API by test@gmail.com — <b>OB272</b></div><span class="t">Today</span></div>
+            <div class="feed-item"><span class="feed-dot"></span><div>Order created via External API by test@gmail.com — <b>OB271</b></div><span class="t">Today</span></div>
+            <div class="feed-item"><span class="feed-dot"></span><div>Order created via External API by test@gmail.com — <b>OB270</b></div><span class="t">Today</span></div>
+            <div class="feed-item"><span class="feed-dot"></span><div>Order created via External API by test@gmail.com — <b>OB269</b></div><span class="t">Today</span></div>
+            <div class="feed-item"><span class="feed-dot"></span><div>Order created via External API by test@gmail.com — <b>OB268</b></div><span class="t">Today</span></div>
+            <div class="feed-item"><span class="feed-dot"></span><div>Order created via External API by test@gmail.com — <b>OB267</b></div><span class="t">Today</span></div>
+            <div class="feed-item"><span class="feed-dot"></span><div>Order created via External API by test@gmail.com — <b>OB266</b></div><span class="t">Today</span></div>
+          </div>
+          <div>
+            <div class="card" style="margin-bottom:16px;"><h3>Orders by Date Basis</h3><div class="card-sub">Total Orders 8 · <span class="up">+700%</span> (prev 1)</div><div style="font-size:20px;font-weight:800;">৳4,342</div><div class="sub" style="font-size:12px;color:var(--muted);">Total Sales · <span class="up">+985.5%</span> (prev ৳400)</div></div>
+            <div class="card" style="margin-bottom:16px;"><h3>Web Orders / Incomplete</h3><div class="card-sub">No web orders in this period</div></div>
+            <div class="card"><h3>Order Counts</h3><div class="card-sub">Created 8 · Sent to Courier 0</div>
+              <div class="bar-row"><span class="nm">Created</span><span class="bar-track"><span class="bar-fill" style="width:100%"></span></span><span class="amt">8</span></div>
+              <div class="bar-row"><span class="nm">Sent to Courier</span><span class="bar-track"><span class="bar-fill" style="width:0%"></span></span><span class="amt">0</span></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /layout -->
+<button class="team-chat" onclick="alert('Open Team Chat (UI prototype)')">💬 Open Team Chat</button>
+
+<script>
+  // Sidebar submenu expand/collapse
+  function toggleSub(el){
+    var sub = el.nextElementSibling;
+    var chev = el.querySelector('.chev');
+    if(sub && sub.classList.contains('sub-items')){
+      sub.classList.toggle('open');
+      if(chev) chev.textContent = sub.classList.contains('open') ? '⌄' : '›';
+    }
+  }
+  // Sidebar collapse to icon rail
+  var collapsed = false;
+  function collapseSidebar(){
+    var sb = document.querySelector('.sidebar');
+    var main = document.getElementById('mainCol');
+    collapsed = !collapsed;
+    sb.style.width = collapsed ? '74px' : '296px';
+    main.style.marginLeft = collapsed ? '74px' : '296px';
+    document.querySelectorAll('.sidebar .nav-item, .sidebar .group-label, .sidebar .ws-name, .sidebar .ws-sub, .sidebar .quicksearch, .sidebar .side-footer span:last-child').forEach(function(n){
+      n.style.display = collapsed ? 'none' : '';
+    });
+    document.querySelectorAll('.sidebar .nav-item .ico').forEach(function(n){ n.style.display=''; });
+  }
+  // Dashboard view tabs
+  document.getElementById('viewTabs').addEventListener('click', function(e){
+    if(e.target.tagName !== 'BUTTON') return;
+    this.querySelectorAll('button').forEach(function(b){ b.classList.remove('active'); });
+    e.target.classList.add('active');
+    var v = e.target.getAttribute('data-view');
+    document.querySelectorAll('.view-panel').forEach(function(p){ p.classList.remove('active'); });
+    document.getElementById('panel-' + v).classList.add('active');
+  });
+  // Notifications drawer
+  function toggleNotif(){
+    var d = document.getElementById('notifDrawer');
+    d.style.display = (d.style.display === 'none' || !d.style.display) ? 'block' : 'none';
+  }
+  document.addEventListener('keydown', function(e){
+    if(e.altKey && (e.key === 't' || e.key === 'T')){ e.preventDefault(); toggleNotif(); }
+    if((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')){ e.preventDefault(); openSearch(); }
+    if(e.key === 'Escape'){ closeSearch(); }
+  });
+  // Quick Search (Ctrl+K)
+  var menuNames = ['Dashboard','Search Orders','New Order','Web Order List','Auto Pick Orders','Auto Call Center','Order Block List','Order List','Orders Dashboard','Preorders','Super Edit','Scan To Update','Courier Invoice Upload','Courier Management','Inventory Dashboard','Products','Add Product','Stock Ledger','Branches','Warranty','Stock Transfer','Low Stock Alert','Inbox','Comments','Auto Replies','AI Reply','Messages Report','Purchase Dashboard','Purchase List','New Purchase','Purchase Receive','Supplier Ledger','Suppliers','Ask for Quotation','Task Board','Agent Cockpit','Follow-up Management','My Follow-ups','Follow-up Performance','Call Center Dashboard','Call Center Reports','Contacts','My Work','Work Control','Ads Dashboard','Meta Ads','Record Ad Spend','Ad Profit Analysis','TikTok Ads','Google Ads','Automation','Email Marketing','SMS Marketing','Voice Marketing','Campaign List','Templates','Customer List','Bulk Upload','HR Dashboard','Attendance','Attendance Report','Shift Management','Departments & SOP','User & Role','Finance Dashboard','Accounts & Bank','Income & Expense','Courier Settlement','Cash Flow','Asset Management','Profit & Loss','Order Report','Courier Report','Product Report','Employee Report','Call Center Report','Customer Report','Business Reports','My Limits','Business Profile','Merchant Profile','Device Approvals','Website Integration','Courier Integration','App Integration','Messaging Channels','VoiceDrive PBX','Order Sources','Deletion Logs','Advanced Settings','Help Center','Updates','My Bug Reports','My Feedback','System Status'];
+  function openSearch(){
+    document.getElementById('searchModal').style.display = 'block';
+    filterSearch('');
+    setTimeout(function(){ document.getElementById('searchInput').focus(); }, 50);
+  }
+  function closeSearch(){ document.getElementById('searchModal').style.display = 'none'; }
+  function filterSearch(q){
+    var box = document.getElementById('searchResults');
+    var list = menuNames.filter(function(n){ return n.toLowerCase().indexOf(q.toLowerCase()) !== -1; }).slice(0, 14);
+    box.innerHTML = list.length ? list.map(function(n){ return '<div class="nav-item" onclick="closeSearch()"><span class="ico">›</span> ' + n + '</div>'; }).join('') : '<p style="color:var(--muted);font-size:13px;padding:8px;">No results</p>';
+  }
+  // Theme toggle (visual only)
+  var dark = false;
+  function toggleTheme(btn){
+    dark = !dark;
+    btn.textContent = dark ? '🌙' : '☀️';
+    document.body.style.background = dark ? '#171021' : '';
+    document.querySelectorAll('.card,.topbar,.sidebar,.view-tabs,.stuck,.dhaka-clock').forEach(function(c){
+      c.style.background = dark ? '#241533' : '';
+      c.style.color = dark ? '#f3e8ff' : '';
+      c.style.borderColor = dark ? '#3b2354' : '';
+    });
+  }
+  // Language toggle (visual only)
+  var bn = false;
+  function toggleLang(btn){ bn = !bn; btn.textContent = bn ? 'EN · Switch language' : 'BN · ভাষা বদলান'; }
+  // Live Dhaka clock
+  function tickClock(){
+    try{
+      var t = new Date().toLocaleTimeString('en-GB', { timeZone: 'Asia/Dhaka', hour12: true });
+      document.getElementById('dhakaClock').textContent = t.toUpperCase();
+    }catch(e){}
+  }
+  tickClock(); setInterval(tickClock, 1000);
+</script>
+</body>
+</html>
