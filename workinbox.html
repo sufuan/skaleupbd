@@ -224,7 +224,7 @@
   .row-menu a.danger{color:var(--red-tx);}
   .modal-overlay{position:fixed;inset:0;background:rgba(17,24,39,.5);display:flex;align-items:center;justify-content:center;z-index:200;padding:18px;}
   .modal-box{background:#fff;border-radius:18px;padding:26px;width:100%;max-width:440px;max-height:88vh;overflow:auto;box-shadow:0 24px 60px rgba(30,10,50,.25);}
-  .switch{width:42px;height:23px;border-radius:99px;background:var(--toggle-off);border:none;cursor:pointer;position:relative;flex-shrink:0;}
+  .switch{width:42px;height:23px;border-radius:99px;background:var(--toggle-off);border:1px solid #c4bce0;cursor:pointer;position:relative;flex-shrink:0;}
   .switch::after{content:"";position:absolute;top:3px;left:3px;width:17px;height:17px;border-radius:50%;background:#fff;transition:left .15s;}
   .switch.on{background:var(--focus);}
   .switch.on::after{left:22px;}
@@ -345,18 +345,18 @@
       <div class="sub-items">
         <div class="nav-item" onclick="location.href='hrm.html#dash'">HR Dashboard</div><div class="nav-item" onclick="location.href='hrm.html#attendance'">Attendance</div>
         <div class="nav-item" onclick="location.href='hrm.html#attreport'">Attendance Report</div><div class="nav-item" onclick="location.href='hrm.html#shift'">Shift Management</div>
-        <div class="nav-item">Departments &amp; SOP</div><div class="nav-item">User &amp; Role</div>
+        <div class="nav-item" onclick="location.href='hrm.html#dept'">Departments &amp; SOP</div><div class="nav-item" onclick="location.href='hrm.html#userrole'">User &amp; Role</div>
         <div class="nav-item" onclick="location.href='hrm.html#settings'">Settings</div>
       </div>
       <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><rect x="2.5" y="6" width="19" height="13" rx="2.5"/><circle cx="12" cy="12.5" r="2.8"/><path d="M6 9.5h.01M18 15.5h.01"/></svg></span> Finance <span class="chev">›</span></div>
       <div class="sub-items">
-        <div class="nav-item" onclick="location.href='finance.html#dash'">Finance Dashboard</div><div class="nav-item">Accounts &amp; Bank</div>
-        <div class="nav-item">Income &amp; Expense</div><div class="nav-item" onclick="location.href='finance.html#settlement'">Courier Settlement</div>
+        <div class="nav-item" onclick="location.href='finance.html#dash'">Finance Dashboard</div><div class="nav-item" onclick="location.href='finance.html#accounts'">Accounts &amp; Bank</div>
+        <div class="nav-item" onclick="location.href='finance.html#ie'">Income &amp; Expense</div><div class="nav-item" onclick="location.href='finance.html#settlement'">Courier Settlement</div>
         <div class="nav-item" onclick="location.href='finance.html#cashflow'">Cash Flow</div><div class="nav-item" onclick="location.href='finance.html#assets'">Asset Management</div>
       </div>
       <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="15 7 21 7 21 13"/></svg></span> Reports <span class="chev">›</span></div>
       <div class="sub-items">
-        <div class="nav-item">Profit &amp; Loss</div><div class="nav-item" onclick="location.href='reports.html#order'">Order Report</div>
+        <div class="nav-item" onclick="location.href='reports.html#pl'">Profit &amp; Loss</div><div class="nav-item" onclick="location.href='reports.html#order'">Order Report</div>
         <div class="nav-item" onclick="location.href='reports.html#courier'">Courier Report</div><div class="nav-item" onclick="location.href='reports.html#product'">Product Report</div>
         <div class="nav-item" onclick="location.href='reports.html#employee'">Employee Report</div><div class="nav-item" onclick="location.href='reports.html#call'">Call Center Report</div>
         <div class="nav-item" onclick="location.href='reports.html#customer'">Customer Report</div><div class="nav-item" onclick="location.href='reports.html#business'">Business Reports</div>
