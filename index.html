@@ -324,6 +324,12 @@
   #page-approved-orders > .card{border-radius:8px;}
   /* Orders Report — soft gradient page head */
   #page-orders-dashboard{background:linear-gradient(180deg,rgba(244,234,247,.45),rgba(248,247,250,0) 220px);}
+
+  /* Auto Call — live uses a bordered segmented tab bar (accent border) and 20px card titles */
+  #page-auto-call .utabs.inner-tabs{display:inline-flex;background:#fff;border:1px solid #E8D8EF;border-radius:12px;padding:4px;gap:2px;}
+  #page-auto-call .utabs.inner-tabs button{border:none;border-bottom:none;padding:6px 12px;font-size:14px;font-weight:500;border-radius:6px;color:#64748B;background:transparent;}
+  #page-auto-call .utabs.inner-tabs button.active{background:#F4EDF7;color:#411550;}
+  #page-auto-call h3{font-size:20px;font-weight:600;}
 </style>
 </head>
 <body>
@@ -918,6 +924,7 @@
       </section>
 
             <section class="page-panel" id="page-auto-call">
+        <h2 style="font-size:20px;font-weight:600;margin-bottom:14px;">Auto Call Center</h2>
         <div class="utabs inner-tabs" data-tabs="ac" style="margin-bottom:16px;">
           <button class="active" data-t="ac-main">Auto Call Center</button><button data-t="ac-broadcast">Broadcast</button><button data-t="ac-leads">Leads</button><button data-t="ac-myleads">My Leads</button><button data-t="ac-report">Auto Call Report</button><button data-t="ac-rules">Rules</button><button data-t="ac-setup">Integration Setup</button>
         </div>
@@ -1146,13 +1153,13 @@
       </section>
 
       <section class="page-panel" id="page-scan-update">
-        <div class="page-head"><div><h1>Scan To Update</h1><p>Scan a parcel barcode or use the phone camera to update status in bulk</p></div></div>
-        <div class="utabs inner-tabs"><button class="active">Shipping</button><button>Return</button><button>RTS</button></div>
+        <div class="page-head"><div><h1 style="font-size:24px;font-weight:700;color:#411550;">Logistics Scanner Console</h1><p>Scan order barcodes or invoices to perform high-speed state updates</p></div><span style="margin-left:auto;display:flex;gap:8px;"><button class="ctl-btn">Guide</button><button class="ctl-btn">History</button></span></div>
+        <div class="utabs inner-tabs"><button class="active">Scan To Shipping</button><button>Scan To Return</button><button>Scan To RTS</button></div>
         <div class="card">
           <input class="fld" style="font-size:16px;padding:14px;" placeholder="Scan or type tracking ID, then press Enter" onkeydown="if(event.key==='Enter'){scanAdd(this);}">
           <div style="display:flex;gap:16px;margin-top:16px;flex-wrap:wrap;">
             <span class="sum-chip">Session scanned: <b id="scanCount">0</b></span>
-            <span class="sum-chip">Mode: <b>Shipping</b></span>
+            <span class="sum-chip">Mode: <b>Scan To Shipping</b></span>
             <span class="sum-chip">Updated to: <b>Shipped</b></span>
           </div>
           <table style="margin-top:14px;"><tr><th>Tracking ID</th><th>Invoice</th><th>Result</th><th>Time</th></tr><tbody id="scanList"><tr><td colspan="4" class="muted-sm">Nothing scanned yet in this session.</td></tr></tbody></table>
@@ -1160,20 +1167,44 @@
       </section>
 
       <section class="page-panel" id="page-courier-invoice">
-        <div class="page-head"><div><h1>Courier Invoice Upload</h1><p>Upload the courier's invoice file to reconcile delivery charges and COD</p></div></div>
+        <div class="page-head"><div><h1 style="font-size:24px;font-weight:700;">Update Courier Payment</h1></div></div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
+          <span class="seg"><button class="on">Manual Entry</button><button>Invoice History</button></span>
+          <span class="muted-sm" style="margin-left:auto;">Invalid entry? <a href="#" onclick="toast('Fix guide (UI prototype)');return false;" style="color:var(--primary);font-weight:600;">Invalid ফিক্স গাইড</a></span>
+        </div>
+        <div class="card" style="margin-bottom:16px;">
+          <h3 style="font-size:20px;font-weight:600;margin-bottom:14px;">Search &amp; Add Orders</h3>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;">
+            <label class="fld-l">Invoice Number<span style="display:flex;gap:8px;"><input class="fld" placeholder="e.g. OB265"><button class="btn-primary" style="white-space:nowrap;" onclick="toast('Order added (UI prototype)')">Search &amp; Add</button></span></label>
+            <label class="fld-l">COD Charge (%)<input class="fld" type="number" value="1"></label>
+            <label class="fld-l">Deposit Account (Optional)<select class="fld"><option>No account selected</option><option>Main Cash</option><option>bKash Merchant</option></select></label>
+          </div>
+          <p class="muted-sm" style="margin-top:10px;">If an account is selected, this save's settlement is deposited to that account automatically.</p>
+        </div>
         <div class="card">
-          <div class="dashed-empty" style="padding:44px 16px;"><b style="color:var(--text);font-size:15px;">Drop the courier invoice file here</b><br>CSV or Excel from Pathao, Steadfast, RedX, Carrybee, Paperfly or eCourier<br><br><button class="btn-primary" onclick="toast('File picker (UI prototype)')">Browse File</button></div>
-          <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;"><select class="fld" style="max-width:200px;"><option>Steadfast</option><option>Pathao</option><option>RedX</option><option>Carrybee</option><option>Paperfly</option><option>eCourier</option></select><button class="ctl-btn" onclick="toast('Column mapping (UI prototype)')">Map Columns</button><span class="muted-sm" style="align-self:center;">Uploaded invoices feed Courier Settlement reconciliation.</span></div>
+          <h3 style="font-size:16px;font-weight:600;margin-bottom:12px;">Added Orders</h3>
+          <table><tr><th>Invoice</th><th>Customer</th><th>COD Collected</th><th>Delivery Charge</th><th>Total</th><th></th></tr>
+          <tr><td colspan="6" class="muted-sm" style="text-align:center;padding:22px;">No orders added yet. Search an invoice number above to add it.</td></tr></table>
+          <div style="display:flex;justify-content:flex-end;margin-top:16px;"><button class="btn-primary" onclick="toast('Settlement saved (UI prototype)')">Save Settlement</button></div>
         </div>
       </section>
 
       <section class="page-panel" id="page-courier-mgmt">
-        <div class="page-head"><div><h1>Courier Management</h1><p>Every parcel, return and courier permission in one place</p></div>
-        <span style="margin-left:auto;"><button class="ctl-btn" onclick="showPage('page-delivery-methods')">Delivery Methods</button></span></div>
+        
+        
         <div class="utabs inner-tabs" data-tabs="cm"><button class="active" data-t="cm-parcels">All Parcels</button><button data-t="cm-returns">Return Management</button><button data-t="cm-analysis">Return Analysis</button><button data-t="cm-entry">Courier Entry</button><button data-t="cm-settings">Courier Settings</button></div>
+        <div class="page-head"><div><h1 style="font-size:24px;font-weight:700;">Courier Management</h1><p>Track and manage parcels in transit, returns, and cancellations</p></div>
+        <span style="margin-left:auto;"><button class="ctl-btn" onclick="showPage('page-delivery-methods')">Delivery Methods</button></span></div>
         <div id="cm-parcels" class="inner-pane">
           <div class="card">
-            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;"><select class="fld" style="max-width:230px;"><option>In Transit (76)</option><option>Assigned for Delivery</option><option>Cancelled</option><option>Pending Entry</option><option>Return Pending</option><option>Returned</option><option>Damage and Lost</option></select><span class="muted-sm" style="align-self:center;">A parcel-status filter is required before the list loads.</span></div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;"><span style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn-primary" style="border-radius:99px;padding:7px 14px;font-size:13.5px;">In Transit <b>76</b></button>
+            <button class="ctl-btn" style="border-radius:99px;padding:7px 14px;">Assigned for Delivery</button>
+            <button class="ctl-btn" style="border-radius:99px;padding:7px 14px;">Cancelled</button>
+            <button class="ctl-btn" style="border-radius:99px;padding:7px 14px;">Pending Entry</button>
+            <button class="ctl-btn" style="border-radius:99px;padding:7px 14px;">Return Pending</button>
+            <button class="ctl-btn" style="border-radius:99px;padding:7px 14px;">Returned</button>
+            <button class="ctl-btn" style="border-radius:99px;padding:7px 14px;">Damage &amp; Lost</button></span><span class="muted-sm" style="align-self:center;">A parcel-status filter is required before the list loads.</span></div>
             <table><tr><th>Tracking</th><th>Invoice</th><th>Customer</th><th>Courier</th><th>Day</th><th>Customer Call Slot</th><th>Status</th></tr>
             <tr><td>SF-88231</td><td>OB252</td><td>Nusrat Jahan</td><td>Steadfast</td><td><span class="pill blue">Day 1</span></td><td><span class="pill grey">10 AM</span> <span class="pill grey">1 PM</span> <span class="pill grey">4 PM</span> <span class="pill grey">7 PM</span></td><td><span class="pill lpurple">In Transit</span></td></tr>
             <tr><td>PA-55210</td><td>OB249</td><td>Arif Chowdhury</td><td>Pathao</td><td><span class="pill blue">Day 2</span></td><td><span class="pill grey">10 AM</span> <span class="pill grey">1 PM</span> <span class="pill grey">4 PM</span> <span class="pill grey">7 PM</span></td><td><span class="pill lpurple">In Transit</span></td></tr>
