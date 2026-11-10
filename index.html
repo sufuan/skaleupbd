@@ -137,6 +137,26 @@
   .legend i{width:11px;height:11px;border-radius:3px;display:block;}
   .team-chat{position:fixed;right:22px;bottom:22px;background:var(--primary);color:#fff;border:none;border-radius:999px;padding:12px 20px;font-weight:600;font-size:13.5px;cursor:pointer;box-shadow:0 8px 24px rgba(74,26,94,.35);z-index:30;}
   .empty-note{font-size:12.5px;color:var(--muted);background:var(--grey-bg);border-radius:8px;padding:10px 12px;}
+  /* verification-fix additions (matched to live my_setup, 2026-11-10) */
+  .utabs{display:flex;gap:22px;border-bottom:1px solid var(--card-border);margin-bottom:18px;flex-wrap:wrap;}
+  .utabs button{border:none;background:transparent;padding:10px 2px;font-size:14px;font-weight:600;color:var(--grey-tx);cursor:pointer;border-bottom:2.5px solid transparent;margin-bottom:-1px;}
+  .utabs button.active{color:var(--primary);border-bottom-color:var(--primary);}
+  .head-row{display:flex;align-items:center;gap:10px;margin-left:auto;}
+  .ctl-btn{background:#fff;border:1px solid var(--card-border);border-radius:8px;padding:7px 12px;font-size:12.5px;font-weight:600;color:var(--grey-tx);cursor:pointer;display:inline-flex;align-items:center;gap:6px;}
+  .ctl-btn:hover{background:var(--active-bg);}
+  .kpi .val{text-decoration:underline dotted;text-underline-offset:4px;cursor:pointer;}
+  .kpi-controls{display:flex;gap:6px;margin-left:auto;}
+  .donut-blue{width:150px;height:150px;border-radius:50%;background:conic-gradient(#4f46e5 0 100%);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .donut-blue i{width:104px;height:104px;background:#fff;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;font-style:normal;text-align:center;padding:6px;}
+  .seg{display:inline-flex;background:var(--grey-bg);border-radius:8px;padding:3px;gap:2px;}
+  .seg button{border:none;background:transparent;padding:5px 11px;border-radius:6px;font-size:12px;font-weight:600;color:var(--grey-tx);cursor:pointer;}
+  .seg button.on{background:var(--active-bg);color:var(--primary);}
+  .dashed-empty{border:1.5px dashed var(--input-border);border-radius:10px;padding:26px 16px;text-align:center;color:var(--muted);}
+  .qlink{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:500;color:var(--grey-tx);cursor:pointer;padding:7px 9px;border-radius:8px;white-space:nowrap;}
+  .qlink:hover{background:var(--active-bg);}
+  .dropdown{position:absolute;background:#fff;border:1px solid var(--card-border);border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.12);padding:6px;z-index:60;min-width:210px;}
+  .dropdown div{padding:8px 10px;border-radius:6px;font-size:13px;cursor:pointer;}
+  .dropdown div:hover{background:var(--active-bg);}
   @media (max-width:1100px){.kpi-grid{grid-template-columns:repeat(2,1fr);}.stuck-grid{grid-template-columns:repeat(3,1fr);}.grid-2,.grid-21{grid-template-columns:1fr;}}
 </style>
 </head>
@@ -154,7 +174,7 @@
 
     <nav class="side-nav">
       <div class="nav-item active"><span class="ico">📊</span> Dashboard</div>
-      <div class="nav-item"><span class="ico">🔎</span> Search Orders</div>
+      <div class="nav-item"><span class="ico">🔎</span> Search</div>
 
       <div class="group-label">Operations</div>
       <div class="nav-item" onclick="toggleSub(this)"><span class="ico">🌐</span> Web Orders <span class="chev">›</span></div>
@@ -201,7 +221,6 @@
         <div class="nav-item">Dashboard</div><div class="nav-item">Reports</div><div class="nav-item">Contacts</div>
       </div>
 
-      <div class="group-label">Workflow</div>
       <div class="nav-item" onclick="toggleSub(this)"><span class="ico">📥</span> Work Inbox <span class="chev">›</span></div>
       <div class="sub-items">
         <div class="nav-item">My Work</div><div class="nav-item">Work Control</div><div class="nav-item">Settings</div>
@@ -273,12 +292,12 @@
   <div class="main" id="mainCol">
     <header class="topbar">
       <button class="icon-btn" onclick="collapseSidebar()" title="Collapse sidebar">☰</button>
-      <div class="top-search" onclick="openSearch()"><span>🔍</span> Quick Search <kbd>CTRL K</kbd></div>
+      <span class="qlink" onclick="openSearch()">🔍 Search</span>
+      <span class="qlink">🛒 New Order</span>
+      <span class="qlink">🌐 Web Order List</span>
+      <span class="qlink">📋 Order List</span>
+      <span class="qlink" onclick="alert('Send Message (UI prototype)')">✉️ Send Message</span>
       <div class="spacer"></div>
-      <button class="icon-btn" title="Cart">🛒</button>
-      <button class="icon-btn" title="Language / Website">🌐</button>
-      <button class="icon-btn" title="Shortcuts">📋</button>
-      <button class="icon-btn" title="Messages">✉️</button>
       <button class="bn-btn" onclick="toggleLang(this)">BN · ভাষা বদলান</button>
       <button class="ask-btn" onclick="alert('Ask EcomDrive — AI Assistant (UI prototype)')">✦ Ask EcomDrive</button>
       <button class="icon-btn" title="What's New">📣</button>
@@ -309,58 +328,147 @@
       <div class="step-banner"><span>🧩</span><div><b>UI Prototype — Step 1 of 5:</b> App Shell + Dashboard (Command Center). UI only — no backend, all interactions run in the browser.</div>
         <div class="step-dots"><i class="on"></i><i></i><i></i><i></i><i></i></div></div>
 
-      <div class="page-head">
-        <div><h1>Dashboard</h1><p>Command Center — ONLINE BUSINESS</p></div>
-        <div class="dhaka-clock"><div class="lbl">DHAKA TIME</div><div class="time" id="dhakaClock">--:--:--</div></div>
-      </div>
-
-      <div class="view-tabs" id="viewTabs">
-        <button class="active" data-view="my">My Dashboard</button>
-        <button data-view="decision">Decision</button>
-        <button data-view="operations">Operations</button>
-        <button data-view="products">Products</button>
-        <button data-view="marketing">Marketing</button>
-        <button data-view="customers">Customers &amp; Team</button>
-        <button data-view="activity">Activity</button>
+      <div style="display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap;">
+        <div class="utabs" id="viewTabs" style="flex:1;min-width:420px;">
+          <button class="active" data-view="my">My Dashboard</button>
+          <button data-view="overview">Overview</button>
+          <button data-view="decision">Decision</button>
+          <button data-view="operations">Operations</button>
+          <button data-view="products">Products</button>
+          <button data-view="marketing">Marketing</button>
+          <button data-view="customers">Customers &amp; Team</button>
+          <button data-view="activity">Activity</button>
+        </div>
+        <div class="head-row" style="margin-bottom:18px;">
+          <div style="text-align:right;"><div style="font-size:10px;letter-spacing:.14em;color:var(--muted2);font-weight:700;">DHAKA TIME</div><div id="dhakaClock" style="font-size:14px;font-weight:700;color:var(--primary);">--:--:--</div></div>
+          <button class="ctl-btn" title="Previous day">‹</button>
+          <button class="ctl-btn" onclick="alert('Date picker — Quick: Today / Yesterday / Last 7 days / Last 30 days · Extended: This month / Last month / This year / Last year / Lifetime · Custom: Select a date / Custom range')">📅 Today</button>
+          <button class="ctl-btn" onclick="location.reload()" title="Refresh">↻ Refresh</button>
+          <div style="position:relative;">
+            <button class="ctl-btn" onclick="toggleActions(event)">⋮</button>
+            <div id="actionsMenu" class="dropdown" style="display:none;right:0;top:38px;">
+              <div onclick="alert('Add widgets (UI prototype)')">Add widgets</div>
+              <div onclick="alert('Edit layout (UI prototype)')">Edit layout</div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- ===== MY DASHBOARD ===== -->
       <section class="view-panel active" id="panel-my">
         <div class="kpi-grid">
-          <div class="card kpi"><div class="kpi-top"><span class="chip" style="background:var(--active-bg)">🧾</span><span class="lbl">Total Orders</span><span class="dots">⋯</span></div><div class="val">8</div><div class="sub">Counted on Approved date · <span class="up">+700%</span> vs prev 1</div></div>
-          <div class="card kpi"><div class="kpi-top"><span class="chip" style="background:var(--green-bg)">💵</span><span class="lbl">Revenue</span><span class="dots">⋯</span></div><div class="val">৳4,342</div><div class="sub">Any time · <span class="up">+985.5%</span> vs prev ৳400</div></div>
-          <div class="card kpi"><div class="kpi-top"><span class="chip" style="background:var(--mint-bg)">📈</span><span class="lbl">Profit</span><span class="dots">👁</span></div><div class="val">৳2,942</div><div class="sub">Estimated · delivery likelihood 77.8%</div></div>
-          <div class="card kpi"><div class="kpi-top"><span class="chip" style="background:var(--amber-bg)">⏳</span><span class="lbl">Pending Web Orders</span><span class="dots">⋯</span></div><div class="val">0</div><div class="sub">Free Web Orders counter · Processing 23 in queue</div></div>
+          <div class="card kpi"><div class="kpi-top"><span class="lbl" style="font-size:14px;font-weight:600;color:var(--text);">Total Orders</span><span class="kpi-controls"><button class="ctl-btn" onclick="funnelMenu(event)">⧩ Counted on Approved date</button><button class="ctl-btn">Today</button></span></div><div class="val">8</div><div class="sub"><span class="up">↗ 700.0%</span> &nbsp;Previous 1</div></div>
+          <div class="card kpi"><div class="kpi-top"><span class="lbl" style="font-size:14px;font-weight:600;color:var(--text);">Revenue</span><span class="kpi-controls"><button class="ctl-btn" onclick="funnelMenu(event)">⧩ Counted on Approved date</button><button class="ctl-btn">Today</button></span></div><div class="val">৳4,342</div><div class="sub"><span class="up">↗ 985.5%</span> &nbsp;Previous ৳400</div></div>
+          <div class="card kpi"><div class="kpi-top"><span class="lbl" style="font-size:14px;font-weight:600;color:var(--text);">Profit</span><span class="kpi-controls"><button class="ctl-btn" onclick="funnelMenu(event)">⧩ Counted on Approved date</button><button class="ctl-btn">Today</button></span></div><div class="val">৳2,942</div><div class="sub"><span class="up">↗ 2263.8%</span> &nbsp;Previous ৳124</div></div>
+          <div class="card kpi"><div class="kpi-top"><span class="lbl" style="font-size:14px;font-weight:600;color:var(--text);">Pending Web Orders</span><span class="kpi-controls"><button class="ctl-btn">Today</button></span></div><div class="val">0</div><div class="sub">&nbsp;</div></div>
         </div>
-        <div class="grid-21">
-          <div class="card"><h3>Orders by Source</h3><div class="card-sub">Chart / Table toggle · grouped by Source</div>
-            <div class="bar-row"><span class="nm">Manual Website Source</span><span class="bar-track"><span class="bar-fill" style="width:100%"></span></span><span class="amt">8 · ৳4,342</span></div>
-            <div class="bar-row"><span class="nm">Facebook</span><span class="bar-track"><span class="bar-fill" style="width:0%"></span></span><span class="amt">0</span></div>
-            <div class="bar-row"><span class="nm">Instagram</span><span class="bar-track"><span class="bar-fill" style="width:0%"></span></span><span class="amt">0</span></div>
-            <div class="bar-row"><span class="nm">WhatsApp</span><span class="bar-track"><span class="bar-fill" style="width:0%"></span></span><span class="amt">0</span></div>
+        <div style="display:grid;grid-template-columns:55fr 45fr;gap:16px;margin-bottom:18px;">
+          <div class="card"><div style="display:flex;align-items:center;"><h3>Web Order Report</h3><span style="margin-left:auto;"><button class="ctl-btn">Today</button></span></div>
+            <div style="display:flex;align-items:center;gap:6px;margin:10px 0;">
+              <button class="ctl-btn" title="Scroll tabs left">‹</button>
+              <div class="utabs" style="border-bottom:none;margin:0;">
+                <button class="active" onclick="worTab(this,'web')">Web Orders</button>
+                <button onclick="worTab(this,'inc')">Incomplete Orders</button>
+              </div>
+              <button class="ctl-btn" title="Scroll tabs right">›</button>
+            </div>
+            <div class="dashed-empty" id="worEmpty"><div style="font-size:26px;">🗂️</div><b style="color:var(--text);">No web orders in this period</b><br>The selected date range has no web orders to chart.</div>
           </div>
-          <div class="card"><h3>Order Delivery Calculator</h3><div class="card-sub">Delivery rate preview</div>
-            <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px;"><span>Delivered</span><b>16</b></div>
-            <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px;"><span>Returned</span><b>0</b></div>
-            <div style="display:flex;justify-content:space-between;font-size:13px;"><span>Delivery rate</span><b class="up">—</b></div>
+          <div class="card"><div style="display:flex;align-items:center;flex-wrap:wrap;gap:8px;"><h3>Orders by Source</h3></div>
+            <div style="display:flex;align-items:center;gap:10px;margin:10px 0;flex-wrap:wrap;">
+              <span style="font-size:11px;letter-spacing:.1em;color:var(--muted2);font-weight:700;">VIEW</span>
+              <span class="seg"><button class="on" onclick="segOn(this)">Group by source</button><button onclick="segOn(this)">Group by channel</button></span>
+              <span class="seg"><button class="on" onclick="segOn(this);sourceView('chart')">Chart view</button><button onclick="segOn(this);sourceView('table')">Table view</button></span>
+              <button class="ctl-btn" onclick="funnelMenu(event)">⧩ Counted on Approved date</button>
+              <button class="ctl-btn">Today</button>
+            </div>
+            <div id="sourceChart" style="display:flex;align-items:center;gap:20px;">
+              <div class="donut-blue"><i><b style="font-size:13px;">Total Orders: 8</b><span style="font-size:12px;color:var(--muted);">Total Value: ৳4,342</span></i></div>
+              <div style="font-size:13.5px;"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#4f46e5;margin-right:7px;"></span>Manual Website Source (8)<br><span style="color:var(--muted);margin-left:17px;">৳4,342</span></div>
+            </div>
+            <div id="sourceTable" style="display:none;">
+              <table><tr><th>Source</th><th>Orders</th><th>Value</th></tr><tr><td>Manual Website Source</td><td>8</td><td>৳4,342</td></tr></table>
+            </div>
           </div>
+        </div>
+        <div style="display:grid;grid-template-columns:55fr 45fr;gap:16px;margin-bottom:18px;">
+          <div class="card"><div style="display:flex;align-items:flex-start;flex-wrap:wrap;gap:8px;"><div><h3>Order Counts</h3><div class="card-sub" style="margin:2px 0 0;">Orders created vs sent to courier in the selected range</div></div>
+            <span style="margin-left:auto;"><select class="ctl-btn"><option>Last 30 days</option><option>Last 7 days</option><option>Today</option></select></span></div>
+            <div style="display:flex;gap:10px;margin:12px 0;">
+              <button class="ctl-btn" style="background:var(--active-bg);border-color:var(--active-bg);"><span style="width:10px;height:10px;background:#2563eb;border-radius:2px;display:inline-block;"></span> Created <b>15</b></button>
+              <button class="ctl-btn"><span style="width:10px;height:10px;background:#bbf7d0;border-radius:2px;display:inline-block;"></span> Sent to Courier <b>0</b></button>
+            </div>
+            <div style="display:flex;align-items:flex-end;gap:5px;height:110px;border-bottom:1px solid var(--card-border);">
+              <div style="flex:1;"></div><div style="flex:1;"></div><div style="flex:1;"></div><div style="flex:1;"></div><div style="flex:1;"></div><div style="flex:1;"></div>
+              <div title="Oct 25 · 1" style="flex:1;background:#2563eb;height:14%;border-radius:3px 3px 0 0;"></div><div style="flex:1;"></div>
+              <div title="Oct 28 · 1" style="flex:1;background:#2563eb;height:14%;border-radius:3px 3px 0 0;"></div><div style="flex:1;"></div><div style="flex:1;"></div>
+              <div title="Nov 7 · 4" style="flex:1;background:#2563eb;height:52%;border-radius:3px 3px 0 0;"></div>
+              <div title="Nov 8 · 1" style="flex:1;background:#2563eb;height:14%;border-radius:3px 3px 0 0;"></div>
+              <div title="Nov 9 · 1" style="flex:1;background:#2563eb;height:14%;border-radius:3px 3px 0 0;"></div>
+              <div title="Nov 10 · 8" style="flex:1;background:#2563eb;height:100%;border-radius:3px 3px 0 0;"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:10.5px;color:var(--muted2);margin-top:5px;"><span>Oct 13</span><span>Oct 19</span><span>Oct 25</span><span>Oct 31</span><span>Nov 6</span><span>Nov 10</span></div>
+          </div>
+          <div>
+            <div class="card" style="margin-bottom:16px;"><div style="display:flex;align-items:center;"><h3>Earning Reports</h3><span style="margin-left:auto;display:flex;gap:6px;"><button class="ctl-btn" onclick="funnelMenu(event)">⧩ Counted on Approved date</button><button class="ctl-btn">Year</button></span></div>
+              <div class="dashed-empty" id="earnBox" style="margin-top:12px;">This report is loaded only when you ask for it. Pick a date range above, then load it.<br><br><button class="ctl-btn" style="background:var(--primary);color:#fff;border-color:var(--primary);padding:9px 16px;" onclick="loadEarnings()">Load Earning Reports</button></div>
+            </div>
+            <div class="card"><div style="display:flex;align-items:center;flex-wrap:wrap;gap:8px;"><h3>Hourly Combined</h3><button class="ctl-btn" style="margin-left:auto;" onclick="alert('Select Date (UI prototype)')">⋯</button></div>
+              <div class="card-sub" style="margin:2px 0 10px;">2026-11-10 vs 2026-11-09 (Until 16:00)</div>
+              <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                <span class="seg"><button class="on" onclick="segOn(this)">Combined</button><button onclick="segOn(this)">Web Orders</button><button onclick="segOn(this)">Incomplete Orders</button></span>
+                <span class="seg"><button class="on" style="background:var(--primary);color:#fff;" onclick="segOn(this)">Today</button><button onclick="segOn(this)">Yesterday</button></span>
+              </div>
+              <svg viewBox="0 0 300 70" style="width:100%;margin-top:12px;"><line x1="0" y1="58" x2="300" y2="58" stroke="#16a34a" stroke-width="2.5"/><line x1="0" y1="58" x2="300" y2="58" stroke="#e5e7eb" stroke-width="1" stroke-dasharray="3 4"/></svg>
+              <div style="display:flex;justify-content:space-between;font-size:10.5px;color:var(--muted2);"><span>12 AM</span><span>4 AM</span><span>8 AM</span><span>12 PM</span><span>4 PM</span><span>8 PM</span><span>11 PM</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="card"><div style="display:flex;align-items:center;gap:8px;"><h3>Top Selling Products</h3><span class="pill grey">Top 2</span><span style="margin-left:auto;display:flex;gap:6px;"><button class="ctl-btn" onclick="funnelMenu(event)">⧩ Counted on Approved date</button><button class="ctl-btn">Today</button></span></div>
+          <div style="margin-top:14px;">
+            <div style="display:flex;align-items:center;gap:12px;">
+              <span style="width:26px;height:26px;border-radius:50%;background:var(--grey-bg);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12.5px;">1</span>
+              <span style="width:40px;height:40px;border-radius:8px;background:var(--active-bg);display:flex;align-items:center;justify-content:center;">🧴</span>
+              <span><b>Mentara Roll On Balm COMBO</b><br><span style="font-size:12px;color:var(--muted);">SKU MENT-COMBO - Return 0.0%</span></span>
+              <span class="pill" style="margin-left:auto;background:#2563eb;color:#fff;">6</span>
+            </div>
+            <div style="height:6px;background:#dbeafe;border-radius:99px;margin:8px 0 16px 38px;"><div style="width:100%;height:100%;background:#2563eb;border-radius:99px;"></div></div>
+            <div style="display:flex;align-items:center;gap:12px;">
+              <span style="width:26px;height:26px;border-radius:50%;background:var(--grey-bg);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12.5px;">2</span>
+              <span style="width:40px;height:40px;border-radius:8px;background:var(--active-bg);display:flex;align-items:center;justify-content:center;">🧴</span>
+              <span><b>Mentara Roll On Balm Single</b><br><span style="font-size:12px;color:var(--muted);">SKU MNT-SINGLE - Return 0.0%</span></span>
+              <span class="pill" style="margin-left:auto;background:#2563eb;color:#fff;">2</span>
+            </div>
+            <div style="height:6px;background:#dbeafe;border-radius:99px;margin:8px 0 0 38px;"><div style="width:33%;height:100%;background:#2563eb;border-radius:99px;"></div></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== OVERVIEW ===== -->
+      <section class="view-panel" id="panel-overview">
+        <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr);">
+          <div class="card kpi"><div class="lbl">Orders Received</div><div class="val">71</div><div class="sub">Web orders, all statuses</div></div>
+          <div class="card kpi"><div class="lbl">Total Orders</div><div class="val">8</div><div class="sub"><span class="up">↗ 700.0%</span> Previous 1</div></div>
+          <div class="card kpi"><div class="lbl">Confirmed</div><div class="val">8</div><div class="sub">Approved from web + outside web</div></div>
+          <div class="card kpi"><div class="lbl">Shipped</div><div class="val">5</div><div class="sub">Of 65 website orders</div></div>
+          <div class="card kpi"><div class="lbl">Delivered</div><div class="val">16</div><div class="sub">Website filter view</div></div>
+          <div class="card kpi"><div class="lbl">Cancelled</div><div class="val">41</div><div class="sub">Approved list total</div></div>
+          <div class="card kpi"><div class="lbl">Return</div><div class="val">7</div><div class="sub">Returned orders</div></div>
+          <div class="card kpi"><div class="lbl">Revenue</div><div class="val">৳4,342</div><div class="sub"><span class="up">↗ 985.5%</span> Previous ৳400</div></div>
+          <div class="card kpi"><div class="lbl">Profit</div><div class="val">৳2,942</div><div class="sub">Estimated</div></div>
+          <div class="card kpi"><div class="lbl">Ad Spend</div><div class="val">৳0</div><div class="sub">No ad accounts connected</div></div>
+          <div class="card kpi"><div class="lbl">Courier Cost</div><div class="val">৳0</div><div class="sub">Today</div></div>
+          <div class="card kpi"><div class="lbl">Pending COD</div><div class="val">৳0</div><div class="sub">COD receivable</div></div>
         </div>
         <div class="grid-2">
-          <div class="card"><h3>Web Order Report</h3><div class="card-sub">Status counts — all web orders</div>
-            <table><tr><th>Status</th><th>Count</th><th></th></tr>
-            <tr><td><span class="pill lpurple">Processing</span></td><td>23</td><td></td></tr>
-            <tr><td><span class="pill amber">Incomplete</span></td><td>3</td><td></td></tr>
-            <tr><td><span class="pill blue">Good But No Response</span></td><td>1</td><td></td></tr>
-            <tr><td><span class="pill grey">No Response</span></td><td>0</td><td></td></tr>
-            <tr><td><span class="pill pink">Advance Payment</span></td><td>1</td><td></td></tr>
-            <tr><td><span class="pill green">Approved</span></td><td>40</td><td></td></tr>
-            <tr><td><span class="pill red">Cancel</span></td><td>3</td><td></td></tr></table>
+          <div class="card"><h3>Order Funnel</h3><div class="card-sub">Web → Incomplete → Confirmed</div>
+            <div class="bar-row"><span class="nm">Web Orders</span><span class="bar-track"><span class="bar-fill" style="width:100%"></span></span><span class="amt">71</span></div>
+            <div class="bar-row"><span class="nm">Incomplete</span><span class="bar-track"><span class="bar-fill" style="width:6%"></span></span><span class="amt">3</span></div>
+            <div class="bar-row"><span class="nm">Confirmed</span><span class="bar-track"><span class="bar-fill" style="width:56%"></span></span><span class="amt">40</span></div>
           </div>
-          <div class="card"><h3>Top Selling Products</h3><div class="card-sub">Today</div>
-            <table><tr><th>Product</th><th>Units</th><th>Revenue</th></tr>
-            <tr><td>Mentara Roll On Balm COMBO (6X)</td><td>6</td><td>৳3,594</td></tr>
-            <tr><td>Mentara Roll On Balm Single</td><td>2</td><td>৳748</td></tr></table>
-            <p class="empty-note" style="margin-top:12px;">Hourly Combined chart (Today vs Yesterday) and Earning Reports (load on demand, yearly) sit below in the original — included as part of this panel's scroll area in the full build.</p>
+          <div class="card"><h3>Order Counts</h3><div class="card-sub">Created vs Sent to Courier</div>
+            <div class="bar-row"><span class="nm">Created</span><span class="bar-track"><span class="bar-fill" style="width:100%"></span></span><span class="amt">15</span></div>
+            <div class="bar-row"><span class="nm">Sent to Courier</span><span class="bar-track"><span class="bar-fill" style="width:0%"></span></span><span class="amt">0</span></div>
           </div>
         </div>
       </section>
@@ -556,6 +664,42 @@
   // Language toggle (visual only)
   var bn = false;
   function toggleLang(btn){ bn = !bn; btn.textContent = bn ? 'EN · Switch language' : 'BN · ভাষা বদলান'; }
+  // Header actions menu
+  function toggleActions(e){
+    e.stopPropagation();
+    var m = document.getElementById('actionsMenu');
+    m.style.display = (m.style.display === 'block') ? 'none' : 'block';
+  }
+  document.addEventListener('click', function(){ var m = document.getElementById('actionsMenu'); if(m) m.style.display = 'none'; });
+  // Date-basis funnel dropdown (shared)
+  function funnelMenu(e){
+    e.stopPropagation();
+    alert('Counted on: ✓ Approved date · Web order date · Courier date');
+  }
+  // Segmented controls
+  function segOn(btn){
+    var parent = btn.parentElement;
+    parent.querySelectorAll('button').forEach(function(b){ b.classList.remove('on'); b.style.background=''; b.style.color=''; });
+    btn.classList.add('on');
+  }
+  // Web Order Report inner tabs
+  function worTab(btn, which){
+    btn.parentElement.querySelectorAll('button').forEach(function(b){ b.classList.remove('active'); });
+    btn.classList.add('active');
+    var box = document.getElementById('worEmpty');
+    box.innerHTML = which === 'web'
+      ? '<div style="font-size:26px;">🗂️</div><b style="color:var(--text);">No web orders in this period</b><br>The selected date range has no web orders to chart.'
+      : '<div style="font-size:26px;">🗂️</div><b style="color:var(--text);">No incomplete orders in this period</b><br>The selected date range has no incomplete orders to chart.';
+  }
+  // Orders by Source chart/table switch
+  function sourceView(v){
+    document.getElementById('sourceChart').style.display = v === 'chart' ? 'flex' : 'none';
+    document.getElementById('sourceTable').style.display = v === 'table' ? 'block' : 'none';
+  }
+  // Earning Reports load on demand
+  function loadEarnings(){
+    document.getElementById('earnBox').innerHTML = '<b style="color:var(--text);">Earning Reports — 2026</b><br><br>No earnings data in the selected range yet. Connect a sales channel and orders will appear here.';
+  }
   // Live Dhaka clock
   function tickClock(){
     try{
