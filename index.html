@@ -308,15 +308,13 @@
   #page-new-order .fld-l{font-size:12px;font-weight:600;color:#64748B;}
   #page-new-order .fld{height:40px;border-radius:6px;font-size:14px;border-color:#E8E3EE;padding:0 12px;}
   #page-new-order textarea.fld{height:auto;padding:8px 12px;}
-  #page-new-order .grid-21 > div:first-child{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);gap:16px;align-items:start;}
-  #page-new-order .grid-21 > div:first-child > .card{margin-bottom:0 !important;}
-  #page-new-order .grid-21 > div:first-child > .card:first-child{grid-column:1 / -1;}
   #prodGrid{display:grid;grid-template-columns:1fr;gap:0;}
-  #page-new-order .prod-card{display:block;width:100%;text-align:left;background:#fff;border:none;border-bottom:1px solid #EEF2F7;padding:10px 4px;cursor:pointer;position:relative;border-radius:0;}
+  #page-new-order .prod-card{display:block;width:100%;text-align:left;background:#fff;border:none;border-bottom:1px solid #EEF2F7;padding:16px 30px 16px 104px;cursor:pointer;position:relative;border-radius:0;}
   #page-new-order .prod-card:hover{background:#F8F7FB;}
-  #page-new-order .pc-name{font-size:13.5px;font-weight:500;color:#111827;display:block;padding-right:78px;}
-  #page-new-order .prod-card .muted-sm{display:block;font-size:12px;padding-right:78px;}
-  #page-new-order .prod-card::after{content:'No Image';position:absolute;right:4px;top:50%;transform:translateY(-50%);width:64px;height:44px;border:1px solid #EEF2F7;border-radius:6px;color:#94A3B8;font-size:11px;display:flex;align-items:center;justify-content:center;background:#F8F7FB;}
+  #page-new-order .pc-name{font-size:13.5px;font-weight:500;color:#111827;display:block;}
+  #page-new-order .prod-card .muted-sm{display:block;font-size:12px;}
+  #page-new-order .prod-card::before{content:'No Image';position:absolute;left:4px;top:50%;transform:translateY(-50%);width:85px;height:85px;border:1px solid #EEF2F7;border-radius:8px;color:#94A3B8;font-size:11px;display:flex;align-items:center;justify-content:center;background:#F8F7FB;}
+  #page-new-order .prod-card::after{content:'';position:absolute;right:8px;top:16px;width:20px;height:20px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394A3B8' stroke-width='2'%3E%3Cpolygon points='12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26'/%3E%3C/svg%3E") no-repeat center/contain;}
   #page-new-order .pc-fav{font-size:11px;color:#94A3B8;}
   /* Approved Orders — live tab strip is 48px in a rounded-lg card */
   #aoPills{gap:8px;}
@@ -326,10 +324,23 @@
   #page-orders-dashboard{background:linear-gradient(180deg,rgba(244,234,247,.45),rgba(248,247,250,0) 220px);}
 
   /* Auto Call — live uses a bordered segmented tab bar (accent border) and 20px card titles */
-  #page-auto-call .utabs.inner-tabs{display:inline-flex;background:#fff;border:1px solid #E8D8EF;border-radius:12px;padding:4px;gap:2px;}
+  #page-auto-call .utabs.inner-tabs{display:inline-flex;background:#F6F2F9;border:none;border-radius:10px;padding:4px;gap:2px;}
   #page-auto-call .utabs.inner-tabs button{border:none;border-bottom:none;padding:6px 12px;font-size:14px;font-weight:500;border-radius:6px;color:#64748B;background:transparent;}
-  #page-auto-call .utabs.inner-tabs button.active{background:#F4EDF7;color:#411550;}
+  #page-auto-call .utabs.inner-tabs button.active{background:#4C195E;color:#fff;}
   #page-auto-call h3{font-size:20px;font-weight:600;}
+
+  #page-new-order .fld{background:#F8F7FB;border-color:#ECE8F0;}
+  #page-new-order .sum-row.total{background:#F4EDF7;border-radius:8px;padding:10px 12px;border-bottom:none;}
+  #page-new-order .sum-row.total span{color:#411550;font-weight:600;}
+  #page-new-order .sum-row.total b{color:#411550;font-size:16px;font-weight:700;}
+  #sumDisc2,#sumAdv2{color:#009966;}
+  #sumGrand{font-weight:700;}
+  #page-new-order .empty-note{background:transparent;}
+
+  #page-auto-call .filter-grid{grid-template-columns:repeat(5,1fr);}
+  #page-auto-call table{width:100%;}
+  #page-auto-call table th{background:#FAF9FB;text-transform:none;letter-spacing:0;}
+  #page-auto-pick .switch.on{background:#411550;}
 </style>
 </head>
 <body>
@@ -751,53 +762,57 @@
 
       <!-- ===== STEP 2: ORDERS PAGES ===== -->
             <section class="page-panel" id="page-new-order" style="max-width:1400px;margin-left:auto;margin-right:auto;">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap;background:#fff;border:1px solid #EEF2F7;border-radius:16px;padding:10px 16px;box-shadow:0 1px 2px rgba(17,24,39,.04),0 1px 3px rgba(17,24,39,.06);">
-          <span class="seg" style="font-size:13.5px;"><button onclick="orderMode(this,'manual')">Manual</button><button class="on" onclick="orderMode(this,'approved')">Approved</button><button onclick="orderMode(this,'preorder')">Pre-Order</button></span>
-          <span style="margin-left:auto;display:flex;gap:8px;"><button class="ctl-btn" style="border-color:#EEF2F7;border-radius:8px;font-size:12px;" onclick="toast('Screenshot picker (UI prototype)')">স্ক্রিনশট থেকে পূরণ</button><button class="ctl-btn">Guide</button><button class="ctl-btn" onclick="openModal('layoutsModal')">Layouts &amp; Fields</button></span>
-        </div>
+        
         
         <div class="grid-21" style="grid-template-columns:minmax(0,1fr) clamp(16rem,25%,28rem);gap:16px;">
           <div>
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap;background:#fff;border:1px solid #EEF2F7;border-radius:16px;padding:10px 16px;box-shadow:0 1px 2px rgba(17,24,39,.04),0 1px 3px rgba(17,24,39,.06);">
+          <span class="seg" style="font-size:13.5px;"><button onclick="orderMode(this,'manual')">Manual</button><button class="on" onclick="orderMode(this,'approved')">Approved</button><button onclick="orderMode(this,'preorder')">Pre-Order</button></span>
+          <span style="margin-left:auto;display:flex;gap:8px;"><button class="ctl-btn" style="border-color:#EEF2F7;border-radius:8px;font-size:12px;" onclick="toast('Screenshot picker (UI prototype)')">স্ক্রিনশট থেকে পূরণ</button><button class="ctl-btn">Guide</button><button class="ctl-btn" onclick="openModal('layoutsModal')">Layouts &amp; Fields</button></span>
+        </div>
             <div class="card" style="margin-bottom:16px;">
               <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;">
-                <label class="fld-l">Mobile Number *<span style="display:flex;gap:6px;"><input class="fld" placeholder="01XXXXXXXXX"><button class="ctl-btn" title="Call">Call</button><button class="ctl-btn" title="WhatsApp">WA</button></span></label>
+                <label class="fld-l">Mobile Number *<input class="fld" placeholder="01XXXXXXXXX"></label>
                 <label class="fld-l">Customer Name *<input class="fld" placeholder="Customer name"></label>
                 <label class="fld-l">Email <span class="opt-tag">OPTIONAL</span><input class="fld" placeholder="customer@example.com"></label>
-                <label class="fld-l">Address *<input class="fld" placeholder="Enter address"></label>
-              </div>
-              <label class="fld-l" style="margin-top:12px;">Shipping Note <span class="opt-tag">OPTIONAL</span> <span class="muted-sm">0/350</span><span style="display:flex;gap:6px;"><input class="fld" placeholder="Note printed on invoice / shared with courier"><button class="ctl-btn" onclick="toast('Shipping note templates — No templates found. Add New Template in Settings (UI prototype)')">+</button></span></label>
-              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:12px;">
-                <label class="fld-l" id="dmWrap">Delivery Method *<select class="fld"><option>Select delivery method</option><option>mr</option><option>Outlet</option><option>Outlet</option><option>steadfast</option><option>Test</option></select></label>
-                <div class="fld-l" id="dmHelp" style="display:none;">Delivery Method<div class="muted-sm" style="margin-top:8px;font-weight:400;">Courier will be assigned during Online Order approval.</div></div>
-                <label class="fld-l">Payment Method <span class="opt-tag">OPTIONAL</span><select class="fld"><option>Select account</option><option>Brack Bank</option><option>Rocket</option><option>Test</option><option>bKash</option></select></label>
-                <label class="fld-l">Order Source<select class="fld"><option>Select order source</option><option>Facebook</option><option>Website</option><option>Direct</option><option>Instagram</option><option>TikTok</option><option>WhatsApp</option><option>Exchange</option><option>MESSENGER</option><option>Custom Source</option><option>Custom Source 2</option><option>Incomplete Order</option><option>Upsale</option></select></label>
-                <label class="fld-l" id="preReason" style="display:none;">Preorder Reason<select class="fld"><option>Select reason</option><option>Out of Stock</option><option>Others</option></select></label>
-                <label class="fld-l" id="preDate" style="display:none;">Notification Date<input class="fld" type="datetime-local"></label>
-              </div>
-              <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;">
-                <button class="ctl-btn" onclick="popToggle('tagPop')">Tag</button>
-                <span class="fld-l" style="display:inline-flex;align-items:center;gap:8px;">Cross Sale <button class="switch" onclick="this.classList.toggle('on')"></button></span>
-                <button class="ctl-btn" onclick="popToggle('refPop')">Reference Link</button>
-                <button class="ctl-btn" onclick="popToggle('notePop')">Note</button>
-                <button class="ctl-btn" onclick="popToggle('attPop')">Attachment</button>
-                <button class="ctl-btn" onclick="popToggle('morePop')">More</button>
+                <label class="fld-l">Address *<textarea class="fld" rows="6" placeholder="Enter address"></textarea></label>
+                <label class="fld-l">Shipping Note <span class="opt-tag">OPTIONAL</span> <span class="muted-sm">0/350</span><textarea class="fld" rows="6" placeholder="Note printed on invoice / shared with courier"></textarea></label>
+                <div style="display:flex;flex-direction:column;gap:10px;">
+                  <label class="fld-l" id="dmWrap">Delivery Method *<select class="fld"><option>Select delivery method</option><option>mr</option><option>Outlet</option><option>Outlet</option><option>steadfast</option><option>Test</option></select></label>
+                  <div class="fld-l" id="dmHelp" style="display:none;">Delivery Method<div class="muted-sm" style="margin-top:8px;font-weight:400;">Courier will be assigned during Online Order approval.</div></div>
+                  <div style="display:flex;gap:8px;align-items:center;"><button class="ctl-btn" onclick="popToggle('tagPop')">Tag</button><span class="fld-l" style="display:inline-flex;align-items:center;gap:8px;">Cross Sale <button class="switch" onclick="this.classList.toggle('on')"></button></span></div>
+                  <div style="display:flex;gap:8px;"><button class="ctl-btn" onclick="popToggle('refPop')">Reference Link</button><button class="ctl-btn" onclick="popToggle('notePop')">Note</button></div>
+                  <div style="display:flex;gap:8px;"><button class="ctl-btn" onclick="popToggle('attPop')">Attachment</button><button class="ctl-btn" onclick="popToggle('morePop')">More</button></div>
+                  <label class="fld-l" id="preReason" style="display:none;">Preorder Reason<select class="fld"><option>Select reason</option><option>Out of Stock</option><option>Others</option></select></label>
+                  <label class="fld-l" id="preDate" style="display:none;">Notification Date<input class="fld" type="datetime-local"></label>
+                </div>
               </div>
               <div id="tagPop" class="pop-panel" style="display:none;"><b>Order Tags</b><div class="muted-sm" style="margin:6px 0;">Select Custom Tags</div><div class="tag-cloud"><span>storola</span><span>diaper</span><span>diaper + feeding item</span><span>age 0 to 1 year</span><span>Custom Tag 5</span><span>Custom Tag 6</span><span>Custom Tag 7</span><span>Custom Tag 8</span><span>Custom Tag 9</span><span>Custom Tag 10</span><span>Custom Tag 11</span><span>Custom Tag 12</span><span>Custom Tag 13</span><span>Custom Tag 14</span><span>Custom Tag 15</span></div></div>
               <div id="refPop" class="pop-panel" style="display:none;"><label class="fld-l">Reference link<input class="fld" placeholder="https://…"></label></div>
               <div id="notePop" class="pop-panel" style="display:none;"><label class="fld-l">Order note<textarea class="fld" rows="2" placeholder="Add an order note"></textarea></label></div>
               <div id="attPop" class="pop-panel" style="display:none;"><b>Upload Attachments</b><div class="dashed-empty" style="margin-top:8px;">Drag and drop your files here, or click to select<br><span class="muted-sm">Supported formats: JPG, PNG, GIF, WEBP, AVIF, SVG, PDF (max 5MB)</span></div></div>
               <div id="morePop" class="pop-panel" style="display:none;"><label class="fld-l">Invoice prefix<input class="fld" placeholder="Optional invoice prefix"></label></div>
-            </div>
-            <div class="card" style="margin-bottom:16px;">
-              <div style="display:flex;gap:8px;flex-wrap:wrap;"><button class="ctl-btn" onclick="toast('Product picker focused (UI prototype)')">Add Product</button><button class="ctl-btn" onclick="toast('Scan Barcode — Code/sku search focused (UI prototype)')">Scan Barcode</button><button class="ctl-btn" onclick="openModal('customProductModal')">Add Custom Product</button></div>
-              <h3 style="margin-top:16px;">Click To Add Products <button class="ctl-btn" style="padding:2px 8px;">?</button></h3>
-              <div style="display:flex;gap:10px;margin:12px 0;"><input class="fld" placeholder="Code/sku — Type to Search.." oninput="prodSearch()"><input class="fld" placeholder="Name — Type to Search.." oninput="prodSearch()"><button class="ctl-btn" title="Favourites only" onclick="this.classList.toggle('fav-on')">★</button></div>
-              <div class="prod-grid" id="prodGrid"></div>
+              <div style="display:grid;grid-template-columns:1fr 2fr;gap:16px;margin-top:16px;">
+                <label class="fld-l">Payment Method <span class="opt-tag">OPTIONAL</span><select class="fld"><option>Select account</option><option>Brack Bank</option><option>Rocket</option><option>Test</option><option>bKash</option></select></label>
+                <label class="fld-l">Order Source *<select class="fld"><option>Select order source</option><option>Facebook</option><option>Website</option><option>Direct</option><option>Instagram</option><option>TikTok</option><option>WhatsApp</option><option>Exchange</option><option>MESSENGER</option><option>Custom Source</option><option>Custom Source 2</option><option>Incomplete Order</option><option>Upsale</option></select></label>
+              </div>
             </div>
             <div class="card">
+              <div style="display:flex;gap:8px;flex-wrap:wrap;"><button class="ctl-btn" style="background:#F8F7FB;border-color:#E8D8EF;" onclick="toast('Product picker focused (UI prototype)')">Add Product</button><button class="ctl-btn" style="background:#F8F7FB;border-color:#E8D8EF;" onclick="toast('Scan Barcode — Code/sku search focused (UI prototype)')">Scan Barcode</button><button class="ctl-btn" style="background:#F8F7FB;border-color:#E8D8EF;" onclick="openModal('customProductModal')">Add Custom Product</button></div>
+              <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);gap:16px;margin-top:16px;">
+                <div style="border:1px solid #EEF2F7;border-radius:12px;padding:16px;">
+                  <h3 >Click To Add Products <button class="ctl-btn" style="padding:2px 8px;">?</button></h3>
+                  <div style="display:flex;gap:10px;margin:12px 0;"><input class="fld" placeholder="Code/sku — Type to Search.." oninput="prodSearch()"><input class="fld" placeholder="Name — Type to Search.." oninput="prodSearch()"><button class="ctl-btn" title="Favourites only" onclick="this.classList.toggle('fav-on')">★</button></div>
+                  <div class="prod-grid" id="prodGrid"></div>
+                </div>
+                <div style="border:1px solid #EEF2F7;border-radius:12px;padding:16px;">
+                  
               <h3>Ordered Products <span class="muted-sm" id="ordCount">0item(s)</span></h3>
               <div id="ordEmpty" class="empty-note" style="margin-top:10px;">Search and add products from the "Click To Add Products" panel.</div>
               <div id="ordList"></div>
+            
+                </div>
+              </div>
             </div>
           </div>
           <div>
@@ -903,22 +918,48 @@
       </section>
 
             <section class="page-panel" id="page-auto-pick">
-        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;"><h3 style="font-size:18px;font-weight:700;">Auto Order Dashboard</h3><span style="margin-left:auto;display:flex;gap:10px;align-items:center;"><span class="muted-sm">Updated just now</span><button class="ctl-btn" onclick="toast('Data refreshed (UI prototype)')">Refresh data</button><button class="ctl-btn">Guide</button></span></div>
-        <div class="card" style="margin:16px 0;">
-          <div style="display:flex;gap:14px;align-items:flex-start;"><button class="switch on" onclick="this.classList.toggle('on')"></button><div><b>Open next automatically after status update</b><br><span class="muted-sm">When enabled, auto-order continues with the next item in the same queue after you update a status.</span></div></div>
+        <div class="card" style="padding:24px;">
+          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+            <h3 style="font-size:18px;font-weight:700;">Auto Order Dashboard</h3>
+            <span style="margin-left:auto;display:flex;align-items:center;gap:10px;"><span class="muted-sm">Updated just now</span><button class="ctl-btn">Guide</button><button class="ctl-btn" style="padding:6px 8px;" title="Refresh data" onclick="toast('Refreshed (UI prototype)')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><polyline points="21 3 21 9 15 9"/></svg></button></span>
+          </div>
+          <div style="display:flex;align-items:center;gap:14px;margin:18px 0 20px;">
+            <div><div style="font-weight:600;font-size:14.5px;">Open next automatically after status update</div><div class="muted-sm">When enabled, auto-order continues with the next item in the queue.</div></div>
+            <button class="switch on" style="margin-left:auto;" onclick="this.classList.toggle('on')" aria-label="Open next automatically"></button>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:18px;">
+        <div style="border:1px solid #E5E7EB;border-radius:12px;padding:16px;">
+          <div style="display:flex;align-items:center;gap:8px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 13.5"/></svg><span style="font-size:14px;font-weight:500;">Processing</span><span style="margin-left:auto;background:#F4EDF7;color:#411550;border-radius:99px;padding:1px 9px;font-size:12px;font-weight:600;">23</span></div>
+          <button class="btn-primary" style="width:100%;height:36px;margin-top:14px;border-radius:8px;background:linear-gradient(180deg,#531D68,#461756);">Open Next</button>
+        </div><div style="border:1px solid #E5E7EB;border-radius:12px;padding:16px;">
+          <div style="display:flex;align-items:center;gap:8px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span style="font-size:14px;font-weight:500;">Incomplete</span><span style="margin-left:auto;background:#F4EDF7;color:#411550;border-radius:99px;padding:1px 9px;font-size:12px;font-weight:600;">3</span></div>
+          <button class="btn-primary" style="width:100%;height:36px;margin-top:14px;border-radius:8px;background:linear-gradient(180deg,#531D68,#461756);">Open Next</button>
+        </div><div style="border:1px solid #E5E7EB;border-radius:12px;padding:16px;">
+          <div style="display:flex;align-items:center;gap:8px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10v12"/><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z"/></svg><span style="font-size:14px;font-weight:500;">Good But No Response</span><span style="margin-left:auto;background:#F4EDF7;color:#411550;border-radius:99px;padding:1px 9px;font-size:12px;font-weight:600;">1</span></div>
+          <button class="btn-primary" style="width:100%;height:36px;margin-top:14px;border-radius:8px;background:linear-gradient(180deg,#531D68,#461756);">Open Next</button>
+        </div><div style="border:1px solid #E5E7EB;border-radius:12px;padding:16px;">
+          <div style="display:flex;align-items:center;gap:8px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.42 19.42 0 0 1-3.33-2.67m-2.67-3.34a19.79 19.79 0 0 1-3.07-8.63A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91"/><line x1="2" y1="2" x2="22" y2="22"/></svg><span style="font-size:14px;font-weight:500;">No Response</span><span style="margin-left:auto;background:#F4EDF7;color:#411550;border-radius:99px;padding:1px 9px;font-size:12px;font-weight:600;">0</span></div>
+          <button style="width:100%;height:36px;margin-top:14px;border-radius:8px;background:#E9E4EE;color:#A08AB0;border:none;font-weight:600;cursor:not-allowed;">Open Next</button>
+        </div><div style="border:1px solid #E5E7EB;border-radius:12px;padding:16px;">
+          <div style="display:flex;align-items:center;gap:8px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg><span style="font-size:14px;font-weight:500;">Advance Payment</span><span style="margin-left:auto;background:#F4EDF7;color:#411550;border-radius:99px;padding:1px 9px;font-size:12px;font-weight:600;">1</span></div>
+          <button class="btn-primary" style="width:100%;height:36px;margin-top:14px;border-radius:8px;background:linear-gradient(180deg,#531D68,#461756);">Open Next</button>
+        </div><div style="border:1px solid #E5E7EB;border-radius:12px;padding:16px;">
+          <div style="display:flex;align-items:center;gap:8px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="10" y1="9" x2="10" y2="15"/><line x1="14" y1="9" x2="14" y2="15"/></svg><span style="font-size:14px;font-weight:500;">On Hold</span><span style="margin-left:auto;background:#F4EDF7;color:#411550;border-radius:99px;padding:1px 9px;font-size:12px;font-weight:600;">0</span></div>
+          <button style="width:100%;height:36px;margin-top:14px;border-radius:8px;background:#E9E4EE;color:#A08AB0;border:none;font-weight:600;cursor:not-allowed;">Open Next</button>
+        </div><div style="border:1px solid #E5E7EB;border-radius:12px;padding:16px;">
+          <div style="display:flex;align-items:center;gap:8px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><polyline points="3.29 7 12 12 20.71 7"/><line x1="12" y1="22" x2="12" y2="12"/></svg><span style="font-size:14px;font-weight:500;">Stock Out</span><span style="margin-left:auto;background:#F4EDF7;color:#411550;border-radius:99px;padding:1px 9px;font-size:12px;font-weight:600;">0</span></div>
+          <button style="width:100%;height:36px;margin-top:14px;border-radius:8px;background:#E9E4EE;color:#A08AB0;border:none;font-weight:600;cursor:not-allowed;">Open Next</button>
         </div>
-        <div class="queue-grid">
-          <div class="card queue-card"><span class="pill lpurple">Processing</span><div class="q-count">23</div><button class="btn-primary" onclick="showPage('page-web-order-detail')">Open Next</button></div>
-          <div class="card queue-card"><span class="pill amber">Incomplete</span><div class="q-count">3</div><button class="btn-primary" onclick="showPage('page-web-order-detail')">Open Next</button></div>
-          <div class="card queue-card"><span class="pill blue">Good But No Response</span><div class="q-count">1</div><button class="btn-primary" onclick="showPage('page-web-order-detail')">Open Next</button></div>
-          <div class="card queue-card"><span class="pill grey">No Response</span><div class="q-count">0</div><button class="btn-primary" disabled style="opacity:.45;">Open Next</button></div>
-          <div class="card queue-card"><span class="pill pink">Advance Payment</span><div class="q-count">1</div><button class="btn-primary" onclick="showPage('page-web-order-detail')">Open Next</button></div>
-          <div class="card queue-card"><span class="pill grey">On Hold</span><div class="q-count">0</div><button class="btn-primary" disabled style="opacity:.45;">Open Next</button></div>
-          <div class="card queue-card"><span class="pill grey">Stock Out</span><div class="q-count">0</div><button class="btn-primary" disabled style="opacity:.45;">Open Next</button></div>
+          </div>
         </div>
-        <div class="card" style="margin-top:16px;"><h3>My Daily Report</h3>
-          <div style="display:flex;gap:26px;margin-top:12px;flex-wrap:wrap;">
-            <span>TAKEN <b style="font-size:17px;">8</b></span><span>SHIPPED <b style="font-size:17px;">0</b></span><span>DELIVERED <b style="font-size:17px;">0</b></span><span>RETURNED <b style="font-size:17px;">0</b></span>
+        <div class="card" style="margin-top:24px;padding:24px;">
+          <h3 style="font-size:18px;font-weight:700;margin-bottom:16px;">My Daily Report</h3>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;">
+        <div style="border:1px solid #E5E7EB;border-left:4px solid #411550;border-radius:8px;padding:14px 16px;">
+          <div style="font-size:13px;color:#64748B;font-weight:500;">Taken</div><div style="font-size:22px;font-weight:700;margin-top:2px;">8</div></div><div style="border:1px solid #E5E7EB;border-left:4px solid #411550;border-radius:8px;padding:14px 16px;">
+          <div style="font-size:13px;color:#64748B;font-weight:500;">Shipped</div><div style="font-size:22px;font-weight:700;margin-top:2px;">0</div></div><div style="border:1px solid #E5E7EB;border-left:4px solid #411550;border-radius:8px;padding:14px 16px;">
+          <div style="font-size:13px;color:#64748B;font-weight:500;">Delivered</div><div style="font-size:22px;font-weight:700;margin-top:2px;">0</div></div><div style="border:1px solid #E5E7EB;border-left:4px solid #411550;border-radius:8px;padding:14px 16px;">
+          <div style="font-size:13px;color:#64748B;font-weight:500;">Returned</div><div style="font-size:22px;font-weight:700;margin-top:2px;">0</div></div>
           </div>
         </div>
       </section>
@@ -932,8 +973,8 @@
           <h3 style="font-size:17px;">Auto Call Center by EcomDrive</h3>
           <div style="display:flex;gap:16px;flex-wrap:wrap;margin:10px 0 16px;font-size:13.5px;"><span>Mode: <b>Central Auto Call Center</b></span><span>Balance: <b>0.00 TK</b></span><span>Hold: <b>0.00 TK</b></span><span>Available: <b>0.00 TK</b></span><span>Rate: <b>1.00 TK/min</b></span></div>
           <div class="card">
-            <h3>Manual Call Batches</h3>
-            <div class="utabs inner-tabs" style="margin:12px 0;"><button class="active">Online Order</button><button>Approved Orders</button></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px;"><h3>Manual Call Batches</h3>
+            <div class="utabs inner-tabs" style="margin:0;"><button class="active">Online Order</button><button>Approved Orders</button></div></div>
             <div class="filter-grid">
               <label class="fld-l">Search<input class="fld" placeholder="Phone, customer, order id"></label>
               <label class="fld-l">Web Order Status<select class="fld"><option>All statuses</option><option selected>Processing</option><option>Incomplete</option><option>Good But No Response</option><option>No Response</option><option>Advance Payment</option><option>On Hold</option><option>Stock Out</option><option>Approved</option><option>Cancel</option></select></label>
@@ -941,8 +982,8 @@
               <label class="fld-l">Auto Call Outcome<select class="fld"><option>All outcomes</option><option>Pressed 1</option><option>Pressed 2</option><option>Transferred to agent</option><option>Answered (No Input)</option><option>Answered (Other Key)</option><option>No Answer</option><option>Busy</option><option>Rejected Call</option><option>Failed</option><option>Could not start call</option><option>Insufficient Balance</option></select></label>
               <label class="fld-l">Attempt<select class="fld"><option>All attempts</option><option>Attempt 1</option><option>Attempt 2</option><option>Attempt 3</option></select></label>
               <label class="fld-l">Tag<select class="fld"><option>All tags</option><option>Non-COD</option><option>Qty Change</option><option>MANUAL</option><option>Auto Call Pressed 1</option><option>Auto Call Pressed 2</option><option>Auto Call No Answer</option><option>Auto Call Busy</option><option>Auto Call Rejected</option><option>Auto Call Failed</option><option>Auto Call In Progress</option><option>storola</option><option>diaper</option><option>diaper + feeding item</option><option>age 0 to 1 year</option><option>Custom Tag 5</option><option>Custom Tag 10</option><option>Custom Tag 15</option></select></label>
-              <label class="fld-l">From Date<input class="fld" type="datetime-local"></label>
-              <label class="fld-l">To Date<input class="fld" type="datetime-local"></label>
+              <label class="fld-l">From Date<input class="fld" type="date"></label>
+              <label class="fld-l">To Date<input class="fld" type="date"></label>
               <label class="fld-l">Max Attempts (Override)<input class="fld" type="number" value="2"></label>
               <label class="fld-l">Retry Gap Minutes (Override)<input class="fld" type="number" value="15"></label>
             </div>
@@ -961,12 +1002,12 @@
             </div>
             <div style="display:flex;gap:10px;align-items:center;margin:14px 0;"><button class="btn-primary" disabled style="opacity:.45;">Start Auto Call</button><span class="muted-sm">No orders selected</span></div>
             <table><tr><th><input type="checkbox"></th><th>Order</th><th>Customer</th><th>Phone</th><th>Status</th><th>Source</th><th>Auto Call</th><th>Attempt</th><th>Created</th></tr>
-            <tr><td><input type="checkbox"></td><td>#1794128205</td><td>test</td><td>01945502173</td><td><span class="pill lpurple">PROCESSING</span></td><td>unknown</td><td>—</td><td>—</td><td>11/8/2026, 12:27:15 PM</td></tr>
-            <tr><td><input type="checkbox"></td><td>#1790615850</td><td>—</td><td>016XXXXXXXX</td><td><span class="pill lpurple">PROCESSING</span></td><td>direct</td><td>—</td><td>—</td><td>11/8/2026, 7:41:02 AM</td></tr>
-            <tr><td><input type="checkbox"></td><td>#1790566460</td><td>—</td><td>017XXXXXXXX</td><td><span class="pill lpurple">PROCESSING</span></td><td>fb</td><td>—</td><td>—</td><td>11/8/2026, 6:12:44 AM</td></tr>
-            <tr><td><input type="checkbox"></td><td>#1790453495</td><td>—</td><td>018XXXXXXXX</td><td><span class="pill lpurple">PROCESSING</span></td><td>unknown</td><td>—</td><td>—</td><td>11/7/2026, 9:03:31 PM</td></tr>
-            <tr><td><input type="checkbox"></td><td>#1790154968</td><td>—</td><td>019XXXXXXXX</td><td><span class="pill lpurple">PROCESSING</span></td><td>direct</td><td>—</td><td>—</td><td>11/7/2026, 4:26:10 PM</td></tr>
-            <tr><td><input type="checkbox"></td><td>#1790786232</td><td>Anwar Hossain</td><td>017XXXXXXXX</td><td><span class="pill lpurple">PROCESSING</span></td><td>fb</td><td>—</td><td>—</td><td>11/8/2026, 8:03:19 AM</td></tr></table>
+            <tr><td><input type="checkbox"></td><td>#1794128205</td><td>test</td><td>01945502173</td><td><span style="font-weight:600;">PROCESSING</span></td><td>unknown</td><td>—</td><td>—</td><td>11/8/2026, 12:27:15 PM</td></tr>
+            <tr><td><input type="checkbox"></td><td>#1790615850</td><td>—</td><td>016XXXXXXXX</td><td><span style="font-weight:600;">PROCESSING</span></td><td>direct</td><td>—</td><td>—</td><td>11/8/2026, 7:41:02 AM</td></tr>
+            <tr><td><input type="checkbox"></td><td>#1790566460</td><td>—</td><td>017XXXXXXXX</td><td><span style="font-weight:600;">PROCESSING</span></td><td>fb</td><td>—</td><td>—</td><td>11/8/2026, 6:12:44 AM</td></tr>
+            <tr><td><input type="checkbox"></td><td>#1790453495</td><td>—</td><td>018XXXXXXXX</td><td><span style="font-weight:600;">PROCESSING</span></td><td>unknown</td><td>—</td><td>—</td><td>11/7/2026, 9:03:31 PM</td></tr>
+            <tr><td><input type="checkbox"></td><td>#1790154968</td><td>—</td><td>019XXXXXXXX</td><td><span style="font-weight:600;">PROCESSING</span></td><td>direct</td><td>—</td><td>—</td><td>11/7/2026, 4:26:10 PM</td></tr>
+            <tr><td><input type="checkbox"></td><td>#1790786232</td><td>Anwar Hossain</td><td>017XXXXXXXX</td><td><span style="font-weight:600;">PROCESSING</span></td><td>fb</td><td>—</td><td>—</td><td>11/8/2026, 8:03:19 AM</td></tr></table>
             <div class="pager">Page 1 of 2 · Previous / Next</div>
           </div>
           <div class="grid-2" style="margin-top:16px;">
@@ -1081,9 +1122,10 @@
       </section>
 
       <section class="page-panel" id="page-approved-orders">
-        <div class="page-head"><div><h1>Approved Order List</h1><p>Confirmed orders — ready to ship, ship, track and close</p></div>
-        <span style="margin-left:auto;display:flex;gap:8px;"><button class="ctl-btn" onclick="toast('Bulk print started — labels render in a hidden print frame')">Bulk Print</button><button class="ctl-btn">Export</button></span></div>
-        <div class="pill-row" id="aoPills">
+        
+        
+        <div class="card" style="padding-top:14px;">
+          <div class="pill-row" id="aoPills">
           <button class="wo-pill active" data-f="Pending">Pending <b>59</b></button>
           <button class="wo-pill" data-f="RTS">RTS <b>9</b></button>
           <button class="wo-pill" data-f="Shipped">Shipped <b>8</b></button>
@@ -1096,37 +1138,43 @@
           <button class="wo-pill" data-f="Preorder">Preorder <b>0</b></button>
           <button class="wo-pill" data-f="Lost">Lost <b>0</b></button>
         </div>
-        <div class="card">
-          <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;align-items:center;"><input class="fld" style="max-width:280px;" placeholder="Search invoice, name or phone"><select class="fld" style="max-width:210px;"><option>Bulk Actions</option><option>Print Invoices</option><option>Send to RTS</option><option>Create Task</option><option>Cancel Orders</option></select><button class="ctl-btn">Apply</button>
-          <span class="muted-sm" style="margin-left:auto;">Stock is reserved when an order is confirmed</span></div>
-          <table id="aoTable"><tr><th></th><th>Invoice</th><th>Approved</th><th>Customer</th><th>Product</th><th>Courier</th><th>COD</th><th>Status</th><th></th></tr>
-          <tr data-status="Pending"><td><input type="checkbox"></td><td><b>OB266</b></td><td>10 Nov, 11:20 AM</td><td>M. Fahim · 01712-445566</td><td>Mentara COMBO ×1</td><td>Steadfast</td><td>৳599</td><td><span class="pill amber">Pending</span></td><td style="position:relative;"><button class="ctl-btn" onclick="rowMenu(this)">⋮</button><span class="row-menu" style="display:none;"><a onclick="openModal('orderModal')">Order Details</a><a onclick="toast('Print sent — invoice renders in a hidden print frame')">Print</a><a onclick="toast('JPG exported (UI prototype)')">JPG Export</a><a onclick="toast('Edit order (UI prototype)')">Edit</a><a onclick="toast('Sent to RTS (UI prototype)')">Send to RTS</a><a onclick="toast('Create Task (UI prototype)')">Create Task</a><a onclick="toast('Add Note (UI prototype)')">Add Note</a><a class="danger" onclick="toast('Order cancelled (UI prototype)')">Cancel</a></span></td></tr>
-          <tr data-status="Pending"><td><input type="checkbox"></td><td><b>OB265</b></td><td>10 Nov, 10:41 AM</td><td>Shakil Ahmed · 01819-223344</td><td>Mentara Single ×2</td><td>Pathao</td><td>৳748</td><td><span class="pill amber">Pending</span></td><td style="position:relative;"><button class="ctl-btn" onclick="rowMenu(this)">⋮</button><span class="row-menu" style="display:none;"><a onclick="openModal('orderModal')">Order Details</a><a onclick="toast('Print sent — invoice renders in a hidden print frame')">Print</a><a onclick="toast('JPG exported (UI prototype)')">JPG Export</a><a onclick="toast('Edit order (UI prototype)')">Edit</a><a onclick="toast('Sent to RTS (UI prototype)')">Send to RTS</a><a onclick="toast('Create Task (UI prototype)')">Create Task</a><a onclick="toast('Add Note (UI prototype)')">Add Note</a><a class="danger" onclick="toast('Order cancelled (UI prototype)')">Cancel</a></span></td></tr>
-          <tr data-status="RTS"><td><input type="checkbox"></td><td><b>OB261</b></td><td>9 Nov, 5:12 PM</td><td>Ruma Akter · 01922-334455</td><td>Mentara Single ×1</td><td>Steadfast</td><td>৳434</td><td><span class="pill blue">RTS</span></td><td style="position:relative;"><button class="ctl-btn" onclick="rowMenu(this)">⋮</button><span class="row-menu" style="display:none;"><a onclick="openModal('orderModal')">Order Details</a><a onclick="toast('Print sent — invoice renders in a hidden print frame')">Print</a><a onclick="toast('JPG exported (UI prototype)')">JPG Export</a><a onclick="toast('Edit order (UI prototype)')">Edit</a><a onclick="toast('Create Task (UI prototype)')">Create Task</a><a onclick="toast('Add Note (UI prototype)')">Add Note</a><a class="danger" onclick="toast('Order cancelled (UI prototype)')">Cancel</a></span></td></tr>
-          <tr data-status="Shipped"><td><input type="checkbox"></td><td><b>OB258</b></td><td>9 Nov, 2:03 PM</td><td>Tanvir Hasan · 01555-667788</td><td>Mentara COMBO ×2</td><td>RedX</td><td>৳1,198</td><td><span class="pill lpurple">Shipped</span></td><td style="position:relative;"><button class="ctl-btn" onclick="rowMenu(this)">⋮</button><span class="row-menu" style="display:none;"><a onclick="openModal('orderModal')">Order Details</a><a onclick="toast('Print sent — invoice renders in a hidden print frame')">Print</a><a onclick="toast('JPG exported (UI prototype)')">JPG Export</a><a onclick="toast('Add Note (UI prototype)')">Add Note</a></span></td></tr>
-          <tr data-status="Delivered"><td><input type="checkbox"></td><td><b>OB252</b></td><td>8 Nov, 1:15 PM</td><td>Nusrat Jahan · 01311-998877</td><td>Mentara COMBO ×1</td><td>Steadfast</td><td>৳599</td><td><span class="pill green">Delivered</span></td><td style="position:relative;"><button class="ctl-btn" onclick="rowMenu(this)">⋮</button><span class="row-menu" style="display:none;"><a onclick="openModal('orderModal')">Order Details</a><a onclick="toast('Print sent — invoice renders in a hidden print frame')">Print</a><a onclick="toast('JPG exported (UI prototype)')">JPG Export</a><a onclick="toast('Add Note (UI prototype)')">Add Note</a></span></td></tr>
-          <tr data-status="Returned"><td><input type="checkbox"></td><td><b>OB247</b></td><td>7 Nov, 4:50 PM</td><td>Arif Chowdhury · 01799-112233</td><td>Mentara Single ×1</td><td>Pathao</td><td>৳434</td><td><span class="pill red">Returned</span></td><td style="position:relative;"><button class="ctl-btn" onclick="rowMenu(this)">⋮</button><span class="row-menu" style="display:none;"><a onclick="openModal('orderModal')">Order Details</a><a onclick="toast('Print sent — invoice renders in a hidden print frame')">Print</a><a onclick="toast('Add Note (UI prototype)')">Add Note</a></span></td></tr>
-          <tr data-status="Cancelled"><td><input type="checkbox"></td><td><b>OB240</b></td><td>6 Nov, 9:26 AM</td><td>Wrong Number</td><td>Mentara Single ×1</td><td>—</td><td>৳374</td><td><span class="pill grey">Cancelled</span></td><td style="position:relative;"><button class="ctl-btn" onclick="rowMenu(this)">⋮</button><span class="row-menu" style="display:none;"><a onclick="openModal('orderModal')">Order Details</a><a onclick="toast('Add Note (UI prototype)')">Add Note</a></span></td></tr>
-          </table>
+          <div style="display:flex;align-items:center;gap:10px;margin:12px 0 14px;flex-wrap:wrap;"><span style="display:inline-flex;background:#F1F5F9;border-radius:8px;padding:4px;gap:2px;">
+            <button style="background:#411550;color:#fff;border:none;border-radius:6px;padding:4px 12px;font-size:14px;font-weight:500;cursor:pointer;">mr <span style="opacity:.75;font-size:12px;">1</span></button>
+            <button style="background:transparent;color:#64748B;border:none;border-radius:6px;padding:4px 12px;font-size:14px;font-weight:500;cursor:pointer;">Outlet <span style="opacity:.75;font-size:12px;">2</span></button>
+            <button style="background:transparent;color:#64748B;border:none;border-radius:6px;padding:4px 12px;font-size:14px;font-weight:500;cursor:pointer;">Outlet <span style="opacity:.75;font-size:12px;">0</span></button>
+            <button style="background:transparent;color:#64748B;border:none;border-radius:6px;padding:4px 12px;font-size:14px;font-weight:500;cursor:pointer;">steadfast <span style="opacity:.75;font-size:12px;">40</span></button>
+            <button style="background:transparent;color:#64748B;border:none;border-radius:6px;padding:4px 12px;font-size:14px;font-weight:500;cursor:pointer;">Test <span style="opacity:.75;font-size:12px;">16</span></button></span>
+            <button class="ctl-btn" style="margin-left:auto;">List view</button></div>
+          <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;align-items:center;"><input class="fld" style="max-width:340px;background:#F8F7FB;" placeholder="Filter orders..."><button class="ctl-btn">Filters</button><select class="fld" style="max-width:240px;"><option>Sort: Date Created (Newest)</option><option>Sort: Date Created (Oldest)</option><option>Sort: Total (High to Low)</option></select><button class="ctl-btn">Actions</button><button class="ctl-btn">View</button><span class="muted-sm" style="margin-left:auto;">Stock is reserved when an order is confirmed</span></div>
+          <div style="overflow-x:auto;"><table id="aoTable" style="min-width:1560px;"><tr><th></th><th>Date</th><th>Invoice</th><th>Customer</th><th>PBX Calls</th><th>Note</th><th>Products</th><th>productName</th><th>qty</th><th>Tags</th><th>Custom Tags</th><th>Status Tags</th><th>Total</th><th>Status</th><th>Source</th><th>Channel</th><th>Shipping Note</th><th>Actions</th></tr><tr data-status="Pending"><td><input type="checkbox"></td><td>10 Nov, 11:20 AM</td><td><b>OB266</b></td><td>M. Fahim · 01712-445566</td><td>—</td><td>—</td><td>Mentara COMBO ×1</td><td>Mentara Roll On Balm COMBO</td><td>1</td><td>—</td><td>—</td><td>—</td><td><b>৳599</b></td><td><span class="pill amber">Pending</span></td><td>Facebook</td><td>—</td><td>—</td><td style="position:relative;"><button class="ctl-btn" onclick="rowMenu(this)">⋮</button><span class="row-menu" style="display:none;"><a onclick="openModal('orderModal')">Order Details</a><a onclick="toast('Print sent — invoice renders in a hidden print frame')">Print</a><a onclick="toast('JPG exported (UI prototype)')">JPG Export</a><a onclick="toast('Edit order (UI prototype)')">Edit</a><a onclick="toast('Sent to RTS (UI prototype)')">Send to RTS</a><a onclick="toast('Create Task (UI prototype)')">Create Task</a><a onclick="toast('Add Note (UI prototype)')">Add Note</a><a class="danger" onclick="toast('Order cancelled (UI prototype)')">Cancel</a></span></td></tr><tr data-status="Delivered"><td><input type="checkbox"></td><td>09 Nov, 03:42 PM</td><td><b>OB261</b></td><td>F.A. Rayhan · 01812-334455</td><td>2 calls</td><td>—</td><td>Kumkum Ikkat 1 ×1</td><td>Kumkum Ikkat 1</td><td>1</td><td>storola</td><td>—</td><td>—</td><td><b>৳699</b></td><td><span class="pill green">Delivered</span></td><td>Website</td><td>—</td><td>—</td><td style="position:relative;"><button class="ctl-btn" onclick="rowMenu(this)">⋮</button><span class="row-menu" style="display:none;"><a onclick="openModal('orderModal')">Order Details</a><a onclick="toast('Print sent — invoice renders in a hidden print frame')">Print</a><a onclick="toast('JPG exported (UI prototype)')">JPG Export</a><a onclick="toast('Edit order (UI prototype)')">Edit</a><a onclick="toast('Sent to RTS (UI prototype)')">Send to RTS</a><a onclick="toast('Create Task (UI prototype)')">Create Task</a><a onclick="toast('Add Note (UI prototype)')">Add Note</a><a class="danger" onclick="toast('Order cancelled (UI prototype)')">Cancel</a></span></td></tr><tr data-status="Shipped"><td><input type="checkbox"></td><td>09 Nov, 10:05 AM</td><td><b>OB258</b></td><td>Nozrul Islam · 01912-998877</td><td>1 call</td><td>—</td><td>Jeans Pant ×1</td><td>Jeans Pant</td><td>1</td><td>—</td><td>—</td><td>—</td><td><b>৳1,000</b></td><td><span class="pill purple">Shipped</span></td><td>Facebook</td><td>—</td><td>—</td><td style="position:relative;"><button class="ctl-btn" onclick="rowMenu(this)">⋮</button><span class="row-menu" style="display:none;"><a onclick="openModal('orderModal')">Order Details</a><a onclick="toast('Print sent — invoice renders in a hidden print frame')">Print</a><a onclick="toast('JPG exported (UI prototype)')">JPG Export</a><a onclick="toast('Edit order (UI prototype)')">Edit</a><a onclick="toast('Sent to RTS (UI prototype)')">Send to RTS</a><a onclick="toast('Create Task (UI prototype)')">Create Task</a><a onclick="toast('Add Note (UI prototype)')">Add Note</a><a class="danger" onclick="toast('Order cancelled (UI prototype)')">Cancel</a></span></td></tr><tr data-status="Cancelled"><td><input type="checkbox"></td><td>08 Nov, 06:15 PM</td><td><b>OB249</b></td><td>Anwar Hossain · 01612-776655</td><td>3 calls</td><td>Customer cancelled</td><td>30L Bag ×1</td><td>30L Bag</td><td>1</td><td>—</td><td>—</td><td>—</td><td><b>৳320</b></td><td><span class="pill grey">Cancelled</span></td><td>Messenger</td><td>—</td><td>—</td><td style="position:relative;"><button class="ctl-btn" onclick="rowMenu(this)">⋮</button><span class="row-menu" style="display:none;"><a onclick="openModal('orderModal')">Order Details</a><a onclick="toast('Print sent — invoice renders in a hidden print frame')">Print</a><a onclick="toast('JPG exported (UI prototype)')">JPG Export</a><a onclick="toast('Edit order (UI prototype)')">Edit</a><a onclick="toast('Sent to RTS (UI prototype)')">Send to RTS</a><a onclick="toast('Create Task (UI prototype)')">Create Task</a><a onclick="toast('Add Note (UI prototype)')">Add Note</a><a class="danger" onclick="toast('Order cancelled (UI prototype)')">Cancel</a></span></td></tr></table></div>
           <div class="pager">Showing sample rows · counts from the live demo</div>
         </div>
       </section>
 
       <section class="page-panel" id="page-orders-dashboard">
-        <div class="page-head"><div><h1 style="font-size:24px;font-weight:800;color:#18181B;letter-spacing:-0.02em;">Orders Report</h1><p>Source: Website · last 30 days</p></div>
-        <span style="margin-left:auto;display:flex;gap:8px;"><button class="ctl-btn" onclick="toast('Excel export queued — appears in Export Center')">Export Excel</button><button class="ctl-btn" onclick="toast('Main Report Template export queued')">Export as Main Report Template</button><button class="ctl-btn" onclick="toast('Export Center (UI prototype)')">Export Center</button></span></div>
-        <div class="kpi-grid">
-          <div class="card kpi"><div class="lbl">Orders</div><div class="val">65</div><div class="sub">Website source</div></div>
-          <div class="card kpi"><div class="lbl">Revenue</div><div class="val">৳72,108</div><div class="sub">Website source</div></div>
-          <div class="card kpi"><div class="lbl">Delivered</div><div class="val">16</div><div class="sub">Delivery rate tracked per courier</div></div>
-          <div class="card kpi"><div class="lbl">Returned</div><div class="val">7</div><div class="sub">Return rate on delivered base</div></div>
+        <div class="page-head"><div><h1 style="font-size:24px;font-weight:800;color:#18181B;letter-spacing:-0.02em;">Orders Report</h1><p>Apply filters to analyze your orders</p></div>
+        <span style="margin-left:auto;"><button class="btn-primary" onclick="showPage('page-approved-orders')">Open New All Orders List</button></span></div>
+        <div class="card" style="margin-bottom:16px;">
+          <div style="display:flex;align-items:center;margin-bottom:14px;"><h3 style="font-size:16px;font-weight:600;">Filters</h3><button class="ctl-btn" style="margin-left:auto;">Hide</button></div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;">
+            <label class="fld-l">Filter By<select class="fld"><option>By Approved Order Date</option><option>By Web Order Date</option><option>By Courier Date</option></select></label>
+            <label class="fld-l">Date Range<input class="fld" placeholder="Pick a date range"></label>
+            <div class="fld-l">Approved Time Range<span style="display:flex;gap:8px;"><input class="fld" type="time"><input class="fld" type="time"></span></div>
+            <label class="fld-l">Search<input class="fld" placeholder="Search"></label>
+            <label class="fld-l">Source<select class="fld"><option>All sources</option><option>Facebook</option><option>Website</option><option>Direct</option><option>Instagram</option><option>TikTok</option><option>WhatsApp</option><option>Messenger</option></select></label>
+            <label class="fld-l">Courier<select class="fld"><option>All couriers</option><option>Pathao</option><option>Steadfast</option><option>RedX</option><option>Carrybee</option><option>Paperfly</option><option>eCourier</option></select></label>
+            <label class="fld-l">Taken By<select class="fld"><option>All users</option><option>M. Fahim</option></select></label>
+            <label class="fld-l">Courier Payment Status<select class="fld"><option>All</option><option>Paid</option><option>Unpaid</option></select></label>
+            <label class="fld-l">Invoice Search (Order/Courier)<input class="fld" placeholder="Invoice or tracking id"></label>
+            <label class="fld-l">Status Tags<select class="fld"><option>All tags</option></select></label>
+            <label class="fld-l">Order Tags<select class="fld"><option>All tags</option></select></label>
+            <label class="fld-l">District Wise Filter<select class="fld"><option>All districts</option><option>Dhaka</option><option>Khulna</option><option>Nilphamari</option></select></label>
+          </div>
+          <div style="display:flex;justify-content:flex-end;margin-top:16px;"><button class="btn-primary" onclick="toast('Filters applied (UI prototype)')">Apply Filters</button></div>
         </div>
-        <div class="card"><h3>Orders by Status</h3>
-          <div class="bar-row"><span class="nm">Delivered</span><span class="bar-track"><span class="bar-fill" style="width:46%"></span></span><span class="amt">30</span></div>
-          <div class="bar-row"><span class="nm">Pending</span><span class="bar-track"><span class="bar-fill" style="width:91%"></span></span><span class="amt">59</span></div>
-          <div class="bar-row"><span class="nm">Cancelled</span><span class="bar-track"><span class="bar-fill" style="width:63%"></span></span><span class="amt">41</span></div>
-          <div class="bar-row"><span class="nm">Shipped</span><span class="bar-track"><span class="bar-fill" style="width:12%"></span></span><span class="amt">8</span></div>
-          <div class="bar-row"><span class="nm">Returned</span><span class="bar-track"><span class="bar-fill" style="width:11%"></span></span><span class="amt">7</span></div>
+        <div class="card" style="text-align:center;padding:36px 24px;">
+          <h3 style="font-size:18px;font-weight:600;margin-bottom:6px;">No Filters Applied</h3>
+          <p class="muted-sm">Select at least one filter above to view your orders. You can combine date, source, courier and tag filters.</p>
         </div>
       </section>
 
@@ -1503,7 +1551,7 @@
   }
   // Language toggle (visual only)
   var bn = false;
-  function toggleLang(btn){ bn = !bn; btn.textContent = bn ? 'EN · Switch language' : 'BN · ভাষা বদলান'; }
+  function toggleLang(btn){ bn = !bn; for(var ci=0;ci<btn.childNodes.length;ci++){ var nd=btn.childNodes[ci]; if(nd.nodeType===3 && nd.textContent.trim()){ nd.textContent = bn ? ' EN' : ' BN'; } } }
   // Header actions menu
   function toggleActions(e){
     e.stopPropagation();
