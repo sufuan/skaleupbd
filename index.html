@@ -158,6 +158,38 @@
     .step-banner{font-size:12px;padding:10px 12px;}
     .modal-box{max-width:94vw;}
   }
+
+  /* ===== Web Orders rebuild additions ===== */
+  .opt-tag{font-size:10px;letter-spacing:.08em;color:var(--muted2);font-weight:700;}
+  .pop-panel{border:1px solid var(--card-border);border-radius:10px;padding:14px;margin-top:12px;background:#fcfbfe;}
+  .tag-cloud{display:flex;gap:6px;flex-wrap:wrap;}
+  .tag-cloud span{background:var(--grey-bg);border-radius:99px;padding:4px 10px;font-size:12px;cursor:pointer;}
+  .tag-cloud span:hover{background:var(--active-bg);}
+  .prod-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px;}
+  .prod-card{display:flex;flex-direction:column;gap:3px;text-align:left;background:#fff;border:1px solid var(--card-border);border-radius:10px;padding:11px;cursor:pointer;font-family:inherit;}
+  .prod-card:hover{border-color:var(--focus);}
+  .prod-card:disabled{opacity:.45;cursor:default;}
+  .pc-name{font-weight:600;font-size:13px;color:var(--text);}
+  .pc-fav{font-size:11px;color:var(--amber-tx);}
+  .ord-row{display:flex;align-items:center;gap:16px;padding:11px 0;border-bottom:1px solid #f3f4f6;flex-wrap:wrap;}
+  .queue-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:14px;}
+  .queue-card{text-align:left;}
+  .q-count{font-size:26px;font-weight:800;margin:10px 0;}
+  .filter-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px;}
+  .menu-list{display:flex;flex-direction:column;}
+  .menu-list span{padding:7px 8px;border-radius:6px;cursor:pointer;font-size:13.5px;}
+  .menu-list span:hover{background:var(--active-bg);}
+  .cfg-list{display:grid;grid-template-columns:1fr 1fr;gap:4px 18px;margin-top:10px;}
+  .cfg-list span{display:flex;align-items:center;font-size:13px;padding:3px 0;}
+  .cfg-list .switch{margin-left:auto;width:36px;height:20px;}
+  .cfg-list .switch::after{width:14px;height:14px;}
+  .cfg-list .switch.on::after{left:19px;}
+  .icon-btns button{border:1px solid var(--card-border);background:#fff;border-radius:6px;font-size:10.5px;padding:2px 6px;cursor:pointer;}
+  .icon-btns button:disabled{opacity:.4;}
+  .sr-ring{display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:50%;font-size:11px;font-weight:700;border:3.5px solid var(--card-border);}
+  .sr-ring.red-ring{border-color:#fca5a5;color:var(--red-tx);}
+  .sr-ring.green-ring{border-color:#86efac;color:var(--green-tx);}
+  .fav-on{background:var(--amber-bg) !important;border-color:var(--amber-tx) !important;}
   /* ===== Step 2 additions ===== */
   .page-panel{display:none;}
   .page-panel.active{display:block;}
@@ -651,53 +683,84 @@
 </div><!-- /layout -->
 
       <!-- ===== STEP 2: ORDERS PAGES ===== -->
-      <section class="page-panel" id="page-new-order">
-        <div class="page-head"><div><h1>New Order</h1><p>Create a manual order — it lands in Web Orders as Processing</p></div></div>
-        <div class="grid-21">
+            <section class="page-panel" id="page-new-order">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
+          <span class="seg" style="font-size:13.5px;"><button onclick="orderMode(this,'manual')">Manual</button><button class="on" onclick="orderMode(this,'approved')">Approved</button><button onclick="orderMode(this,'preorder')">Pre-Order</button></span>
+          <span style="margin-left:auto;display:flex;gap:8px;"><button class="ctl-btn">Guide</button><button class="ctl-btn" onclick="openModal('layoutsModal')">Layouts &amp; Fields</button></span>
+        </div>
+        <div class="card" style="margin-bottom:16px;background:linear-gradient(90deg,#f3eff9,#ece5f5);display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+          <div><b>চ্যাটের স্ক্রিনশট থেকে ফর্ম পূরণ করুন</b><br><span class="muted-sm">স্ক্রিনশট বেছে নিন, এখানে ছেড়ে দিন, অথবা Ctrl+V দিয়ে পেস্ট করুন</span></div>
+          <button class="btn-primary" style="margin-left:auto;" onclick="toast('Screenshot picker (UI prototype)')">স্ক্রিনশট থেকে পূরণ</button>
+        </div>
+        <div class="grid-21" style="grid-template-columns:1fr 340px;">
           <div>
-            <div class="card" style="margin-bottom:16px;"><h3>Customer</h3>
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;">
-                <label class="fld-l">Customer Name<input class="fld" id="noName" placeholder="e.g. Md. Rahim Uddin"></label>
-                <label class="fld-l">Phone<input class="fld" id="noPhone" placeholder="01XXXXXXXXX"></label>
+            <div class="card" style="margin-bottom:16px;">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                <label class="fld-l">Mobile Number *<span style="display:flex;gap:6px;"><input class="fld" placeholder="01XXXXXXXXX"><button class="ctl-btn" title="Call">Call</button><button class="ctl-btn" title="WhatsApp">WA</button></span></label>
+                <label class="fld-l">Customer Name *<input class="fld" placeholder="Customer name"></label>
+                <label class="fld-l">Email <span class="opt-tag">OPTIONAL</span><input class="fld" placeholder="customer@example.com"></label>
+                <label class="fld-l">Address *<input class="fld" placeholder="Enter address"></label>
               </div>
-              <label class="fld-l" style="margin-top:12px;">Address<textarea class="fld" rows="2" placeholder="House, Road, Area"></textarea></label>
+              <label class="fld-l" style="margin-top:12px;">Shipping Note <span class="opt-tag">OPTIONAL</span> <span class="muted-sm">0/350</span><span style="display:flex;gap:6px;"><input class="fld" placeholder="Note printed on invoice / shared with courier"><button class="ctl-btn" onclick="toast('Shipping note templates — No templates found. Add New Template in Settings (UI prototype)')">+</button></span></label>
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;">
-                <label class="fld-l">District<select class="fld"><option>Dhaka</option><option>Gazipur</option><option>Narayanganj</option><option>Chattogram</option></select></label>
-                <label class="fld-l">Order Source<select class="fld"><option>Phone Call</option><option>Messenger</option><option>WhatsApp</option><option>Walk-in</option></select></label>
+                <label class="fld-l" id="dmWrap">Delivery Method *<select class="fld"><option>Select delivery method</option><option>mr</option><option>Outlet</option><option>Outlet</option><option>steadfast</option><option>Test</option></select></label>
+                <div class="fld-l" id="dmHelp" style="display:none;">Delivery Method<div class="muted-sm" style="margin-top:8px;font-weight:400;">Courier will be assigned during Online Order approval.</div></div>
+                <label class="fld-l">Payment Method <span class="opt-tag">OPTIONAL</span><select class="fld"><option>Select account</option><option>Brack Bank</option><option>Rocket</option><option>Test</option><option>bKash</option></select></label>
+                <label class="fld-l">Order Source<select class="fld"><option>Select order source</option><option>Facebook</option><option>Website</option><option>Direct</option><option>Instagram</option><option>TikTok</option><option>WhatsApp</option><option>Exchange</option><option>MESSENGER</option><option>Custom Source</option><option>Custom Source 2</option><option>Incomplete Order</option><option>Upsale</option></select></label>
+                <label class="fld-l" id="preReason" style="display:none;">Preorder Reason<select class="fld"><option>Select reason</option><option>Out of Stock</option><option>Others</option></select></label>
+                <label class="fld-l" id="preDate" style="display:none;">Notification Date<input class="fld" type="datetime-local"></label>
               </div>
-              <label class="fld-l" style="margin-top:12px;">Note<input class="fld" placeholder="Delivery note (optional)"></label>
+              <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;">
+                <button class="ctl-btn" onclick="popToggle('tagPop')">Tag</button>
+                <span class="fld-l" style="display:inline-flex;align-items:center;gap:8px;">Cross Sale <button class="switch" onclick="this.classList.toggle('on')"></button></span>
+                <button class="ctl-btn" onclick="popToggle('refPop')">Reference Link</button>
+                <button class="ctl-btn" onclick="popToggle('notePop')">Note</button>
+                <button class="ctl-btn" onclick="popToggle('attPop')">Attachment</button>
+                <button class="ctl-btn" onclick="popToggle('morePop')">More</button>
+              </div>
+              <div id="tagPop" class="pop-panel" style="display:none;"><b>Order Tags</b><div class="muted-sm" style="margin:6px 0;">Select Custom Tags</div><div class="tag-cloud"><span>storola</span><span>diaper</span><span>diaper + feeding item</span><span>age 0 to 1 year</span><span>Custom Tag 5</span><span>Custom Tag 6</span><span>Custom Tag 7</span><span>Custom Tag 8</span><span>Custom Tag 9</span><span>Custom Tag 10</span><span>Custom Tag 11</span><span>Custom Tag 12</span><span>Custom Tag 13</span><span>Custom Tag 14</span><span>Custom Tag 15</span></div></div>
+              <div id="refPop" class="pop-panel" style="display:none;"><label class="fld-l">Reference link<input class="fld" placeholder="https://…"></label></div>
+              <div id="notePop" class="pop-panel" style="display:none;"><label class="fld-l">Order note<textarea class="fld" rows="2" placeholder="Add an order note"></textarea></label></div>
+              <div id="attPop" class="pop-panel" style="display:none;"><b>Upload Attachments</b><div class="dashed-empty" style="margin-top:8px;">Drag and drop your files here, or click to select<br><span class="muted-sm">Supported formats: JPG, PNG, GIF, WEBP, AVIF, SVG, PDF (max 5MB)</span></div></div>
+              <div id="morePop" class="pop-panel" style="display:none;"><label class="fld-l">Invoice prefix<input class="fld" placeholder="Optional invoice prefix"></label></div>
             </div>
-            <div class="card"><h3>Products</h3>
-              <input class="fld" placeholder="Search product by name or SKU" style="margin:12px 0;">
-              <div class="prod-line"><span><b>Mentara Roll On Balm COMBO</b><br><span class="muted-sm">SKU MENT-COMBO · Stock 150</span></span><span class="qty"><button onclick="qtyCh(this,-1,599)">−</button><b>1</b><button onclick="qtyCh(this,1,599)">+</button></span><b class="line-amt">৳599</b></div>
-              <div class="prod-line"><span><b>Mentara Roll On Balm Single</b><br><span class="muted-sm">SKU MNT-SINGLE · Stock 320</span></span><span class="qty"><button onclick="qtyCh(this,-1,374)">−</button><b>1</b><button onclick="qtyCh(this,1,374)">+</button></span><b class="line-amt">৳374</b></div>
+            <div class="card" style="margin-bottom:16px;">
+              <div style="display:flex;gap:8px;flex-wrap:wrap;"><button class="ctl-btn" onclick="toast('Product picker focused (UI prototype)')">Add Product</button><button class="ctl-btn" onclick="toast('Scan Barcode — Code/sku search focused (UI prototype)')">Scan Barcode</button><button class="ctl-btn" onclick="openModal('customProductModal')">Add Custom Product</button></div>
+              <h3 style="margin-top:16px;">Click To Add Products <button class="ctl-btn" style="padding:2px 8px;">?</button></h3>
+              <div style="display:flex;gap:10px;margin:12px 0;"><input class="fld" placeholder="Code/sku — Type to Search.." oninput="prodSearch()"><input class="fld" placeholder="Name — Type to Search.." oninput="prodSearch()"><button class="ctl-btn" title="Favourites only" onclick="this.classList.toggle('fav-on')">★</button></div>
+              <div class="prod-grid" id="prodGrid"></div>
+            </div>
+            <div class="card">
+              <h3>Ordered Products <span class="muted-sm" id="ordCount">0item(s)</span></h3>
+              <div id="ordEmpty" class="empty-note" style="margin-top:10px;">Search and add products from the "Click To Add Products" panel.</div>
+              <div id="ordList"></div>
             </div>
           </div>
           <div>
-            <div class="card" style="margin-bottom:16px;"><h3>Delivery</h3>
-              <label class="fld-l" style="margin-top:12px;">Delivery Method<select class="fld" id="noCourier"><option>Steadfast — Inside Dhaka</option><option>Pathao — Inside Dhaka</option><option>RedX</option><option>Manual / Own Delivery</option></select></label>
-              <label class="fld-l" style="margin-top:12px;">Delivery Charge<input class="fld" id="noDel" type="number" value="60" oninput="calcOrder()"></label>
-              <label class="fld-l" style="margin-top:12px;">Discount<input class="fld" id="noDisc" type="number" value="0" oninput="calcOrder()"></label>
-              <label class="fld-l" style="margin-top:12px;">Advance Paid<input class="fld" id="noAdv" type="number" value="0" oninput="calcOrder()"></label>
-            </div>
-            <div class="card"><h3>Summary</h3>
-              <div class="sum-row"><span>Subtotal</span><b id="sumSub">৳973</b></div>
-              <div class="sum-row"><span>Delivery Charge</span><b id="sumDel">৳60</b></div>
-              <div class="sum-row"><span>Discount</span><b id="sumDisc">৳0</b></div>
-              <div class="sum-row"><span>Advance</span><b id="sumAdv">৳0</b></div>
-              <div class="sum-row total"><span>Total (COD Due)</span><b id="sumTotal">৳1,033</b></div>
-              <button class="btn-primary" style="width:100%;margin-top:14px;" onclick="toast('Order created — added to Web Orders (UI prototype)')">Create Order</button>
-              <button class="ctl-btn" style="width:100%;margin-top:8px;justify-content:center;" onclick="showPage('page-web-orders')">Cancel</button>
+            <div style="position:sticky;top:78px;">
+              <div class="card" style="margin-bottom:16px;"><h3>Calculation Details</h3>
+                <label class="fld-l" style="margin-top:12px;">Discount (৳)<input class="fld" type="number" value="0" id="calcDisc" oninput="calcSummary()"></label>
+                <label class="fld-l" style="margin-top:12px;">Delivery Charge (৳)<input class="fld" type="number" value="0" id="calcDel" oninput="calcSummary()"></label>
+                <label class="fld-l" style="margin-top:12px;">Advance (৳)<input class="fld" type="number" value="0" id="calcAdv" oninput="calcSummary()"></label>
+                <label class="fld-l" style="margin-top:12px;">Transaction ID<input class="fld" placeholder="TrxId (bKash/Nagad/Bank)" disabled></label>
+              </div>
+              <div class="card"><h3>Order Summary</h3>
+                <div class="sum-row"><span>Items Total</span><b id="sumItems">৳0</b></div>
+                <div class="sum-row"><span>Discount</span><b id="sumDisc2">৳0</b></div>
+                <div class="sum-row"><span>Delivery Charge</span><b id="sumDel2">৳0</b></div>
+                <div class="sum-row"><span>Grand Total</span><b id="sumGrand">৳0</b></div>
+                <div class="sum-row"><span>Advance</span><b id="sumAdv2">৳0</b></div>
+                <div class="sum-row total"><span>Due Amount</span><b id="sumDue">৳0</b></div>
+                <button class="btn-primary" style="width:100%;margin-top:14px;" id="createOrderBtn" onclick="toast('Order saved (UI prototype)')">Create Approved Order</button>
+                <p class="empty-note" style="text-align:center;margin-top:8px;">Order will be saved as soon as you click.</p>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      <section class="page-panel" id="page-web-orders">
-        <div class="page-head"><div><h1>Web Order List</h1><p>Every incoming order lands here first — confirm to move it to Approved Orders</p></div>
-        <span style="margin-left:auto;display:flex;gap:8px;"><button class="ctl-btn" onclick="showPage('page-new-order')">+ New Order</button><button class="ctl-btn">Export</button></span></div>
+            <section class="page-panel" id="page-web-orders">
         <div class="pill-row" id="woPills">
-          <button class="wo-pill active" data-f="all">All <b>71</b></button>
           <button class="wo-pill" data-f="Processing">Processing <b>23</b></button>
           <button class="wo-pill" data-f="Incomplete">Incomplete <b>3</b></button>
           <button class="wo-pill" data-f="Good But No Response">Good But No Response <b>1</b></button>
@@ -707,19 +770,32 @@
           <button class="wo-pill" data-f="Stock Out">Stock Out <b>0</b></button>
           <button class="wo-pill" data-f="Approved">Approved <b>40</b></button>
           <button class="wo-pill" data-f="Cancel">Cancel <b>3</b></button>
+          <button class="wo-pill active" data-f="all">All <b>71</b></button>
         </div>
         <div class="card">
-          <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;"><input class="fld" style="max-width:280px;" placeholder="Search invoice, name or phone" oninput="woSearch(this)"><select class="fld" style="max-width:190px;"><option>All Sources</option><option>Website</option><option>Messenger</option><option>WhatsApp</option><option>Phone</option></select><select class="fld" style="max-width:170px;"><option>Today</option><option>Last 7 days</option><option>Last 30 days</option></select></div>
-          <table id="woTable"><tr><th></th><th>Invoice</th><th>Date</th><th>Customer</th><th>Phone</th><th>Product</th><th>Source</th><th>Total</th><th>Status</th><th></th></tr>
-          <tr data-status="Processing"><td><input type="checkbox"></td><td><b>OB273</b></td><td>10 Nov, 4:12 PM</td><td>M. Fahim</td><td>01712-445566</td><td>Mentara Roll On Balm COMBO ×1</td><td>Website</td><td>৳599</td><td><span class="pill lpurple">Processing</span></td><td><button class="ctl-btn" onclick="showPage('page-web-order-detail')">View</button></td></tr>
-          <tr data-status="Processing"><td><input type="checkbox"></td><td><b>OB272</b></td><td>10 Nov, 3:48 PM</td><td>Shakil Ahmed</td><td>01819-223344</td><td>Mentara Roll On Balm Single ×2</td><td>Messenger</td><td>৳748</td><td><span class="pill lpurple">Processing</span></td><td><button class="ctl-btn" onclick="showPage('page-web-order-detail')">View</button></td></tr>
-          <tr data-status="Incomplete"><td><input type="checkbox"></td><td><b>OB269</b></td><td>10 Nov, 2:05 PM</td><td>Unknown</td><td>01611-987654</td><td>Mentara Roll On Balm COMBO ×1</td><td>Website</td><td>৳599</td><td><span class="pill amber">Incomplete</span></td><td><button class="ctl-btn" onclick="showPage('page-web-order-detail')">View</button></td></tr>
-          <tr data-status="Good But No Response"><td><input type="checkbox"></td><td><b>OB268</b></td><td>10 Nov, 1:31 PM</td><td>Ruma Akter</td><td>01922-334455</td><td>Mentara Roll On Balm Single ×1</td><td>WhatsApp</td><td>৳434</td><td><span class="pill blue">Good But No Response</span></td><td><button class="ctl-btn" onclick="showPage('page-web-order-detail')">View</button></td></tr>
-          <tr data-status="Advance Payment"><td><input type="checkbox"></td><td><b>OB267</b></td><td>10 Nov, 12:20 PM</td><td>Tanvir Hasan</td><td>01555-667788</td><td>Mentara Roll On Balm COMBO ×2</td><td>Website</td><td>৳1,198</td><td><span class="pill pink">Advance Payment</span></td><td><button class="ctl-btn" onclick="showPage('page-web-order-detail')">View</button></td></tr>
-          <tr data-status="Approved"><td><input type="checkbox"></td><td><b>OB266</b></td><td>10 Nov, 11:02 AM</td><td>M. Fahim</td><td>01712-445566</td><td>Mentara Roll On Balm COMBO ×1</td><td>Website</td><td>৳599</td><td><span class="pill green">Approved</span></td><td><button class="ctl-btn" onclick="showPage('page-web-order-detail')">View</button></td></tr>
-          <tr data-status="Cancel"><td><input type="checkbox"></td><td><b>OB259</b></td><td>9 Nov, 6:44 PM</td><td>Duplicate Order</td><td>01712-445566</td><td>Mentara Roll On Balm Single ×1</td><td>Website</td><td>৳374</td><td><span class="pill red">Cancel</span></td><td><button class="ctl-btn" onclick="showPage('page-web-order-detail')">View</button></td></tr>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px;">
+            <input class="fld" style="max-width:230px;" placeholder="Filter orders..." oninput="woSearch(this)">
+            <button class="ctl-btn" onclick="openModal('filterModal')">Filter</button>
+            <button class="ctl-btn" onclick="popToggle('callHelpPop')">কল স্ট্যাটাস কী, দেখুন</button>
+            <button class="ctl-btn" onclick="popToggle('sortPop')">New</button>
+            <button class="ctl-btn" onclick="popToggle('bulkPop')">Bulk Actions</button>
+            <button class="ctl-btn" onclick="popToggle('tableCfgPop')" title="Table Configuration">Table</button>
+            <button class="ctl-btn" onclick="popToggle('woSettingsPop')" title="Settings">Settings</button>
+          </div>
+          <div id="callHelpPop" class="pop-panel" style="display:none;"><b>কোন অর্ডারে কে কল করেছে জানুন</b><p style="margin:8px 0;">Call Center (PBX) চালু করলে অর্ডার থেকে করা প্রতিটি কল নিজে থেকেই গোনা হয়: Not Called, Tried 1×, 2×, 3+ বা Talked। এক ক্লিকে লিস্ট ফিল্টার করুন, কে কল করেছে দেখুন, আর কলের রেকর্ডিং শুনুন।</p><div style="display:flex;gap:6px;flex-wrap:wrap;"><span class="pill red">Not Called</span><span class="pill amber">Tried 1×</span><span class="pill amber">Tried 2×</span><span class="pill amber">Tried 3+</span><span class="pill green">Talked</span></div><button class="btn-primary" style="margin-top:10px;" onclick="toast('PBX setup (UI prototype)')">PBX সেট আপ করুন →</button></div>
+          <div id="sortPop" class="pop-panel" style="display:none;"><b>Sort by</b><div class="menu-list"><span>Rating</span><span>Success High</span><span>Success Low</span><span>New ✓</span><span>Old</span><span>Not Updated</span></div></div>
+          <div id="bulkPop" class="pop-panel" style="display:none;"><div class="menu-list"><span onclick="toast('Download orders (UI prototype)')">Download Orders</span><span onclick="toast('Sync Shopify Orders (UI prototype)')">Sync Shopify Orders</span><span onclick="toast('Sync New Orders (UI prototype)')">Sync New Orders</span><span onclick="toast('Sync Additional Site Orders (UI prototype)')">Sync Additional Site Orders</span></div><div class="sum-row" style="margin-top:8px;"><span>Automatic REST order recovery<br><span class="muted-sm">Off · Checks every 5 minutes</span></span><button class="switch" onclick="this.classList.toggle('on')"></button></div></div>
+          <div id="tableCfgPop" class="pop-panel" style="display:none;"><b>Table Configuration</b><div class="cfg-list"><span>Select <i class="switch on" onclick="this.classList.toggle('on')"></i></span><span>Created At <i class="switch on" onclick="this.classList.toggle('on')"></i></span><span>Auto Call <i class="switch on" onclick="this.classList.toggle('on')"></i></span><span>Customer <i class="switch on" onclick="this.classList.toggle('on')"></i></span><span>Note <i class="switch on" onclick="this.classList.toggle('on')"></i></span><span>PBX Calls <i class="switch on" onclick="this.classList.toggle('on')"></i></span><span>Order Items <i class="switch on" onclick="this.classList.toggle('on')"></i></span><span>Success Rate <i class="switch on" onclick="this.classList.toggle('on')"></i></span><span>Tags <i class="switch on" onclick="this.classList.toggle('on')"></i></span><span>Taken By <i class="switch" onclick="this.classList.toggle('on')"></i></span><span>Site <i class="switch on" onclick="this.classList.toggle('on')"></i></span><span>Assigned To <i class="switch on" onclick="this.classList.toggle('on')"></i></span><span>Actions <i class="switch on" onclick="this.classList.toggle('on')"></i></span><span>Sticky Action <i class="switch on" onclick="this.classList.toggle('on')"></i></span></div><div style="display:flex;gap:8px;margin-top:10px;"><button class="ctl-btn">Reset Configuration</button><button class="btn-primary" onclick="toast('Configuration saved (UI prototype)')">Save Configuration</button></div></div>
+          <div id="woSettingsPop" class="pop-panel" style="display:none;"><div class="menu-list"><span>Assignment Settings</span><span>Customize Statuses</span><span>Customize Tags</span><span>Customize Reasons</span><span>Website payments</span><span>Team Chat</span><span onclick="openModal('alertsModal')">New web order alerts</span><span>Video Guide</span></div></div>
+          <table id="woTable"><tr><th><input type="checkbox"></th><th>Created At</th><th>Auto Call</th><th>Customer</th><th>Note</th><th>PBX Calls</th><th>Order Items</th><th>Success Rate</th><th>Tags</th><th>Site</th><th>Assigned To</th><th>Actions</th></tr>
+          <tr data-status="Processing"><td><input type="checkbox"></td><td>08 Nov, 12:27 pm<br><span class="muted-sm">ID: 1794128205</span></td><td>—</td><td><b>01945502173</b> <span class="icon-btns"><button title="Call customer">Call</button><button title="Message customer on WhatsApp">WA</button><button title="Start PBX call" disabled>PBX</button><button title="Copy customer details">Copy</button></span><br>test<br><span class="muted-sm">ert5r fbg</span></td><td>Updated 2 days ago<br>—</td><td>No Call Center<br><a href="#" onclick="toast('PBX setup (UI prototype)');return false;">Set up PBX →</a></td><td><a href="#" onclick="showPage('page-web-order-detail');return false;">Apple iPod classic product 2x ৳100</a></td><td>0</td><td><span class="pill grey">storola</span> <button class="ctl-btn" style="padding:3px 8px;">Add Tag</button></td><td>Main</td><td><select class="fld" style="padding:6px 8px;"><option>Unassigned</option><option selected>M. Fahim - Active</option></select></td><td><a href="#" onclick="showPage('page-web-order-detail');return false;">Open (M. Fahim)</a></td></tr>
+          <tr data-status="Processing"><td><input type="checkbox"></td><td>08 Nov, 11:02 am<br><span class="muted-sm">ID: 12167</span></td><td>—</td><td><b>017XXXXXXXX</b> <span class="icon-btns"><button title="Call customer">Call</button><button title="Message customer on WhatsApp">WA</button><button title="Copy customer details">Copy</button></span><br>khan tanvir islam<br><span class="muted-sm">TEST ONLY - quantity TWO confirmed, Khulna</span></td><td>—</td><td>No Call Center<br><a href="#" onclick="toast('PBX setup (UI prototype)');return false;">Set up PBX →</a></td><td><a href="#" onclick="showPage('page-web-order-detail');return false;">Pink Minnie Kids Plush Bag 11145 1x ৳300</a></td><td><span class="sr-ring red-ring">11%</span><br><span class="muted-sm">Order: 1/9 · Rating: 36</span></td><td><button class="ctl-btn" style="padding:3px 8px;">Add Tag</button></td><td>Alasil BD Demo</td><td><select class="fld" style="padding:6px 8px;"><option>Unassigned</option><option selected>M. Fahim - Active</option></select></td><td><a href="#" onclick="showPage('page-web-order-detail');return false;">Open (M. Fahim)</a></td></tr>
+          <tr data-status="Approved"><td><input type="checkbox"></td><td>07 Nov, 3:44 pm<br><span class="muted-sm">ID: 0</span></td><td>—</td><td><b>018XXXXXXXX</b> <span class="icon-btns"><button title="Call customer">Call</button><button title="Message customer on WhatsApp">WA</button><button title="Copy customer details">Copy</button></span><br>F.A. Rayhan<br><span class="muted-sm">Dimla, Nilphamari</span></td><td>—</td><td>No Call Center<br><a href="#" onclick="toast('PBX setup (UI prototype)');return false;">Set up PBX →</a></td><td><a href="#" onclick="showPage('page-web-order-detail');return false;">Kumkum Ikkat 1 1x ৳699</a></td><td><span class="sr-ring green-ring">98%</span><br><span class="muted-sm">Order: 65/66 · Rating: 150</span></td><td><span class="pill grey">MANUAL</span> <button class="ctl-btn" style="padding:3px 8px;">Add Tag</button></td><td>Main</td><td><select class="fld" style="padding:6px 8px;"><option>Unassigned</option><option selected>M. Fahim - Active</option></select></td><td><a href="#" onclick="showPage('page-web-order-detail');return false;">Open (M. Fahim)</a></td></tr>
+          <tr data-status="Processing"><td><input type="checkbox"></td><td>08 Nov, 9:15 am<br><span class="muted-sm">ID: 1790854121</span></td><td>—</td><td><b>019XXXXXXXX</b> <span class="icon-btns"><button title="Call customer">Call</button><button title="Message customer on WhatsApp">WA</button><button title="Copy customer details">Copy</button></span><br>Nozrul Islam<br><span class="muted-sm">—</span></td><td>—</td><td>No Call Center<br><a href="#" onclick="toast('PBX setup (UI prototype)');return false;">Set up PBX →</a></td><td><a href="#" onclick="showPage('page-web-order-detail');return false;">Neela Pankh 2 2x ৳700</a></td><td><span class="sr-ring green-ring">100%</span><br><span class="muted-sm">Order: 1/1 · Rating: 1</span></td><td><button class="ctl-btn" style="padding:3px 8px;">Add Tag</button></td><td>Main</td><td><select class="fld" style="padding:6px 8px;"><option>Unassigned</option><option selected>M. Fahim - Active</option></select></td><td><a href="#" onclick="showPage('page-web-order-detail');return false;">Open (M. Fahim)</a></td></tr>
+          <tr data-status="Processing"><td><input type="checkbox"></td><td>08 Nov, 8:03 am<br><span class="muted-sm">ID: 1790786232</span></td><td>—</td><td><b>017XXXXXXXX</b> <span class="icon-btns"><button title="Call customer">Call</button><button title="Message customer on WhatsApp">WA</button><button title="Copy customer details">Copy</button></span><br>Anwar Hossain<br><span class="muted-sm">Room No.- 05, House No.- ?, Mohammadpur, Dhaka</span></td><td>—</td><td>No Call Center<br><a href="#" onclick="toast('PBX setup (UI prototype)');return false;">Set up PBX →</a></td><td><a href="#" onclick="showPage('page-web-order-detail');return false;">Kumkum Ikkat 1 1x ৳699</a></td><td><span class="sr-ring green-ring">100%</span><br><span class="muted-sm">Order: 2/2 · Rating: 2</span></td><td><button class="ctl-btn" style="padding:3px 8px;">Add Tag</button></td><td>Alasil BD Demo</td><td><select class="fld" style="padding:6px 8px;"><option>Unassigned</option><option selected>M. Fahim - Active</option></select></td><td><a href="#" onclick="showPage('page-web-order-detail');return false;">Open (M. Fahim)</a></td></tr>
+          <tr data-status="Incomplete"><td><input type="checkbox"></td><td>08 Nov, 7:41 am<br><span class="muted-sm">ID: 1790615850</span></td><td>—</td><td><b>016XXXXXXXX</b> <span class="icon-btns"><button title="Call customer">Call</button><button title="Message customer on WhatsApp">WA</button><button title="Copy customer details">Copy</button></span><br>—<br><span class="muted-sm">—</span></td><td>—</td><td>No Call Center<br><a href="#" onclick="toast('PBX setup (UI prototype)');return false;">Set up PBX →</a></td><td><a href="#" onclick="showPage('page-web-order-detail');return false;">30L Bag 109 1x ৳320</a></td><td>0</td><td><button class="ctl-btn" style="padding:3px 8px;">Add Tag</button></td><td>Main</td><td><select class="fld" style="padding:6px 8px;"><option>Unassigned</option><option>M. Fahim - Active</option></select></td><td><a href="#" onclick="showPage('page-web-order-detail');return false;">Open</a></td></tr>
           </table>
-          <div class="pager">Page 1 of 9 · 71 orders</div>
+          <div style="display:flex;align-items:center;gap:12px;margin-top:12px;flex-wrap:wrap;"><span class="muted-sm">Page 1</span><label class="muted-sm">Rows per page <select class="fld" style="width:auto;display:inline-block;padding:5px 8px;"><option>20</option><option>50</option><option>100</option></select></label><span style="margin-left:auto;display:flex;gap:6px;"><button class="ctl-btn" disabled>‹ Previous</button><button class="ctl-btn">Next ›</button></span></div>
         </div>
       </section>
 
@@ -760,43 +836,181 @@
         </div>
       </section>
 
-      <section class="page-panel" id="page-auto-pick">
-        <div class="page-head"><div><h1>Auto Pick Orders</h1><p>Automatically pick and prepare confirmed orders for courier handover</p></div></div>
-        <div class="card">
-          <div style="display:flex;align-items:center;gap:12px;"><b>Auto Pick</b><button class="switch on" onclick="this.classList.toggle('on')"></button><span class="muted-sm">When ON, approved orders are auto-assigned to the default warehouse pick list.</span></div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:18px;">
-            <label class="fld-l">Warehouse<select class="fld"><option>Main Warehouse — Dhaka</option><option>Warehouse 2 — Gazipur</option></select></label>
-            <label class="fld-l">Pick Strategy<select class="fld"><option>First In, First Out</option><option>Nearest Expiry First</option></select></label>
+            <section class="page-panel" id="page-auto-pick">
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;"><h3 style="font-size:17px;">Auto Order Dashboard</h3><span style="margin-left:auto;display:flex;gap:10px;align-items:center;"><span class="muted-sm">Updated just now</span><button class="ctl-btn" onclick="toast('Data refreshed (UI prototype)')">Refresh data</button><button class="ctl-btn">Guide</button></span></div>
+        <div class="card" style="margin:16px 0;">
+          <div style="display:flex;gap:14px;align-items:flex-start;"><button class="switch on" onclick="this.classList.toggle('on')"></button><div><b>Open next automatically after status update</b><br><span class="muted-sm">When enabled, auto-order continues with the next item in the same queue after you update a status.</span></div></div>
+        </div>
+        <div class="queue-grid">
+          <div class="card queue-card"><span class="pill lpurple">Processing</span><div class="q-count">23</div><button class="btn-primary" onclick="showPage('page-web-order-detail')">Open Next</button></div>
+          <div class="card queue-card"><span class="pill amber">Incomplete</span><div class="q-count">3</div><button class="btn-primary" onclick="showPage('page-web-order-detail')">Open Next</button></div>
+          <div class="card queue-card"><span class="pill blue">Good But No Response</span><div class="q-count">1</div><button class="btn-primary" onclick="showPage('page-web-order-detail')">Open Next</button></div>
+          <div class="card queue-card"><span class="pill grey">No Response</span><div class="q-count">0</div><button class="btn-primary" disabled style="opacity:.45;">Open Next</button></div>
+          <div class="card queue-card"><span class="pill pink">Advance Payment</span><div class="q-count">1</div><button class="btn-primary" onclick="showPage('page-web-order-detail')">Open Next</button></div>
+          <div class="card queue-card"><span class="pill grey">On Hold</span><div class="q-count">0</div><button class="btn-primary" disabled style="opacity:.45;">Open Next</button></div>
+          <div class="card queue-card"><span class="pill grey">Stock Out</span><div class="q-count">0</div><button class="btn-primary" disabled style="opacity:.45;">Open Next</button></div>
+        </div>
+        <div class="card" style="margin-top:16px;"><h3>My Daily Report</h3>
+          <div style="display:flex;gap:26px;margin-top:12px;flex-wrap:wrap;">
+            <span>TAKEN <b style="font-size:17px;">8</b></span><span>SHIPPED <b style="font-size:17px;">0</b></span><span>DELIVERED <b style="font-size:17px;">0</b></span><span>RETURNED <b style="font-size:17px;">0</b></span>
           </div>
-          <p class="empty-note" style="margin-top:14px;">This page has no separate Rules or Settings tabs in the original — the controls above are the whole feature.</p>
         </div>
       </section>
 
-      <section class="page-panel" id="page-auto-call">
-        <div class="page-head"><div><h1>Auto Call Center</h1><p>Automatic order-confirmation calls — billed ৳1.00 per minute</p></div></div>
-        <div class="utabs inner-tabs"><button class="active">Rules</button><button>Integration Setup</button><button>Call Logs</button><button>Reports</button></div>
-        <div class="kpi-grid" style="grid-template-columns:repeat(3,1fr);">
-          <div class="card kpi"><div class="lbl">Wallet Balance</div><div class="val">৳250</div><div class="sub">Hold ৳0 · Available ৳250</div></div>
-          <div class="card kpi"><div class="lbl">Rate</div><div class="val">৳1.00<span style="font-size:14px;">/min</span></div><div class="sub">Per connected call minute</div></div>
-          <div class="card kpi"><div class="lbl">Call Settings</div><div class="val" style="font-size:17px;">2 attempts · 15 min gap</div><div class="sub">Max duration per call: 3 min</div></div>
+            <section class="page-panel" id="page-auto-call">
+        <div class="utabs inner-tabs" data-tabs="ac" style="margin-bottom:16px;">
+          <button class="active" data-t="ac-main">Auto Call Center</button><button data-t="ac-broadcast">Broadcast</button><button data-t="ac-leads">Leads</button><button data-t="ac-myleads">My Leads</button><button data-t="ac-report">Auto Call Report</button><button data-t="ac-rules">Rules</button><button data-t="ac-setup">Integration Setup</button>
         </div>
-        <div class="card"><div style="display:flex;align-items:center;"><h3>Rules</h3><button class="btn-primary" style="margin-left:auto;" onclick="toast('Create Rule dialog (UI prototype)')">+ Create Rule</button></div>
-          <table style="margin-top:12px;"><tr><th>Rule</th><th>Trigger</th><th>Script</th><th>Status</th><th></th></tr>
-          <tr><td>Order Confirmation Call</td><td>New Web Order (Processing)</td><td>Confirm order + address</td><td><span class="pill green">Active</span></td><td><button class="ctl-btn">Edit</button></td></tr>
-          <tr><td>Incomplete Order Recovery</td><td>Incomplete over 30 min</td><td>Complete your order</td><td><span class="pill grey">Paused</span></td><td><button class="ctl-btn">Edit</button></td></tr></table>
-          <p class="empty-note" style="margin-top:12px;">WooCommerce stores trigger the same calls through the verify-order API; the result returns by webhook.</p>
+        <div id="ac-main" class="inner-pane">
+          <h3 style="font-size:17px;">Auto Call Center by EcomDrive</h3>
+          <div style="display:flex;gap:16px;flex-wrap:wrap;margin:10px 0 16px;font-size:13.5px;"><span>Mode: <b>Central Auto Call Center</b></span><span>Balance: <b>0.00 TK</b></span><span>Hold: <b>0.00 TK</b></span><span>Available: <b>0.00 TK</b></span><span>Rate: <b>1.00 TK/min</b></span></div>
+          <div class="card">
+            <h3>Manual Call Batches</h3>
+            <div class="utabs inner-tabs" style="margin:12px 0;"><button class="active">Online Order</button><button>Approved Orders</button></div>
+            <div class="filter-grid">
+              <label class="fld-l">Search<input class="fld" placeholder="Phone, customer, order id"></label>
+              <label class="fld-l">Web Order Status<select class="fld"><option>All statuses</option><option selected>Processing</option><option>Incomplete</option><option>Good But No Response</option><option>No Response</option><option>Advance Payment</option><option>On Hold</option><option>Stock Out</option><option>Approved</option><option>Cancel</option></select></label>
+              <label class="fld-l">Order Source<select class="fld"><option>All sources</option><option>Facebook</option><option>Instagram</option><option>TikTok</option><option>ChatGPT</option><option>Google</option><option>YouTube</option><option>WhatsApp</option><option>Email</option><option>X</option><option>LinkedIn</option><option>Reddit</option><option>Pinterest</option><option>Direct</option><option>Other</option><option>Unknown</option></select></label>
+              <label class="fld-l">Auto Call Outcome<select class="fld"><option>All outcomes</option><option>Pressed 1</option><option>Pressed 2</option><option>Transferred to agent</option><option>Answered (No Input)</option><option>Answered (Other Key)</option><option>No Answer</option><option>Busy</option><option>Rejected Call</option><option>Failed</option><option>Could not start call</option><option>Insufficient Balance</option></select></label>
+              <label class="fld-l">Attempt<select class="fld"><option>All attempts</option><option>Attempt 1</option><option>Attempt 2</option><option>Attempt 3</option></select></label>
+              <label class="fld-l">Tag<select class="fld"><option>All tags</option><option>Non-COD</option><option>Qty Change</option><option>MANUAL</option><option>Auto Call Pressed 1</option><option>Auto Call Pressed 2</option><option>Auto Call No Answer</option><option>Auto Call Busy</option><option>Auto Call Rejected</option><option>Auto Call Failed</option><option>Auto Call In Progress</option><option>storola</option><option>diaper</option><option>diaper + feeding item</option><option>age 0 to 1 year</option><option>Custom Tag 5</option><option>Custom Tag 10</option><option>Custom Tag 15</option></select></label>
+              <label class="fld-l">From Date<input class="fld" type="datetime-local"></label>
+              <label class="fld-l">To Date<input class="fld" type="datetime-local"></label>
+              <label class="fld-l">Max Attempts (Override)<input class="fld" type="number" value="2"></label>
+              <label class="fld-l">Retry Gap Minutes (Override)<input class="fld" type="number" value="15"></label>
+            </div>
+            <p class="empty-note">Tag only keeps the Web Order status unchanged. To approve an order, choose Confirm Web Order. Actions run only for the pressed key.</p>
+            <div class="grid-2" style="margin-top:14px;">
+              <div class="card" style="box-shadow:none;border:1px solid var(--card-border);"><div style="display:flex;align-items:center;"><b>Key1 Actions</b><button class="ctl-btn" style="margin-left:auto;">Add Action</button></div>
+                <p class="muted-sm" style="margin:6px 0;">Multiple actions run in order for the same key press.</p>
+                <label class="fld-l">Action<select class="fld"><option>Tag only, no status change</option><option>Confirm Web Order</option><option>Update Web Status</option><option>Add Note</option></select></label>
+                <label class="fld-l" style="margin-top:10px;">Tag<select class="fld"><option>Select tag</option><option>Non-COD</option><option>Qty Change</option><option>MANUAL</option><option selected>Auto Call Pressed 1</option><option>Auto Call Pressed 2</option><option>storola</option><option>diaper</option></select></label>
+                <button class="ctl-btn" style="margin-top:10px;">Remove action</button></div>
+              <div class="card" style="box-shadow:none;border:1px solid var(--card-border);"><div style="display:flex;align-items:center;"><b>Key2 Actions</b><button class="ctl-btn" style="margin-left:auto;">Add Action</button></div>
+                <p class="muted-sm" style="margin:6px 0;">Multiple actions run in order for the same key press.</p>
+                <label class="fld-l">Action<select class="fld"><option>Tag only, no status change</option><option>Confirm Web Order</option><option>Update Web Status</option><option>Add Note</option></select></label>
+                <label class="fld-l" style="margin-top:10px;">Tag<select class="fld"><option>Select tag</option><option>Non-COD</option><option>Qty Change</option><option>MANUAL</option><option>Auto Call Pressed 1</option><option selected>Auto Call Pressed 2</option><option>storola</option><option>diaper</option></select></label>
+                <button class="ctl-btn" style="margin-top:10px;">Remove action</button></div>
+            </div>
+            <div style="display:flex;gap:10px;align-items:center;margin:14px 0;"><button class="btn-primary" disabled style="opacity:.45;">Start Auto Call</button><span class="muted-sm">No orders selected</span></div>
+            <table><tr><th><input type="checkbox"></th><th>Order</th><th>Customer</th><th>Phone</th><th>Status</th><th>Source</th><th>Auto Call</th><th>Attempt</th><th>Created</th></tr>
+            <tr><td><input type="checkbox"></td><td>#1794128205</td><td>test</td><td>01945502173</td><td><span class="pill lpurple">PROCESSING</span></td><td>unknown</td><td>—</td><td>—</td><td>11/8/2026, 12:27:15 PM</td></tr>
+            <tr><td><input type="checkbox"></td><td>#1790615850</td><td>—</td><td>016XXXXXXXX</td><td><span class="pill lpurple">PROCESSING</span></td><td>direct</td><td>—</td><td>—</td><td>11/8/2026, 7:41:02 AM</td></tr>
+            <tr><td><input type="checkbox"></td><td>#1790566460</td><td>—</td><td>017XXXXXXXX</td><td><span class="pill lpurple">PROCESSING</span></td><td>fb</td><td>—</td><td>—</td><td>11/8/2026, 6:12:44 AM</td></tr>
+            <tr><td><input type="checkbox"></td><td>#1790453495</td><td>—</td><td>018XXXXXXXX</td><td><span class="pill lpurple">PROCESSING</span></td><td>unknown</td><td>—</td><td>—</td><td>11/7/2026, 9:03:31 PM</td></tr>
+            <tr><td><input type="checkbox"></td><td>#1790154968</td><td>—</td><td>019XXXXXXXX</td><td><span class="pill lpurple">PROCESSING</span></td><td>direct</td><td>—</td><td>—</td><td>11/7/2026, 4:26:10 PM</td></tr>
+            <tr><td><input type="checkbox"></td><td>#1790786232</td><td>Anwar Hossain</td><td>017XXXXXXXX</td><td><span class="pill lpurple">PROCESSING</span></td><td>fb</td><td>—</td><td>—</td><td>11/8/2026, 8:03:19 AM</td></tr></table>
+            <div class="pager">Page 1 of 2 · Previous / Next</div>
+          </div>
+          <div class="grid-2" style="margin-top:16px;">
+            <div class="card"><h3>Recent Runs</h3><p class="empty-note" style="margin-top:8px;">No runs yet.</p></div>
+            <div class="card"><h3>Live Run Activity</h3><p class="empty-note" style="margin-top:8px;">Start a run to see real-time call activity.</p></div>
+          </div>
+        </div>
+        <div id="ac-broadcast" class="inner-pane" style="display:none;">
+          <div class="card"><h3>New broadcast campaign</h3>
+            <p class="muted-sm" style="margin:8px 0;">Upload your own customer list (CSV) and call it as a campaign. Numbers are validated and de-duplicated automatically.</p>
+            <div class="filter-grid">
+              <label class="fld-l">Campaign name<input class="fld" placeholder="e.g. Eid offer — repeat customers"></label>
+              <label class="fld-l">Mode<select class="fld"><option>IVR (auto-dial)</option><option>Manual (employees call)</option><option>Hybrid</option></select></label>
+              <label class="fld-l">Contact list (.csv)<input class="fld" type="file"></label>
+            </div>
+            <p class="muted-sm" style="margin:8px 0;">The system auto-dials every contact and plays your recorded message.</p>
+            <button class="btn-primary" disabled style="opacity:.45;">Create campaign</button> <button class="ctl-btn">Download sample CSV</button>
+            <h3 style="margin-top:20px;">Campaigns</h3><p class="empty-note" style="margin-top:8px;">No campaigns yet. Upload a contact list above to create one.</p>
+          </div>
+        </div>
+        <div id="ac-leads" class="inner-pane" style="display:none;">
+          <div class="card"><h3>Leads</h3><p class="muted-sm" style="margin:8px 0;">Every contact from your broadcast campaigns, and who is working it.</p>
+            <div class="filter-grid">
+              <label class="fld-l">Campaign<select class="fld"><option>All campaigns</option></select></label>
+              <label class="fld-l">Assigned to<select class="fld"><option>Everyone</option></select></label>
+              <label class="fld-l">Follow-up status<select class="fld"><option>All statuses</option></select></label>
+              <label class="fld-l">Search<input class="fld" placeholder="Name or phone"></label>
+            </div>
+            <label style="display:flex;gap:8px;align-items:center;margin-top:12px;font-size:13px;"><input type="checkbox"> Ready to call <span class="muted-sm">— manual campaigns, plus hybrid leads the auto caller has finished with</span></label>
+            <div class="dashed-empty" style="margin-top:14px;">No contacts match these filters.</div>
+          </div>
+        </div>
+        <div id="ac-myleads" class="inner-pane" style="display:none;">
+          <div class="card"><h3>My Leads</h3><p class="muted-sm" style="margin:8px 0;">Contacts from your business's broadcast campaigns that are assigned to you. Call them, then set how it went.</p>
+            <div class="filter-grid">
+              <label class="fld-l">Follow-up status<select class="fld"><option>All statuses</option></select></label>
+              <label class="fld-l">Search<input class="fld" placeholder="Name or phone"></label>
+            </div>
+            <label style="display:flex;gap:8px;align-items:center;margin-top:12px;font-size:13px;"><input type="checkbox"> Ready to call <span class="muted-sm">— hides leads the auto caller is still working through</span></label>
+            <div class="dashed-empty" style="margin-top:14px;">No leads are assigned to you right now.</div>
+          </div>
+        </div>
+        <div id="ac-report" class="inner-pane" style="display:none;">
+          <div class="muted-sm" style="letter-spacing:.08em;">REPORTS / AUTO CALL CENTER</div>
+          <h3 style="font-size:19px;margin:6px 0;">Auto Call Center Report</h3>
+          <p class="muted-sm">Date-wise, month-wise, year-wise, and lifetime auto-call activity in one place.</p>
+          <div style="display:flex;gap:10px;align-items:center;margin:12px 0;flex-wrap:wrap;"><span class="sum-chip">SELECTED RANGE: <b>12 Oct 2026 - 10 Nov 2026</b></span><button class="ctl-btn">How it Works</button><button class="ctl-btn">Reset</button><button class="ctl-btn">Export CSV</button></div>
+          <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr);">
+            <div class="card kpi"><div class="lbl">TOTAL CALLS</div><div class="val">0</div><div class="sub">Completed auto-call attempts in the selected filter</div></div>
+            <div class="card kpi"><div class="lbl">SUCCESS</div><div class="val">0</div><div class="sub">0.0% Pressed 1 confirmation rate</div></div>
+            <div class="card kpi"><div class="lbl">NOT CONFIRMED</div><div class="val">0</div><div class="sub">Calls that did not end with Pressed 1</div></div>
+            <div class="card kpi"><div class="lbl">LIVE QUEUE</div><div class="val">0</div><div class="sub">In progress, retry queue, and queued items</div></div>
+            <div class="card kpi"><div class="lbl">IN PROGRESS</div><div class="val">0</div><div class="sub">Currently waiting for customer response</div></div>
+            <div class="card kpi"><div class="lbl">TRY AGAIN</div><div class="val">0</div><div class="sub">Retry is scheduled for another attempt</div></div>
+            <div class="card kpi"><div class="lbl">PRESSED 2</div><div class="val">0</div><div class="sub">Customers cancelled from auto call</div></div>
+            <div class="card kpi"><div class="lbl">FAILED</div><div class="val">0</div><div class="sub">0 rejected and 0 busy</div></div>
+          </div>
+          <div class="card" style="margin-bottom:16px;"><h3>Confirmed Order Snapshot</h3><p class="muted-sm" style="margin:6px 0;">Current distribution of Pressed 1 approved orders.</p>
+            <div style="display:flex;gap:22px;flex-wrap:wrap;margin-top:8px;"><span>CONFIRMED APPROVED ORDERS <b>0</b></span><span>ACTIVE PIPELINE <b>0</b></span><span>DELIVERED <b>0</b></span><span>RETURNED / CANCELLED <b>0</b></span></div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;"><span class="pill grey">Pending 0</span><span class="pill grey">RTS 0</span><span class="pill grey">Shifted 0</span><span class="pill grey">Delivering 0</span><span class="pill grey">Delivered 0</span><span class="pill grey">Partial Delivery 0</span><span class="pill grey">Partial Return 0</span><span class="pill grey">Pending Return 0</span><span class="pill grey">Returned 0</span><span class="pill grey">Cancelled 0</span><span class="pill grey">Other 0</span></div>
+          </div>
+          <div class="card"><h3>Detailed Auto Call Activity</h3><p class="muted-sm" style="margin:6px 0;">Combined call history and live queue records with current order statuses, source, and attempts.</p>
+            <table><tr><th>TIME</th><th>APPROVED ORDER STATUS</th><th>WEB ORDER STATUS</th><th>SOURCE</th><th>ORDER TYPE</th><th>PHONE</th><th>ATTEMPT</th><th>DURATION / RETRY</th><th>ERROR</th></tr>
+            <tr><td colspan="9" class="muted-sm">No records found for the selected filters.</td></tr></table>
+          </div>
+        </div>
+        <div id="ac-rules" class="inner-pane" style="display:none;">
+          <div class="card"><div style="display:flex;align-items:center;"><div><h3>Auto Call Rules</h3><p class="muted-sm" style="margin-top:4px;">Create scheduled status-based calls for Web Orders and Approved Orders.</p></div><span style="margin-left:auto;display:flex;gap:8px;"><button class="ctl-btn">How it Works</button><button class="btn-primary" onclick="openModal('ruleModal')">Create Rule</button></span></div>
+          <div class="dashed-empty" style="margin-top:14px;">No rules yet. Create a rule to auto-call orders by status.</div></div>
+        </div>
+        <div id="ac-setup" class="inner-pane" style="display:none;">
+          <div class="card"><h3>Auto Call Center by EcomDrive</h3>
+            <p class="muted-sm" style="margin:8px 0;">Central mode is active. Calls are routed through the Auto Call Center.</p>
+            <div style="display:flex;gap:16px;flex-wrap:wrap;font-size:13.5px;"><span>Wallet Balance <b>0.00TK</b></span><span>Pending Hold <b>0.00TK</b></span><span>Available Balance <b>0.00TK</b></span><span>Current Rate <b>1.00TK/min</b></span></div>
+            <div class="filter-grid" style="margin-top:14px;">
+              <label class="fld-l">Top-up amount (TK)<input class="fld" type="number"></label>
+              <label class="fld-l">Default Delivery Method for Auto-Confirmed Orders<select class="fld"><option selected>mr</option><option>Outlet</option><option>Outlet</option><option>steadfast</option><option>Test</option></select></label>
+              <label class="fld-l">Test Call Mobile Number<input class="fld"></label>
+              <label class="fld-l">Upload Voice File<input class="fld" type="file"></label>
+              <label class="fld-l">Question Voice (Approved)<select class="fld"><option>Select approved question voice</option></select></label>
+              <label class="fld-l">Default Max Attempts (1-3)<input class="fld" type="number" value="2"></label>
+              <label class="fld-l">Default Retry Gap Minutes (5-120)<input class="fld" type="number" value="15"></label>
+              <label class="fld-l">Default Per-Call Duration (minutes)<input class="fld" type="number" value="3"></label>
+            </div>
+            <p class="muted-sm" style="margin-top:10px;">Uploaded voices require Super Admin approval before they can be used. Only voices approved for this business are shown.</p>
+            <div style="margin-top:12px;"><b>DTMF Options</b> <button class="ctl-btn">Add Option</button><p class="muted-sm" style="margin:6px 0;">Use unique keys between 1 and 9. First pressed key determines outcome.</p>
+            <div class="sum-row"><span>Key 1 — No option voice</span><button class="ctl-btn">Remove</button></div>
+            <div class="sum-row"><span>Key 2 — No option voice</span><button class="ctl-btn">Remove</button></div></div>
+            <button class="btn-primary" style="margin-top:14px;" onclick="toast('Settings saved (UI prototype)')">Save Settings</button>
+            <h3 style="margin-top:22px;">Call Logs</h3><p class="muted-sm" style="margin:6px 0;">Recent auto-call verification attempts and results</p>
+            <div class="dashed-empty">No call logs yet. Logs will appear here when auto-call verification is triggered.</div>
+          </div>
         </div>
       </section>
 
-      <section class="page-panel" id="page-block-list">
-        <div class="page-head"><div><h1>Order Block List</h1><p>Blocked entries cannot place orders</p></div></div>
-        <div class="kpi-grid" style="grid-template-columns:repeat(3,1fr);">
-          <div class="card kpi"><div class="lbl">Blocked IPs</div><div class="val">0 <span style="font-size:14px;color:var(--muted);">/ 2500</span></div><div class="sub">Add an IP below</div></div>
-          <div class="card kpi"><div class="lbl">Blocked Mobile Numbers</div><div class="val">0 <span style="font-size:14px;color:var(--muted);">/ 2500</span></div><div class="sub">Add a number below</div></div>
-          <div class="card kpi"><div class="lbl">Blocked Devices</div><div class="val">0 <span style="font-size:14px;color:var(--muted);">/ 2500</span></div><div class="sub">Device fingerprints</div></div>
+            <section class="page-panel" id="page-block-list">
+        <h3 style="font-size:17px;margin-bottom:14px;">Order Block List</h3>
+        <div class="utabs inner-tabs" data-tabs="bl"><button class="active" data-t="bl-ips">Blocked IPs 0/2500</button><button data-t="bl-mobiles">Blocked Mobile Numbers 0/2500</button><button data-t="bl-devices">Blocked Devices 0/2500</button></div>
+        <div id="bl-ips" class="inner-pane">
+          <div style="display:flex;gap:8px;margin-bottom:12px;"><button class="ctl-btn" onclick="toast('Expired entries cleaned (UI prototype)')">Cleanup Expired</button><button class="btn-primary" style="margin-left:auto;" onclick="openModal('blockIpModal')">+ Block New IP</button></div>
+          <div class="card"><table><tr><th>IP Address</th><th>Blocked At</th><th>Block Type</th><th>Expires</th><th>Status</th><th>Actions</th></tr></table></div>
         </div>
-        <div class="card"><div style="display:flex;gap:10px;flex-wrap:wrap;"><select class="fld" style="max-width:180px;"><option>IP Address</option><option>Mobile Number</option><option>Device</option></select><input class="fld" style="max-width:320px;" placeholder="Enter value to block"><button class="btn-primary" onclick="toast('Entry blocked (UI prototype)')">Block</button></div>
-        <p class="empty-note" style="margin-top:14px;">No blocked entries yet.</p></div>
+        <div id="bl-mobiles" class="inner-pane" style="display:none;">
+          <div style="display:flex;gap:8px;margin-bottom:12px;"><button class="ctl-btn" onclick="toast('Expired entries cleaned (UI prototype)')">Cleanup Expired</button><button class="btn-primary" style="margin-left:auto;" onclick="openModal('blockMobileModal')">+ Block New Mobile</button></div>
+          <div class="card"><table><tr><th>Mobile Number</th><th>Blocked At</th><th>Block Type</th><th>Expires</th><th>Status</th><th>Actions</th></tr>
+          <tr><td>01842326777</td><td>2 months ago</td><td>Temporary</td><td>2 months from now</td><td><span class="pill red">Expired</span></td><td><button class="ctl-btn" title="Delete">Delete</button></td></tr></table></div>
+        </div>
+        <div id="bl-devices" class="inner-pane" style="display:none;">
+          <div style="display:flex;gap:8px;margin-bottom:12px;"><button class="ctl-btn" onclick="toast('Expired entries cleaned (UI prototype)')">Cleanup Expired</button><button class="btn-primary" style="margin-left:auto;" onclick="openModal('blockDeviceModal')">+ Block New Device</button></div>
+          <div class="card"><table><tr><th>Device Key</th><th>Blocked At</th><th>Block Type</th><th>Expires</th><th>Status</th><th>Actions</th></tr></table></div>
+        </div>
       </section>
 
       <section class="page-panel" id="page-approved-orders">
@@ -1018,6 +1232,105 @@
       <button class="ctl-btn" onclick="closeModal('methodModal')">Cancel</button>
       <button class="btn-primary" onclick="closeModal('methodModal');toast('Delivery method saved (UI prototype)')">Save Method</button>
     </div>
+  </div>
+</div>
+
+
+<div class="modal-overlay" id="layoutsModal" style="display:none;">
+  <div class="modal-box" style="max-width:640px;">
+    <div style="display:flex;align-items:center;"><h3 style="font-size:17px;">Order Form Options</h3><button class="icon-btn" style="margin-left:auto;" onclick="closeModal('layoutsModal')">✕</button></div>
+    <div class="utabs inner-tabs" style="margin-top:10px;"><button class="active">Layouts</button><button>Fields</button><button>Courier Cards</button></div>
+    <p class="muted-sm">Layouts apply on wider screens. On a phone every layout stacks into one column.</p>
+    <div class="card" style="box-shadow:none;border:1px solid var(--focus);margin-top:12px;"><b>V2 Default</b> <span class="pill green">ACTIVE</span><p class="muted-sm" style="margin-top:6px;">Two columns with the calculation details pinned in a sticky rail on the right, so the total and the submit button stay on screen.</p></div>
+    <div class="card" style="box-shadow:none;border:1px solid var(--card-border);margin-top:10px;"><b>V2 Full Width Stacked</b><p class="muted-sm" style="margin-top:6px;">Like V2 Default, but the product picker gets a full-width row with the ordered products below it, the way a phone shows them.</p></div>
+    <div class="card" style="box-shadow:none;border:1px solid var(--card-border);margin-top:10px;"><b>V1 Classic</b><p class="muted-sm" style="margin-top:6px;">The legacy arrangement: full width, ordered products beside the picker, and the money fields in a band across the bottom. Scroll down to submit.</p></div>
+    <p class="muted-sm" style="margin-top:12px;">Fields templates: Default Template (ACTIVE), Compact Template, Wholesale Template, Pre-Order Template, Call Center Fast Entry Template. Courier Cards order: Overall, Pathao, Steadfast, RedX, CarryBee.</p>
+    <div style="display:flex;gap:10px;margin-top:14px;justify-content:space-between;align-items:center;"><span class="muted-sm">Active: V2 Default + Default Template</span><button class="btn-primary" onclick="closeModal('layoutsModal')">Close</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="customProductModal" style="display:none;">
+  <div class="modal-box">
+    <div style="display:flex;align-items:center;"><h3 style="font-size:17px;">Add Custom Product</h3><button class="icon-btn" style="margin-left:auto;" onclick="closeModal('customProductModal')">✕</button></div>
+    <label class="fld-l" style="margin-top:12px;">Product Name *<input class="fld" placeholder="e.g. Special Offer Box"></label>
+    <label class="fld-l" style="margin-top:12px;">SKU (optional)<input class="fld" placeholder="Auto-generated if left blank"></label>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;">
+      <label class="fld-l">Price (৳) *<input class="fld" type="number" value="0"></label>
+      <label class="fld-l">Quantity *<input class="fld" type="number" value="1"></label>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end;"><button class="ctl-btn" onclick="closeModal('customProductModal')">Cancel</button><button class="btn-primary" onclick="closeModal('customProductModal');toast('Custom product added (UI prototype)')">Add Product</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="filterModal" style="display:none;">
+  <div class="modal-box" style="max-width:520px;">
+    <div style="display:flex;align-items:center;"><h3 style="font-size:17px;">Filter Orders</h3><button class="icon-btn" style="margin-left:auto;" onclick="closeModal('filterModal')">✕</button></div>
+    <label class="fld-l" style="margin-top:12px;">Date range counts on<select class="fld"><option>Order date</option><option>Status change date</option></select></label>
+    <label class="fld-l" style="margin-top:12px;">Date Range<button class="ctl-btn" style="width:100%;justify-content:center;margin-top:5px;" onclick="toast('Date picker — Today / Yesterday / Last 7 days / Last 30 days / This month / Last month / This year / Last year / Lifetime / Custom range')">All dates</button></label>
+    <label class="fld-l" style="margin-top:12px;">Filter Field<select class="fld"><option>Reference</option><option>Incomplete Orders</option><option>Web Source</option><option>Tags</option><option>Previous Status</option><option>Employees</option><option>Product Code</option><option>Product Quantity</option><option>Order Value</option><option>Total Orders</option><option>Success Orders</option><option>Assignee</option></select></label>
+    <div style="display:flex;gap:16px;margin-top:12px;font-size:13px;"><label><input type="checkbox"> Show Only Incomplete Order</label><label><input type="checkbox"> Hide Incomplete Order</label></div>
+    <div style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end;"><button class="ctl-btn" onclick="closeModal('filterModal')">Cancel</button><button class="btn-primary" onclick="closeModal('filterModal');toast('Filter applied (UI prototype)')">Apply Filter</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="alertsModal" style="display:none;">
+  <div class="modal-box" style="max-width:520px;">
+    <div style="display:flex;align-items:center;"><h3 style="font-size:17px;">New web order alerts</h3><button class="icon-btn" style="margin-left:auto;" onclick="closeModal('alertsModal')">✕</button></div>
+    <p style="font-size:13.5px;margin-top:10px;">Play a sound when a new web order arrives in the selected order types.</p>
+    <div class="sum-row"><span>Play a sound when a new web order comes<br><span class="muted-sm">The alert works from the order list and keeps checking while this browser tab is open.</span></span><button class="switch" onclick="this.classList.toggle('on')"></button></div>
+    <b style="display:block;margin-top:12px;">Order types</b><span class="muted-sm">Choose which new orders should play the alert.</span>
+    <label style="display:block;margin-top:8px;font-size:13.5px;"><input type="checkbox" checked> Processing orders — <span class="muted-sm">New confirmed web orders that need team action.</span></label>
+    <label style="display:block;margin-top:6px;font-size:13.5px;"><input type="checkbox"> Incomplete orders — <span class="muted-sm">New checkout attempts that were not completed.</span></label>
+    <b style="display:block;margin-top:12px;">Alert sound</b><span class="muted-sm">Pick the volume for the new order sound.</span>
+    <div style="display:flex;gap:14px;margin-top:8px;font-size:13.5px;"><label><input type="radio" name="vol"> Low</label><label><input type="radio" name="vol" checked> Medium</label><label><input type="radio" name="vol"> High</label><button class="ctl-btn">Test sound</button></div>
+    <p class="muted-sm" style="margin-top:10px;">Your browser will ask for permission when you turn this on.</p>
+    <div style="display:flex;gap:10px;margin-top:14px;justify-content:flex-end;"><button class="ctl-btn" onclick="closeModal('alertsModal')">Cancel</button><button class="btn-primary" onclick="closeModal('alertsModal');toast('Alert settings saved (UI prototype)')">Save changes</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="ruleModal" style="display:none;">
+  <div class="modal-box" style="max-width:560px;">
+    <div style="display:flex;align-items:center;"><h3 style="font-size:17px;">Create Rule</h3><button class="icon-btn" style="margin-left:auto;" onclick="closeModal('ruleModal')">✕</button></div>
+    <label class="fld-l" style="margin-top:12px;">Rule Name<input class="fld" placeholder="Hold orders follow-up"></label>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;">
+      <label class="fld-l">Order Type<select class="fld"><option>Web Order</option><option>Approved Order</option></select></label>
+      <label class="fld-l">Order Status<select class="fld"><option>Processing</option><option>Incomplete</option><option>Good But No Response</option><option>No Response</option><option>Advance Payment</option><option>On Hold</option><option>Stock Out</option><option>Approved</option><option>Cancel</option></select></label>
+      <label class="fld-l">Schedule Type<select class="fld"><option>Everyday</option><option>Today Only</option></select></label>
+      <label class="fld-l">Call Limit<input class="fld" value="3" readonly></label>
+    </div>
+    <label class="fld-l" style="margin-top:12px;">Time Slots <button class="ctl-btn" style="margin-left:8px;">Add Time</button><input class="fld" type="time" value="10:00" style="margin-top:6px;"></label>
+    <div class="sum-row"><span>Rule Active<br><span class="muted-sm">Disabled rules will not auto-trigger.</span></span><button class="switch on" onclick="this.classList.toggle('on')"></button></div>
+    <div class="sum-row"><span>Custom Voices For This Rule<br><span class="muted-sm">Using global Auto Call Center voices for this rule.</span></span><button class="switch" onclick="this.classList.toggle('on')"></button></div>
+    <div style="margin-top:12px;"><b>Keypad Actions</b> <button class="ctl-btn">Add Key</button><p class="muted-sm" style="margin-top:6px;">No key actions configured. Press results will still be logged.</p></div>
+    <div style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end;"><button class="ctl-btn" onclick="closeModal('ruleModal')">Cancel</button><button class="btn-primary" onclick="closeModal('ruleModal');toast('Rule created (UI prototype)')">Create Rule</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="blockIpModal" style="display:none;">
+  <div class="modal-box">
+    <div style="display:flex;align-items:center;"><h3 style="font-size:17px;">Block IP Address</h3><button class="icon-btn" style="margin-left:auto;" onclick="closeModal('blockIpModal')">✕</button></div>
+    <label class="fld-l" style="margin-top:12px;">IP Address<input class="fld" placeholder="Enter IP address"></label>
+    <label class="fld-l" style="margin-top:12px;">Duration (minutes)<input class="fld" type="number" placeholder="Enter duration in minutes"></label>
+    <div style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end;"><button class="btn-primary" onclick="closeModal('blockIpModal');toast('IP blocked (UI prototype)')">Block IP</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="blockMobileModal" style="display:none;">
+  <div class="modal-box">
+    <div style="display:flex;align-items:center;"><h3 style="font-size:17px;">Block Mobile Number</h3><button class="icon-btn" style="margin-left:auto;" onclick="closeModal('blockMobileModal')">✕</button></div>
+    <label class="fld-l" style="margin-top:12px;">Mobile Number<input class="fld" placeholder="Enter mobile number"></label>
+    <div class="sum-row"><span>Permanent Block</span><button class="switch" onclick="this.classList.toggle('on')"></button></div>
+    <label class="fld-l" style="margin-top:12px;">Duration (minutes)<input class="fld" type="number" placeholder="Enter duration in minutes"></label>
+    <div style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end;"><button class="btn-primary" onclick="closeModal('blockMobileModal');toast('Mobile number blocked (UI prototype)')">Block Mobile</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="blockDeviceModal" style="display:none;">
+  <div class="modal-box">
+    <div style="display:flex;align-items:center;"><h3 style="font-size:17px;">Block Device</h3><button class="icon-btn" style="margin-left:auto;" onclick="closeModal('blockDeviceModal')">✕</button></div>
+    <label class="fld-l" style="margin-top:12px;">Device Key<input class="fld" placeholder="Enter device key"></label>
+    <div class="sum-row"><span>Permanent Block</span><button class="switch on" onclick="this.classList.toggle('on')"></button></div>
+    <div style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end;"><button class="btn-primary" onclick="closeModal('blockDeviceModal');toast('Device blocked (UI prototype)')">Block Device</button></div>
   </div>
 </div>
 
@@ -1277,6 +1590,116 @@
     methodFields(t);
     openModal('methodModal');
   }
+  // ===== Web Orders rebuild: New Order products + modes + popovers =====
+  var PRODUCTS = [
+    {name:'Mobile Phone Umbrella Cute Phone Holder', sku:'11143', price:400, stock:153, feat:1},
+    {name:'Kumkum Ikkat 1', sku:'KIK-1', price:699, stock:2084, feat:1},
+    {name:'Kumkum Ikkat 2', sku:'KIK-2', price:699, stock:195, feat:1},
+    {name:'Neela Pankh 2', sku:'NP-2', price:699, stock:198, feat:1},
+    {name:'Jeans Pant', sku:'1001', price:1000, stock:53},
+    {name:'30L Bag', sku:'109', price:320, stock:1001},
+    {name:'Student Penknife', sku:'11142', price:350, stock:148},
+    {name:'Computer Arm Rest', sku:'11144', price:750, stock:151},
+    {name:'Pink Minnie Kids Plush Bag', sku:'11145', price:300, stock:null},
+    {name:'Kids Backpack', sku:'11146', price:350, stock:151},
+    {name:'Spider man bag', sku:'11147', price:350, stock:151},
+    {name:'Memory Cotton U-shaped Pillow', sku:'11148', price:650, stock:151},
+    {name:'Washing machine cover', sku:'11149', price:400, stock:151},
+    {name:'Carat Key Ring', sku:'11150', price:300, stock:10005},
+    {name:'Kitchen Watermelon Slicer', sku:'11151', price:499, stock:151},
+    {name:'Tactical waist Bag', sku:'11152', price:600, stock:150},
+    {name:'মিনি পকেট ক্যারাবিনার ফোল্ডিং নাইফ', sku:'11153', price:200, stock:150},
+    {name:'ক্যাট & ডগ গ্রুমিং হ্যামক', sku:'11154', price:400, stock:150},
+    {name:'Door bottom sealing strip', sku:'11212', price:310, stock:null},
+    {name:'Door bottom sealing strip', sku:'11213', price:380, stock:150},
+    {name:'30L Bag', sku:'11310', price:320, stock:150},
+    {name:'শিশুদের ইলেকট্রনিক লার্নিং মেশিন', sku:'11323', price:1400, stock:150},
+    {name:'রেফ্রিজারেটর ওয়াটারপ্রুফ প্যাড', sku:'11324', price:900, stock:150},
+    {name:'ফিশ শেপ মিনি নাইফ', sku:'11325', price:300, stock:150},
+    {name:'মাইক্রোফাইবার মহিলা বাথ ড্রেস টাওয়েল', sku:'11326', price:1400, stock:150},
+    {name:'মাল্টিফাংশনাল ফোল্ডিং কাঁচি', sku:'11327', price:250, stock:150},
+    {name:'বি-পিলার কার ওয়েদারস্ট্রিপস', sku:'11370', price:1000, stock:150},
+    {name:'মাল্টি-পারপাস স্ট্যাকেবল র‍্যাক', sku:'11371', price:700, stock:150},
+    {name:'ম্যানুফ্যাকচার এপিডিএম রাবার ওয়েদারস্ট্রিপ', sku:'11372', price:900, stock:150},
+    {name:'K-American Birthday Cake (Pink)', sku:'001', price:1890, stock:0}
+  ];
+  var orderedItems = {};
+  function renderProducts(){
+    var g = document.getElementById('prodGrid');
+    if(!g) return;
+    g.innerHTML = PRODUCTS.map(function(pr, i){
+      var dis = (orderedItems[i] || (pr.stock === 0 && currentOrderMode !== 'preorder')) ? ' disabled' : '';
+      return '<button class="prod-card" data-name="' + pr.name.toLowerCase() + '" data-sku="' + pr.sku.toLowerCase() + '" onclick="addToOrder(' + i + ')"' + dis + '>'
+        + '<span class="pc-name">' + pr.name + '</span>'
+        + '<span class="muted-sm">SKU: ' + pr.sku + '</span>'
+        + '<span class="muted-sm">Price: ৳' + pr.price + ' · Stock: ' + (pr.stock === null ? '—' : pr.stock) + (pr.stock === 0 ? ' — Pre-order allowed' : '') + '</span>'
+        + '<span class="pc-fav">' + (pr.feat ? 'Remove from featured' : 'Mark as featured') + '</span></button>';
+    }).join('');
+  }
+  function prodSearch(){
+    var inputs = document.querySelectorAll('#page-new-order .card input[placeholder*="Type to Search"]');
+    var q1 = inputs[0] ? inputs[0].value.toLowerCase() : '';
+    var q2 = inputs[1] ? inputs[1].value.toLowerCase() : '';
+    document.querySelectorAll('.prod-card').forEach(function(c){
+      var okSku = !q1 || c.getAttribute('data-sku').indexOf(q1) > -1;
+      var okName = !q2 || c.getAttribute('data-name').indexOf(q2) > -1;
+      c.style.display = (okSku && okName) ? '' : 'none';
+    });
+  }
+  function addToOrder(i){
+    orderedItems[i] = { qty: 1, price: PRODUCTS[i].price };
+    renderOrdered(); renderProducts();
+  }
+  function removeFromOrder(i){ delete orderedItems[i]; renderOrdered(); renderProducts(); }
+  function ordQty(i, d){ orderedItems[i].qty = Math.max(1, orderedItems[i].qty + d); renderOrdered(); }
+  function ordPrice(i, d){ orderedItems[i].price = Math.max(0, orderedItems[i].price + d); renderOrdered(); }
+  function renderOrdered(){
+    var keys = Object.keys(orderedItems);
+    document.getElementById('ordCount').textContent = keys.length + 'item(s)';
+    document.getElementById('ordEmpty').style.display = keys.length ? 'none' : '';
+    document.getElementById('ordList').innerHTML = keys.map(function(k){
+      var pr = PRODUCTS[k], it = orderedItems[k];
+      return '<div class="ord-row"><span><b>' + pr.name + '</b><br><span class="muted-sm">SKU ' + pr.sku + ' · ৳' + pr.price + ' · Stock:' + (pr.stock === null ? '—' : pr.stock) + '</span></span>'
+        + '<span class="qty">Qty <button onclick="ordQty(' + k + ',-1)">−</button><b>' + it.qty + '</b><button onclick="ordQty(' + k + ',1)">+</button></span>'
+        + '<span class="qty">Price <button onclick="ordPrice(' + k + ',-10)">−</button><b>' + it.price + '</b><button onclick="ordPrice(' + k + ',10)">+</button></span>'
+        + '<b>Total ৳' + (it.qty * it.price).toFixed(2) + '</b>'
+        + '<button class="ctl-btn" onclick="removeFromOrder(' + k + ')">×</button></div>';
+    }).join('');
+    calcSummary();
+  }
+  function calcSummary(){
+    var items = 0;
+    Object.keys(orderedItems).forEach(function(k){ items += orderedItems[k].qty * orderedItems[k].price; });
+    var disc = parseInt((document.getElementById('calcDisc') || {}).value) || 0;
+    var del = parseInt((document.getElementById('calcDel') || {}).value) || 0;
+    var adv = parseInt((document.getElementById('calcAdv') || {}).value) || 0;
+    var grand = items - disc + del;
+    document.getElementById('sumItems').textContent = '৳' + items.toLocaleString('en-IN');
+    document.getElementById('sumDisc2').textContent = '৳' + disc.toLocaleString('en-IN');
+    document.getElementById('sumDel2').textContent = '৳' + del.toLocaleString('en-IN');
+    document.getElementById('sumGrand').textContent = '৳' + grand.toLocaleString('en-IN');
+    document.getElementById('sumAdv2').textContent = '৳' + adv.toLocaleString('en-IN');
+    document.getElementById('sumDue').textContent = '৳' + (grand - adv).toLocaleString('en-IN');
+  }
+  var currentOrderMode = 'approved';
+  function orderMode(btn, mode){
+    currentOrderMode = mode;
+    btn.parentElement.querySelectorAll('button').forEach(function(b){ b.classList.remove('on'); });
+    btn.classList.add('on');
+    document.getElementById('dmWrap').style.display = mode === 'manual' ? 'none' : '';
+    document.getElementById('dmHelp').style.display = mode === 'manual' ? '' : 'none';
+    document.getElementById('preReason').style.display = mode === 'preorder' ? '' : 'none';
+    document.getElementById('preDate').style.display = mode === 'preorder' ? '' : 'none';
+    document.getElementById('createOrderBtn').textContent = mode === 'manual' ? 'Create Order' : (mode === 'preorder' ? 'Create Pre-Order' : 'Create Approved Order');
+    renderProducts();
+  }
+  function popToggle(id){
+    var el = document.getElementById(id);
+    var show = el.style.display !== 'block';
+    document.querySelectorAll('.pop-panel').forEach(function(x){ x.style.display = 'none'; });
+    el.style.display = show ? 'block' : 'none';
+  }
+  renderProducts();
   // Live Dhaka clock
   function tickClock(){
     try{
