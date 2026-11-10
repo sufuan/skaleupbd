@@ -25,7 +25,8 @@
   .layout{display:flex;min-height:100vh;}
 
   /* ============ SIDEBAR ============ */
-  .sidebar{width:260px;background:#fff;border-right:1px solid var(--card-border);position:fixed;top:0;bottom:0;left:0;overflow-y:auto;display:flex;flex-direction:column;z-index:20;}
+  .sidebar{width:260px;background:#fff;border-right:1px solid var(--card-border);position:fixed;top:0;bottom:0;left:0;overflow-y:auto;display:flex;flex-direction:column;z-index:20;scrollbar-width:none;}
+  .sidebar::-webkit-scrollbar{width:0;}
   .ws-switcher{display:flex;align-items:center;gap:10px;padding:16px 16px 10px;cursor:pointer;}
   .ws-chip{width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,var(--primary),var(--gradient-end));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px;flex-shrink:0;}
   .ws-name{font-weight:700;font-size:13px;letter-spacing:.02em;}
@@ -33,7 +34,7 @@
   .ws-chev{margin-left:auto;color:var(--muted);}
   .quicksearch{margin:6px 14px 10px;background:var(--grey-bg);border:1px solid var(--card-border);border-radius:8px;padding:8px 10px;display:flex;align-items:center;gap:8px;color:var(--muted);font-size:13px;cursor:pointer;}
   .quicksearch kbd{margin-left:auto;background:#fff;border:1px solid var(--input-border);border-radius:4px;padding:1px 5px;font-size:10px;color:var(--muted);}
-  .side-nav{padding:2px 10px 10px;flex:1;}
+  .side-nav{padding:2px 8px 10px;flex:1;}
   .nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;color:var(--grey-tx);font-size:14px;font-weight:500;cursor:pointer;margin-bottom:2px;}
   .nav-item:hover{background:var(--active-bg);}
   .nav-item.active{background:var(--active-bg);color:var(--primary);font-weight:600;}
@@ -257,7 +258,7 @@
   .dropdown div:hover{background:var(--active-bg);}
   @media (max-width:1100px){.kpi-grid{grid-template-columns:repeat(2,1fr);}.stuck-grid{grid-template-columns:repeat(3,1fr);}.grid-2,.grid-21{grid-template-columns:1fr;}}
 
-  .funnel-btn{width:24px;height:24px;border:1px solid #E5E7EB;background:#fff;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;color:#64748B;flex-shrink:0;}
+  .funnel-btn{width:auto;padding:0 6px;gap:2px;height:24px;border:1px solid #E5E7EB;background:#fff;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;color:#64748B;flex-shrink:0;}
   .today-pill{height:23px;padding:0 10px;border:1px solid #E5E7EB;background:#fff;border-radius:999px;font-size:11.5px;font-weight:600;color:#374151;cursor:pointer;display:inline-flex;align-items:center;}
   .kpi-lbl{font-size:13px;font-weight:500;color:#64748B;white-space:nowrap;}
   .seg-light{display:inline-flex;background:#F3F4F6;border-radius:10px;padding:3px;gap:2px;}
@@ -265,10 +266,10 @@
   .seg-light button.on{background:#F4EDF7;color:#411550;}
   .legend-box{display:inline-flex;align-items:center;gap:7px;border:1px solid #E5E7EB;background:#fff;border-radius:8px;padding:7px 12px;font-size:12.5px;font-weight:600;color:#374151;cursor:pointer;}
   .legend-box.on{background:#F4EDF7;border-color:#E9DFF5;color:#411550;}
-  .legend-big{display:inline-flex;flex-direction:column;align-items:flex-start;border:1px solid #E5E7EB;background:#fff;border-radius:10px;padding:6px 14px;cursor:pointer;min-width:104px;}
+  .legend-big{display:inline-flex;flex-direction:column;align-items:flex-start;gap:5px;border:1px solid #E5E7EB;background:#fff;border-radius:10px;padding:14px;cursor:pointer;min-width:118px;max-width:134px;}
   .legend-big.on{background:#F4EDF7;border-color:#E9DFF5;}
-  .lb-lbl{font-size:11.5px;font-weight:600;color:#64748B;}
-  .lb-num{font-size:20px;font-weight:700;color:#111827;line-height:1.15;}
+  .lb-lbl{font-size:11.5px;font-weight:600;color:#64748B;line-height:1.3;}
+  .lb-num{font-size:30px;font-weight:700;color:#111827;line-height:1.1;}
 </style>
 </head>
 <body>
@@ -438,7 +439,7 @@
     <div class="content">
       
 
-      <div style="display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap;">
+      <div style="display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap;margin-bottom:6px;">
         <div class="utabs" id="viewTabs" style="flex:1;min-width:420px;">
           <button class="active" data-view="my">My Dashboard</button>
           <button data-view="overview">Overview</button>
@@ -467,13 +468,13 @@
       <!-- ===== MY DASHBOARD ===== -->
       <section class="view-panel active" id="panel-my">
         <div class="kpi-grid">
-          <div class="card kpi"><div class="kpi-top"><span class="kpi-lbl">Total Orders</span><span class="kpi-controls"><button class="funnel-btn" onclick="funnelMenu(event)" title="Counted on Approved date"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h18l-7 8v6l-4 2v-8L3 4z"/></svg></button><button class="today-pill"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg> Today</button></span></div><div class="val">8</div><div class="sub"><span class="up">↗ 700.0%</span> &nbsp;Previous 1</div></div>
-          <div class="card kpi"><div class="kpi-top"><span class="kpi-lbl">Revenue</span><span class="kpi-controls"><button class="funnel-btn" onclick="funnelMenu(event)" title="Counted on Approved date"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h18l-7 8v6l-4 2v-8L3 4z"/></svg></button><button class="today-pill"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg> Today</button></span></div><div class="val">৳4,342</div><div class="sub"><span class="up">↗ 985.5%</span> &nbsp;Previous ৳400</div></div>
-          <div class="card kpi"><div class="kpi-top"><span class="kpi-lbl">Profit</span><span class="kpi-controls"><button class="funnel-btn" onclick="funnelMenu(event)" title="Counted on Approved date"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h18l-7 8v6l-4 2v-8L3 4z"/></svg></button><button class="today-pill"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg> Today</button></span></div><div class="val">৳2,942</div><div class="sub"><span class="up">↗ 2263.8%</span> &nbsp;Previous ৳124</div></div>
+          <div class="card kpi"><div class="kpi-top"><span class="kpi-lbl">Total Orders</span><span class="kpi-controls"><button class="funnel-btn" onclick="funnelMenu(event)" title="Counted on Approved date"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h18l-7 8v6l-4 2v-8L3 4z"/></svg><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button><button class="today-pill"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg> Today</button></span></div><div class="val">8</div><div class="sub"><span class="up">↗ 700.0%</span> &nbsp;Previous 1</div></div>
+          <div class="card kpi"><div class="kpi-top"><span class="kpi-lbl">Revenue</span><span class="kpi-controls"><button class="funnel-btn" onclick="funnelMenu(event)" title="Counted on Approved date"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h18l-7 8v6l-4 2v-8L3 4z"/></svg><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button><button class="today-pill"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg> Today</button></span></div><div class="val">৳4,342</div><div class="sub"><span class="up">↗ 985.5%</span> &nbsp;Previous ৳400</div></div>
+          <div class="card kpi"><div class="kpi-top"><span class="kpi-lbl">Profit</span><span class="kpi-controls"><button class="funnel-btn" onclick="funnelMenu(event)" title="Counted on Approved date"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h18l-7 8v6l-4 2v-8L3 4z"/></svg><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button><button class="today-pill"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg> Today</button></span></div><div class="val">৳2,942</div><div class="sub"><span class="up">↗ 2263.8%</span> &nbsp;Previous ৳124</div></div>
           <div class="card kpi"><div class="kpi-top"><span class="kpi-lbl">Pending Web Orders</span><span class="kpi-controls"><button class="today-pill"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg> Today</button></span></div><div class="val">0</div><div class="sub">&nbsp;</div></div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px;">
-          <div class="card"><div style="display:flex;align-items:center;"><h3>Web Order Report</h3><span style="margin-left:auto;"><button class="ctl-btn">Today</button></span></div>
+          <div class="card"><div style="display:flex;align-items:center;"><h3>Web Order Report</h3><span style="margin-left:auto;"><button class="ctl-btn">Today <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button></span></div>
             <div style="background:#F9FAFB;border:1px solid #E5E7EB;border-radius:10px;padding:2px 12px;margin:12px 0 14px;">
               <div class="utabs" style="border-bottom:none;margin:0;">
                 <button class="active" onclick="worTab(this,'web')">Web Orders</button>
@@ -495,8 +496,7 @@
             </div>
           </div>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px;">
-          <div class="card"><div style="display:flex;align-items:flex-start;flex-wrap:wrap;gap:8px;"><div><h3>Order Counts</h3><div class="card-sub" style="margin:2px 0 0;">Orders created vs sent to courier in the selected range</div></div>
+        <div class="card"><div style="display:flex;align-items:flex-start;flex-wrap:wrap;gap:8px;"><div><h3>Order Counts</h3><div class="card-sub" style="margin:2px 0 0;">Orders created vs sent to courier in the selected range</div></div>
             <span style="margin-left:auto;display:flex;gap:8px;align-items:center;"><select class="ctl-btn"><option>Last 30 days</option><option>Last 7 days</option><option>Today</option></select><span class="legend-big on"><span class="lb-lbl">Created</span><span class="lb-num" style="color:#2563EB;">15</span></span><span class="legend-big"><span class="lb-lbl">Sent to Courier</span><span class="lb-num">0</span></span></span></div>
             <div style="height:14px;"></div>
             <div style="display:flex;align-items:flex-end;gap:5px;height:110px;border-bottom:1px solid var(--card-border);">
@@ -510,11 +510,11 @@
             </div>
             <div style="display:flex;justify-content:space-between;font-size:9.5px;color:var(--muted2);margin-top:5px;"><span>Oct 13</span><span>Oct 15</span><span>Oct 17</span><span>Oct 19</span><span>Oct 21</span><span>Oct 23</span><span>Oct 25</span><span>Oct 27</span><span>Oct 29</span><span>Oct 31</span><span>Nov 2</span><span>Nov 4</span><span>Nov 6</span><span>Nov 8</span><span>Nov 10</span></div>
           </div>
-          <div>
-            <div class="card" style="margin-bottom:16px;"><div style="display:flex;align-items:center;"><h3>Earning Reports</h3><span style="margin-left:auto;display:flex;gap:6px;"><button class="ctl-btn" onclick="funnelMenu(event)">⧩ Approved</button><button class="ctl-btn">Year</button></span></div>
+        <div class="card" ><div style="display:flex;align-items:center;"><h3>Earning Reports</h3><span style="margin-left:auto;display:flex;gap:6px;"><button class="ctl-btn" onclick="funnelMenu(event)">⧩ Approved</button><button class="ctl-btn">Year</button></span></div>
               <div class="dashed-empty" id="earnBox" style="margin-top:12px;">This report is loaded only when you ask for it. Pick a date range above, then load it.<br><br><button class="ctl-btn" style="background:var(--primary);color:#fff;border-color:var(--primary);padding:9px 16px;" onclick="loadEarnings()">Load Earning Reports</button></div>
             </div>
-            <div class="card"><div style="display:flex;align-items:center;flex-wrap:wrap;gap:8px;"><h3>Hourly Combined</h3><button class="ctl-btn" style="margin-left:auto;" onclick="alert('Select Date (UI prototype)')">⋯</button></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px;">
+          <div class="card"><div style="display:flex;align-items:center;flex-wrap:wrap;gap:8px;"><h3>Hourly Combined</h3><button class="ctl-btn" style="margin-left:auto;" onclick="alert('Select Date (UI prototype)')">⋯</button></div>
               <div class="card-sub" id="hourlySub" style="margin:2px 0 10px;">2026-11-10 vs 2026-11-09 (Until 20:00)</div>
               <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
                 <select class="ctl-btn"><option>Combined</option><option>Web Orders</option><option>Incomplete Orders</option></select>
@@ -526,14 +526,12 @@
               </div>
               <div style="display:flex;justify-content:space-between;font-size:8.5px;color:var(--muted2);margin-left:16px;"><span>12 AM</span><span>1 AM</span><span>2 AM</span><span>3 AM</span><span>4 AM</span><span>5 AM</span><span>6 AM</span><span>7 AM</span><span>8 AM</span><span>9 AM</span><span>10 AM</span><span>11 AM</span><span>12 PM</span><span>1 PM</span><span>2 PM</span><span>3 PM</span><span>4 PM</span><span>5 PM</span><span>6 PM</span><span>7 PM</span><span>8 PM</span><span>9 PM</span><span>10 PM</span><span>11 PM</span></div>
             </div>
-          </div>
-        </div>
-        <div class="card"><div style="display:flex;align-items:center;gap:8px;"><h3>Top Selling Products</h3><span class="pill grey">Top 2</span><span style="margin-left:auto;display:flex;gap:6px;"><button class="ctl-btn" onclick="funnelMenu(event)">⧩ Approved</button><button class="ctl-btn">Today</button></span></div>
+          <div class="card"><div style="display:flex;align-items:center;gap:8px;"><h3>Top Selling Products</h3><span class="pill grey">Top 2</span><span style="margin-left:auto;display:flex;gap:6px;"><button class="ctl-btn" onclick="funnelMenu(event)">⧩ Approved</button><button class="ctl-btn">Today</button></span></div>
           <div style="margin-top:14px;">
             <div style="border:1px solid #E5E7EB;border-radius:12px;padding:14px 16px;margin-bottom:12px;">
               <div style="display:flex;align-items:center;gap:12px;">
                 <span style="width:26px;height:26px;border-radius:50%;background:var(--grey-bg);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12.5px;">1</span>
-                <span style="width:44px;height:44px;border-radius:8px;background:var(--active-bg);display:flex;align-items:center;justify-content:center;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="9" width="8" height="12" rx="2"/><path d="M10 9V6.5A1.5 1.5 0 0 1 11.5 5h4A1.5 1.5 0 0 1 17 6.5V8"/><path d="M10.5 14h3"/></svg></span>
+                <span style="width:44px;height:44px;border-radius:8px;background:var(--active-bg);display:flex;align-items:center;justify-content:center;"><svg width="30" height="30" viewBox="0 0 24 24"><rect x="8" y="2.5" width="8" height="3" rx="1" fill="#3F6212"/><path d="M6.5 8A2.5 2.5 0 0 1 9 5.5h6A2.5 2.5 0 0 1 17.5 8v11A2.5 2.5 0 0 1 15 21.5H9a2.5 2.5 0 0 1-2.5-2.5z" fill="#FDE68A" stroke="#D97706" stroke-width="1.2"/><rect x="9" y="10.5" width="6" height="6" rx="1" fill="#FFFFFF" stroke="#D97706" stroke-width=".8"/><line x1="10.2" y1="12.8" x2="13.8" y2="12.8" stroke="#92400E" stroke-width="1"/><line x1="10.2" y1="14.6" x2="13" y2="14.6" stroke="#D97706" stroke-width="1"/></svg></span>
                 <span><b>Mentara Roll On Balm COMBO</b><br><span style="font-size:12px;color:var(--muted);">SKU MENT-COMBO - Return 0.0%</span></span>
                 <span class="pill" style="margin-left:auto;background:#DBEAFE;color:#1D4ED8;">6</span>
               </div>
@@ -542,13 +540,14 @@
             <div style="border:1px solid #E5E7EB;border-radius:12px;padding:14px 16px;margin-bottom:12px;">
               <div style="display:flex;align-items:center;gap:12px;">
                 <span style="width:26px;height:26px;border-radius:50%;background:var(--grey-bg);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12.5px;">2</span>
-                <span style="width:44px;height:44px;border-radius:8px;background:var(--active-bg);display:flex;align-items:center;justify-content:center;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="9" width="8" height="12" rx="2"/><path d="M10 9V6.5A1.5 1.5 0 0 1 11.5 5h4A1.5 1.5 0 0 1 17 6.5V8"/><path d="M10.5 14h3"/></svg></span>
+                <span style="width:44px;height:44px;border-radius:8px;background:var(--active-bg);display:flex;align-items:center;justify-content:center;"><svg width="30" height="30" viewBox="0 0 24 24"><rect x="8" y="2.5" width="8" height="3" rx="1" fill="#3F6212"/><path d="M6.5 8A2.5 2.5 0 0 1 9 5.5h6A2.5 2.5 0 0 1 17.5 8v11A2.5 2.5 0 0 1 15 21.5H9a2.5 2.5 0 0 1-2.5-2.5z" fill="#FDE68A" stroke="#D97706" stroke-width="1.2"/><rect x="9" y="10.5" width="6" height="6" rx="1" fill="#FFFFFF" stroke="#D97706" stroke-width=".8"/><line x1="10.2" y1="12.8" x2="13.8" y2="12.8" stroke="#92400E" stroke-width="1"/><line x1="10.2" y1="14.6" x2="13" y2="14.6" stroke="#D97706" stroke-width="1"/></svg></span>
                 <span><b>Mentara Roll On Balm Single</b><br><span style="font-size:12px;color:var(--muted);">SKU MNT-SINGLE - Return 0.0%</span></span>
                 <span class="pill" style="margin-left:auto;background:#DBEAFE;color:#1D4ED8;">2</span>
               </div>
               <div style="height:6px;background:#dbeafe;border-radius:99px;margin-top:10px;"><div style="width:33%;height:100%;background:#2563eb;border-radius:99px;"></div></div>
             </div>
           </div>
+        </div>
         </div>
       </section>
 
@@ -1731,6 +1730,6 @@
   tickClock(); setInterval(tickClock, 1000);
 </script>
 <script>(function(){var m={'new-order':'page-new-order','web-orders':'page-web-orders','web-order-detail':'page-web-order-detail','auto-pick':'page-auto-pick','auto-call':'page-auto-call','block-list':'page-block-list','order-list':'page-approved-orders','orders-dashboard':'page-orders-dashboard','preorders':'page-preorders','super-edit':'page-super-edit','scan-update':'page-scan-update','courier-invoice':'page-courier-invoice','courier-mgmt':'page-courier-mgmt','delivery-methods':'page-delivery-methods','settlement':'page-courier-settlement'};var h=location.hash.replace('#','');if(m[h])showPage(m[h]);})();</script>
-<script>(function(){var el=document.getElementById('hourlySub');if(!el)return;var d=new Date(),y=new Date(Date.now()-86400000);function f(x){return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0');}el.textContent=f(d)+' vs '+f(y)+' (Until '+d.getHours()+':00)';})();</script>
+<script>(function(){var el=document.getElementById('hourlySub');if(!el)return;var d=new Date(),y=new Date(Date.now()-86400000);function f(x){return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0');}el.textContent=f(d)+' vs '+f(y)+' (Until '+((d.getHours()+23)%24)+':00)';})();</script>
 </body>
 </html>
