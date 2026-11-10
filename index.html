@@ -299,6 +299,31 @@
   .wo-pill.active{border-bottom-color:transparent;box-shadow:inset 0 -2px 0 #42174F;}
   .wo-pill b{opacity:1;}
   .wo-pill.active b{opacity:1;}
+
+  /* New Order — measured from saved live page (v2 form) */
+  #page-new-order .card{border-color:#EEF2F7;border-radius:16px;padding:20px;box-shadow:0 1px 2px rgba(17,24,39,.04),0 1px 3px rgba(17,24,39,.06);}
+  #page-new-order .seg{background:#F8F7FB;border:1px solid #EEF2F7;border-radius:8px;padding:4px;gap:2px;}
+  #page-new-order .seg button{padding:6px 12px;font-size:12px;font-weight:500;border-radius:6px;color:#64748B;background:transparent;}
+  #page-new-order .seg button.on{background:#411550;color:#fff;box-shadow:0 1px 2px rgba(17,24,39,.15);}
+  #page-new-order .fld-l{font-size:12px;font-weight:600;color:#64748B;}
+  #page-new-order .fld{height:40px;border-radius:6px;font-size:14px;border-color:#E8E3EE;padding:0 12px;}
+  #page-new-order textarea.fld{height:auto;padding:8px 12px;}
+  #page-new-order .grid-21 > div:first-child{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);gap:16px;align-items:start;}
+  #page-new-order .grid-21 > div:first-child > .card{margin-bottom:0 !important;}
+  #page-new-order .grid-21 > div:first-child > .card:first-child{grid-column:1 / -1;}
+  #prodGrid{display:grid;grid-template-columns:1fr;gap:0;}
+  #page-new-order .prod-card{display:block;width:100%;text-align:left;background:#fff;border:none;border-bottom:1px solid #EEF2F7;padding:10px 4px;cursor:pointer;position:relative;border-radius:0;}
+  #page-new-order .prod-card:hover{background:#F8F7FB;}
+  #page-new-order .pc-name{font-size:13.5px;font-weight:500;color:#111827;display:block;padding-right:78px;}
+  #page-new-order .prod-card .muted-sm{display:block;font-size:12px;padding-right:78px;}
+  #page-new-order .prod-card::after{content:'No Image';position:absolute;right:4px;top:50%;transform:translateY(-50%);width:64px;height:44px;border:1px solid #EEF2F7;border-radius:6px;color:#94A3B8;font-size:11px;display:flex;align-items:center;justify-content:center;background:#F8F7FB;}
+  #page-new-order .pc-fav{font-size:11px;color:#94A3B8;}
+  /* Approved Orders — live tab strip is 48px in a rounded-lg card */
+  #aoPills{gap:8px;}
+  #aoPills .wo-pill{padding:13px 1px 11px;}
+  #page-approved-orders > .card{border-radius:8px;}
+  /* Orders Report — soft gradient page head */
+  #page-orders-dashboard{background:linear-gradient(180deg,rgba(244,234,247,.45),rgba(248,247,250,0) 220px);}
 </style>
 </head>
 <body>
@@ -719,26 +744,23 @@
 
 
       <!-- ===== STEP 2: ORDERS PAGES ===== -->
-            <section class="page-panel" id="page-new-order">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
+            <section class="page-panel" id="page-new-order" style="max-width:1400px;margin-left:auto;margin-right:auto;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap;background:#fff;border:1px solid #EEF2F7;border-radius:16px;padding:10px 16px;box-shadow:0 1px 2px rgba(17,24,39,.04),0 1px 3px rgba(17,24,39,.06);">
           <span class="seg" style="font-size:13.5px;"><button onclick="orderMode(this,'manual')">Manual</button><button class="on" onclick="orderMode(this,'approved')">Approved</button><button onclick="orderMode(this,'preorder')">Pre-Order</button></span>
-          <span style="margin-left:auto;display:flex;gap:8px;"><button class="ctl-btn">Guide</button><button class="ctl-btn" onclick="openModal('layoutsModal')">Layouts &amp; Fields</button></span>
+          <span style="margin-left:auto;display:flex;gap:8px;"><button class="ctl-btn" style="border-color:#EEF2F7;border-radius:8px;font-size:12px;" onclick="toast('Screenshot picker (UI prototype)')">স্ক্রিনশট থেকে পূরণ</button><button class="ctl-btn">Guide</button><button class="ctl-btn" onclick="openModal('layoutsModal')">Layouts &amp; Fields</button></span>
         </div>
-        <div class="card" style="margin-bottom:16px;background:linear-gradient(90deg,#f3eff9,#ece5f5);display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
-          <div><b>চ্যাটের স্ক্রিনশট থেকে ফর্ম পূরণ করুন</b><br><span class="muted-sm">স্ক্রিনশট বেছে নিন, এখানে ছেড়ে দিন, অথবা Ctrl+V দিয়ে পেস্ট করুন</span></div>
-          <button class="btn-primary" style="margin-left:auto;" onclick="toast('Screenshot picker (UI prototype)')">স্ক্রিনশট থেকে পূরণ</button>
-        </div>
-        <div class="grid-21" style="grid-template-columns:1fr 340px;">
+        
+        <div class="grid-21" style="grid-template-columns:minmax(0,1fr) clamp(16rem,25%,28rem);gap:16px;">
           <div>
             <div class="card" style="margin-bottom:16px;">
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;">
                 <label class="fld-l">Mobile Number *<span style="display:flex;gap:6px;"><input class="fld" placeholder="01XXXXXXXXX"><button class="ctl-btn" title="Call">Call</button><button class="ctl-btn" title="WhatsApp">WA</button></span></label>
                 <label class="fld-l">Customer Name *<input class="fld" placeholder="Customer name"></label>
                 <label class="fld-l">Email <span class="opt-tag">OPTIONAL</span><input class="fld" placeholder="customer@example.com"></label>
                 <label class="fld-l">Address *<input class="fld" placeholder="Enter address"></label>
               </div>
               <label class="fld-l" style="margin-top:12px;">Shipping Note <span class="opt-tag">OPTIONAL</span> <span class="muted-sm">0/350</span><span style="display:flex;gap:6px;"><input class="fld" placeholder="Note printed on invoice / shared with courier"><button class="ctl-btn" onclick="toast('Shipping note templates — No templates found. Add New Template in Settings (UI prototype)')">+</button></span></label>
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;">
+              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:12px;">
                 <label class="fld-l" id="dmWrap">Delivery Method *<select class="fld"><option>Select delivery method</option><option>mr</option><option>Outlet</option><option>Outlet</option><option>steadfast</option><option>Test</option></select></label>
                 <div class="fld-l" id="dmHelp" style="display:none;">Delivery Method<div class="muted-sm" style="margin-top:8px;font-weight:400;">Courier will be assigned during Online Order approval.</div></div>
                 <label class="fld-l">Payment Method <span class="opt-tag">OPTIONAL</span><select class="fld"><option>Select account</option><option>Brack Bank</option><option>Rocket</option><option>Test</option><option>bKash</option></select></label>
@@ -787,7 +809,7 @@
                 <div class="sum-row"><span>Grand Total</span><b id="sumGrand">৳0</b></div>
                 <div class="sum-row"><span>Advance</span><b id="sumAdv2">৳0</b></div>
                 <div class="sum-row total"><span>Due Amount</span><b id="sumDue">৳0</b></div>
-                <button class="btn-primary" style="width:100%;margin-top:14px;" id="createOrderBtn" onclick="toast('Order saved (UI prototype)')">Create Approved Order</button>
+                <button class="btn-primary" style="width:100%;margin-top:16px;height:44px;border-radius:8px;font-size:14px;" id="createOrderBtn" onclick="toast('Order saved (UI prototype)')">Create Approved Order</button>
                 <p class="empty-note" style="text-align:center;margin-top:8px;">Order will be saved as soon as you click.</p>
               </div>
             </div>
@@ -875,7 +897,7 @@
       </section>
 
             <section class="page-panel" id="page-auto-pick">
-        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;"><h3 style="font-size:17px;">Auto Order Dashboard</h3><span style="margin-left:auto;display:flex;gap:10px;align-items:center;"><span class="muted-sm">Updated just now</span><button class="ctl-btn" onclick="toast('Data refreshed (UI prototype)')">Refresh data</button><button class="ctl-btn">Guide</button></span></div>
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;"><h3 style="font-size:18px;font-weight:700;">Auto Order Dashboard</h3><span style="margin-left:auto;display:flex;gap:10px;align-items:center;"><span class="muted-sm">Updated just now</span><button class="ctl-btn" onclick="toast('Data refreshed (UI prototype)')">Refresh data</button><button class="ctl-btn">Guide</button></span></div>
         <div class="card" style="margin:16px 0;">
           <div style="display:flex;gap:14px;align-items:flex-start;"><button class="switch on" onclick="this.classList.toggle('on')"></button><div><b>Open next automatically after status update</b><br><span class="muted-sm">When enabled, auto-order continues with the next item in the same queue after you update a status.</span></div></div>
         </div>
@@ -1084,7 +1106,7 @@
       </section>
 
       <section class="page-panel" id="page-orders-dashboard">
-        <div class="page-head"><div><h1>Orders Dashboard</h1><p>Source: Website · last 30 days</p></div>
+        <div class="page-head"><div><h1 style="font-size:24px;font-weight:800;color:#18181B;letter-spacing:-0.02em;">Orders Report</h1><p>Source: Website · last 30 days</p></div>
         <span style="margin-left:auto;display:flex;gap:8px;"><button class="ctl-btn" onclick="toast('Excel export queued — appears in Export Center')">Export Excel</button><button class="ctl-btn" onclick="toast('Main Report Template export queued')">Export as Main Report Template</button><button class="ctl-btn" onclick="toast('Export Center (UI prototype)')">Export Center</button></span></div>
         <div class="kpi-grid">
           <div class="card kpi"><div class="lbl">Orders</div><div class="val">65</div><div class="sub">Website source</div></div>
