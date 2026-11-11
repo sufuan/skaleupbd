@@ -337,7 +337,9 @@
   #sumGrand{font-weight:700;}
   #page-new-order .empty-note{background:transparent;}
 
-  #page-auto-call .filter-grid{grid-template-columns:repeat(5,1fr);}
+  #page-auto-call .filter-grid{display:flex;flex-wrap:wrap;gap:16px;}
+  #page-auto-call .filter-grid > *{flex:1 1 250px;}
+  #page-auto-call table{display:table;}
   #page-auto-call table{width:100%;}
   #page-auto-call table th{background:#FAF9FB;text-transform:none;letter-spacing:0;}
   #page-auto-pick .switch.on{background:#411550;}
@@ -349,11 +351,11 @@
 
   #aoTable th{text-transform:none;letter-spacing:0;}
 
-  #page-auto-call .filter-grid > :nth-child(6){max-width:200px;}
-  #page-auto-call .filter-grid > :nth-child(7){max-width:170px;}
-  #page-auto-call .filter-grid > :nth-child(8){max-width:170px;}
-  #page-auto-call .filter-grid > :nth-child(9){max-width:210px;}
-  #page-auto-call .filter-grid > :nth-child(10){max-width:200px;}
+  #page-auto-call .filter-grid > :nth-child(6){flex:0 1 190px;}
+  #page-auto-call .filter-grid > :nth-child(7){flex:0 1 165px;}
+  #page-auto-call .filter-grid > :nth-child(8){flex:0 1 165px;}
+  #page-auto-call .filter-grid > :nth-child(9){flex:0 1 200px;}
+  #page-auto-call .filter-grid > :nth-child(10){flex:0 1 190px;}
 
   #page-courier-mgmt .utabs{border-bottom:none;gap:6px;}
   #page-courier-mgmt .utabs button{border-bottom:none;border-radius:99px;padding:7px 14px;}
