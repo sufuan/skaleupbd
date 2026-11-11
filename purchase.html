@@ -1478,6 +1478,19 @@ if(supSec){
     if(el && /Zeotexbd|Ahsan Supplier/.test(el.textContent || '')){ showPage('pur-supplier-detail'); }
   });
 }
+// imported views: plain href="#" anchors carry no route in the source file — wire the labelled ones
+document.querySelectorAll('.purx').forEach(function(scope){
+  scope.addEventListener('click', function(e){
+    var a = e.target.closest('a[href="#"]');
+    if(!a || a.hasAttribute('data-route')) return;
+    var t = (a.textContent || '').replace(/\s+/g, ' ').trim();
+    if(/New Purchase/.test(t)){ e.preventDefault(); showPage('pur-new'); }
+    else if(/^Owed to suppliers/.test(t)){ e.preventDefault(); showPage('pur-ledger'); }
+    else if(/^Goods not received/.test(t)){ e.preventDefault(); showPage('pur-receive'); }
+    else if(/^Low stock on items/.test(t)){ e.preventDefault(); location.href = 'inventory.html#inv-lowstock'; }
+    else if(/^Overdue/.test(t) && scope.closest('#pur-suppliers')){ e.preventDefault(); showPage('pur-ledger'); }
+  });
+});
 </script>
 <div id="purModal" style="display:none;position:fixed;inset:0;background:rgba(17,24,39,.5);z-index:300;align-items:center;justify-content:center;">
   <div style="background:#fff;border-radius:14px;width:min(480px,92vw);max-height:88vh;overflow:auto;padding:24px;box-shadow:0 20px 50px rgba(17,24,39,.3);">
