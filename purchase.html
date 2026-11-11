@@ -372,6 +372,10 @@
   #inv-dashboard .utabs button.active,#inv-ledger .utabs button.active{background:#F4EDF7;color:#411550;box-shadow:none;}
   .inv-table{display:table;width:100%;}
   .inv-table th{background:#fff;color:#64748B;text-transform:none;letter-spacing:0;font-size:13px;font-weight:600;border-bottom:1px solid #EEF2F7;}
+
+  #pur-suppliers .utabs,#pur-supplier-detail .utabs{border-bottom:none;}
+  #pur-suppliers .utabs button,#pur-supplier-detail .utabs button{border-bottom:none;border-radius:99px;padding:7px 14px;}
+  #pur-suppliers .utabs button.active,#pur-supplier-detail .utabs button.active{background:#F4EDF7;color:#411550;box-shadow:none;}
 </style>
 </head>
 <body>
@@ -542,101 +546,384 @@
       
 
       <section class="page-panel active" id="pur-dashboard">
-        <h3 style="font-size:19px;">Purchase Dashboard</h3>
-        <div class="kpi-grid" style="margin:18px 0;">
-          <div class="card kpi"><div class="lbl">TOTAL PURCHASES</div><div class="val">396</div><div class="sub">All time</div></div>
-          <div class="card kpi"><div class="lbl">TO RECEIVE</div><div class="val">363</div><div class="sub">Waiting for delivery</div></div>
-          <div class="card kpi"><div class="lbl">TO PAY</div><div class="val">৳4,25,784</div><div class="sub">6 bills unpaid</div></div>
-          <div class="card kpi"><div class="lbl">SUPPLIERS</div><div class="val">24</div><div class="sub">Active suppliers</div></div>
+        <div style="max-width:1535px;margin:0 auto;padding-top:30px;">
+        <div class="page-head"><div style="display:flex;align-items:center;gap:12px;"><span style="display:inline-flex;width:42px;height:42px;border-radius:11px;background:#E5DFE9;align-items:center;justify-content:center;flex:none;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#411550" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg></span><div><h1 style="font-size:24px;font-weight:700;">Purchase Dashboard</h1><p>Stock coming in — what you owe, what is late, what has arrived</p></div></div><span style="margin-left:auto;display:flex;gap:8px;align-items:center;"><button class="ctl-btn">Guide</button><button class="btn-primary" onclick="showPage('pur-new')">+ New Purchase</button></span></div>
+        <div style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#64748B;margin-bottom:12px;">RIGHT NOW</div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;">
+          <div class="card" style="padding:20px;"><div style="font-size:13px;color:#64748B;font-weight:500;">Owed to suppliers</div><div style="font-size:26px;font-weight:700;color:#111827;margin-top:6px;">৳4,25,784</div></div>
+          <div class="card" style="padding:20px;"><div style="font-size:13px;color:#64748B;font-weight:500;">Overdue</div><div style="font-size:26px;font-weight:700;color:#E9000B;margin-top:6px;">৳4,25,784</div></div>
+          <div class="card" style="padding:20px;"><div style="font-size:13px;color:#64748B;font-weight:500;">Goods not received</div><div style="font-size:26px;font-weight:700;color:#111827;margin-top:6px;">367</div><div class="muted-sm" style="margin-top:2px;">purchases waiting</div></div>
+          <div class="card" style="padding:20px;"><div style="font-size:13px;color:#64748B;font-weight:500;">Low stock on items you buy</div><div style="font-size:26px;font-weight:700;color:#111827;margin-top:6px;">17</div></div>
         </div>
-        <div class="card"><h3>Recent Purchases</h3>
-          <table><tr><th>Invoice</th><th>Supplier</th><th>Date</th><th>Total</th><th>Status</th></tr>
-          <tr><td>PO-0396</td><td>Zeotexbd</td><td>10 Nov</td><td>৳86,400</td><td><span class="pill amber">To Receive</span></td></tr>
-          <tr><td>PO-0395</td><td>Dhaka Fabrics</td><td>09 Nov</td><td>৳42,750</td><td><span class="pill green">Received</span></td></tr>
-          <tr><td>PO-0394</td><td>Zeotexbd</td><td>08 Nov</td><td>৳1,12,300</td><td><span class="pill blue">Partial</span></td></tr></table>
+        <div style="display:flex;align-items:center;margin:26px 0 12px;"><div style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#64748B;">THIS PERIOD</div>
+          <span style="margin-left:auto;display:flex;gap:8px;align-items:center;"><span class="ptabs"><button class="ptab">‹</button><button class="ptab">Today</button><button class="ptab">Yest.</button><button class="ptab" style="background:#42174F;color:#fff;">30D</button><button class="ptab">Month</button><button class="ptab">⋯</button></span>
+          <select class="fld" style="width:170px;"><option>All suppliers</option><option>Zeotexbd</option></select></span></div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">
+          <div class="card" style="padding:20px;"><div style="font-size:13px;color:#64748B;font-weight:500;">Purchased</div><div style="font-size:26px;font-weight:700;color:#111827;margin-top:6px;">৳2,500</div><div class="muted-sm" style="margin-top:2px;">86 purchases</div></div>
+          <div class="card" style="padding:20px;"><div style="font-size:13px;color:#64748B;font-weight:500;">Paid</div><div style="font-size:26px;font-weight:700;color:#111827;margin-top:6px;">৳2,500</div></div>
+          <div class="card" style="padding:20px;"><div style="font-size:13px;color:#64748B;font-weight:500;">Received value</div><div style="font-size:26px;font-weight:700;color:#111827;margin-top:6px;">৳20,120</div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;">
+          <div class="card"><h3 style="font-size:16px;font-weight:600;margin-bottom:12px;">Top suppliers</h3>
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;"><span style="font-weight:500;">Zeotexbd</span><span style="flex:1;height:8px;border-radius:99px;background:#F4EDF7;"><span style="display:block;width:72%;height:100%;border-radius:99px;background:#411550;"></span></span><b>৳2,500</b></div>
+            <div style="display:flex;align-items:center;gap:10px;"><span style="font-weight:500;">Ahsan Supplier</span><span style="flex:1;height:8px;border-radius:99px;background:#F4EDF7;"><span style="display:block;width:22%;height:100%;border-radius:99px;background:#411550;"></span></span><b>৳700</b></div>
+          </div>
+          <div class="card"><h3 style="font-size:16px;font-weight:600;margin-bottom:6px;">Most bought products</h3>
+            <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #F6F3F9;"><span style="min-width:0;"><span style="display:block;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Kumkum Ikkat 1</span><span class="muted-sm">11143</span></span><span style="margin-left:auto;text-align:right;flex:none;"><span class="muted-sm">101pcs</span><br><b>৳8,080</b></span></div>
+            <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #F6F3F9;"><span style="min-width:0;"><span style="display:block;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Jeans Pant</span><span class="muted-sm">1001</span></span><span style="margin-left:auto;text-align:right;flex:none;"><span class="muted-sm">64pcs</span><br><b>৳6,400</b></span></div>
+            <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #F6F3F9;"><span style="min-width:0;"><span style="display:block;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">30L Bag</span><span class="muted-sm">109</span></span><span style="margin-left:auto;text-align:right;flex:none;"><span class="muted-sm">58pcs</span><br><b>৳1,856</b></span></div>
+            <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #F6F3F9;"><span style="min-width:0;"><span style="display:block;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Neela Pankh 2</span><span class="muted-sm">11145</span></span><span style="margin-left:auto;text-align:right;flex:none;"><span class="muted-sm">41pcs</span><br><b>৳2,460</b></span></div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;">
+          <div class="card"><h3 style="font-size:16px;font-weight:600;">Purchases, last 6 months</h3><p class="muted-sm" style="margin-bottom:10px;">0 – ৳3,60,000</p>
+            <div style="display:flex;gap:10px;align-items:flex-end;"><div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;"><div style="width:70%;height:150px;display:flex;align-items:flex-end;"><div style="width:100%;height:40%;background:#411550;border-radius:6px 6px 0 0;opacity:.45;"></div></div><span class="muted-sm">Jun</span></div><div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;"><div style="width:70%;height:150px;display:flex;align-items:flex-end;"><div style="width:100%;height:55%;background:#411550;border-radius:6px 6px 0 0;opacity:.6;"></div></div><span class="muted-sm">Jul</span></div><div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;"><div style="width:70%;height:150px;display:flex;align-items:flex-end;"><div style="width:100%;height:35%;background:#411550;border-radius:6px 6px 0 0;opacity:.4;"></div></div><span class="muted-sm">Aug</span></div><div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;"><div style="width:70%;height:150px;display:flex;align-items:flex-end;"><div style="width:100%;height:70%;background:#411550;border-radius:6px 6px 0 0;opacity:.75;"></div></div><span class="muted-sm">Sep</span></div><div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;"><div style="width:70%;height:150px;display:flex;align-items:flex-end;"><div style="width:100%;height:88%;background:#411550;border-radius:6px 6px 0 0;opacity:1;"></div></div><span class="muted-sm">Oct</span></div><div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;"><div style="width:70%;height:150px;display:flex;align-items:flex-end;"><div style="width:100%;height:62%;background:#411550;border-radius:6px 6px 0 0;opacity:.65;"></div></div><span class="muted-sm">Nov</span></div></div></div>
+          <div class="card"><div style="display:flex;align-items:center;margin-bottom:6px;"><h3 style="font-size:16px;font-weight:600;">Recent purchases</h3><a href="#" onclick="showPage('pur-list');return false;" style="margin-left:auto;color:#411550;font-weight:500;">View all</a></div>
+            <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #F6F3F9;"><span><span style="display:block;font-weight:500;">Quick Stock In</span><span class="muted-sm">10 Nov 2026</span></span><span style="margin-left:auto;display:flex;align-items:center;gap:10px;"><b>৳0</b><span style="border:1px solid #BFDBFE;color:#2563EB;border-radius:99px;padding:2px 10px;font-size:12.5px;">Not received</span></span></div>
+            <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #F6F3F9;"><span><span style="display:block;font-weight:500;">Zeotexbd</span><span class="muted-sm">09 Nov 2026</span></span><span style="margin-left:auto;display:flex;align-items:center;gap:10px;"><b>৳2,500</b><span style="border:1px solid #BBF7D0;color:#16A34A;border-radius:99px;padding:2px 10px;font-size:12.5px;">Received</span></span></div>
+            <div style="display:flex;align-items:center;gap:10px;padding:9px 0;"><span><span style="display:block;font-weight:500;">Zeotexbd</span><span class="muted-sm">08 Nov 2026</span></span><span style="margin-left:auto;display:flex;align-items:center;gap:10px;"><b>৳1,800</b><span style="border:1px solid #BFDBFE;color:#2563EB;border-radius:99px;padding:2px 10px;font-size:12.5px;">Not received</span></span></div>
+          </div>
+        </div>
+        <div class="card" style="margin-top:12px;"><h3 style="font-size:16px;font-weight:600;margin-bottom:10px;">Overdue supplier payments</h3>
+          <table class="inv-table"><tr><th>Supplier</th><th>Overdue</th><th>Bills</th><th>Oldest due date</th><th>Action</th></tr>
+          <tr><td><b>Zeotexbd</b></td><td style="color:#E9000B;font-weight:600;">৳3,55,784</td><td>5</td><td>14 Jan 2026</td><td><a href="#" onclick="showPage('pur-ledger');return false;" style="color:#2563EB;">Open Supplier Ledger</a></td></tr>
+          <tr><td><b>Ahsan Supplier</b></td><td style="color:#E9000B;font-weight:600;">৳70,000</td><td>1</td><td>02 Oct 2026</td><td><a href="#" onclick="showPage('pur-ledger');return false;" style="color:#2563EB;">Open Supplier Ledger</a></td></tr>
+          </table></div>
         </div>
       </section>
 
       <section class="page-panel" id="pur-list">
-        <h3 style="font-size:19px;margin-bottom:16px;">Purchase List</h3>
-        <div class="pill-row">
-          <button class="wo-pill active">All <b>396</b></button><button class="wo-pill">To receive <b>363</b></button><button class="wo-pill">To pay <b>6</b></button><button class="wo-pill">Quick Stock <b>387</b></button><button class="wo-pill">Voided <b>1</b></button>
+        <div style="max-width:1535px;margin:0 auto;padding-top:30px;">
+        <div class="page-head"><div style="display:flex;align-items:center;gap:12px;"><span style="display:inline-flex;width:42px;height:42px;border-radius:11px;background:#E5DFE9;align-items:center;justify-content:center;flex:none;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#411550" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg></span><div><h1 style="font-size:24px;font-weight:700;">Purchase List</h1><p>Every purchase order, its receiving and payment status</p></div></div><span style="margin-left:auto;display:flex;gap:8px;align-items:center;"><button class="ctl-btn">Guide</button><button class="btn-primary" onclick="showPage('pur-new')">+ New Purchase</button><button class="ctl-btn">⋯</button></span></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
+          <button style="background:#42174F;color:#fff;border:1px solid #42174F;border-radius:99px;padding:8px 14px;font:inherit;font-weight:500;cursor:pointer;" onclick="toast('UI prototype')">All 400</button><button style="background:#fff;color:#111827;border:1px solid #E5E7EB;border-radius:99px;padding:8px 14px;font:inherit;font-weight:500;cursor:pointer;" onclick="toast('UI prototype')">To receive 367</button><button style="background:#fff;color:#111827;border:1px solid #E5E7EB;border-radius:99px;padding:8px 14px;font:inherit;font-weight:500;cursor:pointer;" onclick="toast('UI prototype')">To pay 6 · ৳4,25,784</button><button style="background:#fff;color:#111827;border:1px solid #E5E7EB;border-radius:99px;padding:8px 14px;font:inherit;font-weight:500;cursor:pointer;" onclick="toast('UI prototype')">Quick Stock 391</button><button style="background:#fff;color:#111827;border:1px solid #E5E7EB;border-radius:99px;padding:8px 14px;font:inherit;font-weight:500;cursor:pointer;" onclick="toast('UI prototype')">Voided 1</button>
         </div>
         <div class="card">
-          <table><tr><th>Invoice</th><th>Supplier</th><th>Date</th><th>Items</th><th>Total</th><th>Paid</th><th>Due</th><th>Status</th></tr>
-          <tr><td>PO-0396</td><td>Zeotexbd</td><td>10 Nov</td><td>Kumkum Ikkat 1 ×200</td><td>৳86,400</td><td>৳0</td><td>৳86,400</td><td><span class="pill amber">To Receive</span></td></tr>
-          <tr><td>PO-0395</td><td>Dhaka Fabrics</td><td>09 Nov</td><td>Neela Pankh 2 ×150</td><td>৳42,750</td><td>৳42,750</td><td>৳0</td><td><span class="pill green">Received</span></td></tr>
-          <tr><td>PO-0394</td><td>Zeotexbd</td><td>08 Nov</td><td>Saree Mix ×320</td><td>৳1,12,300</td><td>৳50,000</td><td>৳62,300</td><td><span class="pill blue">Partial</span></td></tr>
-          <tr><td>PO-0393</td><td>Padma Textile</td><td>07 Nov</td><td>Jeans Pant ×100</td><td>৳72,000</td><td>৳72,000</td><td>৳0</td><td><span class="pill green">Received</span></td></tr></table>
-          <div class="pager">Page 1 of 20 · Rows per page 20</div>
+          <div style="display:flex;gap:10px;align-items:center;margin-bottom:14px;">
+            <input class="fld" style="width:340px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2394A3B8' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:10px center;padding-left:32px;" placeholder="Search supplier, product or SKU">
+            <button class="ctl-btn">Filters</button>
+          </div>
+          <div style="overflow-x:auto;"><table class="inv-table" style="min-width:1050px;">
+            <tr><th><input type="checkbox"></th><th>Date ↕</th><th>Supplier ↕</th><th>Items</th><th>Amount ↕</th><th>Due</th><th>Status</th><th>Next step</th></tr>
+          <tr><td><input type="checkbox"></td><td>10 Nov 2026</td><td><b>Zeotexbd</b><br><span class="muted-sm">No supplier bill</span></td><td><span style="display:inline-block;max-width:280px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;vertical-align:middle;">Kumkum Ikkat 1</span></td><td>৳1,800</td><td>—</td><td><span style="border:1px solid #BFDBFE;color:#2563EB;background:#EFF6FF;border-radius:99px;padding:2px 10px;font-size:12.5px;">Not received</span></td><td><button class="ctl-btn" onclick="showPage('pur-receive')">Receive</button></td></tr>
+          <tr><td><input type="checkbox"></td><td>10 Nov 2026</td><td><b>Quick Stock Increase</b><br><span class="muted-sm">No supplier bill</span></td><td><span style="display:inline-block;max-width:280px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;vertical-align:middle;">Jeans Pant</span></td><td>৳0</td><td>—</td><td><span style="border:1px solid #BFDBFE;color:#2563EB;background:#EFF6FF;border-radius:99px;padding:2px 10px;font-size:12.5px;">Not received</span></td><td><button class="ctl-btn" onclick="showPage('pur-receive')">Receive</button></td></tr>
+          <tr><td><input type="checkbox"></td><td>09 Nov 2026</td><td><b>Zeotexbd</b><br><span class="muted-sm">No supplier bill</span></td><td><span style="display:inline-block;max-width:280px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;vertical-align:middle;">30L Bag</span></td><td>৳2,500</td><td>—</td><td><span style="background:#F0FDF4;color:#16A34A;border-radius:99px;padding:2px 10px;font-size:12.5px;font-weight:600;">Received</span></td><td><a href="#" onclick="toast('UI prototype');return false;" class="muted-sm">View purchase details...</a></td></tr>
+          <tr><td><input type="checkbox"></td><td>08 Nov 2026</td><td><b>Ahsan Supplier</b><br><span class="muted-sm">No supplier bill</span></td><td><span style="display:inline-block;max-width:280px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;vertical-align:middle;">Neela Pankh 2</span></td><td>৳950</td><td>৳950</td><td><span style="border:1px solid #BFDBFE;color:#2563EB;background:#EFF6FF;border-radius:99px;padding:2px 10px;font-size:12.5px;">Not received</span></td><td><button class="ctl-btn" onclick="showPage('pur-receive')">Receive</button></td></tr>
+          </table></div>
+          <div style="display:flex;align-items:center;margin-top:14px;flex-wrap:wrap;gap:10px;">
+            <span class="muted-sm">0 of 400 row(s) selected.</span>
+            <span style="margin-left:auto;display:flex;align-items:center;gap:10px;"><span class="muted-sm">Rows per page</span><select class="fld" style="width:76px;"><option>10</option><option>25</option></select><span class="muted-sm">Page 1 of 40</span><button class="ctl-btn" disabled>‹</button><button class="ctl-btn">›</button></span>
+          </div>
+        </div>
         </div>
       </section>
 
       <section class="page-panel" id="pur-new">
-        <h3 style="font-size:19px;margin-bottom:18px;">New Purchase</h3>
-        <div class="card">
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
-            <label class="fld-l">Supplier *<select class="fld"><option>Zeotexbd</option><option>Dhaka Fabrics</option><option>Padma Textile</option></select></label>
-            <label class="fld-l">Purchase Date<input class="fld" type="date"></label>
-            <label class="fld-l">Product<select class="fld"><option>Kumkum Ikkat 1 — KIK-1</option><option>Neela Pankh 2 — NP-2</option><option>Jeans Pant — 1001</option></select></label>
-            <label class="fld-l">Quantity<input class="fld" type="number" placeholder="0"></label>
-            <label class="fld-l">Cost Price (৳)<input class="fld" type="number" placeholder="0"></label>
-            <label class="fld-l">Warehouse<select class="fld"><option>Main Warehouse — Dhaka</option><option>Outlet — Mirpur</option></select></label>
+        <div style="max-width:1535px;margin:0 auto;padding-top:30px;">
+        <div class="page-head"><div style="display:flex;align-items:center;gap:12px;"><span style="display:inline-flex;width:42px;height:42px;border-radius:11px;background:#E5DFE9;align-items:center;justify-content:center;flex:none;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#411550" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg></span><div><h1 style="font-size:24px;font-weight:700;">New Purchase</h1><p>Add products, choose the supplier, and create the purchase</p></div></div><span style="margin-left:auto;display:flex;gap:8px;align-items:center;"><button class="ctl-btn">Guide</button><button class="ctl-btn" onclick="showPage('pur-list')">Purchase List</button></span></div>
+        <div style="display:grid;grid-template-columns:minmax(0,1fr) 400px;gap:20px;align-items:start;">
+          <div>
+            <div class="card">
+              <div style="display:flex;align-items:center;margin-bottom:12px;"><h2 style="font-size:17px;font-weight:600;">Click To Add Products</h2><button class="mini-btn" style="margin-left:8px;" title="How favourites work">?</button></div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:6px;">
+                <label class="fld-l">CODE/SKU<input class="fld" style="background:#F8F7FB;" placeholder="Type to Search.."></label>
+                <label class="fld-l">NAME<input class="fld" style="background:#F8F7FB;" placeholder="Type to Search.."></label>
+              </div>
+              <div style="display:flex;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid #F6F3F9;cursor:pointer;" onclick="purAdd('11143')"><span style="display:inline-block;width:64px;height:64px;border-radius:8px;background:var(--active-bg);flex:none;"></span><span style="flex:1;min-width:0;"><span style="display:block;font-weight:500;">Kumkum Ikkat 1</span><span class="muted-sm">SKU: <b style="color:#111827;">11143</b></span><br><span class="muted-sm">Purchase Price: ৳450 &nbsp;·&nbsp; Stock: 2084</span></span><span style="color:#FFB900;flex:none;"><svg width="18" height="18" viewBox="0 0 24 24" fill="#FFB900" stroke="#FFB900" stroke-width="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span></div>
+              <div style="display:flex;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid #F6F3F9;cursor:pointer;" onclick="purAdd('1001')"><span style="display:inline-block;width:64px;height:64px;border-radius:8px;background:var(--active-bg);flex:none;"></span><span style="flex:1;min-width:0;"><span style="display:block;font-weight:500;">Jeans Pant</span><span class="muted-sm">SKU: <b style="color:#111827;">1001</b></span><br><span class="muted-sm">Purchase Price: ৳600 &nbsp;·&nbsp; Stock: 53</span></span><span style="color:#FFB900;flex:none;"><svg width="18" height="18" viewBox="0 0 24 24" fill="#FFB900" stroke="#FFB900" stroke-width="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span></div>
+              <div style="display:flex;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid #F6F3F9;cursor:pointer;" onclick="purAdd('109')"><span style="display:inline-block;width:64px;height:64px;border-radius:8px;background:var(--active-bg);flex:none;"></span><span style="flex:1;min-width:0;"><span style="display:block;font-weight:500;">30L Bag</span><span class="muted-sm">SKU: <b style="color:#111827;">109</b></span><br><span class="muted-sm">Purchase Price: ৳200 &nbsp;·&nbsp; Stock: 1001</span></span><span style="color:#FFB900;flex:none;"><svg width="18" height="18" viewBox="0 0 24 24" fill="#FFB900" stroke="#FFB900" stroke-width="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span></div>
+              <div style="display:flex;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid #F6F3F9;cursor:pointer;" onclick="purAdd('11145')"><span style="display:inline-block;width:64px;height:64px;border-radius:8px;background:var(--active-bg);flex:none;"></span><span style="flex:1;min-width:0;"><span style="display:block;font-weight:500;">Neela Pankh 2</span><span class="muted-sm">SKU: <b style="color:#111827;">11145</b></span><br><span class="muted-sm">Purchase Price: ৳420 &nbsp;·&nbsp; Stock: 198</span></span><span style="color:#FFB900;flex:none;"><svg width="18" height="18" viewBox="0 0 24 24" fill="#FFB900" stroke="#FFB900" stroke-width="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span></div>
+              <p class="muted-sm" style="margin-top:10px;">Showing 1 of 90</p>
+            </div>
+            <div class="card" style="margin-top:16px;">
+              <h2 style="font-size:17px;font-weight:600;margin-bottom:8px;">Purchased Products <span class="muted-sm" id="purCount">(0 items)</span></h2>
+              <div id="purItems"><p class="muted-sm">No products added yet — click a product above to add it.</p></div>
+              <div id="purFoot" style="display:none;border-top:1px solid #EEF2F7;margin-top:12px;padding-top:12px;">
+                <div style="display:flex;font-size:15px;"><span style="color:#64748B;">Grand Total</span><b style="margin-left:auto;" id="purTotal">৳0</b></div>
+                <button class="btn-primary" id="purCreate" style="width:100%;margin-top:14px;" onclick="toast('UI prototype')">Create Purchase</button>
+              </div>
+            </div>
           </div>
-          <div class="sum-row" style="margin-top:16px;"><span>Total</span><b>৳0</b></div>
-          <div class="sum-row"><span>Paid</span><b>৳0</b></div>
-          <div class="sum-row total"><span>Due</span><b>৳0</b></div>
-          <div style="display:flex;gap:10px;margin-top:16px;"><button class="btn-primary" onclick="toast('Purchase saved (UI prototype)')">Save Purchase</button><button class="ctl-btn" onclick="showPage('pur-list')">Cancel</button></div>
+          <div class="card">
+            <label class="fld-l">SUPPLIER *<span style="display:flex;gap:8px;"><select class="fld" style="background:#F8F7FB;flex:1;"><option>Choose supplier</option><option>Zeotexbd</option><option>Ahsan Supplier</option></select><button class="ctl-btn" title="New supplier" onclick="toast('UI prototype')">+</button></span></label>
+            <label class="fld-l" style="margin-top:14px;">PURCHASE DATE<button class="fld" style="background:#F8F7FB;text-align:left;" onclick="toast('UI prototype')">11 Nov 2026</button></label>
+            <label class="fld-l" style="margin-top:14px;">NOTE<textarea class="fld" rows="4" style="background:#F8F7FB;" placeholder="Invoice number, delivery details..."></textarea></label>
+          </div>
+        </div>
         </div>
       </section>
 
       <section class="page-panel" id="pur-receive">
-        <h3 style="font-size:19px;margin-bottom:18px;">Purchase Receive</h3>
+        <div style="max-width:1535px;margin:0 auto;padding-top:30px;">
+        <div class="page-head"><div><h1 style="font-size:24px;font-weight:700;">Purchase Receive <span style="font-size:15px;font-weight:500;color:#64748B;">367 waiting</span></h1><p>Purchases waiting to be received into stock</p></div>
+        <span style="margin-left:auto;display:flex;gap:8px;align-items:center;"><button class="ctl-btn">Guide</button><button class="ctl-btn" onclick="showPage('pur-list')">Purchase List</button></span></div>
         <div class="card">
-          <p class="muted-sm" style="margin-bottom:12px;">363 purchases are waiting to be received.</p>
-          <table><tr><th>Invoice</th><th>Supplier</th><th>Items</th><th>Ordered Qty</th><th>Received Qty</th><th></th></tr>
-          <tr><td>PO-0396</td><td>Zeotexbd</td><td>Kumkum Ikkat 1</td><td>200</td><td>0</td><td><button class="btn-primary" onclick="toast('Stock received (UI prototype)')">Receive</button></td></tr>
-          <tr><td>PO-0394</td><td>Zeotexbd</td><td>Saree Mix</td><td>320</td><td>180</td><td><button class="btn-primary" onclick="toast('Stock received (UI prototype)')">Receive</button></td></tr>
-          <tr><td>PO-0391</td><td>Padma Textile</td><td>Jeans Pant</td><td>100</td><td>0</td><td><button class="btn-primary" onclick="toast('Stock received (UI prototype)')">Receive</button></td></tr></table>
+          <div style="overflow-x:auto;"><table class="inv-table" style="min-width:1100px;">
+            <tr><th>Ordered on</th><th>Supplier</th><th>Items</th><th>Ordered</th><th>Received</th><th>Damaged / missing</th><th>Left</th><th>Status</th><th>Actions</th></tr>
+          <tr><td><b>10 Nov 2026</b><br><span class="muted-sm">Ordered today</span></td><td>Quick Stock Increase</td><td><span style="display:inline-block;max-width:260px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;vertical-align:middle;">Jeans Pant</span></td><td>12</td><td style="color:#16A34A;font-weight:600;">0</td><td style="color:#DC2626;font-weight:600;">0</td><td>12</td><td><span style="border:1px solid #BFDBFE;color:#2563EB;background:#EFF6FF;border-radius:99px;padding:2px 10px;font-size:12.5px;">Not received</span></td><td><span style="display:inline-flex;gap:6px;"><button class="ctl-btn" onclick="toast('UI prototype')">Receive</button><button class="mini-btn" title="View purchase details" onclick="toast('UI prototype')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></span></td></tr>
+          <tr><td><b>09 Nov 2026</b><br><span class="muted-sm">Waiting 1 day</span></td><td>Zeotexbd</td><td><span style="display:inline-block;max-width:260px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;vertical-align:middle;">30L Bag</span></td><td>20</td><td style="color:#16A34A;font-weight:600;">0</td><td style="color:#DC2626;font-weight:600;">0</td><td>20</td><td><span style="border:1px solid #BFDBFE;color:#2563EB;background:#EFF6FF;border-radius:99px;padding:2px 10px;font-size:12.5px;">Not received</span></td><td><span style="display:inline-flex;gap:6px;"><button class="ctl-btn" onclick="toast('UI prototype')">Receive</button><button class="mini-btn" title="View purchase details" onclick="toast('UI prototype')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></span></td></tr>
+          <tr><td><b>08 Nov 2026</b><br><span class="muted-sm">Waiting 2 days</span></td><td>Zeotexbd</td><td><span style="display:inline-block;max-width:260px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;vertical-align:middle;">Kumkum Ikkat 1</span></td><td>8</td><td style="color:#16A34A;font-weight:600;">8</td><td style="color:#DC2626;font-weight:600;">0</td><td>0</td><td><span style="background:#F0FDF4;color:#16A34A;border-radius:99px;padding:2px 10px;font-size:12.5px;font-weight:600;">Received</span></td><td><span style="display:inline-flex;gap:6px;"><button class="ctl-btn" onclick="toast('UI prototype')">Receive</button><button class="mini-btn" title="View purchase details" onclick="toast('UI prototype')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></span></td></tr>
+          <tr><td><b>07 Nov 2026</b><br><span class="muted-sm">Waiting 3 days</span></td><td>Ahsan Supplier</td><td><span style="display:inline-block;max-width:260px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;vertical-align:middle;">Neela Pankh 2</span></td><td>5</td><td style="color:#16A34A;font-weight:600;">0</td><td style="color:#DC2626;font-weight:600;">0</td><td>5</td><td><span style="border:1px solid #BFDBFE;color:#2563EB;background:#EFF6FF;border-radius:99px;padding:2px 10px;font-size:12.5px;">Not received</span></td><td><span style="display:inline-flex;gap:6px;"><button class="ctl-btn" onclick="toast('UI prototype')">Receive</button><button class="mini-btn" title="View purchase details" onclick="toast('UI prototype')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></span></td></tr>
+          </table></div>
+          <div style="display:flex;align-items:center;margin-top:14px;">
+            <span class="muted-sm">Page 1 of 19</span>
+            <span style="margin-left:auto;display:flex;gap:8px;"><button class="ctl-btn" disabled>‹ Previous</button><button class="ctl-btn">Next ›</button></span>
+          </div>
+        </div>
         </div>
       </section>
 
       <section class="page-panel" id="pur-ledger">
-        <h3 style="font-size:19px;margin-bottom:18px;">Supplier Ledger</h3>
-        <div class="card">
-          <label class="fld-l" style="max-width:320px;">Supplier<select class="fld"><option>Zeotexbd</option><option>Dhaka Fabrics</option><option>Padma Textile</option></select></label>
-          <table style="margin-top:16px;"><tr><th>Date</th><th>Particular</th><th>Debit</th><th>Credit</th><th>Balance (Due)</th></tr>
-          <tr><td>10 Nov</td><td>Purchase PO-0396</td><td>৳86,400</td><td>—</td><td>৳3,55,784</td></tr>
-          <tr><td>08 Nov</td><td>Purchase PO-0394</td><td>৳1,12,300</td><td>—</td><td>৳2,69,384</td></tr>
-          <tr><td>08 Nov</td><td>Payment — bKash</td><td>—</td><td>৳50,000</td><td>৳1,57,084</td></tr></table>
+        <div style="max-width:1535px;margin:0 auto;padding-top:30px;">
+        <div class="page-head"><div style="display:flex;align-items:center;gap:12px;"><span style="display:inline-flex;width:42px;height:42px;border-radius:11px;background:#E5DFE9;align-items:center;justify-content:center;flex:none;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#411550" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg></span><div><h1 style="font-size:24px;font-weight:700;">Supplier Ledger</h1><p>What you owe each supplier, and what is overdue</p></div></div><span style="margin-left:auto;display:flex;gap:8px;align-items:center;"><button class="ctl-btn" style="display:inline-flex;align-items:center;gap:6px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Dues</button><button class="ctl-btn">Guide</button></span></div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">
+          <div class="card" style="padding:20px;"><div style="font-size:13px;color:#64748B;font-weight:500;">Total due (bills)</div><div style="font-size:26px;font-weight:700;color:#111827;margin-top:6px;">৳4,25,784</div></div>
+          <div class="card" style="padding:20px;"><div style="font-size:13px;color:#64748B;font-weight:500;">Overdue</div><div style="font-size:26px;font-weight:700;color:#EA000B;margin-top:6px;">৳4,25,784</div><div class="muted-sm" style="margin-top:2px;">2 suppliers</div></div>
+          <div class="card" style="padding:20px;"><div style="font-size:13px;color:#64748B;font-weight:500;">Suppliers with due</div><div style="font-size:26px;font-weight:700;color:#111827;margin-top:6px;">2</div></div>
+        </div>
+        <div class="card" style="margin-top:12px;">
+          <input class="fld" style="width:100%;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2394A3B8' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:10px center;padding-left:32px;" placeholder="Search supplier name or phone">
+        </div>
+        <div class="card" style="margin-top:12px;">
+          <div style="overflow-x:auto;"><table class="inv-table" style="min-width:1000px;">
+            <tr><th>Supplier</th><th>Due (bills)</th><th>Overdue</th><th>Oldest due date</th><th>Last activity</th><th>Pay</th></tr>
+          <tr style="cursor:pointer;" onclick="showPage('pur-supplier-detail')"><td><b>Zeotexbd</b><br><span class="muted-sm">0172745474</span></td><td><b>৳3,55,784</b></td><td style="color:#EA000B;font-weight:600;">৳3,55,784</td><td>14 Jan 2026</td><td>7 Nov 2026</td><td><button class="btn-primary" style="padding:7px 18px;" onclick="event.stopPropagation();toast('UI prototype')">Pay</button></td></tr>
+          <tr style="cursor:pointer;" onclick="showPage('pur-supplier-detail')"><td><b>Ahsan Supplier</b><br><span class="muted-sm">01812345678</span></td><td><b>৳70,000</b></td><td style="color:#EA000B;font-weight:600;">৳70,000</td><td>02 Oct 2026</td><td>28 Oct 2026</td><td><button class="btn-primary" style="padding:7px 18px;" onclick="event.stopPropagation();toast('UI prototype')">Pay</button></td></tr>
+          </table></div>
+        </div>
         </div>
       </section>
 
       <section class="page-panel" id="pur-suppliers">
-        <div style="display:flex;align-items:center;gap:12px;"><h3 style="font-size:19px;">Suppliers</h3><span style="margin-left:auto;"><button class="btn-primary" onclick="toast('Add Supplier (UI prototype)')">Add Supplier</button></span></div>
-        <div class="card" style="margin-top:18px;">
-          <table><tr><th>Supplier</th><th>Phone</th><th>Total Purchase</th><th>Paid</th><th>Due</th><th>Status</th></tr>
-          <tr><td><b>Zeotexbd</b></td><td>018XXXXXXXX</td><td>৳12,40,600</td><td>৳8,84,816</td><td>৳3,55,784</td><td><span class="pill green">Active</span></td></tr>
-          <tr><td><b>Dhaka Fabrics</b></td><td>017XXXXXXXX</td><td>৳4,85,250</td><td>৳4,85,250</td><td>৳0</td><td><span class="pill green">Active</span></td></tr>
-          <tr><td><b>Padma Textile</b></td><td>019XXXXXXXX</td><td>৳3,18,900</td><td>৳2,48,900</td><td>৳70,000</td><td><span class="pill green">Active</span></td></tr></table>
+        <div style="max-width:1535px;margin:0 auto;padding-top:30px;">
+        <div class="page-head"><div style="display:flex;align-items:center;gap:12px;"><span style="display:inline-flex;width:42px;height:42px;border-radius:11px;background:#E5DFE9;align-items:center;justify-content:center;flex:none;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#411550" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg></span><div><h1 style="font-size:24px;font-weight:700;">Suppliers</h1><p>Your suppliers, their dues and what to reorder</p></div></div><span style="margin-left:auto;display:flex;gap:8px;align-items:center;"><button class="ctl-btn">Guide</button><button class="btn-primary" onclick="toast('UI prototype')">+ Add Supplier</button></span></div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">
+          <div class="card" style="padding:20px;"><div style="font-size:13px;color:#64748B;font-weight:500;">Overdue suppliers</div><div style="font-size:26px;font-weight:700;color:#EA000B;margin-top:6px;">2</div><div class="muted-sm" style="margin-top:2px;">৳4,25,784 overdue</div></div>
+          <div class="card" style="padding:20px;"><div style="font-size:13px;color:#64748B;font-weight:500;">Products to reorder</div><div style="font-size:26px;font-weight:700;color:#111827;margin-top:6px;">0</div><div class="muted-sm" style="margin-top:2px;">At or below reorder point</div></div>
+          <div class="card" style="padding:20px;"><div style="font-size:13px;color:#64748B;font-weight:500;">Total due (bills)</div><div style="font-size:26px;font-weight:700;color:#111827;margin-top:6px;">৳4,25,784</div><div class="muted-sm" style="margin-top:2px;">Open the Supplier Ledger</div></div>
+        </div>
+        <div class="utabs inner-tabs" data-tabs="sup" style="margin-top:18px;">
+          <button class="active" data-t="sup-list">Suppliers</button><button data-t="sup-reorder"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#E17100" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Reorder</button><button data-t="sup-report"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg> Purchase Report</button>
+        </div>
+        <div id="sup-list" class="inner-pane">
+          <div class="card" style="margin-top:14px;">
+            <div style="display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap;">
+              <input class="fld" style="width:300px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2394A3B8' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:10px center;padding-left:32px;" placeholder="Search name or phone">
+              <select class="fld" style="width:150px;"><option>Active</option><option>Inactive</option><option>All</option></select>
+              <select class="fld" style="width:150px;"><option>Show: All</option><option>Show: With due</option></select>
+              <button class="ctl-btn" style="margin-left:auto;" title="Download supplier list"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>
+            </div>
+            <div style="overflow-x:auto;"><table class="inv-table" style="min-width:1150px;">
+              <tr><th>Supplier</th><th>Phone</th><th>Terms</th><th>Purchases</th><th>Total purchased</th><th>Due (bills)</th><th>Last purchase</th><th>Needs attention</th><th></th></tr>
+              <tr><td><span style="display:inline-flex;align-items:center;gap:9px;"><span style="display:inline-flex;width:34px;height:34px;border-radius:50%;background:#E5DFE9;color:#411550;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex:none;">ZE</span><a href="#" onclick="showPage('pur-supplier-detail');return false;" style="color:#411550;font-weight:600;">Zeotexbd</a></span></td><td>—</td><td>30d</td><td>86</td><td>৳3,61,080</td><td><b>৳3,55,784</b></td><td>7 Nov 2026</td><td><span style="display:inline-block;background:#FEF2F2;color:#DC2626;border-radius:99px;padding:2px 10px;font-size:12.5px;font-weight:600;">Overdue ৳3,55,784</span></td><td><button class="mini-btn" onclick="toast('UI prototype')">⋮</button></td></tr>
+              <tr><td><span style="display:inline-flex;align-items:center;gap:9px;"><span style="display:inline-flex;width:34px;height:34px;border-radius:50%;background:#FCE7F3;color:#BE185D;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex:none;">AS</span><a href="#" onclick="showPage('pur-supplier-detail');return false;" style="color:#411550;font-weight:600;">Ahsan Supplier</a></span></td><td>01812345678</td><td>30d</td><td>12</td><td>৳84,500</td><td><b>৳70,000</b></td><td>28 Oct 2026</td><td><span style="display:inline-block;background:#FEF2F2;color:#DC2626;border-radius:99px;padding:2px 10px;font-size:12.5px;font-weight:600;">Overdue ৳70,000</span></td><td><button class="mini-btn" onclick="toast('UI prototype')">⋮</button></td></tr>
+            </table></div>
+            <div style="display:flex;align-items:center;margin-top:14px;flex-wrap:wrap;gap:10px;">
+              <span class="muted-sm">Showing 1 to 2 of 2 suppliers</span>
+              <span style="margin-left:auto;display:flex;align-items:center;gap:10px;"><button class="ctl-btn" disabled>‹</button><button class="ctl-btn">1</button><button class="ctl-btn" disabled>›</button><span class="muted-sm">Show:</span><select class="fld" style="width:110px;"><option>25 / page</option><option>50 / page</option></select></span>
+            </div>
+          </div>
+        </div>
+        <div id="sup-reorder" class="inner-pane" style="display:none;">
+          <div class="card" style="margin-top:14px;">
+            <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+              <b>0 to reorder</b>
+              <select class="fld" style="width:170px;"><option>All priorities</option><option>High</option><option>Normal</option></select>
+              <span style="display:inline-flex;align-items:center;gap:8px;"><button class="switch on" onclick="this.classList.toggle('on')"></button><span>Needs reorder only</span></span>
+              <button class="ctl-btn" style="margin-left:auto;" disabled>Download reorder list</button>
+            </div>
+            <p class="muted-sm" style="text-align:center;padding:34px 10px;">No product is at or below its reorder point.</p>
+          </div>
+        </div>
+        <div id="sup-report" class="inner-pane" style="display:none;">
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:14px;">
+            <div class="card" style="padding:20px;"><div style="font-size:13px;color:#64748B;font-weight:500;">Total Volume</div><div style="font-size:26px;font-weight:700;color:#111827;margin-top:6px;">৳0</div><div class="muted-sm" style="margin-top:2px;">0 purchase orders</div></div>
+            <div class="card" style="padding:20px;"><div style="font-size:13px;color:#64748B;font-weight:500;">Total Paid</div><div style="font-size:26px;font-weight:700;color:#111827;margin-top:6px;">৳0</div><div class="muted-sm" style="margin-top:2px;">Cleared balances</div></div>
+            <div class="card" style="padding:20px;"><div style="font-size:13px;color:#64748B;font-weight:500;">Outstanding Due</div><div style="font-size:26px;font-weight:700;color:#111827;margin-top:6px;">৳0</div><div class="muted-sm" style="margin-top:2px;">To be paid</div></div>
+          </div>
+          <div class="card" style="margin-top:12px;">
+            <h3 style="font-size:16px;font-weight:600;">Supplier Purchase Report</h3>
+            <p class="muted-sm" style="margin-bottom:12px;">Accumulated purchase aggregates grouped by supplier.</p>
+            <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;">
+              <button class="ctl-btn">‹</button>
+              <select class="fld" style="width:150px;"><option>Today</option><option>Yesterday</option></select>
+              <button class="ctl-btn" style="margin-left:auto;">Download</button>
+            </div>
+            <div style="overflow-x:auto;"><table class="inv-table" style="min-width:1000px;">
+              <tr><th style="text-transform:uppercase;">Supplier</th><th style="text-transform:uppercase;">Purchases</th><th style="text-transform:uppercase;">Qty Ordered</th><th style="text-transform:uppercase;">Qty Received</th><th style="text-transform:uppercase;">Total Amount</th><th style="text-transform:uppercase;">Paid</th><th style="text-transform:uppercase;">Due</th></tr>
+              <tr><td><b>Zeotexbd</b></td><td>86</td><td>1,240</td><td>1,180</td><td>৳3,61,080</td><td>৳5,296</td><td>৳3,55,784</td></tr>
+              <tr><td><b>Ahsan Supplier</b></td><td>12</td><td>320</td><td>300</td><td>৳84,500</td><td>৳14,500</td><td>৳70,000</td></tr>
+            </table></div>
+          </div>
+        </div>
+        </div>
+      </section>
+      <section class="page-panel" id="pur-supplier-detail">
+        <div style="max-width:1535px;margin:0 auto;padding-top:30px;">
+        <button class="ctl-btn" onclick="showPage('pur-suppliers')">‹ All suppliers</button>
+        <div style="display:flex;align-items:center;gap:14px;margin-top:16px;flex-wrap:wrap;">
+          <span style="display:inline-flex;width:46px;height:46px;border-radius:50%;background:#E5DFE9;color:#411550;align-items:center;justify-content:center;font-weight:700;font-size:15px;flex:none;">ZE</span>
+          <div><div style="display:flex;align-items:center;gap:10px;"><h1 style="font-size:24px;font-weight:700;">Zeotexbd</h1><span style="display:inline-block;background:#FEF2F2;color:#DC2626;border-radius:99px;padding:3px 12px;font-size:12.5px;font-weight:600;">Overdue ৳3,55,784</span></div>
+          <p class="muted-sm">No phone number · 30-day payment terms</p></div>
+          <span style="margin-left:auto;display:flex;gap:8px;"><button class="btn-primary" onclick="toast('UI prototype')">Pay</button><button class="ctl-btn" onclick="showPage('pur-new')">New purchase</button><button class="ctl-btn">⋯</button></span>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:18px;">
+          <div class="card" style="padding:20px;"><div style="font-size:13px;color:#64748B;font-weight:500;">Due (bills)</div><div style="font-size:26px;font-weight:700;color:#111827;margin-top:6px;">৳3,55,784</div></div>
+          <div class="card" style="padding:20px;"><div style="font-size:13px;color:#64748B;font-weight:500;">Overdue</div><div style="font-size:26px;font-weight:700;color:#EA000B;margin-top:6px;">৳3,55,784</div></div>
+          <div class="card" style="padding:20px;"><div style="font-size:13px;color:#64748B;font-weight:500;">Advance balance</div><div style="font-size:26px;font-weight:700;color:#111827;margin-top:6px;">0</div></div>
+          <div class="card" style="padding:20px;"><div style="font-size:13px;color:#64748B;font-weight:500;">Purchased (lifetime)</div><div style="font-size:26px;font-weight:700;color:#111827;margin-top:6px;">৳3,61,080</div></div>
+        </div>
+        <div class="utabs inner-tabs" data-tabs="supd" style="margin-top:18px;">
+          <button class="active" data-t="sd-due">Due</button><button data-t="sd-ledger">Ledger</button><button data-t="sd-purchases">Purchases</button><button data-t="sd-payments">Payments</button><button data-t="sd-products">Products</button><button data-t="sd-warranty">Warranty</button><button data-t="sd-perf">Performance</button>
+        </div>
+        <div id="sd-due" class="inner-pane">
+          <div class="card" style="margin-top:14px;">
+            <h3 style="font-size:16px;font-weight:600;">Late bills by age</h3>
+            <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #F6F3F9;"><span style="width:170px;flex:none;">Up to 30 days late</span><span style="flex:1;height:8px;border-radius:99px;background:#F3F4F6;"><span style="display:block;width:30%;height:100%;border-radius:99px;background:#F59E0B;"></span></span><b style="flex:none;">৳4,584 · 3</b></div>
+            <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #F6F3F9;"><span style="width:170px;flex:none;">31–60 days late</span><span style="flex:1;height:8px;border-radius:99px;background:#F3F4F6;"><span style="display:block;width:92%;height:100%;border-radius:99px;background:#F59E0B;"></span></span><b style="flex:none;">৳3,50,000 · 1</b></div>
+            <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #F6F3F9;opacity:.45;"><span style="width:170px;flex:none;">61–90 days late</span><span style="flex:1;height:8px;border-radius:99px;background:#F3F4F6;"><span style="display:block;width:0%;height:100%;border-radius:99px;background:#F59E0B;"></span></span><b style="flex:none;">0 · 0</b></div>
+            <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #F6F3F9;"><span style="width:170px;flex:none;">Over 90 days late</span><span style="flex:1;height:8px;border-radius:99px;background:#F3F4F6;"><span style="display:block;width:8%;height:100%;border-radius:99px;background:#F59E0B;"></span></span><b style="flex:none;">৳1,200 · 1</b></div>
+            <div style="display:flex;align-items:center;margin-top:20px;"><h3 style="font-size:16px;font-weight:600;">Unpaid bills (5)</h3><button class="ctl-btn" style="margin-left:auto;">Download unpaid bills</button></div>
+            <div class="card" style="padding:16px 20px;margin-top:10px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;"><b>PO-0LZ7ZF</b><span style="display:inline-block;background:#FEF2F2;color:#DC2626;border-radius:99px;padding:2px 10px;font-size:12.5px;font-weight:600;">Overdue</span><span class="muted-sm">Bought 14 Jan 2026 · due 13 Feb 2026</span><span style="margin-left:auto;display:flex;align-items:center;gap:12px;"><b>৳1,200</b><button class="btn-primary" style="padding:7px 18px;" onclick="toast('UI prototype')">Pay</button></span></div>
+            <div class="card" style="padding:16px 20px;margin-top:10px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;"><b>PO-0M3K2A</b><span style="display:inline-block;background:#FEF2F2;color:#DC2626;border-radius:99px;padding:2px 10px;font-size:12.5px;font-weight:600;">Overdue</span><span class="muted-sm">Bought 02 Mar 2026 · due 01 Apr 2026</span><span style="margin-left:auto;display:flex;align-items:center;gap:12px;"><b>৳3,50,000</b><button class="btn-primary" style="padding:7px 18px;" onclick="toast('UI prototype')">Pay</button></span></div>
+          </div>
+        </div>
+        <div id="sd-ledger" class="inner-pane" style="display:none;">
+          <div style="background:#FFFBEB;border:1px solid #FDE68A;color:#92400E;border-radius:10px;padding:12px 16px;margin-top:14px;">1 payment has no account transaction.</div>
+          <div class="card" style="margin-top:12px;">
+            <div style="display:flex;gap:10px;align-items:center;margin-bottom:12px;flex-wrap:wrap;">
+              <input class="fld" style="width:320px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2394A3B8' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:10px center;padding-left:32px;" placeholder="Search reference, account, note...">
+              <select class="fld" style="width:130px;"><option>All</option><option>Purchases</option><option>Payments</option></select>
+              <button class="ctl-btn" style="margin-left:auto;">Download</button>
+            </div>
+            <p class="muted-sm" style="margin-bottom:10px;">Opening 0 · Purchases ৳3,61,080 · Paid ৳5,296 · Closing ৳3,55,784</p>
+            <div style="overflow-x:auto;"><table class="inv-table" style="min-width:950px;">
+              <tr><th>Date</th><th>Type</th><th>Reference</th><th>Account</th><th>Debit</th><th>Credit</th><th>Balance</th></tr>
+              <tr><td>01 Jan 2026</td><td>Opening balance</td><td>—</td><td>—</td><td>—</td><td>—</td><td>0</td></tr>
+              <tr><td>14 Jan 2026</td><td>Purchase</td><td>PO-0LZ7ZF</td><td>—</td><td>৳1,200</td><td>—</td><td>৳1,200</td></tr>
+              <tr><td>07 Nov 2026</td><td>Payment</td><td>PAY-2211</td><td>Main Account</td><td>—</td><td>৳5,296</td><td>৳3,55,784</td></tr>
+            </table></div>
+            <p class="muted-sm" style="margin-top:12px;">Showing 1-3 of 3 lines</p>
+          </div>
+        </div>
+        <div id="sd-purchases" class="inner-pane" style="display:none;">
+          <div class="card" style="margin-top:14px;">
+            <h3 style="font-size:16px;font-weight:600;">Purchase History</h3>
+            <p class="muted-sm" style="margin-bottom:12px;">List of purchase orders made to this supplier.</p>
+            <div style="display:flex;gap:10px;margin-bottom:12px;"><select class="fld" style="width:130px;"><option>All</option></select><button class="ctl-btn" style="margin-left:auto;">Download</button></div>
+            <div style="overflow-x:auto;"><table class="inv-table" style="min-width:950px;">
+              <tr><th>Date</th><th>Status</th><th>Items</th><th>Ordered</th><th>Received</th><th>Total</th><th>Paid</th><th>Due</th></tr>
+              <tr><td>09 Nov 2026</td><td><span style="background:#F0FDF4;color:#16A34A;border-radius:99px;padding:2px 10px;font-size:12.5px;font-weight:600;">Received</span></td><td>30L Bag</td><td>20</td><td>20</td><td>৳2,500</td><td>৳2,500</td><td>0</td></tr>
+              <tr><td>14 Jan 2026</td><td><span style="border:1px solid #BFDBFE;color:#2563EB;background:#EFF6FF;border-radius:99px;padding:2px 10px;font-size:12.5px;">Not received</span></td><td>Kumkum Ikkat 1</td><td>8</td><td>0</td><td>৳1,200</td><td>0</td><td>৳1,200</td></tr>
+            </table></div>
+          </div>
+        </div>
+        <div id="sd-payments" class="inner-pane" style="display:none;">
+          <div class="card" style="margin-top:14px;">
+            <h3 style="font-size:16px;font-weight:600;">Payment History</h3>
+            <p class="muted-sm" style="margin-bottom:12px;">Recorded payments issued to this supplier.</p>
+            <div style="display:flex;gap:10px;margin-bottom:12px;"><select class="fld" style="width:130px;"><option>All</option></select><button class="ctl-btn" style="margin-left:auto;">Download</button></div>
+            <table class="inv-table">
+              <tr><th>Date</th><th>Account</th><th>Note</th><th>Amount</th></tr>
+              <tr><td>07 Nov 2026</td><td>Main Account</td><td>Bill payment</td><td>৳5,296</td></tr>
+              <tr><td>20 Oct 2026</td><td>Cash</td><td>Partial payment</td><td>৳2,000</td></tr>
+            </table>
+          </div>
+        </div>
+        <div id="sd-products" class="inner-pane" style="display:none;">
+          <div class="card" style="margin-top:14px;">
+            <div style="display:flex;align-items:center;margin-bottom:12px;"><h3 style="font-size:16px;font-weight:600;">Products bought from this supplier</h3><button class="ctl-btn" style="margin-left:auto;" disabled>Download products</button></div>
+            <div style="overflow-x:auto;"><table class="inv-table" style="min-width:950px;">
+              <tr><th>Product</th><th>Stock</th><th>Bought</th><th>Last price</th><th>Last bought</th><th>Preferred</th><th>Actions</th></tr>
+              <tr><td><b>Kumkum Ikkat 1</b><br><span class="muted-sm">11143</span></td><td>2084</td><td>1,240</td><td>৳450</td><td>09 Nov 2026</td><td>Yes</td><td><span style="display:inline-flex;gap:6px;"><button class="ctl-btn">Reorder</button><button class="ctl-btn">Price trend</button></span></td></tr>
+              <tr><td><b>Jeans Pant</b><br><span class="muted-sm">1001</span></td><td>53</td><td>320</td><td>৳600</td><td>28 Oct 2026</td><td>—</td><td><span style="display:inline-flex;gap:6px;"><button class="ctl-btn">Reorder</button><button class="ctl-btn">Price trend</button></span></td></tr>
+              <tr><td><b>30L Bag</b><br><span class="muted-sm">109</span></td><td>1001</td><td>580</td><td>৳200</td><td>09 Nov 2026</td><td>—</td><td><span style="display:inline-flex;gap:6px;"><button class="ctl-btn">Reorder</button><button class="ctl-btn">Price trend</button></span></td></tr>
+            </table></div>
+          </div>
+        </div>
+        <div id="sd-warranty" class="inner-pane" style="display:none;">
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:14px;">
+            <div class="card" style="padding:20px;"><div style="font-size:13px;color:#64748B;font-weight:500;">Sent</div><div style="font-size:26px;font-weight:700;color:#111827;margin-top:6px;">0</div><div class="muted-sm" style="margin-top:2px;">Every unit sent to them</div></div>
+            <div class="card" style="padding:20px;"><div style="font-size:13px;color:#64748B;font-weight:500;">Pending</div><div style="font-size:26px;font-weight:700;color:#111827;margin-top:6px;">0</div><div class="muted-sm" style="margin-top:2px;">Still with them</div></div>
+            <div class="card" style="padding:20px;"><div style="font-size:13px;color:#64748B;font-weight:500;">Returned</div><div style="font-size:26px;font-weight:700;color:#111827;margin-top:6px;">0</div><div class="muted-sm" style="margin-top:2px;">Came back from them</div></div>
+          </div>
+          <p class="muted-sm" style="text-align:center;padding:26px 10px;">No warranty records yet.</p>
+        </div>
+        <div id="sd-perf" class="inner-pane" style="display:none;">
+          <div class="card" style="margin-top:14px;">
+            <h3 style="font-size:16px;font-weight:600;margin-bottom:12px;">Money, all time</h3>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;">
+              <div style="background:#FAF9FB;border-radius:10px;padding:12px 16px;"><div style="font-size:13px;color:#64748B;">Total purchased</div><div style="font-size:19px;font-weight:700;color:#111827;margin-top:2px;">৳3,61,080</div></div><div style="background:#FAF9FB;border-radius:10px;padding:12px 16px;"><div style="font-size:13px;color:#64748B;">Total paid</div><div style="font-size:19px;font-weight:700;color:#16A34A;margin-top:2px;">৳5,296</div></div><div style="background:#FAF9FB;border-radius:10px;padding:12px 16px;"><div style="font-size:13px;color:#64748B;">Net due</div><div style="font-size:19px;font-weight:700;color:#111827;margin-top:2px;">৳3,55,784</div></div><div style="background:#FAF9FB;border-radius:10px;padding:12px 16px;"><div style="font-size:13px;color:#64748B;">Advance balance</div><div style="font-size:19px;font-weight:700;color:#111827;margin-top:2px;">0</div></div>
+              <div style="background:#FAF9FB;border-radius:10px;padding:12px 16px;"><div style="font-size:13px;color:#64748B;">Extra costs</div><div style="font-size:19px;font-weight:700;color:#111827;margin-top:2px;">0</div></div><div style="background:#FAF9FB;border-radius:10px;padding:12px 16px;"><div style="font-size:13px;color:#64748B;">Return / damage</div><div style="font-size:19px;font-weight:700;color:#111827;margin-top:2px;">0</div></div><div style="background:#FAF9FB;border-radius:10px;padding:12px 16px;"><div style="font-size:13px;color:#64748B;">Net purchase value</div><div style="font-size:19px;font-weight:700;color:#111827;margin-top:2px;">৳3,61,080</div></div><div style="background:#FAF9FB;border-radius:10px;padding:12px 16px;"><div style="font-size:13px;color:#64748B;">Largest open bill</div><div style="font-size:19px;font-weight:700;color:#111827;margin-top:2px;">৳3,50,000</div></div>
+            </div>
+            <h3 style="font-size:16px;font-weight:600;margin:22px 0 12px;">Payment and delivery</h3>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;">
+              <div style="background:#FAF9FB;border-radius:10px;padding:12px 16px;"><div style="font-size:13px;color:#64748B;">Avg days to pay</div><div style="font-size:19px;font-weight:700;color:#111827;margin-top:2px;">0 days</div></div><div style="background:#FAF9FB;border-radius:10px;padding:12px 16px;"><div style="font-size:13px;color:#64748B;">Paid on time</div><div style="font-size:19px;font-weight:700;color:#111827;margin-top:2px;">100%</div></div><div style="background:#FAF9FB;border-radius:10px;padding:12px 16px;"><div style="font-size:13px;color:#64748B;">Last payment</div><div style="font-size:19px;font-weight:700;color:#111827;margin-top:2px;">7 Nov 2026</div></div><div style="background:#FAF9FB;border-radius:10px;padding:12px 16px;"><div style="font-size:13px;color:#64748B;">Overdue</div><div style="font-size:19px;font-weight:700;color:#111827;margin-top:2px;">৳3,55,784 · 5</div></div>
+              <div style="background:#FAF9FB;border-radius:10px;padding:12px 16px;"><div style="font-size:13px;color:#64748B;">Avg delivery time</div><div style="font-size:19px;font-weight:700;color:#111827;margin-top:2px;">0 days</div></div><div style="background:#FAF9FB;border-radius:10px;padding:12px 16px;"><div style="font-size:13px;color:#64748B;">Return / damage</div><div style="font-size:19px;font-weight:700;color:#111827;margin-top:2px;">0%</div></div>
+            </div>
+          </div>
+        </div>
         </div>
       </section>
 
       <section class="page-panel" id="pur-quotation">
-        <h3 style="font-size:19px;margin-bottom:18px;">Ask for Quotation</h3>
-        <div class="card" style="margin-bottom:18px;">
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
-            <label class="fld-l">Supplier<select class="fld"><option>Zeotexbd</option><option>Dhaka Fabrics</option><option>Padma Textile</option></select></label>
-            <label class="fld-l">Product<input class="fld" placeholder="Product name"></label>
-            <label class="fld-l">Quantity<input class="fld" type="number" placeholder="0"></label>
-            <label class="fld-l">Note<input class="fld" placeholder="Expected price, delivery time..."></label>
-          </div>
-          <button class="btn-primary" style="margin-top:16px;" onclick="toast('Quotation request sent (UI prototype)')">Send Request</button>
+        <div style="max-width:1535px;margin:0 auto;padding-top:30px;">
+        <div class="page-head"><div style="display:flex;align-items:center;gap:12px;"><span style="display:inline-flex;width:42px;height:42px;border-radius:11px;background:#E5DFE9;align-items:center;justify-content:center;flex:none;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#411550" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg></span><div><h1 style="font-size:24px;font-weight:700;">Ask for Quotation</h1><p>Collect prices from suppliers before you buy</p></div></div><span style="margin-left:auto;display:flex;gap:8px;align-items:center;"><button class="ctl-btn">Guide</button><button class="btn-primary" onclick="showPage('pur-quotation-new')">+ New request</button></span></div>
+        <div style="display:flex;gap:10px;align-items:center;margin-bottom:14px;">
+          <input class="fld" style="width:340px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2394A3B8' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:10px center;padding-left:32px;" placeholder="RFQ number, product or SKU">
+          <button class="ctl-btn">Filters</button>
         </div>
-        <div class="card"><h3>Sent Requests</h3>
-          <table><tr><th>Date</th><th>Supplier</th><th>Product</th><th>Qty</th><th>Status</th></tr>
-          <tr><td>09 Nov</td><td>Dhaka Fabrics</td><td>Neela Pankh 2</td><td>300</td><td><span class="pill green">Replied — ৳285/pc</span></td></tr>
-          <tr><td>07 Nov</td><td>Zeotexbd</td><td>Kumkum Ikkat 1</td><td>500</td><td><span class="pill amber">Waiting</span></td></tr></table>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;"><button class="ctl-btn" style="padding:6px 9px;">‹</button>
+          <div class="ptabs" style="flex:1;">
+            <button class="ptab" onclick="toast('UI prototype')">Needs replies (0)</button><button class="ptab" onclick="toast('UI prototype')">Drafts (0)</button><button class="ptab" onclick="toast('UI prototype')">Ready to decide (0)</button><button class="ptab" onclick="toast('UI prototype')">Approved – make PO (0)</button><button class="ptab" onclick="toast('UI prototype')">Expired (1)</button><button class="ptab active">All (1)</button>
+          </div><button class="ctl-btn" style="padding:6px 9px;">›</button></div>
+        <div class="card">
+          <div style="overflow-x:auto;"><table class="inv-table" style="min-width:1050px;">
+            <tr><th><input type="checkbox"></th><th>RFQ No</th><th>Date</th><th>Products</th><th>Replies</th><th>Deadline</th><th>Status</th><th>Created by</th><th>Actions</th></tr>
+            <tr><td><input type="checkbox"></td><td><b>RFQ-2026-0001</b> <span style="display:inline-block;background:#FEF2F2;color:#DC2626;border-radius:99px;padding:2px 9px;font-size:12px;font-weight:600;">Urgent</span></td><td>21 Aug 2026</td><td>2</td><td>2/2 replied</td><td style="color:#DC2626;">22 Aug 2026</td><td><span style="display:inline-block;background:#FFF7ED;color:#EA580C;border-radius:99px;padding:2px 10px;font-size:12.5px;font-weight:600;">● Expired</span></td><td>M. Fahim</td><td></td></tr>
+          </table></div>
+          <div style="display:flex;align-items:center;margin-top:14px;flex-wrap:wrap;gap:10px;">
+            <span class="muted-sm">0 of 1 row(s) selected.</span>
+            <span style="margin-left:auto;display:flex;align-items:center;gap:10px;"><span class="muted-sm">Rows per page</span><select class="fld" style="width:76px;"><option>10</option></select><span class="muted-sm">Page 1 of 1</span><button class="ctl-btn" disabled>‹</button><button class="ctl-btn" disabled>›</button></span>
+          </div>
+        </div>
+        </div>
+      </section>
+      <section class="page-panel" id="pur-quotation-new">
+        <div style="max-width:1535px;margin:0 auto;padding-top:30px;">
+        <div style="max-width:900px;margin:0 auto;">
+          <button class="ctl-btn" onclick="showPage('pur-quotation')">‹</button>
+          <h1 style="font-size:24px;font-weight:700;margin-top:14px;">New Quotation Request</h1>
+          <p class="muted-sm" style="margin-bottom:18px;">Saved as Draft — mark it as Sent after you contact the suppliers.</p>
+          <div class="card">
+            <h3 style="font-size:16px;font-weight:600;margin-bottom:14px;">Basic Information</h3>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+              <label class="fld-l">RFQ DATE *<button class="fld" style="text-align:left;" onclick="toast('UI prototype')">November 11th, 2026</button></label>
+              <label class="fld-l">EXPECTED PURCHASE DATE<button class="fld" style="text-align:left;color:#64748B;" onclick="toast('UI prototype')">Pick a date</button></label>
+              <label class="fld-l">RESPONSE DEADLINE *<button class="fld" style="text-align:left;color:#64748B;" onclick="toast('UI prototype')">Pick a date</button></label>
+              <label class="fld-l">WAREHOUSE<select class="fld"><option>SK-FU</option><option>Main Warehouse</option></select></label>
+              <label class="fld-l">PRIORITY<select class="fld"><option>Normal</option><option>Urgent</option></select></label>
+              <label class="fld-l">INTERNAL NOTE<textarea class="fld" rows="2" placeholder="Internal note for your team (optional)"></textarea></label>
+            </div>
+          </div>
+          <div class="card" style="margin-top:16px;">
+            <h3 style="font-size:16px;font-weight:600;margin-bottom:10px;">Suppliers</h3>
+            <label class="fld-l">SELECT SUPPLIERS TO ASK FOR PRICING *</label>
+            <button class="ctl-btn" onclick="toast('UI prototype')">Select suppliers</button>
+            <p class="muted-sm" style="margin-top:10px;">Suppliers are contacted outside EcomDrive (phone, WhatsApp, visit). Their responses are entered manually here.</p>
+          </div>
+          <div class="card" style="margin-top:16px;">
+            <h3 style="font-size:16px;font-weight:600;margin-bottom:12px;">Product Items</h3>
+            <input class="fld" style="width:100%;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2394A3B8' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:10px center;padding-left:32px;" placeholder="Search products by name to add...">
+            <div style="border:1.5px dashed #D8CFE4;border-radius:12px;padding:30px;text-align:center;margin-top:14px;">
+              <p class="muted-sm">No products added yet — search above to add products.</p>
+            </div>
+          </div>
+          <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:18px;">
+            <button class="ctl-btn" onclick="showPage('pur-quotation')">Cancel</button>
+            <button class="btn-primary" onclick="toast('UI prototype')">Create Quotation Request</button>
+          </div>
+        </div>
         </div>
       </section>
 
@@ -1172,5 +1459,22 @@
   tickClock(); setInterval(tickClock, 1000);
 </script>
 <script>(function(){var m={dashboard:'pur-dashboard',list:'pur-list',new:'pur-new',receive:'pur-receive',ledger:'pur-ledger',suppliers:'pur-suppliers',quotation:'pur-quotation'};var h=location.hash.replace('#','');if(m[h])showPage(m[h]);})();</script>
+<script>
+var PUR_DATA = {'11143':['Kumkum Ikkat 1',450],'1001':['Jeans Pant',600],'109':['30L Bag',200],'11145':['Neela Pankh 2',420]};
+var purCart = {};
+function purAdd(sku){
+  purCart[sku] = (purCart[sku] || 0) + 1;
+  var box = document.getElementById('purItems'), foot = document.getElementById('purFoot'), cnt = document.getElementById('purCount'), tot = document.getElementById('purTotal');
+  var n = 0, sum = 0, html = '';
+  Object.keys(purCart).forEach(function(k){
+    var d = PUR_DATA[k], q = purCart[k]; n += q; sum += d[1] * q;
+    html += '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #F6F3F9;"><span style="font-weight:500;">' + d[0] + '</span><span class="muted-sm">' + k + '</span><span style="margin-left:auto;display:flex;align-items:center;gap:10px;"><span class="muted-sm">Qty ' + q + '</span><b>৳' + (d[1]*q).toLocaleString('en-IN') + '</b></span></div>';
+  });
+  box.innerHTML = html;
+  cnt.textContent = '(' + n + (n === 1 ? ' item' : ' items') + ')';
+  tot.textContent = '৳' + sum.toLocaleString('en-IN');
+  foot.style.display = 'block';
+}
+</script>
 </body>
 </html>
