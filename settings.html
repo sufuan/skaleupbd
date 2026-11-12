@@ -546,135 +546,268 @@
       
 
       <section class="page-panel active" id="set-business">
-        <h3 style="font-size:19px;margin-bottom:18px;">Business Profile</h3>
-        <div class="card">
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
-            <label class="fld-l">Business Name<input class="fld" value="ONLINE BUSINESS"></label>
-            <label class="fld-l">Owner Name<input class="fld" value="Jodu doe"></label>
-            <label class="fld-l">Phone<input class="fld" value="01XXXXXXXXX"></label>
-            <label class="fld-l">Email<input class="fld" value="test@gmail.com"></label>
-          </div>
-          <label class="fld-l" style="margin-top:14px;">Address<textarea class="fld" rows="2">Dhaka, Bangladesh</textarea></label>
-          <button class="btn-primary" style="margin-top:16px;" onclick="toast('Business profile saved (UI prototype)')">Save Changes</button>
-        </div>
-      </section>
+<h3 style="font-size:19px;margin-bottom:18px;">Business Profile</h3>
+<div class="card">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+    <label class="fld-l">Business Name<input class="fld" value="ONLINE BUSINESS"></label>
+    <label class="fld-l">Owner Name<input class="fld" value="Jodu doe"></label>
+    <label class="fld-l">Phone<input class="fld" value="01XXXXXXXXX"></label>
+    <label class="fld-l">Email<input class="fld" value="test@gmail.com"></label>
+    <label class="fld-l">Business Category<select class="fld"><option>Fashion &amp; Lifestyle</option><option>Electronics</option><option>Grocery &amp; Food</option><option>Health &amp; Beauty</option><option>Other</option></select></label>
+    <label class="fld-l">Website<input class="fld" value="alasilbd.com"></label>
+    <label class="fld-l">Currency<select class="fld"><option>BDT (৳)</option></select></label>
+    <label class="fld-l">Timezone<select class="fld"><option>Asia/Dhaka (GMT+6)</option></select></label>
+    <label class="fld-l">Language<select class="fld"><option>English</option><option>Bangla</option></select></label>
+    <label class="fld-l">Facebook Page<input class="fld" value="facebook.com/onlinebusiness"></label>
+  </div>
+  <label class="fld-l" style="margin-top:14px;">Address<textarea class="fld" rows="2">Dhaka, Bangladesh</textarea></label>
+  <button class="btn-primary" style="margin-top:16px;" onclick="toast('Business profile saved (UI prototype)')">Save Changes</button>
+</div>
+<div class="card" style="margin-top:18px;"><h3>Storefront</h3>
+  <div class="sum-row" style="margin-top:10px;"><span>Store link<br><span class="muted-sm">Landing pages you build live under this link</span></span><code>skaleup.store/online-business</code></div>
+  <div class="sum-row"><span>Landing pages published</span><b>3</b></div>
+  <div class="sum-row"><span>Custom domain</span><span><span class="pill grey">Not connected</span></span></div>
+  <button class="ctl-btn" style="margin-top:14px;" onclick="toast('Storefront settings (UI prototype)')">Manage Storefront</button>
+</div>
+</section>
 
       <section class="page-panel" id="set-merchant">
-        <h3 style="font-size:19px;margin-bottom:18px;">Merchant Profile</h3>
-        <div class="card">
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
-            <label class="fld-l">Trade License No.<input class="fld" placeholder="TRAD/XXXXXX"></label>
-            <label class="fld-l">Bank Name<input class="fld" value="Asia Bank"></label>
-            <label class="fld-l">Bank Account No.<input class="fld" value="XXXX-4521"></label>
-            <label class="fld-l">bKash Merchant No.<input class="fld" value="01XXX-XXXXXX"></label>
-          </div>
-          <button class="btn-primary" style="margin-top:16px;" onclick="toast('Merchant profile saved (UI prototype)')">Save Changes</button>
-        </div>
-      </section>
+<h3 style="font-size:19px;margin-bottom:18px;">Merchant Profile</h3>
+<div class="card">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+    <label class="fld-l">Trade License No.<input class="fld" placeholder="TRAD/XXXXXX"></label>
+    <label class="fld-l">Account Holder Name<input class="fld" value="Jodu doe"></label>
+    <label class="fld-l">Bank Name<input class="fld" value="Asia Bank"></label>
+    <label class="fld-l">Branch<input class="fld" value="Dhanmondi"></label>
+    <label class="fld-l">Bank Account No.<input class="fld" value="XXXX-4521"></label>
+    <label class="fld-l">Routing No.<input class="fld" value="070261889"></label>
+    <label class="fld-l">bKash Merchant No.<input class="fld" value="01XXX-XXXXXX"></label>
+    <label class="fld-l">Nagad Merchant No.<input class="fld" value="01XXX-XXXXXX"></label>
+  </div>
+  <button class="btn-primary" style="margin-top:16px;" onclick="toast('Merchant profile saved (UI prototype)')">Save Changes</button>
+</div>
+<div class="card" style="margin-top:18px;"><h3>Payment Accounts</h3>
+  <table style="margin-top:8px;"><tr><th>Method</th><th>Number / Account</th><th>Status</th><th></th></tr>
+  <tr><td>bKash Merchant</td><td>01XXX-XXXXXX</td><td><span class="pill green">Connected</span></td><td><button class="ctl-btn" onclick="toast('bKash details (UI prototype)')">Details</button></td></tr>
+  <tr><td>Nagad Merchant</td><td>01XXX-XXXXXX</td><td><span class="pill green">Connected</span></td><td><button class="ctl-btn" onclick="toast('Nagad details (UI prototype)')">Details</button></td></tr>
+  <tr><td>Asia Bank</td><td>XXXX-4521</td><td><span class="pill green">Connected</span></td><td><button class="ctl-btn" onclick="toast('Bank details (UI prototype)')">Details</button></td></tr>
+  <tr><td>Rocket</td><td>—</td><td><span class="pill grey">Not linked</span></td><td><button class="ctl-btn" onclick="toast('Rocket linking (UI prototype)')">Link</button></td></tr></table>
+  <p class="muted-sm" style="margin-top:12px;">These accounts are used for COD settlement reports and refund payouts. Courier companies settle COD to the courier account you give them — this platform never holds your money.</p>
+</div>
+</section>
 
       <section class="page-panel" id="set-devices">
-        <h3 style="font-size:19px;margin-bottom:18px;">Device Approvals</h3>
-        <div class="card">
-          <table><tr><th>Device</th><th>User</th><th>Last Active</th><th>Status</th><th></th></tr>
-          <tr><td>Chrome — Windows (Dhaka)</td><td>Jodu doe</td><td>Just now</td><td><span class="pill green">Approved</span></td><td><button class="ctl-btn">Revoke</button></td></tr>
-          <tr><td>Safari — iPhone</td><td>M. Fahim</td><td>2h ago</td><td><span class="pill green">Approved</span></td><td><button class="ctl-btn">Revoke</button></td></tr>
-          <tr><td>Chrome — Android</td><td>Rokeya Begum</td><td>Yesterday</td><td><span class="pill amber">Pending</span></td><td><button class="ctl-btn" onclick="toast('Device approved (UI prototype)')">Approve</button></td></tr></table>
-        </div>
-      </section>
+<h3 style="font-size:19px;margin-bottom:18px;">Device Approvals</h3>
+<div class="card" style="margin-bottom:18px;">
+  <div class="sum-row"><span><b>Approve new devices</b><br><span class="muted-sm">A new phone or browser must be approved before it can sign in</span></span><button class="switch on" onclick="this.classList.toggle('on')"></button></div>
+  <div class="sum-row"><span><b>Two-factor authentication (2FA)</b><br><span class="muted-sm">Ask for a code from the authenticator app at sign-in</span></span><button class="switch" onclick="this.classList.toggle('on')"></button></div>
+  <div class="sum-row"><span><b>Sign out everywhere</b><br><span class="muted-sm">Ends every session except this one</span></span><button class="ctl-btn" onclick="toast('Other sessions signed out (UI prototype)')">Sign Out All</button></div>
+</div>
+<div class="card">
+  <table><tr><th>Device</th><th>User</th><th>Last Active</th><th>Status</th><th></th></tr>
+  <tr><td>Chrome — Windows (Dhaka)</td><td>Jodu doe</td><td>Just now</td><td><span class="pill green">Approved</span></td><td><button class="ctl-btn" onclick="toast('Device revoked (UI prototype)')">Revoke</button></td></tr>
+  <tr><td>Safari — iPhone</td><td>M. Fahim</td><td>2h ago</td><td><span class="pill green">Approved</span></td><td><button class="ctl-btn" onclick="toast('Device revoked (UI prototype)')">Revoke</button></td></tr>
+  <tr><td>Chrome — Android</td><td>Rokeya Begum</td><td>Yesterday</td><td><span class="pill amber">Pending</span></td><td><button class="ctl-btn" onclick="toast('Device approved (UI prototype)')">Approve</button></td></tr>
+  <tr><td>Firefox — Windows (Barishal)</td><td>Tanvir Ahmed</td><td>3 days ago</td><td><span class="pill amber">Pending</span></td><td><button class="ctl-btn" onclick="toast('Device approved (UI prototype)')">Approve</button></td></tr></table>
+</div>
+</section>
 
       <section class="page-panel" id="set-website">
-        <h3 style="font-size:19px;margin-bottom:18px;">Website Integration</h3>
-        <div class="card" style="margin-bottom:18px;"><h3>WooCommerce</h3>
-          <p class="muted-sm" style="margin:10px 0;">Connected store: alasilbd.com · Orders and products sync automatically.</p>
-          <div class="sum-row"><span>Order Webhook</span><code>portal…/api/post-web-order?businessId=…</code></div>
-          <div class="sum-row"><span>Product Sync Webhook</span><code>portal…/api/webhooks/woocommerce/products/…</code></div>
-          <div class="sum-row"><span>Consumer Key</span><code>ck_••••••••••••••••</code></div>
-          <div class="sum-row"><span>Status</span><span class="pill green">Connected</span></div>
-        </div>
-        <div class="card"><h3>Shopify</h3>
-          <div class="dashed-empty" style="margin-top:12px;">Connect a Shopify store to bring its orders into the same queue.<br><button class="btn-primary" style="margin-top:14px;" onclick="toast('Shopify connect (UI prototype)')">Connect Shopify</button></div>
-        </div>
-      </section>
+<h3 style="font-size:19px;margin-bottom:18px;">Website Integration</h3>
+<div class="card" style="margin-bottom:18px;"><h3>Connected Websites</h3>
+  <table style="margin-top:8px;"><tr><th>Website</th><th>Platform</th><th>API Key</th><th>Last Sync</th><th>Status</th></tr>
+  <tr><td>alasilbd.com</td><td>WooCommerce</td><td><code>ecds_••••3f9a</code></td><td>2 min ago</td><td><span class="pill green">Connected</span></td></tr>
+  <tr><td>zarinashop.com</td><td>WooCommerce</td><td><code>ecds_••••81bc</code></td><td>14 min ago</td><td><span class="pill green">Connected</span></td></tr>
+  <tr><td>quickbazar.com</td><td>Custom (API)</td><td><code>ecds_••••55d2</code></td><td>1 hr ago</td><td><span class="pill green">Connected</span></td></tr></table>
+  <p class="muted-sm" style="margin-top:12px;">One seller can connect up to 5 websites here. Orders from every site land in the same Orders queue.</p>
+</div>
+<div class="card" style="margin-bottom:18px;"><h3>WooCommerce</h3>
+  <p class="muted-sm" style="margin:10px 0;">Connected store: alasilbd.com · Orders and products sync automatically.</p>
+  <div class="sum-row"><span>Order Webhook</span><code>portal…/api/post-web-order?businessId=…</code></div>
+  <div class="sum-row"><span>Product Sync Webhook</span><code>portal…/api/webhooks/woocommerce/products/…</code></div>
+  <div class="sum-row"><span>Consumer Key</span><code>ck_••••••••••••••••</code></div>
+  <div class="sum-row"><span>Status</span><span class="pill green">Connected</span></div>
+  <div style="display:flex;gap:10px;margin-top:14px;"><button class="ctl-btn" onclick="toast('Sync started (UI prototype)')">Sync Now</button><button class="ctl-btn" onclick="toast('WooCommerce plugin download (UI prototype)')">Download Plugin</button></div>
+</div>
+<div class="card" style="margin-bottom:18px;"><h3>Custom Website (API)</h3>
+  <div style="display:grid;grid-template-columns:1fr auto;gap:12px;margin-top:12px;align-items:end;">
+    <label class="fld-l">Website domain<input class="fld" placeholder="yourshop.com"></label>
+    <button class="btn-primary" onclick="toast('Website key generated (UI prototype)')">Generate Key</button>
+  </div>
+  <p class="muted-sm" style="margin-top:10px;">Add the generated key to your website and point your order form to the External API. Full guide: Settings → App Integration → External API.</p>
+</div>
+<div class="card"><h3>Shopify</h3>
+  <div class="dashed-empty" style="margin-top:12px;">Connect a Shopify store to bring its orders into the same queue.<br><button class="btn-primary" style="margin-top:14px;" onclick="toast('Shopify connect (UI prototype)')">Connect Shopify</button></div>
+</div>
+</section>
 
       <section class="page-panel" id="set-courier">
-        <h3 style="font-size:19px;margin-bottom:18px;">Courier Integration</h3>
-        <div class="card">
-          <div class="sum-row"><span><b>Pathao</b><br><span class="muted-sm">Credentials are kept in Orders → Delivery Methods</span></span><span class="pill green">Connected</span></div>
-          <div class="sum-row"><span><b>Steadfast</b><br><span class="muted-sm">Credentials are kept in Orders → Delivery Methods</span></span><span class="pill green">Connected</span></div>
-          <div class="sum-row"><span><b>RedX</b></span><span class="pill grey">Not connected</span></div>
-          <div class="sum-row"><span><b>Carrybee · Paperfly · eCourier · Bahok</b></span><span class="pill grey">Not connected</span></div>
-        </div>
-      </section>
+<h3 style="font-size:19px;margin-bottom:18px;">Courier Integration</h3>
+<div class="card">
+  <table><tr><th>Courier</th><th>Account</th><th>Status</th><th></th></tr>
+  <tr><td><b>Pathao</b></td><td>Merchant ID ••••2210</td><td><span class="pill green">Connected</span></td><td><button class="ctl-btn" onclick="openCourier('Pathao')">Configure</button></td></tr>
+  <tr><td><b>Steadfast</b></td><td>API Key ••••8c41</td><td><span class="pill green">Connected</span></td><td><button class="ctl-btn" onclick="openCourier('Steadfast')">Configure</button></td></tr>
+  <tr><td><b>RedX</b></td><td>—</td><td><span class="pill grey">Not connected</span></td><td><button class="ctl-btn" onclick="openCourier('RedX')">Configure</button></td></tr>
+  <tr><td><b>eCourier</b></td><td>—</td><td><span class="pill grey">Not connected</span></td><td><button class="ctl-btn" onclick="openCourier('eCourier')">Configure</button></td></tr>
+  <tr><td><b>Paperfly</b></td><td>—</td><td><span class="pill grey">Not connected</span></td><td><button class="ctl-btn" onclick="openCourier('Paperfly')">Configure</button></td></tr>
+  <tr><td><b>Carrybee</b></td><td>—</td><td><span class="pill grey">Not connected</span></td><td><button class="ctl-btn" onclick="openCourier('Carrybee')">Configure</button></td></tr></table>
+  <p class="muted-sm" style="margin-top:12px;">Each courier is connected with your own courier account — delivery charges and COD fees are billed by the courier to you, never to this platform. There is no API or integration fee.</p>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px;">
+    <label class="fld-l">Default courier<select class="fld"><option>Pathao</option><option>Steadfast</option><option>RedX</option></select></label>
+    <label class="fld-l">Pickup address<input class="fld" value="Dhaka, Bangladesh"></label>
+  </div>
+  <button class="btn-primary" style="margin-top:16px;" onclick="toast('Courier settings saved (UI prototype)')">Save Changes</button>
+</div>
+</section>
 
       <section class="page-panel" id="set-app">
-        <h3 style="font-size:19px;margin-bottom:18px;">App Integration</h3>
-        <div class="utabs"><button class="active">External API</button><button>WooCommerce</button><button>Shopify</button><button>Meta Ads</button><button>TikTok Ads</button><button>Google Ads</button></div>
-        <div class="card">
-          <div class="sum-row"><span>Base URL</span><code>/api/external/v1</code></div>
-          <div class="sum-row"><span>Authentication</span><span><code>x-api-key</code> header + businessId · docs page uses <code>X-Business-ID</code></span></div>
-          <div class="sum-row"><span>Main API Key</span><span><code>••••••••••••</code> <span class="muted-sm">(never shown again after creation)</span></span></div>
-          <div class="sum-row"><span>Per-site keys</span><span>Prefix <code>ecds_</code> · max 5</span></div>
-          <div class="sum-row"><span>Rate limits</span><span>30/min · 250/hr (settings page) · per-endpoint limits in docs, global 600/min</span></div>
-          <div class="sum-row"><span>Webhooks</span><span><span class="pill grey">order.status_changed</span> <span class="pill grey">order.converted</span> <span class="muted-sm">+ GET /orders/changes feed</span></span></div>
-          <div style="display:flex;gap:10px;margin-top:16px;"><button class="btn-primary" onclick="toast('New key generated (UI prototype)')">Generate New Key</button><button class="ctl-btn" onclick="toast('API docs (UI prototype)')">Open API Docs</button></div>
-        </div>
-      </section>
+<h3 style="font-size:19px;margin-bottom:18px;">App Integration</h3>
+<div class="utabs" id="appTabs"><button class="active" data-atab="api">External API</button><button data-atab="woo">WooCommerce</button><button data-atab="shopify">Shopify</button><button data-atab="meta">Meta Ads</button><button data-atab="tiktok">TikTok Ads</button><button data-atab="google">Google Ads</button></div>
+<div data-apane="api">
+  <div class="card">
+    <div class="sum-row"><span>Base URL</span><code>/api/external/v1</code></div>
+    <div class="sum-row"><span>Authentication</span><span><code>x-api-key</code> header + businessId · docs page uses <code>X-Business-ID</code></span></div>
+    <div class="sum-row"><span>Main API Key</span><span><code>••••••••••••</code> <span class="muted-sm">(never shown again after creation)</span></span></div>
+    <div class="sum-row"><span>Per-site keys</span><span>Prefix <code>ecds_</code> · max 5</span></div>
+    <div class="sum-row"><span>Rate limits</span><span>30/min · 250/hr (settings page) · per-endpoint limits in docs, global 600/min</span></div>
+    <div class="sum-row"><span>Webhooks</span><span><span class="pill grey">order.status_changed</span> <span class="pill grey">order.converted</span> <span class="muted-sm">+ GET /orders/changes feed</span></span></div>
+    <div style="display:flex;gap:10px;margin-top:16px;"><button class="btn-primary" onclick="toast('New key generated (UI prototype)')">Generate New Key</button><button class="ctl-btn" onclick="toast('API docs (UI prototype)')">Open API Docs</button></div>
+  </div>
+  <div class="card" style="margin-top:18px;"><h3>Site Keys</h3>
+    <table style="margin-top:8px;"><tr><th>Key</th><th>Website</th><th>Created</th><th>Last Used</th><th></th></tr>
+    <tr><td><code>ecds_••••3f9a</code></td><td>alasilbd.com</td><td>12 Oct 2026</td><td>2 min ago</td><td><button class="ctl-btn" onclick="toast('Key revoked (UI prototype)')">Revoke</button></td></tr>
+    <tr><td><code>ecds_••••81bc</code></td><td>zarinashop.com</td><td>28 Oct 2026</td><td>14 min ago</td><td><button class="ctl-btn" onclick="toast('Key revoked (UI prototype)')">Revoke</button></td></tr>
+    <tr><td><code>ecds_••••55d2</code></td><td>quickbazar.com</td><td>03 Nov 2026</td><td>1 hr ago</td><td><button class="ctl-btn" onclick="toast('Key revoked (UI prototype)')">Revoke</button></td></tr></table>
+  </div>
+</div>
+<div data-apane="woo" style="display:none;">
+  <div class="card">
+    <div class="sum-row"><span>Store</span><b>alasilbd.com</b></div>
+    <div class="sum-row"><span>Status</span><span class="pill green">Connected</span></div>
+    <div class="sum-row"><span>Plugin</span><span>SkaleUp Connector v1.2 · <button class="ctl-btn" onclick="toast('WooCommerce plugin download (UI prototype)')">Download</button></span></div>
+    <div class="sum-row"><span><b>Fake Order Shield</b><br><span class="muted-sm">OTP checks, repeat-number and IP rules run before an order is accepted</span></span><button class="switch on" onclick="this.classList.toggle('on')"></button></div>
+    <div class="sum-row"><span>Blocked numbers</span><b>37</b></div>
+    <button class="btn-primary" style="margin-top:14px;" onclick="toast('WooCommerce settings saved (UI prototype)')">Save Changes</button>
+  </div>
+</div>
+<div data-apane="shopify" style="display:none;">
+  <div class="card"><div class="dashed-empty">Connect a Shopify store to bring its orders into the same queue.<br><button class="btn-primary" style="margin-top:14px;" onclick="toast('Shopify connect (UI prototype)')">Connect Shopify</button></div></div>
+</div>
+<div data-apane="meta" style="display:none;">
+  <div class="card">
+    <div class="sum-row"><span><b>Meta Ads</b><br><span class="muted-sm">Ad accounts, spend sync and profit analysis</span></span><span class="pill grey">Not connected</span></div>
+    <button class="btn-primary" style="margin-top:14px;" onclick="location.href='ads.html#meta'">Open Meta Ads</button>
+  </div>
+</div>
+<div data-apane="tiktok" style="display:none;">
+  <div class="card">
+    <div class="sum-row"><span><b>TikTok Ads</b><br><span class="muted-sm">Ad accounts, spend sync and profit analysis</span></span><span class="pill grey">Not connected</span></div>
+    <button class="btn-primary" style="margin-top:14px;" onclick="location.href='ads.html#tiktok'">Open TikTok Ads</button>
+  </div>
+</div>
+<div data-apane="google" style="display:none;">
+  <div class="card">
+    <div class="sum-row"><span><b>Google Ads</b><br><span class="muted-sm">Ad accounts, spend sync and profit analysis</span></span><span class="pill grey">Not connected</span></div>
+    <button class="btn-primary" style="margin-top:14px;" onclick="location.href='ads.html#google'">Open Google Ads</button>
+  </div>
+</div>
+</section>
 
       <section class="page-panel" id="set-channels">
-        <h3 style="font-size:19px;margin-bottom:18px;">Messaging Channels</h3>
-        <div class="card">
-          <div class="sum-row"><span><b>Facebook Messenger</b><br><span class="muted-sm">Page messages land in Messages → Inbox</span></span><button class="btn-primary" onclick="toast('Messenger connect (UI prototype)')">Connect Page</button></div>
-          <div class="sum-row"><span><b>Instagram DM</b><br><span class="muted-sm">Needs an Instagram professional account</span></span><button class="btn-primary" onclick="toast('Instagram connect (UI prototype)')">Connect Instagram</button></div>
-          <div class="sum-row"><span><b>WhatsApp</b><br><span class="muted-sm">WhatsApp Cloud API — needs a dedicated business number</span></span><button class="btn-primary" onclick="toast('WhatsApp connect (UI prototype)')">Connect WhatsApp</button></div>
-        </div>
-      </section>
+<h3 style="font-size:19px;margin-bottom:18px;">Messaging Channels</h3>
+<div class="card">
+  <div class="sum-row"><span><b>Facebook Messenger</b><br><span class="muted-sm">Page: ONLINE BUSINESS · messages land in Messages → Inbox</span></span><span style="display:flex;gap:8px;align-items:center;"><span class="pill green">Connected</span><button class="ctl-btn" onclick="toast('Messenger disconnected (UI prototype)')">Disconnect</button></span></div>
+  <div class="sum-row"><span><b>Instagram DM</b><br><span class="muted-sm">Needs an Instagram professional account</span></span><button class="btn-primary" onclick="toast('Instagram connect (UI prototype)')">Connect Instagram</button></div>
+  <div class="sum-row"><span><b>WhatsApp</b><br><span class="muted-sm">WhatsApp Cloud API — needs a dedicated business number</span></span><button class="btn-primary" onclick="toast('WhatsApp connect (UI prototype)')">Connect WhatsApp</button></div>
+  <div class="sum-row"><span><b>TikTok Messages</b><br><span class="muted-sm">TikTok opens message access only after their approval — not self-serve yet</span></span><span class="pill grey">Planned</span></div>
+</div>
+<div class="card" style="margin-top:18px;"><h3>Channel Health</h3>
+  <div class="sum-row" style="margin-top:10px;"><span>Messenger webhook</span><span class="pill green">Active</span></div>
+  <div class="sum-row"><span>Last message received</span><b>4 min ago</b></div>
+  <div class="sum-row"><span>AI auto-reply</span><span><span class="pill amber">Shadow mode</span> <span class="muted-sm">drafts are approved by you first — manage in Messages → AI Reply</span></span></div>
+</div>
+</section>
 
       <section class="page-panel" id="set-pbx">
-        <h3 style="font-size:19px;margin-bottom:18px;">VoiceDrive PBX</h3>
-        <div class="card">
-          <div class="sum-row"><span><b>PBX Call Center</b><br><span class="muted-sm">One-click calling, call counting and recordings on orders</span></span><button class="switch" onclick="this.classList.toggle('on')"></button></div>
-          <div class="sum-row"><span>PBX Balance</span><b>৳0</b></div>
-          <div class="sum-row"><span>Status</span><span class="pill amber">Not set up — this demo workspace shows "No Call Center" on orders</span></div>
-          <button class="btn-primary" style="margin-top:16px;" onclick="toast('PBX setup started (UI prototype)')">Set Up PBX</button>
-        </div>
-      </section>
+<h3 style="font-size:19px;margin-bottom:18px;">VoiceDrive PBX</h3>
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:18px;">
+  <div class="card"><div class="muted-sm">SMS Balance</div><div style="font-size:24px;font-weight:800;margin:6px 0;">৳120</div><button class="ctl-btn" onclick="toast('SMS recharge (UI prototype)')">Recharge</button></div>
+  <div class="card"><div class="muted-sm">Auto Call Balance</div><div style="font-size:24px;font-weight:800;margin:6px 0;">৳45</div><button class="ctl-btn" onclick="toast('Auto Call recharge (UI prototype)')">Recharge</button></div>
+  <div class="card"><div class="muted-sm">PBX Balance</div><div style="font-size:24px;font-weight:800;margin:6px 0;">৳0</div><button class="ctl-btn" onclick="toast('PBX recharge (UI prototype)')">Recharge</button></div>
+</div>
+<div class="card">
+  <div class="sum-row"><span><b>PBX Call Center</b><br><span class="muted-sm">One-click calling, call counting and recordings on orders</span></span><button class="switch" onclick="this.classList.toggle('on')"></button></div>
+  <div class="sum-row"><span>Status</span><span class="pill amber">Not set up — this demo workspace shows "No Call Center" on orders</span></div>
+  <div class="sum-row"><span>Auto Call rate</span><b>৳1.00 / min</b></div>
+  <div class="sum-row"><span><b>Call recording</b><br><span class="muted-sm">Recordings stay attached to the order and the customer profile</span></span><button class="switch" onclick="this.classList.toggle('on')"></button></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px;">
+    <label class="fld-l">Caller number<input class="fld" placeholder="096XX-XXXXXX"></label>
+    <label class="fld-l">Provider<select class="fld"><option>VoiceDrive</option><option>Other SIP provider</option></select></label>
+  </div>
+  <button class="btn-primary" style="margin-top:16px;" onclick="toast('PBX setup started (UI prototype)')">Set Up PBX</button>
+</div>
+</section>
 
       <section class="page-panel" id="set-templates">
-        <h3 style="font-size:19px;margin-bottom:18px;">Templates</h3>
-        <div class="card">
-          <div class="sum-row"><span><b>Invoice Designs</b><br><span class="muted-sm">15 designs + custom</span></span><button class="ctl-btn" onclick="location.href='marketing.html#templates'">Open in Marketing</button></div>
-          <div class="sum-row"><span><b>Sticker Styles</b><br><span class="muted-sm">20 styles for parcel labels</span></span><button class="ctl-btn" onclick="location.href='marketing.html#templates'">Open in Marketing</button></div>
-          <div class="sum-row"><span><b>Message Templates</b><br><span class="muted-sm">SMS / Messenger templates</span></span><button class="ctl-btn" onclick="location.href='marketing.html#templates'">Open in Marketing</button></div>
-        </div>
-      </section>
+<h3 style="font-size:19px;margin-bottom:18px;">Templates</h3>
+<div class="card" style="margin-bottom:18px;">
+  <div class="sum-row"><span><b>Invoice Designs</b><br><span class="muted-sm">15 designs + custom</span></span><button class="ctl-btn" onclick="location.href='marketing.html#templates'">Open in Marketing</button></div>
+  <div class="sum-row"><span><b>Sticker Styles</b><br><span class="muted-sm">20 styles for parcel labels</span></span><button class="ctl-btn" onclick="location.href='marketing.html#templates'">Open in Marketing</button></div>
+  <div class="sum-row"><span><b>Message Templates</b><br><span class="muted-sm">SMS / Messenger templates</span></span><button class="ctl-btn" onclick="location.href='marketing.html#templates'">Open in Marketing</button></div>
+</div>
+<div class="card"><h3>SMS Templates</h3>
+  <table style="margin-top:8px;"><tr><th>Template</th><th>Text</th><th>Status</th><th></th></tr>
+  <tr><td>Order Confirmation</td><td class="muted-sm">Your order {order_id} is confirmed. Total ৳{total}. Thank you!</td><td><span class="pill green">Active</span></td><td><button class="ctl-btn" onclick="toast('Template editor (UI prototype)')">Edit</button></td></tr>
+  <tr><td>Delivery Update</td><td class="muted-sm">Your parcel is on the way with {courier}. Tracking: {tracking}</td><td><span class="pill green">Active</span></td><td><button class="ctl-btn" onclick="toast('Template editor (UI prototype)')">Edit</button></td></tr>
+  <tr><td>Payment Reminder</td><td class="muted-sm">Reminder: ৳{due} is due for order {order_id}. Please pay via bKash.</td><td><span class="pill grey">Off</span></td><td><button class="ctl-btn" onclick="toast('Template editor (UI prototype)')">Edit</button></td></tr></table>
+  <button class="btn-primary" style="margin-top:14px;" onclick="toast('New template (UI prototype)')">Add Template</button>
+</div>
+</section>
 
       <section class="page-panel" id="set-sources">
-        <h3 style="font-size:19px;margin-bottom:18px;">Order Sources</h3>
-        <div class="card">
-          <div style="display:flex;gap:8px;flex-wrap:wrap;">
-            <span class="sum-chip">Facebook</span><span class="sum-chip">Website</span><span class="sum-chip">Direct</span><span class="sum-chip">Instagram</span><span class="sum-chip">TikTok</span><span class="sum-chip">WhatsApp</span><span class="sum-chip">Exchange</span><span class="sum-chip">Messenger</span><span class="sum-chip">Incomplete Order</span><span class="sum-chip">Upsale</span><span class="sum-chip">Custom Source</span><span class="sum-chip">Custom Source 2</span>
-          </div>
-          <button class="btn-primary" style="margin-top:16px;" onclick="toast('Add source (UI prototype)')">Add Custom Source</button>
-        </div>
-      </section>
+<h3 style="font-size:19px;margin-bottom:18px;">Order Sources</h3>
+<div class="card">
+  <div id="sourceChips" style="display:flex;gap:8px;flex-wrap:wrap;">
+    <span class="sum-chip">Facebook</span><span class="sum-chip">Website</span><span class="sum-chip">Direct</span><span class="sum-chip">Instagram</span><span class="sum-chip">TikTok</span><span class="sum-chip">WhatsApp</span><span class="sum-chip">Exchange</span><span class="sum-chip">Messenger</span><span class="sum-chip">Incomplete Order</span><span class="sum-chip">Upsale</span><span class="sum-chip">Custom Source</span><span class="sum-chip">Custom Source 2</span>
+  </div>
+  <p class="muted-sm" style="margin-top:14px;">Sources appear in order filters and in Reports, so you can see which channel each order came from.</p>
+  <button class="btn-primary" style="margin-top:14px;" onclick="sOpen('sourceModal')">Add Custom Source</button>
+</div>
+</section>
 
       <section class="page-panel" id="set-deletion">
-        <h3 style="font-size:19px;margin-bottom:18px;">Deletion Logs</h3>
-        <div class="card">
-          <table><tr><th>Deleted Item</th><th>Deleted By</th><th>Date</th><th>Reason</th></tr>
-          <tr><td>Order OB198</td><td>Jodu doe</td><td>06 Nov</td><td>Duplicate order</td></tr>
-          <tr><td>Product — Test Item 2</td><td>M. Fahim</td><td>02 Nov</td><td>Test product</td></tr></table>
-        </div>
-      </section>
+<h3 style="font-size:19px;margin-bottom:18px;">Deletion Logs</h3>
+<div class="card" style="margin-bottom:18px;">
+  <table><tr><th>Deleted Item</th><th>Deleted By</th><th>Date</th><th>Reason</th></tr>
+  <tr><td>Order OB198</td><td>Jodu doe</td><td>06 Nov</td><td>Duplicate order</td></tr>
+  <tr><td>Product — Test Item 2</td><td>M. Fahim</td><td>02 Nov</td><td>Test product</td></tr>
+  <tr><td>Customer record — 017XX-XXXXXX</td><td>Jodu doe</td><td>28 Oct</td><td>Customer asked to be removed</td></tr></table>
+</div>
+<div class="card" style="margin-bottom:18px;"><h3>Export Your Data</h3>
+  <p class="muted-sm" style="margin:10px 0;">Download orders, customers and products as files you can keep. The export link is emailed to the workspace owner.</p>
+  <button class="ctl-btn" onclick="toast('Export requested (UI prototype)')">Request Export</button>
+</div>
+<div class="card" style="border-color:#F3C2C2;"><h3 style="color:#B42318;">Danger Zone</h3>
+  <div class="sum-row" style="margin-top:10px;"><span><b>Delete this workspace</b><br><span class="muted-sm">Removes the business, its orders, customers and settings. This cannot be undone.</span></span><button class="ctl-btn" style="color:#B42318;border-color:#F3C2C2;" onclick="sOpen('deleteModal')">Delete Workspace</button></div>
+</div>
+</section>
 
       <section class="page-panel" id="set-advanced">
-        <h3 style="font-size:19px;margin-bottom:18px;">Advanced Settings</h3>
-        <div class="card">
-          <div class="sum-row"><span><b>Maintenance Mode</b><br><span class="muted-sm">Pauses order intake from connected sites</span></span><button class="switch" onclick="this.classList.toggle('on')"></button></div>
-          <div class="sum-row"><span><b>Automatic REST order recovery</b><br><span class="muted-sm">Checks every 5 minutes for orders missed by webhooks</span></span><button class="switch" onclick="this.classList.toggle('on')"></button></div>
-          <div class="sum-row"><span><b>Clear Cache</b><br><span class="muted-sm">Refreshes cached product and settings data</span></span><button class="ctl-btn" onclick="toast('Cache cleared (UI prototype)')">Clear Cache</button></div>
-        </div>
-      </section>
+<h3 style="font-size:19px;margin-bottom:18px;">Advanced Settings</h3>
+<div class="card">
+  <div class="sum-row"><span><b>Maintenance Mode</b><br><span class="muted-sm">Pauses order intake from connected sites</span></span><button class="switch" onclick="this.classList.toggle('on')"></button></div>
+  <div class="sum-row"><span><b>Automatic REST order recovery</b><br><span class="muted-sm">Checks every 5 minutes for orders missed by webhooks</span></span><button class="switch" onclick="this.classList.toggle('on')"></button></div>
+  <div class="sum-row"><span><b>Webhook retry</b><br><span class="muted-sm">Retries failed outgoing webhooks 3 times before giving up</span></span><button class="switch on" onclick="this.classList.toggle('on')"></button></div>
+  <div class="sum-row"><span><b>Debug mode</b><br><span class="muted-sm">Shows detailed API errors — keep off for daily use</span></span><button class="switch" onclick="this.classList.toggle('on')"></button></div>
+  <div class="sum-row"><span><b>Clear Cache</b><br><span class="muted-sm">Refreshes cached product and settings data</span></span><button class="ctl-btn" onclick="toast('Cache cleared (UI prototype)')">Clear Cache</button></div>
+  <div class="sum-row"><span><b>Download backup</b><br><span class="muted-sm">A copy of products, customers and settings</span></span><button class="ctl-btn" onclick="toast('Backup download started (UI prototype)')">Download</button></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px;">
+    <label class="fld-l">Session timeout<select class="fld"><option>30 minutes</option><option>2 hours</option><option>8 hours</option></select></label>
+    <label class="fld-l">Date format<select class="fld"><option>DD MMM YYYY</option><option>YYYY-MM-DD</option></select></label>
+  </div>
+  <button class="btn-primary" style="margin-top:16px;" onclick="toast('Advanced settings saved (UI prototype)')">Save Changes</button>
+</div>
+</section>
 
     </div><!-- /content -->
   </div><!-- /main -->
@@ -1208,5 +1341,65 @@
   tickClock(); setInterval(tickClock, 1000);
 </script>
 <script>(function(){var m={business:'set-business',merchant:'set-merchant',devices:'set-devices',website:'set-website',courier:'set-courier',app:'set-app',channels:'set-channels',pbx:'set-pbx',templates:'set-templates',sources:'set-sources',deletion:'set-deletion',advanced:'set-advanced'};var h=location.hash.replace('#','');if(m[h])showPage(m[h]);})();</script>
+
+<div class="modal-overlay" id="courierModal" style="display:none;">
+  <div class="modal-box">
+    <h3 style="font-size:17px;" id="courierModalTitle">Configure Courier</h3>
+    <p style="color:var(--muted);font-size:13.5px;margin:10px 0;">Use your own courier account details. The courier bills delivery and COD charges to you directly.</p>
+    <label class="fld-l">API Key<input class="fld" placeholder="Paste API key"></label>
+    <label class="fld-l" style="margin-top:12px;">API Secret / Client Secret<input class="fld" placeholder="Paste secret"></label>
+    <label class="fld-l" style="margin-top:12px;">Sender Phone<input class="fld" value="01XXXXXXXXX"></label>
+    <label class="fld-l" style="margin-top:12px;">Pickup Address<input class="fld" value="Dhaka, Bangladesh"></label>
+    <div style="display:flex;gap:10px;margin-top:18px;justify-content:flex-end;">
+      <button class="ctl-btn" onclick="sClose('courierModal')">Cancel</button>
+      <button class="btn-primary" onclick="sClose('courierModal');toast('Courier account saved (UI prototype)')">Save Courier</button>
+    </div>
+  </div>
+</div>
+<div class="modal-overlay" id="sourceModal" style="display:none;">
+  <div class="modal-box">
+    <h3 style="font-size:17px;">Add Custom Source</h3>
+    <p style="color:var(--muted);font-size:13.5px;margin:10px 0;">The new source will appear in order filters and reports.</p>
+    <label class="fld-l">Source name<input class="fld" id="sourceName" placeholder="e.g. Daraz"></label>
+    <div style="display:flex;gap:10px;margin-top:18px;justify-content:flex-end;">
+      <button class="ctl-btn" onclick="sClose('sourceModal')">Cancel</button>
+      <button class="btn-primary" onclick="addSource()">Add Source</button>
+    </div>
+  </div>
+</div>
+<div class="modal-overlay" id="deleteModal" style="display:none;">
+  <div class="modal-box">
+    <h3 style="font-size:17px;color:#B42318;">Delete this workspace?</h3>
+    <p style="color:var(--muted);font-size:13.5px;margin:10px 0;">ONLINE BUSINESS, with all its orders, customers, products and settings, will be removed permanently. This cannot be undone.</p>
+    <div style="display:flex;gap:10px;margin-top:18px;justify-content:flex-end;">
+      <button class="ctl-btn" onclick="sClose('deleteModal')">Cancel</button>
+      <button class="btn-primary" style="background:#B42318;" onclick="sClose('deleteModal');toast('Workspace deletion needs owner confirmation by email (UI prototype)')">Delete Workspace</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function sOpen(id){var m=document.getElementById(id);if(m)m.style.display='flex';}
+function sClose(id){var m=document.getElementById(id);if(m)m.style.display='none';}
+function openCourier(name){var t=document.getElementById('courierModalTitle');if(t)t.textContent='Configure '+name;sOpen('courierModal');}
+function addSource(){
+  var inp=document.getElementById('sourceName');var name=(inp.value||'').trim();
+  if(!name){toast('Type a source name first');return;}
+  var chip=document.createElement('span');chip.className='sum-chip';chip.textContent=name;
+  document.getElementById('sourceChips').appendChild(chip);
+  inp.value='';sClose('sourceModal');toast('Source added (UI prototype)');
+}
+(function(){
+  var tabs=document.getElementById('appTabs');if(!tabs)return;
+  tabs.addEventListener('click',function(e){
+    var b=e.target.closest('[data-atab]');if(!b)return;
+    tabs.querySelectorAll('button').forEach(function(x){x.classList.toggle('active',x===b);});
+    document.querySelectorAll('[data-apane]').forEach(function(p){p.style.display=(p.getAttribute('data-apane')===b.getAttribute('data-atab'))?'':'none';});
+  });
+  document.querySelectorAll('.modal-overlay').forEach(function(ov){
+    ov.addEventListener('click',function(e){if(e.target===ov)ov.style.display='none';});
+  });
+})();
+</script>
 </body>
 </html>
