@@ -412,7 +412,12 @@
       <div class="nav-item"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg></span> Search</div>
 
       <div class="group-label">Operations</div>
-      <div class="nav-item active"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><path d="M21 8l-9-5-9 5v8l9 5 9-5V8z"/><path d="M3 8l9 5 9-5"/><path d="M12 13v8"/></svg></span> Orders</div>
+      <div class="nav-item active" onclick="toggleSub(this)"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><path d="M21 8l-9-5-9 5v8l9 5 9-5V8z"/><path d="M3 8l9 5 9-5"/><path d="M12 13v8"/></svg></span> Orders <span class="chev">›</span></div>
+      <div class="sub-items open">
+        <div class="nav-item ord-sub" data-nav="new-order" onclick="showView('new-order')">New Order</div>
+        <div class="nav-item ord-sub active" data-nav="list" onclick="showView('list')">Order List</div>
+        <div class="nav-item ord-sub" data-nav="auto-pick" onclick="showView('auto-pick')">Auto Pick Orders</div>
+      </div>
       <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><path d="M21 8l-9-5-9 5v8l9 5 9-5V8z"/><path d="M3 8l9 5 9-5"/><path d="M12 13v8"/></svg></span> Inventory <span class="chev">›</span></div>
       <div class="sub-items">
         <div class="nav-item">Inventory Dashboard</div><div class="nav-item">Products</div>
@@ -550,57 +555,242 @@
     
     <div class="content">
 
+      <!-- ============ ORDERS — NEW ORDER VIEW ============ -->
+      <section id="view-new-order" style="display:none;">
+<section class="page-panel active" id="page-new-order" style="max-width:1400px;margin-left:auto;margin-right:auto;">
+        
+        
+        <div class="grid-21" style="grid-template-columns:minmax(0,1fr) clamp(16rem,25%,28rem);gap:16px;">
+          <div>
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap;background:#fff;border:1px solid #EEF2F7;border-radius:16px;padding:10px 16px;box-shadow:0 1px 2px rgba(17,24,39,.04),0 1px 3px rgba(17,24,39,.06);">
+          <span class="seg" style="font-size:13.5px;"><button onclick="orderMode(this,'manual')">Manual</button><button class="on" onclick="orderMode(this,'approved')">Approved</button><button onclick="orderMode(this,'preorder')">Pre-Order</button></span>
+          <span style="margin-left:auto;display:flex;gap:8px;"><button class="ctl-btn" style="border-color:#EEF2F7;border-radius:8px;font-size:12px;" onclick="toast('Screenshot picker (UI prototype)')">স্ক্রিনশট থেকে পূরণ</button><button class="ctl-btn">Guide</button><button class="ctl-btn" onclick="openModal('layoutsModal')">Layouts &amp; Fields</button></span>
+        </div>
+            <div class="card" style="margin-bottom:16px;">
+              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;">
+                <label class="fld-l">Mobile Number *<input class="fld" placeholder="01XXXXXXXXX"></label>
+                <label class="fld-l">Customer Name *<input class="fld" placeholder="Customer name"></label>
+                <label class="fld-l">Email <span class="opt-tag">OPTIONAL</span><input class="fld" placeholder="customer@example.com"></label>
+                <label class="fld-l">Address *<textarea class="fld" rows="6" placeholder="Enter address"></textarea></label>
+                <label class="fld-l">Shipping Note <span class="opt-tag">OPTIONAL</span> <span class="muted-sm">0/350</span><textarea class="fld" rows="6" placeholder="Note printed on invoice / shared with courier"></textarea></label>
+                <div style="display:flex;flex-direction:column;gap:10px;">
+                  <label class="fld-l" id="dmWrap">Delivery Method *<select class="fld"><option>Select delivery method</option><option>mr</option><option>Outlet</option><option>Outlet</option><option>steadfast</option><option>Test</option></select></label>
+                  <div class="fld-l" id="dmHelp" style="display:none;">Delivery Method<div class="muted-sm" style="margin-top:8px;font-weight:400;">Courier will be assigned during Online Order approval.</div></div>
+                  <div style="display:flex;gap:8px;align-items:center;"><button class="ctl-btn" onclick="popToggle('tagPop')">Tag</button><span class="fld-l" style="display:inline-flex;align-items:center;gap:8px;">Cross Sale <button class="switch" onclick="this.classList.toggle('on')"></button></span></div>
+                  <div style="display:flex;gap:8px;"><button class="ctl-btn" onclick="popToggle('refPop')">Reference Link</button><button class="ctl-btn" onclick="popToggle('notePop')">Note</button></div>
+                  <div style="display:flex;gap:8px;"><button class="ctl-btn" onclick="popToggle('attPop')">Attachment</button><button class="ctl-btn" onclick="popToggle('morePop')">More</button></div>
+                  <label class="fld-l" id="preReason" style="display:none;">Preorder Reason<select class="fld"><option>Select reason</option><option>Out of Stock</option><option>Others</option></select></label>
+                  <label class="fld-l" id="preDate" style="display:none;">Notification Date<input class="fld" type="datetime-local"></label>
+                </div>
+              </div>
+              <div id="tagPop" class="pop-panel" style="display:none;"><b>Order Tags</b><div class="muted-sm" style="margin:6px 0;">Select Custom Tags</div><div class="tag-cloud"><span>storola</span><span>diaper</span><span>diaper + feeding item</span><span>age 0 to 1 year</span><span>Custom Tag 5</span><span>Custom Tag 6</span><span>Custom Tag 7</span><span>Custom Tag 8</span><span>Custom Tag 9</span><span>Custom Tag 10</span><span>Custom Tag 11</span><span>Custom Tag 12</span><span>Custom Tag 13</span><span>Custom Tag 14</span><span>Custom Tag 15</span></div></div>
+              <div id="refPop" class="pop-panel" style="display:none;"><label class="fld-l">Reference link<input class="fld" placeholder="https://…"></label></div>
+              <div id="notePop" class="pop-panel" style="display:none;"><label class="fld-l">Order note<textarea class="fld" rows="2" placeholder="Add an order note"></textarea></label></div>
+              <div id="attPop" class="pop-panel" style="display:none;"><b>Upload Attachments</b><div class="dashed-empty" style="margin-top:8px;">Drag and drop your files here, or click to select<br><span class="muted-sm">Supported formats: JPG, PNG, GIF, WEBP, AVIF, SVG, PDF (max 5MB)</span></div></div>
+              <div id="morePop" class="pop-panel" style="display:none;"><label class="fld-l">Invoice prefix<input class="fld" placeholder="Optional invoice prefix"></label></div>
+              <div style="display:grid;grid-template-columns:1fr 2fr;gap:16px;margin-top:16px;">
+                <label class="fld-l">Payment Method <span class="opt-tag">OPTIONAL</span><select class="fld"><option>Select account</option><option>Brack Bank</option><option>Rocket</option><option>Test</option><option>bKash</option></select></label>
+                <label class="fld-l">Order Source *<select class="fld"><option>Select order source</option><option>Facebook</option><option>Website</option><option>Direct</option><option>Instagram</option><option>TikTok</option><option>WhatsApp</option><option>Exchange</option><option>MESSENGER</option><option>Custom Source</option><option>Custom Source 2</option><option>Incomplete Order</option><option>Upsale</option></select></label>
+              </div>
+            </div>
+            <div class="card">
+              <div style="display:flex;gap:8px;flex-wrap:wrap;"><button class="ctl-btn" style="background:#F8F7FB;border-color:#E8D8EF;" style="display:inline-flex;align-items:center;gap:5px;" onclick="toast('Product picker focused (UI prototype)')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Add Product</button><button class="ctl-btn" style="background:#F8F7FB;border-color:#E8D8EF;" style="display:inline-flex;align-items:center;gap:5px;" onclick="toast('Scan Barcode — Code/sku search focused (UI prototype)')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Scan Barcode</button><button class="ctl-btn" style="background:#F8F7FB;border-color:#E8D8EF;" style="display:inline-flex;align-items:center;gap:5px;" onclick="openModal('customProductModal')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Add Custom Product</button></div>
+              <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);gap:16px;margin-top:16px;">
+                <div style="border:1px solid #EEF2F7;border-radius:12px;padding:16px;">
+                  <h3 >Click To Add Products <button class="ctl-btn" style="padding:2px 8px;">?</button></h3>
+                  <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:10px;margin:12px 0;align-items:end;">
+                  <label class="fld-l">Code/sku<input class="fld" placeholder="Type to Search.." oninput="prodSearch()"></label>
+                  <label class="fld-l">Name<input class="fld" placeholder="Type to Search.." oninput="prodSearch()"></label>
+                  <button style="width:40px;height:40px;border-radius:8px;background:#FFB900;border:1px solid #FFB900;color:#FFFBEB;font-size:17px;cursor:pointer;" title="Favourites only" onclick="this.classList.toggle('fav-on')">★</button>
+                </div>
+                  <div class="prod-grid" id="prodGrid"></div>
+                </div>
+                <div style="border:1px solid #EEF2F7;border-radius:12px;padding:16px;">
+                  
+              <h3>Ordered Products <span class="muted-sm" id="ordCount">0 item(s)</span></h3>
+              <div id="ordEmpty" class="empty-note" style="margin-top:10px;">Search and add products from the "Click To Add Products" panel.</div>
+              <div id="ordList"></div>
+            
+                </div>
+              </div>
+            </div>
+          </div>
+          <div>
+            <div style="position:sticky;top:61px;">
+              <div class="card" style="margin-bottom:16px;"><h3>Calculation Details</h3>
+                <label class="fld-l" style="margin-top:12px;">Discount (৳)<input class="fld" type="number" value="0" id="calcDisc" oninput="calcSummary()"></label>
+                <label class="fld-l" style="margin-top:12px;">Delivery Charge (৳)<input class="fld" type="number" value="0" id="calcDel" oninput="calcSummary()"></label>
+                <label class="fld-l" style="margin-top:12px;">Advance (৳)<input class="fld" type="number" value="0" id="calcAdv" oninput="calcSummary()"></label>
+                <label class="fld-l" style="margin-top:12px;">Transaction ID<input class="fld" placeholder="TrxId (bKash/Nagad/Bank)" disabled></label>
+              </div>
+              <div class="card"><h3>Order Summary</h3>
+                <div class="sum-row"><span>Items Total</span><b id="sumItems">৳0</b></div>
+                <div class="sum-row"><span>Discount</span><b id="sumDisc2">৳0</b></div>
+                <div class="sum-row"><span>Delivery Charge</span><b id="sumDel2">৳0</b></div>
+                <div class="sum-row"><span>Grand Total</span><b id="sumGrand">৳0</b></div>
+                <div class="sum-row"><span>Advance</span><b id="sumAdv2">৳0</b></div>
+                <div class="sum-row total"><span>Due Amount</span><b id="sumDue">৳0</b></div>
+                <button class="btn-primary" style="width:100%;margin-top:16px;height:44px;border-radius:8px;font-size:14px;" id="createOrderBtn" onclick="toast('Order saved (UI prototype)')">Create Approved Order</button>
+                <p class="empty-note" style="text-align:center;margin-top:8px;">Order will be saved as soon as you click.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+      </section>
+
       <!-- ============ ORDERS — LIST VIEW ============ -->
       <section id="view-list">
         <div class="page-head">
-          <div><h1>Orders</h1><p>Every order in one place — new, confirmed, shipped and delivered.</p></div>
+          <div><h1>Orders</h1><p>Every order in one place — pending, confirmed, shipped and delivered.</p></div>
           <span style="margin-left:auto;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
             <span class="wol-search" style="width:300px;height:44px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><input id="ordSearch" placeholder="Search invoice, phone or name…" oninput="renderTable()"></span>
-            <button class="btn-primary" style="padding:12px 22px;font-size:14.5px;border-radius:12px;" onclick="openNext()">Open Next Order</button>
+            <button class="btn-primary" id="openNextBtn" style="padding:12px 22px;font-size:14.5px;border-radius:12px;" onclick="openNextFromList()">Open Next Order (3)</button>
           </span>
         </div>
 
         <div class="view-tabs" id="ordTabs"></div>
 
         <div class="card" style="padding:6px 10px 10px;">
-          <table id="ordTable">
-            <tr><th>Order</th><th>Customer</th><th>Product</th><th>Amount</th><th>Check</th><th>Status</th><th></th></tr>
+          <table id="woTable"><tr><th><input type="checkbox"></th><th>Created At <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 9 5-5 5 5"/><path d="m7 15 5 5 5-5"/></svg></th><th>Auto Call</th><th>Customer</th><th>Order Items</th><th>Success Rate <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 9 5-5 5 5"/><path d="m7 15 5 5 5-5"/></svg></th><th>Tags</th><th>Site</th><th>Status</th><th>PBX Calls</th><th>Processed By</th><th>Actions</th></tr>
             <tbody id="ordBody"></tbody>
           </table>
-          <div class="pager" id="ordPager" style="padding:0 6px 6px;"></div>
+          <div style="display:flex;align-items:center;gap:14px;margin-top:14px;flex-wrap:wrap;"><span style="font-size:13.5px;color:#64748B;">Page 1</span><label style="font-size:13.5px;color:#64748B;display:inline-flex;align-items:center;gap:7px;">Rows per page <select style="height:26px;width:55px;background:#F8F7FB;border:1px solid #E8E3EE;border-radius:6px;font-size:13px;padding:0 4px;"><option>20</option><option>50</option><option>100</option></select></label><span style="margin-left:auto;display:flex;gap:14px;align-items:center;font-size:13.5px;"><b style="color:#111827;">Page 1</b><span style="color:#9CA3AF;">‹ Previous</span><button style="border:none;background:none;font-size:13.5px;color:#111827;cursor:pointer;padding:0;">Next ›</button></span></div>
         </div>
       </section>
 
-      <!-- ============ ORDERS — DETAIL VIEW ============ -->
-      <section id="view-detail" style="display:none;">
-        <button class="ctl-btn" onclick="backToList()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg> Back to Orders</button>
-        <div class="page-head" style="margin-top:16px;">
-          <div><h1 id="dTitle">Order — OB286</h1><p id="dSub"></p></div>
-          <span style="margin-left:auto;" id="dStatus"></span>
+      <!-- ============ ORDERS — AUTO PICK VIEW ============ -->
+      <section id="view-auto-pick" style="display:none;">
+<section class="page-panel active" id="page-auto-pick" style="max-width:1490px;margin-left:auto;margin-right:auto;padding-top:24px;">
+        <div class="card" style="padding:24px;">
+          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+            <h3 style="font-size:18px;font-weight:700;">Auto Order Dashboard</h3>
+            <span style="margin-left:auto;display:flex;align-items:center;gap:10px;"><span class="muted-sm">Updated just now</span><button class="ctl-btn">Guide</button><button class="ctl-btn" style="padding:6px 8px;" title="Refresh data" onclick="toast('Refreshed (UI prototype)')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><polyline points="21 3 21 9 15 9"/></svg></button></span>
+          </div>
+          <div style="display:flex;align-items:center;gap:14px;margin:18px 0 20px;background:#F8F7FB;border:1px solid #EEF2F7;border-radius:12px;padding:14px 16px;">
+            <div><div style="font-weight:600;font-size:14.5px;">Open next automatically after status update</div><div class="muted-sm">When enabled, auto-order continues with the next item in the same queue after you update a status.</div></div>
+            <button class="switch on" id="apAutoSwitch" style="margin-left:auto;" onclick="this.classList.toggle('on')" aria-label="Open next automatically"></button>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:18px;">
+        <div style="border:1px solid #E5E7EB;border-radius:12px;padding:20px;min-height:122px;">
+          <div style="display:flex;align-items:center;gap:8px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 13.5"/></svg><span style="font-size:14px;font-weight:500;">Processing</span><span style="margin-left:auto;background:#FCFCFC;border:1px solid #E5E7EB;color:#411550;border-radius:99px;padding:1px 9px;font-size:12px;font-weight:600;">23</span></div>
+          <button class="btn-primary" onclick="apOpenNext('Processing')" style="width:100%;height:36px;margin-top:26px;border-radius:8px;background:linear-gradient(90deg,#431652,#581E6B);position:relative;">Open Next<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg></button>
+        </div><div style="border:1px solid #E5E7EB;border-radius:12px;padding:20px;min-height:122px;">
+          <div style="display:flex;align-items:center;gap:8px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><polyline points="3.29 7 12 12 20.71 7"/><line x1="12" y1="22" x2="12" y2="12"/></svg><span style="font-size:14px;font-weight:500;">Incomplete</span><span style="margin-left:auto;background:#FCFCFC;border:1px solid #E5E7EB;color:#411550;border-radius:99px;padding:1px 9px;font-size:12px;font-weight:600;">3</span></div>
+          <button class="btn-primary" onclick="apOpenNext('Incomplete')" style="width:100%;height:36px;margin-top:26px;border-radius:8px;background:linear-gradient(90deg,#431652,#581E6B);position:relative;">Open Next<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg></button>
+        </div><div style="border:1px solid #E5E7EB;border-radius:12px;padding:20px;min-height:122px;">
+          <div style="display:flex;align-items:center;gap:8px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="8.5 12.2 11 14.7 15.5 9.5"/></svg><span style="font-size:14px;font-weight:500;">Good But No Response</span><span style="margin-left:auto;background:#FCFCFC;border:1px solid #E5E7EB;color:#411550;border-radius:99px;padding:1px 9px;font-size:12px;font-weight:600;">1</span></div>
+          <button class="btn-primary" onclick="apOpenNext('Good But No Response')" style="width:100%;height:36px;margin-top:26px;border-radius:8px;background:linear-gradient(90deg,#431652,#581E6B);position:relative;">Open Next<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg></button>
+        </div><div style="border:1px solid #E5E7EB;border-radius:12px;padding:20px;min-height:122px;">
+          <div style="display:flex;align-items:center;gap:8px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.42 19.42 0 0 1-3.33-2.67m-2.67-3.34a19.79 19.79 0 0 1-3.07-8.63A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91"/><line x1="2" y1="2" x2="22" y2="22"/></svg><span style="font-size:14px;font-weight:500;">No Response</span><span style="margin-left:auto;background:#FCFCFC;border:1px solid #E5E7EB;color:#411550;border-radius:99px;padding:1px 9px;font-size:12px;font-weight:600;">0</span></div>
+          <button style="width:100%;height:36px;margin-top:26px;border-radius:8px;background:#E9E4EE;color:#A08AB0;border:none;font-weight:600;cursor:not-allowed;">Open Next</button>
+        </div><div style="border:1px solid #E5E7EB;border-radius:12px;padding:20px;min-height:122px;">
+          <div style="display:flex;align-items:center;gap:8px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg><span style="font-size:14px;font-weight:500;">Advance Payment</span><span style="margin-left:auto;background:#FCFCFC;border:1px solid #E5E7EB;color:#411550;border-radius:99px;padding:1px 9px;font-size:12px;font-weight:600;">1</span></div>
+          <button class="btn-primary" onclick="apOpenNext('Advance Payment')" style="width:100%;height:36px;margin-top:26px;border-radius:8px;background:linear-gradient(90deg,#431652,#581E6B);position:relative;">Open Next<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg></button>
+        </div><div style="border:1px solid #E5E7EB;border-radius:12px;padding:20px;min-height:122px;">
+          <div style="display:flex;align-items:center;gap:8px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><polyline points="3.29 7 12 12 20.71 7"/><line x1="12" y1="22" x2="12" y2="12"/></svg><span style="font-size:14px;font-weight:500;">On Hold</span><span style="margin-left:auto;background:#FCFCFC;border:1px solid #E5E7EB;color:#411550;border-radius:99px;padding:1px 9px;font-size:12px;font-weight:600;">0</span></div>
+          <button style="width:100%;height:36px;margin-top:26px;border-radius:8px;background:#E9E4EE;color:#A08AB0;border:none;font-weight:600;cursor:not-allowed;">Open Next</button>
+        </div><div style="border:1px solid #E5E7EB;border-radius:12px;padding:20px;min-height:122px;">
+          <div style="display:flex;align-items:center;gap:8px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><polyline points="3.29 7 12 12 20.71 7"/><line x1="12" y1="22" x2="12" y2="12"/></svg><span style="font-size:14px;font-weight:500;">Stock Out</span><span style="margin-left:auto;background:#FCFCFC;border:1px solid #E5E7EB;color:#411550;border-radius:99px;padding:1px 9px;font-size:12px;font-weight:600;">0</span></div>
+          <button style="width:100%;height:36px;margin-top:26px;border-radius:8px;background:#E9E4EE;color:#A08AB0;border:none;font-weight:600;cursor:not-allowed;">Open Next</button>
         </div>
+          </div>
+        </div>
+        <div class="card" style="margin-top:24px;padding:24px;">
+          <h3 style="font-size:18px;font-weight:700;margin-bottom:16px;">My Daily Report</h3>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;">
+        <div style="border:1px solid #E5E7EB;border-left:4px solid #411550;border-radius:8px;padding:14px 16px;">
+          <div style="font-size:12px;color:#64748B;font-weight:600;letter-spacing:.05em;">TAKEN</div><div style="font-size:22px;font-weight:700;margin-top:2px;">8</div></div><div style="border:1px solid #E5E7EB;border-left:4px solid #411550;border-radius:8px;padding:14px 16px;">
+          <div style="font-size:12px;color:#64748B;font-weight:600;letter-spacing:.05em;">SHIPPED</div><div style="font-size:22px;font-weight:700;margin-top:2px;">0</div></div><div style="border:1px solid #E5E7EB;border-left:4px solid #411550;border-radius:8px;padding:14px 16px;">
+          <div style="font-size:12px;color:#64748B;font-weight:600;letter-spacing:.05em;">DELIVERED</div><div style="font-size:22px;font-weight:700;margin-top:2px;">0</div></div><div style="border:1px solid #E5E7EB;border-left:4px solid #411550;border-radius:8px;padding:14px 16px;">
+          <div style="font-size:12px;color:#64748B;font-weight:600;letter-spacing:.05em;">RETURNED</div><div style="font-size:22px;font-weight:700;margin-top:2px;">0</div></div>
+          </div>
+        </div>
+      </section>
+      </section>
+
+      <!-- ============ ORDERS — DETAIL / APPROVE VIEW ============ -->
+      <section id="view-detail" style="display:none;">
+<section class="page-panel active" id="page-web-order-detail">
+        <div class="page-head"><div><h1 id="wodTitle">Web Order — OB273</h1><p id="wodSub">10 Nov 2026, 4:12 PM · Source: Website</p></div>
+        <span style="margin-left:auto;display:flex;gap:8px;align-items:center;"><span class="pill lpurple" id="wodStatus">Processing</span><button class="btn-primary" id="wodApproveBtn" onclick="openModal('approveModal')">Approve Order (599৳)</button></span></div>
         <div class="grid-21">
           <div>
             <div class="card" style="margin-bottom:16px;"><h3>Customer</h3>
-              <div id="dCustomer"></div>
-              <div id="dVerdict"></div>
+              <div class="sum-row"><span>Name</span><b id="wodCustName">M. Fahim</b></div>
+              <div class="sum-row"><span>Phone</span><b id="wodCustPhone">01712-445566</b></div>
+              <div class="sum-row"><span>Address</span><b id="wodCustAddr">House 12, Road 5, Mirpur 10, Dhaka</b></div>
+              <div class="sum-row"><span>Customer History</span><b id="wodCustHist">8 orders · Success rate 75%</b></div>
             </div>
             <div class="card"><h3>Items</h3>
-              <div id="dItems"></div>
-              <div id="dTotals" style="margin-top:12px;"></div>
+              <table id="wodItemsTable"><tr><th>Product</th><th>Qty</th><th>Price</th><th>Total</th></tr>
+              <tr><td>Mentara Roll On Balm COMBO <span class="muted-sm">(MENT-COMBO)</span></td><td>1</td><td>৳539</td><td>৳539</td></tr></table>
+              <div class="sum-row" style="margin-top:12px;"><span>Subtotal</span><b id="wodSubTotal">৳539</b></div>
+              <div class="sum-row"><span>Delivery Charge</span><b id="wodDelCharge">৳60</b></div>
+              <div class="sum-row"><span>Discount</span><b id="wodDiscount">৳0</b></div>
+              <div class="sum-row total"><span>Total</span><b id="wodTotal">৳599</b></div>
             </div>
           </div>
           <div>
-            <div class="card"><h3>Delivery</h3>
-              <div id="dAction"></div>
+            <div class="card" style="margin-bottom:16px;"><h3>Process Order</h3>
+              <label class="fld-l" style="margin-top:12px;">Change Status<select class="fld" onchange="document.getElementById('wodStatus').textContent=this.value"><option>Processing</option><option>Good But No Response</option><option>No Response</option><option>Advance Payment</option><option>On Hold</option><option>Stock Out</option><option>Cancel</option></select></label>
+              <label class="fld-l" style="margin-top:12px;">Delivery Method<select class="fld"><option>Steadfast — Inside Dhaka</option><option>Pathao — Inside Dhaka</option><option>RedX — Dhaka</option><option>Carrybee</option><option>Manual</option></select></label>
+              <label class="fld-l" style="margin-top:12px;">Delivery Note<textarea class="fld" rows="2" placeholder="Note for courier"></textarea></label>
+              <button class="ctl-btn" style="width:100%;justify-content:center;margin-top:12px;" onclick="toast('Status saved (UI prototype)')">Save Changes</button>
+              <button class="ctl-btn" style="width:100%;justify-content:center;margin-top:8px;" onclick="goBackFromDetail()">Back to List</button>
+            </div>
+            <div class="card"><h3>Timeline</h3>
+              <div class="sum-row"><span>Order created via External API</span><b>4:12 PM</b></div>
+              <div class="sum-row"><span>Status: Processing</span><b>4:12 PM</b></div>
+              <div class="sum-row"><span>Auto task check (Work Inbox)</span><b>4:15 PM</b></div>
             </div>
           </div>
         </div>
+      </section>
       </section>
 
     </div>
   </div>
 </div>
 <button class="team-chat" onclick="alert('Open Team Chat (UI prototype)')" title="Team Chat"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></button>
+<div class="modal-overlay" id="approveModal" style="display:none;">
+  <div class="modal-box">
+    <h3 style="font-size:17px;">Approve this order?</h3>
+    <p id="apMdlText" style="color:var(--muted);font-size:13.5px;margin:10px 0;">OB273 will move to Approved Orders. Stock for 1 item will be reserved, and the order becomes ready to ship.</p>
+    <div class="sum-row"><span>Customer</span><b id="apMdlCustomer">M. Fahim</b></div>
+    <div class="sum-row"><span>Total (COD)</span><b id="apMdlTotal">৳599</b></div>
+    <div style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end;">
+      <button class="ctl-btn" onclick="closeModal('approveModal')">Cancel</button>
+      <button class="btn-primary" onclick="confirmApprove()">Confirm Approve</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="layoutsModal" style="display:none;">
+  <div class="modal-box" style="max-width:640px;">
+    <div style="display:flex;align-items:center;"><h3 style="font-size:17px;">Order Form Options</h3><button class="icon-btn" style="margin-left:auto;" onclick="closeModal('layoutsModal')">✕</button></div>
+    <div class="utabs inner-tabs" style="margin-top:10px;"><button class="active">Layouts</button><button>Fields</button><button>Courier Cards</button></div>
+    <p class="muted-sm">Layouts apply on wider screens. On a phone every layout stacks into one column.</p>
+    <div class="card" style="box-shadow:none;border:1px solid var(--focus);margin-top:12px;"><b>V2 Default</b> <span class="pill green">ACTIVE</span><p class="muted-sm" style="margin-top:6px;">Two columns with the calculation details pinned in a sticky rail on the right, so the total and the submit button stay on screen.</p></div>
+    <div class="card" style="box-shadow:none;border:1px solid var(--card-border);margin-top:10px;"><b>V2 Full Width Stacked</b><p class="muted-sm" style="margin-top:6px;">Like V2 Default, but the product picker gets a full-width row with the ordered products below it, the way a phone shows them.</p></div>
+    <div class="card" style="box-shadow:none;border:1px solid var(--card-border);margin-top:10px;"><b>V1 Classic</b><p class="muted-sm" style="margin-top:6px;">The legacy arrangement: full width, ordered products beside the picker, and the money fields in a band across the bottom. Scroll down to submit.</p></div>
+    <p class="muted-sm" style="margin-top:12px;">Fields templates: Default Template (ACTIVE), Compact Template, Wholesale Template, Pre-Order Template, Call Center Fast Entry Template. Courier Cards order: Overall, Pathao, Steadfast, RedX, CarryBee.</p>
+    <div style="display:flex;gap:10px;margin-top:14px;justify-content:space-between;align-items:center;"><span class="muted-sm">Active: V2 Default + Default Template</span><button class="btn-primary" onclick="closeModal('layoutsModal')">Close</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="customProductModal" style="display:none;">
+  <div class="modal-box">
+    <div style="display:flex;align-items:center;"><h3 style="font-size:17px;">Add Custom Product</h3><button class="icon-btn" style="margin-left:auto;" onclick="closeModal('customProductModal')">✕</button></div>
+    <label class="fld-l" style="margin-top:12px;">Product Name *<input class="fld" placeholder="e.g. Special Offer Box"></label>
+    <label class="fld-l" style="margin-top:12px;">SKU (optional)<input class="fld" placeholder="Auto-generated if left blank"></label>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;">
+      <label class="fld-l">Price (৳) *<input class="fld" type="number" value="0"></label>
+      <label class="fld-l">Quantity *<input class="fld" type="number" value="1"></label>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end;"><button class="ctl-btn" onclick="closeModal('customProductModal')">Cancel</button><button class="btn-primary" onclick="closeModal('customProductModal');toast('Custom product added (UI prototype)')">Add Product</button></div>
+  </div>
+</div>
 <div id="toast"></div>
 
 <script>
@@ -626,67 +816,238 @@
   function showPage(){ /* inert in this trial file */ }
   function toast(msg){ var t = document.getElementById('toast'); t.textContent = msg; t.style.display = 'block'; setTimeout(function(){ t.style.display = 'none'; }, 2400); }
 
-  /* ===== Orders (minimal) ===== */
-  var ORDERS = [
-    {id:'OB286', when:'15 Nov, 10:42 am', name:'M. Fahim', phone:'01712-445566', addr:'House 12, Road 5, Mirpur 10, Dhaka',
-     items:[{name:'Mentara Roll On Balm COMBO', sku:'MENT-COMBO', qty:1, price:539}], delivery:60, advance:0,
-     check:'safe', checkNote:'This customer received 8 of 9 parcels before. Safe to send.', status:'New',
-     courier:'Steadfast — Inside Dhaka', autoNote:'Auto-picked: Steadfast — best delivery record for this customer.', tracking:''},
-    {id:'OB285', when:'15 Nov, 10:15 am', name:'Khan Tanvir Islam', phone:'01788-221190', addr:'Sonadanga, Khulna',
-     items:[{name:'Pink Minnie Kids Plush Bag', sku:'11145', qty:1, price:300}], delivery:60, advance:100,
-     check:'risky', checkNote:'This customer returned 3 of 5 parcels before. Take advance money before sending.', status:'New',
-     courier:'Pathao — Inside Dhaka', autoNote:'Auto-picked: Pathao — covers this area best.', tracking:''},
-    {id:'OB284', when:'15 Nov, 9:48 am', name:'Nozrul Islam', phone:'01923-778811', addr:'Board Bazar, Gazipur',
-     items:[{name:'Neela Pankh 2', sku:'NP-2', qty:2, price:350}], delivery:60, advance:0,
-     check:'none', checkNote:'No courier history found for this number yet — first order.', status:'New',
-     courier:'Steadfast — Outside Dhaka', autoNote:'Auto-picked: Steadfast — default courier for this shop.', tracking:''},
-    {id:'OB283', when:'15 Nov, 9:20 am', name:'F.A. Rayhan', phone:'01812-334455', addr:'Dimla, Nilphamari',
-     items:[{name:'Kumkum Ikkat 1', sku:'KK-1', qty:1, price:699}], delivery:60, advance:0,
-     check:'safe', checkNote:'This customer received 65 of 66 parcels before. Safe to send.', status:'Confirmed',
-     courier:'Steadfast — Outside Dhaka', autoNote:'', tracking:''},
-    {id:'OB282', when:'15 Nov, 8:57 am', name:'Anwar Hossain', phone:'01765-909090', addr:'Mohammadpur, Dhaka',
-     items:[{name:'Kumkum Ikkat 1', sku:'KK-1', qty:1, price:699}], delivery:60, advance:0,
-     check:'safe', checkNote:'This customer received all 2 parcels before. Safe to send.', status:'Confirmed',
-     courier:'Pathao — Inside Dhaka', autoNote:'', tracking:''},
-    {id:'OB281', when:'14 Nov, 6:30 pm', name:'Sharmin Akter', phone:'01678-445566', addr:'Uttara Sector 11, Dhaka',
-     items:[{name:'30L Bag 109', sku:'BAG-109', qty:1, price:320}], delivery:60, advance:0,
-     check:'safe', checkNote:'This customer received 5 of 5 parcels before. Safe to send.', status:'Shipped',
-     courier:'Steadfast — Inside Dhaka', autoNote:'', tracking:'STF-88213'},
-    {id:'OB280', when:'14 Nov, 5:12 pm', name:'Tanvir Ahmed', phone:'01555-667788', addr:'Chawkbazar, Chattogram',
-     items:[{name:'Mentara Roll On Balm COMBO', sku:'MENT-COMBO', qty:2, price:539}], delivery:60, advance:0,
-     check:'none', checkNote:'No courier history found for this number yet — first order.', status:'Shipped',
-     courier:'Pathao — Outside Dhaka', autoNote:'', tracking:'PTH-55190'},
-    {id:'OB279', when:'14 Nov, 3:05 pm', name:'Rumana Parvin', phone:'01999-112233', addr:'Rajshahi Sadar, Rajshahi',
-     items:[{name:'Neela Pankh 2', sku:'NP-2', qty:1, price:350}], delivery:60, advance:0,
-     check:'safe', checkNote:'This customer received 4 of 4 parcels before. Safe to send.', status:'Delivered',
-     courier:'Steadfast — Outside Dhaka', autoNote:'', tracking:'STF-87702'},
-    {id:'OB278', when:'13 Nov, 7:44 pm', name:'Imran Hossain', phone:'01877-665544', addr:'Kushtia Sadar, Kushtia',
-     items:[{name:'30L Bag 109', sku:'BAG-109', qty:1, price:320}], delivery:60, advance:0,
-     check:'risky', checkNote:'This customer returned 2 of 3 parcels before.', status:'Returned',
-     courier:'Pathao — Outside Dhaka', autoNote:'', tracking:'PTH-54087'},
-    {id:'OB277', when:'13 Nov, 2:18 pm', name:'Sadia Afrin', phone:'01733-998877', addr:'Sylhet Sadar, Sylhet',
-     items:[{name:'Pink Minnie Kids Plush Bag', sku:'11145', qty:1, price:300}], delivery:60, advance:0,
-     check:'none', checkNote:'No courier history found for this number yet — first order.', status:'Cancelled',
-     courier:'Steadfast — Outside Dhaka', autoNote:'', tracking:''}
+  /* ===== modal helpers (from the original prototype) ===== */
+  function openModal(id){ var el = document.getElementById(id); if(el) el.style.display = 'flex'; }
+  function closeModal(id){ var el = document.getElementById(id); if(el) el.style.display = 'none'; }
+
+  /* ===== New Order product picker (copied from the original prototype) ===== */
+var PRODUCTS = [
+    {name:'Mobile Phone Umbrella Cute Phone Holder', sku:'11143', price:400, stock:153, feat:1},
+    {name:'Kumkum Ikkat 1', sku:'KIK-1', price:699, stock:2084, feat:1},
+    {name:'Kumkum Ikkat 2', sku:'KIK-2', price:699, stock:195, feat:1},
+    {name:'Neela Pankh 2', sku:'NP-2', price:699, stock:198, feat:1},
+    {name:'Jeans Pant', sku:'1001', price:1000, stock:53},
+    {name:'30L Bag', sku:'109', price:320, stock:1001},
+    {name:'Student Penknife', sku:'11142', price:350, stock:148},
+    {name:'Computer Arm Rest', sku:'11144', price:750, stock:151},
+    {name:'Pink Minnie Kids Plush Bag', sku:'11145', price:300, stock:null},
+    {name:'Kids Backpack', sku:'11146', price:350, stock:151},
+    {name:'Spider man bag', sku:'11147', price:350, stock:151},
+    {name:'Memory Cotton U-shaped Pillow', sku:'11148', price:650, stock:151},
+    {name:'Washing machine cover', sku:'11149', price:400, stock:151},
+    {name:'Carat Key Ring', sku:'11150', price:300, stock:10005},
+    {name:'Kitchen Watermelon Slicer', sku:'11151', price:499, stock:151},
+    {name:'Tactical waist Bag', sku:'11152', price:600, stock:150},
+    {name:'মিনি পকেট ক্যারাবিনার ফোল্ডিং নাইফ', sku:'11153', price:200, stock:150},
+    {name:'ক্যাট & ডগ গ্রুমিং হ্যামক', sku:'11154', price:400, stock:150},
+    {name:'Door bottom sealing strip', sku:'11212', price:310, stock:null},
+    {name:'Door bottom sealing strip', sku:'11213', price:380, stock:150},
+    {name:'30L Bag', sku:'11310', price:320, stock:150},
+    {name:'শিশুদের ইলেকট্রনিক লার্নিং মেশিন', sku:'11323', price:1400, stock:150},
+    {name:'রেফ্রিজারেটর ওয়াটারপ্রুফ প্যাড', sku:'11324', price:900, stock:150},
+    {name:'ফিশ শেপ মিনি নাইফ', sku:'11325', price:300, stock:150},
+    {name:'মাইক্রোফাইবার মহিলা বাথ ড্রেস টাওয়েল', sku:'11326', price:1400, stock:150},
+    {name:'মাল্টিফাংশনাল ফোল্ডিং কাঁচি', sku:'11327', price:250, stock:150},
+    {name:'বি-পিলার কার ওয়েদারস্ট্রিপস', sku:'11370', price:1000, stock:150},
+    {name:'মাল্টি-পারপাস স্ট্যাকেবল র‍্যাক', sku:'11371', price:700, stock:150},
+    {name:'ম্যানুফ্যাকচার এপিডিএম রাবার ওয়েদারস্ট্রিপ', sku:'11372', price:900, stock:150},
+    {name:'K-American Birthday Cake (Pink)', sku:'001', price:1890, stock:0}
   ];
-  var STATUSES = ['All','New','Confirmed','Shipped','Delivered','Returned','Cancelled'];
-  var STATUS_PILL = {New:'amber', Confirmed:'blue', Shipped:'purple', Delivered:'green', Returned:'red', Cancelled:'grey'};
-  var CHECK_PILL = {safe:'<span class="pill green">Safe</span>', risky:'<span class="pill red">Risky — take advance</span>', none:'<span class="pill grey">Not checked</span>'};
-  var COURIERS = ['Steadfast — Inside Dhaka','Steadfast — Outside Dhaka','Pathao — Inside Dhaka','Pathao — Outside Dhaka','RedX — Dhaka','Carrybee'];
-  var curFilter = 'All', curOrder = null;
+  var orderedItems = {};
+  function renderProducts(){
+    var g = document.getElementById('prodGrid');
+    if(!g) return;
+    g.innerHTML = PRODUCTS.map(function(pr, i){
+      var dis = (orderedItems[i] || (pr.stock === 0 && currentOrderMode !== 'preorder')) ? ' disabled' : '';
+      return '<button class="prod-card" data-name="' + pr.name.toLowerCase() + '" data-sku="' + pr.sku.toLowerCase() + '" onclick="addToOrder(' + i + ')"' + dis + '>'
+        + '<span class="pc-name">' + pr.name + '</span>'
+        + '<span class="muted-sm">SKU: ' + pr.sku + '</span>'
+        + '<span class="muted-sm">Price: ৳' + pr.price + ' · Stock: ' + (pr.stock === null ? '—' : pr.stock) + (pr.stock === 0 ? ' — Pre-order allowed' : '') + '</span>'
+        + '<span class="pc-fav">' + (pr.feat ? 'Remove from featured' : 'Mark as featured') + '</span></button>';
+    }).join('');
+  }
+  function prodSearch(){
+    var inputs = document.querySelectorAll('#page-new-order .card input[placeholder*="Type to Search"]');
+    var q1 = inputs[0] ? inputs[0].value.toLowerCase() : '';
+    var q2 = inputs[1] ? inputs[1].value.toLowerCase() : '';
+    document.querySelectorAll('.prod-card').forEach(function(c){
+      var okSku = !q1 || c.getAttribute('data-sku').indexOf(q1) > -1;
+      var okName = !q2 || c.getAttribute('data-name').indexOf(q2) > -1;
+      c.style.display = (okSku && okName) ? '' : 'none';
+    });
+  }
+  function addToOrder(i){
+    orderedItems[i] = { qty: 1, price: PRODUCTS[i].price };
+    renderOrdered(); renderProducts();
+  }
+  function removeFromOrder(i){ delete orderedItems[i]; renderOrdered(); renderProducts(); }
+  function ordQty(i, d){ orderedItems[i].qty = Math.max(1, orderedItems[i].qty + d); renderOrdered(); }
+  function ordPrice(i, d){ orderedItems[i].price = Math.max(0, orderedItems[i].price + d); renderOrdered(); }
+  function renderOrdered(){
+    var keys = Object.keys(orderedItems);
+    document.getElementById('ordCount').textContent = keys.length + ' item(s)';
+    document.getElementById('ordEmpty').style.display = keys.length ? 'none' : '';
+    document.getElementById('ordList').innerHTML = keys.map(function(k){
+      var pr = PRODUCTS[k], it = orderedItems[k];
+      return '<div class="ord-row"><span><b>' + pr.name + '</b><br><span class="muted-sm">SKU ' + pr.sku + ' · ৳' + pr.price + ' · Stock:' + (pr.stock === null ? '—' : pr.stock) + '</span></span>'
+        + '<span class="qty">Qty <button onclick="ordQty(' + k + ',-1)">−</button><b>' + it.qty + '</b><button onclick="ordQty(' + k + ',1)">+</button></span>'
+        + '<span class="qty">Price <button onclick="ordPrice(' + k + ',-10)">−</button><b>' + it.price + '</b><button onclick="ordPrice(' + k + ',10)">+</button></span>'
+        + '<b>Total ৳' + (it.qty * it.price).toFixed(2) + '</b>'
+        + '<button class="ctl-btn" onclick="removeFromOrder(' + k + ')">×</button></div>';
+    }).join('');
+    calcSummary();
+  }
+  function calcSummary(){
+    var items = 0;
+    Object.keys(orderedItems).forEach(function(k){ items += orderedItems[k].qty * orderedItems[k].price; });
+    var disc = parseInt((document.getElementById('calcDisc') || {}).value) || 0;
+    var del = parseInt((document.getElementById('calcDel') || {}).value) || 0;
+    var adv = parseInt((document.getElementById('calcAdv') || {}).value) || 0;
+    var grand = items - disc + del;
+    document.getElementById('sumItems').textContent = '৳' + items.toLocaleString('en-IN');
+    document.getElementById('sumDisc2').textContent = '৳' + disc.toLocaleString('en-IN');
+    document.getElementById('sumDel2').textContent = '৳' + del.toLocaleString('en-IN');
+    document.getElementById('sumGrand').textContent = '৳' + grand.toLocaleString('en-IN');
+    document.getElementById('sumAdv2').textContent = '৳' + adv.toLocaleString('en-IN');
+    document.getElementById('sumDue').textContent = '৳' + (grand - adv).toLocaleString('en-IN');
+  }
+  var currentOrderMode = 'approved';
+  function orderMode(btn, mode){
+    currentOrderMode = mode;
+    btn.parentElement.querySelectorAll('button').forEach(function(b){ b.classList.remove('on'); });
+    btn.classList.add('on');
+    document.getElementById('dmWrap').style.display = mode === 'manual' ? 'none' : '';
+    document.getElementById('dmHelp').style.display = mode === 'manual' ? '' : 'none';
+    document.getElementById('preReason').style.display = mode === 'preorder' ? '' : 'none';
+    document.getElementById('preDate').style.display = mode === 'preorder' ? '' : 'none';
+    document.getElementById('createOrderBtn').textContent = mode === 'manual' ? 'Create Order' : (mode === 'preorder' ? 'Create Pre-Order' : 'Create Approved Order');
+    renderProducts();
+  }
+  function popToggle(id){
+    var el = document.getElementById(id);
+    var show = el.style.display !== 'block';
+    document.querySelectorAll('.pop-panel').forEach(function(x){ x.style.display = 'none'; });
+    el.style.display = show ? 'block' : 'none';
+  }
+  renderProducts();
+  // Live Dhaka clock
+  
+  /* ===== Orders — merged list, shared detail page & flows ===== */
+  var ORDERS = [
+    {id:'OB286', when:'15 Nov, 10:42 am', extId:'1794551201', name:'M. Fahim', phone:'01712-445566', addr:'House 12, Road 5, Mirpur 10, Dhaka',
+     items:[{name:'Mentara Roll On Balm COMBO', sku:'MENT-COMBO', qty:1, price:539}], delivery:60, advance:0,
+     rate:{pct:89, d:8, t:9, rating:8}, check:'safe', status:'Pending', site:'Main', tag:true,
+     courier:'Steadfast — Inside Dhaka', tracking:''},
+    {id:'OB285', when:'15 Nov, 10:15 am', extId:'1794550987', name:'Khan Tanvir Islam', phone:'01788-221190', addr:'Sonadanga, Khulna',
+     items:[{name:'Pink Minnie Kids Plush Bag', sku:'11145', qty:1, price:300}], delivery:60, advance:100,
+     rate:{pct:40, d:2, t:5, rating:12}, check:'risky', status:'Pending', site:'Main', tag:false,
+     courier:'Pathao — Inside Dhaka', tracking:''},
+    {id:'OB284', when:'15 Nov, 9:48 am', extId:'1794550712', name:'Nozrul Islam', phone:'01923-778811', addr:'Board Bazar, Gazipur',
+     items:[{name:'Neela Pankh 2', sku:'NP-2', qty:2, price:350}], delivery:60, advance:0,
+     rate:null, check:'none', status:'Pending', site:'Alasil BD Demo', tag:false,
+     courier:'Steadfast — Outside Dhaka', tracking:''},
+    {id:'OB283', when:'15 Nov, 9:20 am', extId:'1794550330', name:'F.A. Rayhan', phone:'01812-334455', addr:'Dimla, Nilphamari',
+     items:[{name:'Kumkum Ikkat 1', sku:'KK-1', qty:1, price:699}], delivery:60, advance:0,
+     rate:{pct:98, d:65, t:66, rating:65}, check:'safe', status:'Confirmed', site:'Main', tag:false,
+     courier:'Steadfast — Outside Dhaka', tracking:''},
+    {id:'OB282', when:'15 Nov, 8:57 am', extId:'1794550118', name:'Anwar Hossain', phone:'01765-909090', addr:'Mohammadpur, Dhaka',
+     items:[{name:'Kumkum Ikkat 1', sku:'KK-1', qty:1, price:699}], delivery:60, advance:0,
+     rate:{pct:100, d:2, t:2, rating:2}, check:'safe', status:'Confirmed', site:'Main', tag:false,
+     courier:'Pathao — Inside Dhaka', tracking:''},
+    {id:'OB281', when:'14 Nov, 6:30 pm', extId:'1794498204', name:'Sharmin Akter', phone:'01678-445566', addr:'Uttara Sector 11, Dhaka',
+     items:[{name:'30L Bag 109', sku:'BAG-109', qty:1, price:320}], delivery:60, advance:0,
+     rate:{pct:100, d:5, t:5, rating:5}, check:'safe', status:'Shipped', site:'Alasil BD Demo', tag:false,
+     courier:'Steadfast — Inside Dhaka', tracking:'STF-88213'},
+    {id:'OB280', when:'14 Nov, 5:12 pm', extId:'1794497551', name:'Tanvir Ahmed', phone:'01555-667788', addr:'Chawkbazar, Chattogram',
+     items:[{name:'Mentara Roll On Balm COMBO', sku:'MENT-COMBO', qty:2, price:539}], delivery:60, advance:0,
+     rate:null, check:'none', status:'Shipped', site:'Main', tag:false,
+     courier:'Pathao — Outside Dhaka', tracking:'PTH-55190'},
+    {id:'OB279', when:'14 Nov, 3:05 pm', extId:'1794495902', name:'Rumana Parvin', phone:'01999-112233', addr:'Rajshahi Sadar, Rajshahi',
+     items:[{name:'Neela Pankh 2', sku:'NP-2', qty:1, price:350}], delivery:60, advance:0,
+     rate:{pct:100, d:4, t:4, rating:4}, check:'safe', status:'Delivered', site:'Main', tag:false,
+     courier:'Steadfast — Outside Dhaka', tracking:'STF-87702'},
+    {id:'OB278', when:'13 Nov, 7:44 pm', extId:'1794408240', name:'Imran Hossain', phone:'01877-665544', addr:'Kushtia Sadar, Kushtia',
+     items:[{name:'30L Bag 109', sku:'BAG-109', qty:1, price:320}], delivery:60, advance:0,
+     rate:{pct:33, d:1, t:3, rating:9}, check:'risky', status:'Returned', site:'Main', tag:false,
+     courier:'Pathao — Outside Dhaka', tracking:'PTH-54087'},
+    {id:'OB277', when:'13 Nov, 2:18 pm', extId:'1794389915', name:'Sadia Afrin', phone:'01733-998877', addr:'Sylhet Sadar, Sylhet',
+     items:[{name:'Pink Minnie Kids Plush Bag', sku:'11145', qty:1, price:300}], delivery:60, advance:0,
+     rate:null, check:'none', status:'Cancelled', site:'Alasil BD Demo', tag:false,
+     courier:'Steadfast — Outside Dhaka', tracking:''}
+  ];
+  var STATUSES = ['All','Pending','Confirmed','Shipped','Delivered','Returned','Cancelled'];
+  var STATUS_PILL = {Pending:'amber', Confirmed:'blue', Shipped:'purple', Delivered:'green', Returned:'red', Cancelled:'grey'};
+  var curFilter = 'All', curOrder = null, detailOrigin = 'list', detailQueue = null, lastNav = 'list';
+  var ICON_BTNS = "<span class=\"icon-btns\"><button class=\"mini-btn\" title=\"Call customer\"><svg width=\"12\" height=\"12\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z\"/></svg></button><button class=\"mini-btn\" title=\"Message customer on WhatsApp\"><svg width=\"12\" height=\"12\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z\"/></svg></button><button class=\"mini-btn\" title=\"Start PBX call\" disabled style=\"opacity:.4;\"><svg width=\"12\" height=\"12\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z\"/></svg></button><button class=\"mini-btn\" title=\"Copy customer details\"><svg width=\"12\" height=\"12\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"9\" y=\"9\" width=\"13\" height=\"13\" rx=\"2\"/><path d=\"M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1\"/></svg></button></span>";
+  var PBX_CELL = "<span style=\"display:inline-block;background:#F3F4F6;color:#64748B;border-radius:999px;padding:2px 9px;font-size:11.5px;font-weight:600;white-space:nowrap;\">No Call Center</span><br><a href=\"#\" style=\"white-space:nowrap;\" onclick=\"toast('PBX setup (UI prototype)');return false;\">Set up PBX \u2192</a>";
+  var TAG_CHIP = "<span style=\"display:inline-flex;align-items:center;gap:5px;background:#FCE7F3;color:#BE185D;border-radius:999px;padding:3px 9px;font-size:12px;font-weight:600;\">storola <span style=\"cursor:pointer;font-weight:700;\">\u00d7</span></span> <button class=\"mini-btn\" title=\"Add Tag\"><svg width=\"13\" height=\"13\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\"><path d=\"M12 5v14\"/><path d=\"M5 12h14\"/></svg></button>";
+  var ADD_TAG = "<button class=\"mini-btn\" title=\"Add Tag\"><svg width=\"13\" height=\"13\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\"><path d=\"M12 5v14\"/><path d=\"M5 12h14\"/></svg></button>";
+  var OPEN_SVG = "<svg width=\"12\" height=\"12\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6\"/><path d=\"M15 3h6v6\"/><path d=\"M10 14L21 3\"/></svg>";
 
   function money(n){ return '৳' + n.toLocaleString('en-IN'); }
   function subtotal(o){ return o.items.reduce(function(s,i){ return s + i.qty * i.price; }, 0); }
   function total(o){ return subtotal(o) + o.delivery; }
   function findOrder(id){ return ORDERS.filter(function(o){ return o.id === id; })[0]; }
+  function nextPending(){ return ORDERS.filter(function(o){ return o.status === 'Pending'; })[0] || null; }
+
+  function showView(name){
+    ['new-order','list','auto-pick','detail'].forEach(function(v){
+      document.getElementById('view-' + v).style.display = (v === name) ? 'block' : 'none';
+    });
+    if(name !== 'detail') lastNav = name;
+    document.querySelectorAll('.ord-sub').forEach(function(el){
+      el.classList.toggle('active', el.getAttribute('data-nav') === lastNav);
+    });
+    window.scrollTo(0, 0);
+  }
+
+  function ringHTML(o){
+    if(!o.rate){
+      return '<span style="display:inline-flex;align-items:center;gap:8px;"><svg width="28" height="28" viewBox="0 0 28 28"><circle cx="14" cy="14" r="11" fill="none" stroke="#E5E7EB" stroke-width="3.5"/><circle cx="14" cy="14" r="11" fill="none" stroke="#CBD5E1" stroke-width="3.5" stroke-linecap="round" stroke-dasharray="69.1" stroke-dashoffset="69.1" transform="rotate(-90 14 14)"/></svg><span style="font-size:12px;line-height:1.5;white-space:nowrap;"><span style="color:#94A3B8;font-weight:600;">Success: —</span><br>Order: 0/0<br><span style="color:#64748B;">Rating: —</span></span></span>';
+    }
+    var pct = o.rate.pct;
+    var color = pct >= 70 ? '#16A34A' : (pct >= 40 ? '#F59E0B' : '#EF4444');
+    var off = (69.1 * (1 - pct / 100)).toFixed(1);
+    return '<span style="display:inline-flex;align-items:center;gap:8px;"><svg width="28" height="28" viewBox="0 0 28 28"><circle cx="14" cy="14" r="11" fill="none" stroke="#E5E7EB" stroke-width="3.5"/><circle cx="14" cy="14" r="11" fill="none" stroke="' + color + '" stroke-width="3.5" stroke-linecap="round" stroke-dasharray="69.1" stroke-dashoffset="' + off + '" transform="rotate(-90 14 14)"/></svg><span style="font-size:12px;line-height:1.5;white-space:nowrap;"><span style="color:' + color + ';font-weight:600;">Success: ' + pct + '%</span><br>Order: ' + o.rate.d + '/' + o.rate.t + '<br><span style="color:#64748B;">Rating: ' + o.rate.rating + '</span></span></span>';
+  }
+  function verdictHTML(o){
+    if(o.check === 'safe') return '<span style="font-size:11.5px;font-weight:600;color:#16A34A;">Safe</span>';
+    if(o.check === 'risky') return '<span style="font-size:11.5px;font-weight:600;color:#DC2626;">Risky — take advance</span>';
+    return '<span style="font-size:11.5px;font-weight:600;color:#64748B;">Not checked</span>';
+  }
+
+  function rowHTML(o){
+    var items = o.items.map(function(i){
+      return '<span style="display:flex;gap:8px;align-items:flex-start;"><span style="display:inline-block;width:32px;height:32px;border-radius:6px;background:var(--active-bg);flex-shrink:0;"></span><a class="iname" href="#" style="color:#111827;text-decoration:none;font-weight:500;" onclick="openDetail(\'' + o.id + '\',\'list\');return false;">' + i.name + ' ' + i.qty + 'x ৳' + i.price + '</a></span>';
+    }).join('');
+    return '<tr data-status="' + o.status + '">'
+      + '<td><input type="checkbox"></td>'
+      + '<td><span style="white-space:nowrap;">' + o.when + '</span><br><span class="muted-sm">ID: ' + o.extId + '</span></td>'
+      + '<td>—</td>'
+      + '<td><b>' + o.phone + '</b> ' + ICON_BTNS + '<br>' + o.name + '<br><span class="muted-sm addr">' + o.addr + '</span></td>'
+      + '<td>' + items + '</td>'
+      + '<td><span style="display:inline-block;">' + ringHTML(o) + '<br>' + verdictHTML(o) + '</span></td>'
+      + '<td>' + (o.tag ? TAG_CHIP : ADD_TAG) + '</td>'
+      + '<td>' + o.site + '</td>'
+      + '<td><span class="pill ' + STATUS_PILL[o.status] + '">' + o.status + '</span></td>'
+      + '<td>' + PBX_CELL + '</td>'
+      + '<td>—</td>'
+      + '<td><button class="open-btn" onclick="openDetail(\'' + o.id + '\',\'list\')">Open ' + OPEN_SVG + '</button></td>'
+      + '</tr>';
+  }
 
   function renderTabs(){
     document.getElementById('ordTabs').innerHTML = STATUSES.map(function(s){
       var n = s === 'All' ? ORDERS.length : ORDERS.filter(function(o){ return o.status === s; }).length;
       return '<button class="' + (curFilter === s ? 'active' : '') + '" onclick="setFilter(\'' + s + '\')">' + s + ' <span class="cnt">' + n + '</span></button>';
     }).join('');
+    updateOpenNextBtn();
   }
   function setFilter(s){ curFilter = s; renderTabs(); renderTable(); }
+  function updateOpenNextBtn(){
+    var n = ORDERS.filter(function(o){ return o.status === 'Pending'; }).length;
+    document.getElementById('openNextBtn').textContent = 'Open Next Order (' + n + ')';
+  }
 
   function renderTable(){
     var q = (document.getElementById('ordSearch').value || '').toLowerCase();
@@ -695,101 +1056,65 @@
       if(q && (o.id + ' ' + o.name + ' ' + o.phone).toLowerCase().indexOf(q) === -1) return false;
       return true;
     });
-    document.getElementById('ordBody').innerHTML = rows.map(function(o){
-      var prod = o.items.map(function(i){ return i.name + ' <span class="muted-sm">×' + i.qty + '</span>'; }).join('<br>');
-      return '<tr>'
-        + '<td><span class="inv-link" onclick="openDetail(\'' + o.id + '\')">' + o.id + '</span><br><span class="muted-sm">' + o.when + '</span></td>'
-        + '<td><b>' + o.name + '</b><br><span class="muted-sm">' + o.phone + '</span></td>'
-        + '<td>' + prod + '</td>'
-        + '<td><b>' + money(total(o)) + '</b></td>'
-        + '<td>' + CHECK_PILL[o.check] + '</td>'
-        + '<td><span class="pill ' + STATUS_PILL[o.status] + '">' + o.status + '</span></td>'
-        + '<td><button class="open-btn" onclick="openDetail(\'' + o.id + '\')">Open <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14L21 3"/></svg></button></td>'
-        + '</tr>';
-    }).join('') || '<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:26px;">No orders found</td></tr>';
-    document.getElementById('ordPager').textContent = 'Showing ' + rows.length + ' of ' + ORDERS.length + ' orders';
+    document.getElementById('ordBody').innerHTML = rows.map(rowHTML).join('')
+      || '<tr><td colspan="12" style="text-align:center;color:var(--muted);padding:26px;">No orders found</td></tr>';
   }
 
-  function openNext(){
-    var n = ORDERS.filter(function(o){ return o.status === 'New'; })[0];
-    if(n) openDetail(n.id); else toast('No new orders waiting');
+  function openDetail(id, origin, queue){
+    var o = findOrder(id); if(!o) return;
+    curOrder = o; detailOrigin = origin || 'list'; detailQueue = queue || null;
+    document.getElementById('wodTitle').textContent = 'Web Order — ' + o.id;
+    document.getElementById('wodSub').textContent = o.when + ' · Source: Website';
+    var pill = document.getElementById('wodStatus');
+    pill.textContent = o.status; pill.className = 'pill ' + STATUS_PILL[o.status];
+    var ab = document.getElementById('wodApproveBtn');
+    if(o.status === 'Pending'){ ab.style.display = ''; ab.textContent = 'Approve Order (' + total(o).toLocaleString('en-IN') + '৳)'; }
+    else { ab.style.display = 'none'; }
+    document.getElementById('wodCustName').textContent = o.name;
+    document.getElementById('wodCustPhone').textContent = o.phone;
+    document.getElementById('wodCustAddr').textContent = o.addr;
+    document.getElementById('wodCustHist').textContent = o.rate ? (o.rate.t + ' orders · Success rate ' + o.rate.pct + '%') : 'New customer · Not checked';
+    document.getElementById('wodItemsTable').innerHTML =
+      '<tr><th>Product</th><th>Qty</th><th>Price</th><th>Total</th></tr>'
+      + o.items.map(function(i){ return '<tr><td>' + i.name + ' <span class="muted-sm">(' + i.sku + ')</span></td><td>' + i.qty + '</td><td>' + money(i.price) + '</td><td>' + money(i.qty * i.price) + '</td></tr>'; }).join('');
+    document.getElementById('wodSubTotal').textContent = money(subtotal(o));
+    document.getElementById('wodDelCharge').textContent = money(o.delivery);
+    document.getElementById('wodDiscount').textContent = '৳0';
+    document.getElementById('wodTotal').textContent = money(total(o));
+    var itemCount = o.items.reduce(function(s,i){ return s + i.qty; }, 0);
+    document.getElementById('apMdlText').textContent = o.id + ' will move to Approved Orders. Stock for ' + itemCount + ' item' + (itemCount === 1 ? '' : 's') + ' will be reserved, and the order becomes ready to ship.';
+    document.getElementById('apMdlCustomer').textContent = o.name;
+    document.getElementById('apMdlTotal').textContent = money(total(o));
+    showView('detail');
   }
 
-  function openDetail(id){
-    var o = findOrder(id); if(!o) return; curOrder = o;
-    document.getElementById('view-list').style.display = 'none';
-    document.getElementById('view-detail').style.display = 'block';
-    window.scrollTo(0, 0);
-    document.getElementById('dTitle').textContent = 'Order — ' + o.id;
-    document.getElementById('dSub').textContent = o.when + ' · Source: Website';
-    document.getElementById('dStatus').innerHTML = '<span class="pill ' + STATUS_PILL[o.status] + '">' + o.status + '</span>';
-    document.getElementById('dCustomer').innerHTML =
-        '<div class="sum-row"><span>Name</span><b>' + o.name + '</b></div>'
-      + '<div class="sum-row"><span>Phone</span><b>' + o.phone + '</b></div>'
-      + '<div class="sum-row"><span>Address</span><b>' + o.addr + '</b></div>';
-    document.getElementById('dVerdict').innerHTML =
-      '<div class="vb ' + o.check + '"><b>Courier check:</b> ' + CHECK_PILL[o.check] + '<br>' + o.checkNote + '</div>';
-    document.getElementById('dItems').innerHTML =
-      '<table><tr><th>Product</th><th>Qty</th><th>Price</th><th>Total</th></tr>'
-      + o.items.map(function(i){ return '<tr><td>' + i.name + ' <span class="muted-sm">(' + i.sku + ')</span></td><td>' + i.qty + '</td><td>' + money(i.price) + '</td><td>' + money(i.qty * i.price) + '</td></tr>'; }).join('')
-      + '</table>';
-    var t = '<div class="sum-row"><span>Subtotal</span><b>' + money(subtotal(o)) + '</b></div>'
-          + '<div class="sum-row"><span>Delivery Charge</span><b>' + money(o.delivery) + '</b></div>';
-    if(o.advance > 0) t += '<div class="sum-row"><span>Advance Paid</span><b style="color:#009966;">−' + money(o.advance) + '</b></div>';
-    t += '<div class="sum-row total"><span>Total</span><b>' + money(total(o)) + '</b></div>';
-    if(o.advance > 0) t += '<div class="sum-row"><span>Due on Delivery</span><b>' + money(total(o) - o.advance) + '</b></div>';
-    document.getElementById('dTotals').innerHTML = t;
-    renderAction(o);
-  }
-
-  function renderAction(o){
-    var box = document.getElementById('dAction'), h = '';
-    if(o.status === 'New'){
-      h = '<label class="fld-l" style="margin-top:12px;">Courier<select class="fld" id="dCourier">'
-        + COURIERS.map(function(cn){ return '<option' + (cn === o.courier ? ' selected' : '') + '>' + cn + '</option>'; }).join('')
-        + '</select></label>'
-        + (o.autoNote ? '<p class="muted-sm" style="margin-top:8px;">' + o.autoNote + '</p>' : '')
-        + '<button class="btn-primary big-action" onclick="confirmOrder()">Confirm Order</button>';
-    } else if(o.status === 'Confirmed'){
-      h = '<div class="sum-row" style="margin-top:6px;"><span>Courier</span><b>' + o.courier + '</b></div>'
-        + '<button class="btn-primary big-action" onclick="sendOrder()">Send to Courier</button>';
-    } else if(o.status === 'Shipped'){
-      h = '<div class="sum-row" style="margin-top:6px;"><span>Courier</span><b>' + o.courier + '</b></div>'
-        + '<div class="sum-row"><span>Tracking ID</span><b>' + o.tracking + '</b></div>'
-        + '<div class="sum-row"><span>Status</span><span class="pill blue">In transit</span></div>';
-    } else if(o.status === 'Delivered'){
-      h = '<div class="sum-row" style="margin-top:6px;"><span>Courier</span><b>' + o.courier + '</b></div>'
-        + '<div class="sum-row"><span>Tracking ID</span><b>' + o.tracking + '</b></div>'
-        + '<div class="sum-row"><span>Status</span><span class="pill green">Delivered</span></div>';
-    } else if(o.status === 'Returned'){
-      h = '<div class="sum-row" style="margin-top:6px;"><span>Courier</span><b>' + o.courier + '</b></div>'
-        + '<div class="sum-row"><span>Tracking ID</span><b>' + o.tracking + '</b></div>'
-        + '<div class="sum-row"><span>Status</span><span class="pill red">Returned to seller</span></div>';
-    } else {
-      h = '<div class="sum-row" style="margin-top:6px;"><span>Status</span><span class="pill grey">Cancelled</span></div>'
-        + '<p class="muted-sm" style="margin-top:8px;">This order was cancelled. No action needed.</p>';
-    }
-    box.innerHTML = h;
-  }
-
-  function confirmOrder(){
-    var sel = document.getElementById('dCourier');
-    if(sel) curOrder.courier = sel.value;
+  function confirmApprove(){
+    closeModal('approveModal');
+    if(!curOrder) return;
     curOrder.status = 'Confirmed';
-    toast('Order ' + curOrder.id + ' confirmed');
-    backToList();
-  }
-  function sendOrder(){
-    var pfx = curOrder.courier.indexOf('Pathao') === 0 ? 'PTH' : curOrder.courier.indexOf('RedX') === 0 ? 'RDX' : curOrder.courier.indexOf('Carrybee') === 0 ? 'CRB' : 'STF';
-    curOrder.tracking = pfx + '-' + Math.floor(10000 + Math.random() * 90000);
-    curOrder.status = 'Shipped';
-    toast('Sent to courier — tracking ' + curOrder.tracking);
-    backToList();
-  }
-  function backToList(){
-    document.getElementById('view-detail').style.display = 'none';
-    document.getElementById('view-list').style.display = 'block';
+    toast('Order ' + curOrder.id + ' approved');
     renderTabs(); renderTable();
+    if(detailOrigin === 'autopick'){
+      var sw = document.getElementById('apAutoSwitch');
+      var on = sw && sw.classList.contains('on');
+      var n = on ? nextPending() : null;
+      if(n){ openDetail(n.id, 'autopick', detailQueue); } else { showView('auto-pick'); }
+    } else {
+      var n2 = nextPending();
+      if(n2){ openDetail(n2.id, 'list'); } else { showView('list'); }
+    }
+  }
+
+  function openNextFromList(){
+    var n = nextPending();
+    if(n){ openDetail(n.id, 'list'); } else { toast('No pending orders waiting'); }
+  }
+  function apOpenNext(queue){
+    var n = nextPending();
+    if(n){ openDetail(n.id, 'autopick', queue); } else { toast('No pending orders waiting in this queue'); }
+  }
+  function goBackFromDetail(){
+    showView(detailOrigin === 'autopick' ? 'auto-pick' : 'list');
   }
 
   renderTabs(); renderTable();
