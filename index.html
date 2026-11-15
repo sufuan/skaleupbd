@@ -227,6 +227,14 @@
   .row-menu a.danger{color:var(--red-tx);}
   .modal-overlay{position:fixed;inset:0;background:rgba(17,24,39,.5);display:flex;align-items:center;justify-content:center;z-index:200;padding:18px;}
   .modal-box{background:#fff;border-radius:18px;padding:26px;width:100%;max-width:440px;max-height:88vh;overflow:auto;box-shadow:0 24px 60px rgba(30,10,50,.25);}
+  @media print{
+    body *{visibility:hidden !important;}
+    #invoiceModal[style*="flex"], #invoiceModal[style*="flex"] *{visibility:visible !important;}
+    #invoiceModal[style*="flex"]{position:absolute !important;left:0 !important;top:0 !important;background:none !important;padding:0 !important;}
+    #invoiceModal[style*="flex"] .modal-box{box-shadow:none !important;max-height:none !important;overflow:visible !important;max-width:100% !important;}
+    #invoiceModal[style*="flex"] .inv-actions{display:none !important;}
+  }
+
   .switch{width:42px;height:23px;border-radius:99px;background:var(--toggle-off);border:1px solid #c4bce0;cursor:pointer;position:relative;flex-shrink:0;}
   .switch::after{content:"";position:absolute;top:3px;left:3px;width:17px;height:17px;border-radius:50%;background:#fff;transition:left .15s;}
   .switch.on{background:var(--focus);}
@@ -901,7 +909,7 @@
         <div class="view-tabs" id="ordTabs"></div>
 
         <div class="card" style="padding:6px 10px 10px;">
-          <div style="overflow-x:auto;"><table id="woTable" style="width:1186px;"><colgroup><col style="width:32px"><col style="width:114px"><col style="width:52px"><col style="width:210px"><col style="width:108px"><col style="width:132px"><col style="width:94px"><col style="width:56px"><col style="width:94px"><col style="width:110px"><col style="width:92px"><col style="width:92px"></colgroup><tr><th><input type="checkbox"></th><th>Created At <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 9 5-5 5 5"/><path d="m7 15 5 5 5-5"/></svg></th><th>Auto Call</th><th>Customer</th><th>Order Items</th><th>Success Rate <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 9 5-5 5 5"/><path d="m7 15 5 5 5-5"/></svg></th><th>Tags</th><th>Site</th><th>Status</th><th>PBX Calls</th><th>Processed By</th><th>Actions</th></tr>
+          <div style="overflow-x:auto;"><table id="woTable" style="width:1222px;"><colgroup><col style="width:32px"><col style="width:114px"><col style="width:52px"><col style="width:210px"><col style="width:108px"><col style="width:132px"><col style="width:94px"><col style="width:56px"><col style="width:94px"><col style="width:110px"><col style="width:92px"><col style="width:128px"></colgroup><tr><th><input type="checkbox"></th><th>Invoice</th><th>Auto Call</th><th>Customer</th><th>Order Items</th><th>Success Rate <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 9 5-5 5 5"/><path d="m7 15 5 5 5-5"/></svg></th><th>Tags</th><th>Site</th><th>Status</th><th>PBX Calls</th><th>Processed By</th><th>Actions</th></tr>
             <tbody id="ordBody"></tbody>
           </table></div>
           <div style="display:flex;align-items:center;gap:14px;margin-top:14px;flex-wrap:wrap;"><span style="font-size:13.5px;color:#64748B;">Page 1</span><label style="font-size:13.5px;color:#64748B;display:inline-flex;align-items:center;gap:7px;">Rows per page <select style="height:26px;width:55px;background:#F8F7FB;border:1px solid #E8E3EE;border-radius:6px;font-size:13px;padding:0 4px;"><option>20</option><option>50</option><option>100</option></select></label><span style="margin-left:auto;display:flex;gap:14px;align-items:center;font-size:13.5px;"><b style="color:#111827;">Page 1</b><span style="color:#9CA3AF;">‹ Previous</span><button style="border:none;background:none;font-size:13.5px;color:#111827;cursor:pointer;padding:0;">Next ›</button></span></div>
@@ -1396,6 +1404,17 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="invoiceModal" style="display:none;">
+  <div class="modal-box" style="max-width:640px;">
+    <div id="invoiceSheet"></div>
+    <div class="inv-actions" style="display:flex;gap:10px;margin-top:18px;justify-content:flex-end;">
+      <button class="ctl-btn" onclick="closeModal('invoiceModal')">Close</button>
+      <button class="btn-primary" onclick="window.print()">Print / Download</button>
+    </div>
+  </div>
+</div>
+
+
 <div class="modal-overlay" id="orderModal" style="display:none;">
   <div class="modal-box" style="max-width:640px;">
     <div style="display:flex;align-items:center;"><h3 style="font-size:17px;">Order Details — OB266</h3><button class="icon-btn" style="margin-left:auto;" onclick="closeModal('orderModal')">✕</button></div>
@@ -1724,6 +1743,32 @@
   var TAG_CHIP = "<span style=\"display:inline-flex;align-items:center;gap:5px;background:#FCE7F3;color:#BE185D;border-radius:999px;padding:3px 9px;font-size:12px;font-weight:600;\">storola <span style=\"cursor:pointer;font-weight:700;\">\u00d7</span></span> <button class=\"mini-btn\" title=\"Add Tag\"><svg width=\"13\" height=\"13\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\"><path d=\"M12 5v14\"/><path d=\"M5 12h14\"/></svg></button>";
   var ADD_TAG = "<button class=\"mini-btn\" title=\"Add Tag\"><svg width=\"13\" height=\"13\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\"><path d=\"M12 5v14\"/><path d=\"M5 12h14\"/></svg></button>";
   var OPEN_SVG = "<svg width=\"12\" height=\"12\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6\"/><path d=\"M15 3h6v6\"/><path d=\"M10 14L21 3\"/></svg>";
+  var DL_SVG = "<svg width=\"13\" height=\"13\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4\"/><polyline points=\"7 10 12 15 17 10\"/><line x1=\"12\" y1=\"15\" x2=\"12\" y2=\"3\"/></svg>";
+  function openInvoice(id){
+    var o = findOrder(id); if(!o) return;
+    var rows = o.items.map(function(i){
+      return '<tr><td style="padding:8px;border-bottom:1px solid #F1EDF5;">' + i.name + ' <span style="color:#94A3B8;">(' + i.sku + ')</span></td><td style="padding:8px;border-bottom:1px solid #F1EDF5;text-align:center;">' + i.qty + '</td><td style="padding:8px;border-bottom:1px solid #F1EDF5;text-align:right;">' + money(i.price) + '</td><td style="padding:8px;border-bottom:1px solid #F1EDF5;text-align:right;">' + money(i.qty * i.price) + '</td></tr>';
+    }).join('');
+    document.getElementById('invoiceSheet').innerHTML =
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;border-bottom:2px solid #411550;padding-bottom:14px;">'
+      + '<div><div style="font-size:20px;font-weight:800;color:#411550;letter-spacing:.01em;">ONLINE BUSINESS</div><div style="font-size:12px;color:#64748B;margin-top:2px;">Workspace \u00b7 SkaleUp BD</div></div>'
+      + '<div style="text-align:right;"><div style="font-size:16px;font-weight:800;letter-spacing:.14em;">INVOICE</div>'
+      + '<div style="font-size:12.5px;color:#64748B;margin-top:4px;">Invoice No: <b style="color:#111827;">' + o.id + '</b></div>'
+      + '<div style="font-size:12.5px;color:#64748B;">Date: ' + o.when + '</div>'
+      + '<div style="margin-top:6px;"><span class="pill ' + STATUS_PILL[o.status] + '">' + o.status + '</span></div></div></div>'
+      + '<div style="margin-top:16px;font-size:13.5px;line-height:1.55;"><div style="font-weight:700;font-size:12px;letter-spacing:.08em;color:#64748B;">BILL TO</div>'
+      + '<b>' + o.name + '</b><br>' + o.phone + '<br><span style="color:#64748B;">' + o.addr + '</span></div>'
+      + '<table style="width:100%;border-collapse:collapse;font-size:13.5px;margin-top:14px;"><tr style="background:#F8F7FB;"><th style="text-align:left;padding:8px;border-bottom:1px solid #E8E3EE;">Product</th><th style="padding:8px;border-bottom:1px solid #E8E3EE;">Qty</th><th style="text-align:right;padding:8px;border-bottom:1px solid #E8E3EE;">Price</th><th style="text-align:right;padding:8px;border-bottom:1px solid #E8E3EE;">Total</th></tr>'
+      + rows + '</table>'
+      + '<div style="margin-left:auto;width:240px;margin-top:12px;font-size:13.5px;">'
+      + '<div class="sum-row"><span>Subtotal</span><b>' + money(subtotal(o)) + '</b></div>'
+      + '<div class="sum-row"><span>Delivery Charge</span><b>' + money(o.delivery) + '</b></div>'
+      + '<div class="sum-row"><span>Discount</span><b>\u09f30</b></div>'
+      + '<div class="sum-row total"><span>Grand Total</span><b>' + money(total(o)) + '</b></div></div>'
+      + '<div style="margin-top:20px;font-size:11.5px;color:#94A3B8;">Order status at download: ' + o.status + ' \u00b7 Thank you for shopping with us.</div>';
+    openModal('invoiceModal');
+  }
+
 
   function money(n){ return '৳' + n.toLocaleString('en-IN'); }
   function subtotal(o){ return o.items.reduce(function(s,i){ return s + i.qty * i.price; }, 0); }
@@ -1753,7 +1798,7 @@
     }).join('');
     return '<tr data-status="' + o.status + '">'
       + '<td><input type="checkbox"></td>'
-      + '<td><span style="white-space:nowrap;">' + o.when + '</span><br><span class="muted-sm">ID: ' + o.extId + '</span></td>'
+      + '<td><b style="white-space:nowrap;font-size:13px;">' + o.id + '</b><br><span class="muted-sm" style="white-space:nowrap;">' + o.when + '</span></td>'
       + '<td>—</td>'
       + '<td><b>' + o.phone + '</b> ' + ICON_BTNS + '<br>' + o.name + '<br><span class="muted-sm addr">' + o.addr + '</span></td>'
       + '<td>' + items + '</td>'
@@ -1763,7 +1808,7 @@
       + '<td><span class="pill ' + STATUS_PILL[o.status] + '">' + o.status + '</span></td>'
       + '<td>' + PBX_CELL + '</td>'
       + '<td>—</td>'
-      + '<td><button class="open-btn" onclick="openDetail(\'' + o.id + '\',\'list\')">Open ' + OPEN_SVG + '</button></td>'
+      + '<td><span style="display:inline-flex;gap:6px;align-items:center;"><button class="mini-btn" title="Download Invoice" onclick="openInvoice(\'' + o.id + '\')">' + DL_SVG + '</button><button class="open-btn" onclick="openDetail(\'' + o.id + '\',\'list\')">Open ' + OPEN_SVG + '</button></span></td>'
       + '</tr>';
   }
 
