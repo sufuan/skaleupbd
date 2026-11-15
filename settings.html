@@ -271,7 +271,7 @@
   .lb-lbl{font-size:11.5px;font-weight:600;color:#64748B;line-height:1.3;}
   .lb-num{font-size:30px;font-weight:700;color:#111827;line-height:1.1;}
 
-  /* Page 2 — Web Order List (measured spec) */
+  /* Page 2 — Order List (measured spec) */
   .pill-row{display:flex;gap:15px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;border-bottom:1px solid #E5E7EB;margin-bottom:12px;}
   .wo-pill{background:transparent;border:none;border-bottom:2px solid transparent;margin-bottom:-1px;padding:9px 1px;font-size:14px;font-weight:500;color:#64748B;cursor:pointer;display:inline-flex;align-items:center;gap:7px;white-space:nowrap;border-radius:0;}
   .wo-pill b{background:#F1F5F9;color:#64748B;border-radius:999px;padding:0 7px;font-size:11.5px;font-weight:600;min-width:24px;height:18px;display:inline-flex;align-items:center;justify-content:center;}
@@ -316,7 +316,7 @@
   #page-new-order .prod-card::before{content:'No Image';position:absolute;left:4px;top:50%;transform:translateY(-50%);width:85px;height:85px;border:1px solid #EEF2F7;border-radius:8px;color:#94A3B8;font-size:11px;display:flex;align-items:center;justify-content:center;background:#F8F7FB;}
   #page-new-order .prod-card::after{content:'';position:absolute;right:8px;top:16px;width:20px;height:20px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23FFB900' stroke='none' stroke-width='2'%3E%3Cpolygon points='12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26'/%3E%3C/svg%3E") no-repeat center/contain;}
   #page-new-order .pc-fav{font-size:11px;color:#94A3B8;}
-  /* Approved Orders — live tab strip is 48px in a rounded-lg card */
+  /* Order List — live tab strip is 48px in a rounded-lg card */
   #aoPills{gap:8px;}
   #aoPills .wo-pill{padding:13px 1px 11px;}
   #page-approved-orders > .card{border-radius:8px;}
@@ -395,19 +395,18 @@
       <div class="nav-item"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg></span> Search</div>
 
       <div class="group-label">Operations</div>
-      <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></span> Web Orders <span class="chev">›</span></div>
+      <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><path d="M21 8l-9-5-9 5v8l9 5 9-5V8z"/><path d="M3 8l9 5 9-5"/><path d="M12 13v8"/></svg></span> Orders <span class="chev">›</span></div>
       <div class="sub-items">
-        <div class="nav-item" onclick="location.href='index.html#new-order'">New Order</div><div class="nav-item" onclick="location.href='index.html#web-orders'">Web Order List</div>
+        <div class="nav-item" onclick="location.href='index.html#new-order'">New Order</div><div class="nav-item" onclick="location.href='index.html#order-list'">Order List</div>
         <div class="nav-item" onclick="location.href='index.html#auto-pick'">Auto Pick Orders</div><div class="nav-item" onclick="location.href='index.html#auto-call'">Auto Call Center</div>
-        <div class="nav-item" onclick="location.href='index.html#block-list'">Order Block List</div>
+        <div class="nav-item" onclick="location.href='index.html#block-list'">Order Block List</div><div class="nav-item" onclick="location.href='index.html#preorders'">Preorders</div>
+        <div class="nav-item" onclick="location.href='index.html#orders-dashboard'">Orders Dashboard</div>
       </div>
-      <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><circle cx="12" cy="12" r="10"/><polyline points="8 12.5 11 15.5 16 9.5"/></svg></span> Approved Orders <span class="chev">›</span></div>
+      <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.62l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/></svg></span> Delivery <span class="chev">›</span></div>
       <div class="sub-items">
-        <div class="nav-item" onclick="location.href='index.html#order-list'">Order List</div><div class="nav-item" onclick="location.href='index.html#orders-dashboard'">Orders Dashboard</div>
-        <div class="nav-item" onclick="location.href='index.html#preorders'">Preorders</div><div class="nav-item" onclick="location.href='index.html#super-edit'">Super Edit</div>
+        <div class="nav-item" onclick="location.href='index.html#ready-to-ship'">Ready to Ship <span style="float:right;background:#411550;color:#fff;border-radius:99px;padding:0 8px;font-size:11.5px;font-weight:700;">2</span></div><div class="nav-item" onclick="location.href='index.html#courier-mgmt'">Courier Management</div>
         <div class="nav-item" onclick="location.href='index.html#scan-update'">Scan To Update</div><div class="nav-item" onclick="location.href='index.html#courier-invoice'">Courier Invoice Upload</div>
-        <div class="nav-item" onclick="location.href='index.html#courier-mgmt'">Courier Management</div>
-        <div class="nav-item" onclick="location.href='index.html#ready-to-ship'">Ready to Ship</div><div class="nav-item" onclick="location.href='index.html#settlement'">Courier Ledger</div>
+        <div class="nav-item" onclick="location.href='index.html#settlement'">Courier Ledger</div>
       </div>
       <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><path d="M21 8l-9-5-9 5v8l9 5 9-5V8z"/><path d="M3 8l9 5 9-5"/><path d="M12 13v8"/></svg></span> Inventory <span class="chev">›</span></div>
       <div class="sub-items">
@@ -513,8 +512,7 @@
       <button class="icon-btn" onclick="collapseSidebar()" title="Collapse sidebar"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg></button>
       <span class="qlink" onclick="openSearch()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg> Search</span>
       <span class="qlink" onclick="location.href='index.html#new-order'"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><circle cx="9" cy="21" r="1.6"/><circle cx="19" cy="21" r="1.6"/><path d="M2.5 3h2l2.6 12.5a2 2 0 0 0 2 1.5h8.7a2 2 0 0 0 2-1.6L21.5 7H6"/></svg> New Order</span>
-      <span class="qlink" onclick="location.href='index.html#web-orders'"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg> Web Order List</span>
-      <span class="qlink" onclick="location.href='index.html#order-list'"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg> Order List</span>
+            <span class="qlink" onclick="location.href='index.html#order-list'"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg> Order List</span>
       <span class="qlink" onclick="alert('Send Message (UI prototype)')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><rect x="2.5" y="5" width="19" height="14" rx="2"/><polyline points="3 7 12 13 21 7"/></svg>️ Send Message</span>
       <div class="spacer"></div>
       <button class="bn-btn" onclick="toggleLang(this)">BN · ভাষা বদলান</button>
@@ -821,7 +819,7 @@
 <div class="modal-overlay" id="approveModal" style="display:none;">
   <div class="modal-box">
     <h3 style="font-size:17px;">Approve this order?</h3>
-    <p style="color:var(--muted);font-size:13.5px;margin:10px 0;">OB273 will move to Approved Orders. Stock for 1 item will be reserved, and the order becomes ready to ship.</p>
+    <p style="color:var(--muted);font-size:13.5px;margin:10px 0;">OB273 will be confirmed. Stock for 1 item will be reserved, and the order moves to Ready to Ship.</p>
     <div class="sum-row"><span>Customer</span><b>M. Fahim</b></div>
     <div class="sum-row"><span>Total (COD)</span><b>৳599</b></div>
     <div style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end;">
@@ -1012,7 +1010,7 @@
     if(e.key === 'Escape'){ closeSearch(); }
   });
   // Quick Search (Ctrl+K)
-  var menuNames = ['Dashboard','Search Orders','New Order','Web Order List','Auto Pick Orders','Auto Call Center','Order Block List','Order List','Orders Dashboard','Preorders','Super Edit','Scan To Update','Courier Invoice Upload','Courier Management','Inventory Dashboard','Products','Add Product','Stock Ledger','Branches','Warranty','Stock Transfer','Low Stock Alert','Inbox','Comments','Auto Replies','AI Reply','Messages Report','Purchase Dashboard','Purchase List','New Purchase','Purchase Receive','Supplier Ledger','Suppliers','Ask for Quotation','Task Board','Agent Cockpit','Follow-up Management','My Follow-ups','Follow-up Performance','Call Center Dashboard','Call Center Reports','Contacts','My Work','Work Control','Ads Dashboard','Meta Ads','Record Ad Spend','Ad Profit Analysis','TikTok Ads','Google Ads','Automation','Email Marketing','SMS Marketing','Voice Marketing','Campaign List','Templates','Customer List','Bulk Upload','HR Dashboard','Attendance','Attendance Report','Shift Management','Departments & SOP','User & Role','Finance Dashboard','Accounts & Bank','Income & Expense','Courier Settlement','Cash Flow','Asset Management','Profit & Loss','Order Report','Courier Report','Product Report','Employee Report','Call Center Report','Customer Report','Business Reports','My Limits','Business Profile','Merchant Profile','Device Approvals','Website Integration','Courier Integration','App Integration','Messaging Channels','VoiceDrive PBX','Order Sources','Deletion Logs','Advanced Settings','Help Center','Updates','My Bug Reports','My Feedback','System Status'];
+  var menuNames = ['Dashboard','Search Orders','New Order','Auto Pick Orders','Auto Call Center','Order Block List','Order List','Orders Dashboard','Preorders','Ready to Ship','Scan To Update','Courier Invoice Upload','Courier Management','Inventory Dashboard','Products','Add Product','Stock Ledger','Branches','Warranty','Stock Transfer','Low Stock Alert','Inbox','Comments','Auto Replies','AI Reply','Messages Report','Purchase Dashboard','Purchase List','New Purchase','Purchase Receive','Supplier Ledger','Suppliers','Ask for Quotation','Task Board','Agent Cockpit','Follow-up Management','My Follow-ups','Follow-up Performance','Call Center Dashboard','Call Center Reports','Contacts','My Work','Work Control','Ads Dashboard','Meta Ads','Record Ad Spend','Ad Profit Analysis','TikTok Ads','Google Ads','Automation','Email Marketing','SMS Marketing','Voice Marketing','Campaign List','Templates','Customer List','Bulk Upload','HR Dashboard','Attendance','Attendance Report','Shift Management','Departments & SOP','User & Role','Finance Dashboard','Accounts & Bank','Income & Expense','Courier Ledger','Cash Flow','Asset Management','Profit & Loss','Order Report','Courier Report','Product Report','Employee Report','Call Center Report','Customer Report','Business Reports','My Limits','Business Profile','Merchant Profile','Device Approvals','Website Integration','Courier Integration','App Integration','Messaging Channels','VoiceDrive PBX','Order Sources','Deletion Logs','Advanced Settings','Help Center','Updates','My Bug Reports','My Feedback','System Status'];
   function openSearch(){
     document.getElementById('searchModal').style.display = 'block';
     filterSearch('');
@@ -1104,7 +1102,7 @@
     closeModal('approveModal');
     var s = document.getElementById('wodStatus');
     if(s){ s.textContent = 'Approved'; s.className = 'pill green'; }
-    toast('Order OB273 approved — moved to Approved Orders');
+    toast('Order OB273 confirmed — moved to Ready to Ship');
   }
   // Web order pill filter
   document.querySelectorAll('#woPills .wo-pill').forEach(function(b){
