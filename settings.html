@@ -1001,7 +1001,7 @@
     document.querySelectorAll('.sidebar .nav-item .ico').forEach(function(n){ n.style.display=''; });
   }
   // Dashboard view tabs
-  document.getElementById('viewTabs').addEventListener('click', function(e){
+  if(document.getElementById('viewTabs')) document.getElementById('viewTabs').addEventListener('click', function(e){
     if(e.target.tagName !== 'BUTTON') return;
     this.querySelectorAll('button').forEach(function(b){ b.classList.remove('active'); });
     e.target.classList.add('active');
@@ -1352,7 +1352,7 @@
   }
   tickClock(); setInterval(tickClock, 1000);
 </script>
-<script>(function(){var m={business:['grp-business','set-business'],merchant:['grp-business','set-merchant'],devices:['grp-security','set-devices'],website:['grp-api','set-website'],courier:['grp-api','set-courier'],app:['grp-api','set-app'],channels:['grp-api','set-channels'],pbx:['grp-calls','set-pbx'],templates:['grp-calls','set-templates'],sources:['grp-calls','set-sources'],deletion:['grp-security','set-deletion'],advanced:['grp-security','set-advanced']};var h=location.hash.replace('#','');if(m[h])openGroup(null,m[h][0],m[h][1]);})();</script>
+
 
 <div class="modal-overlay" id="courierModal" style="display:none;">
   <div class="modal-box">
@@ -1479,5 +1479,6 @@ document.addEventListener('click', function(e){
   if(w && !w.contains(e.target)){ var b = document.getElementById('dmResults'); if(b) b.style.display = 'none'; }
 });
 </script>
+<script>(function(){var m={business:['grp-business','set-business'],merchant:['grp-business','set-merchant'],devices:['grp-security','set-devices'],website:['grp-api','set-website'],courier:['grp-api','set-courier'],app:['grp-api','set-app'],channels:['grp-api','set-channels'],pbx:['grp-calls','set-pbx'],templates:['grp-calls','set-templates'],sources:['grp-calls','set-sources'],deletion:['grp-security','set-deletion'],advanced:['grp-security','set-advanced']};var h=location.hash.replace('#','');if(m[h])openGroup(null,m[h][0],m[h][1]);})();</script>
 </body>
 </html>
