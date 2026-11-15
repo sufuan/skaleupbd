@@ -391,22 +391,22 @@
     <div class="quicksearch"><span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg></span> Quick Search <kbd>CTRL K</kbd></div>
 
     <nav class="side-nav">
-      <div class="nav-item" onclick="location.href='index.html'"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></span> Dashboard</div>
+      <div class="nav-item active" onclick="location.href='index.html'"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></span> Dashboard</div>
       <div class="nav-item"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg></span> Search</div>
 
       <div class="group-label">Operations</div>
-      <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></span> Web Orders <span class="chev">›</span></div>
+      <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><path d="M21 8l-9-5-9 5v8l9 5 9-5V8z"/><path d="M3 8l9 5 9-5"/><path d="M12 13v8"/></svg></span> Orders <span class="chev">›</span></div>
       <div class="sub-items">
-        <div class="nav-item" onclick="location.href='orders.html#new-order'">New Order</div><div class="nav-item" onclick="location.href='orders.html#web-orders'">Web Order List</div>
-        <div class="nav-item" onclick="location.href='orders.html#auto-pick'">Auto Pick Orders</div><div class="nav-item" onclick="location.href='orders.html#auto-call'">Auto Call Center</div>
-        <div class="nav-item" onclick="location.href='orders.html#block-list'">Order Block List</div>
+        <div class="nav-item" onclick="showPage('page-new-order')">New Order</div><div class="nav-item" onclick="openOrderList('All')">Order List</div>
+        <div class="nav-item" onclick="showPage('page-auto-pick')">Auto Pick Orders</div><div class="nav-item" onclick="showPage('page-auto-call')">Auto Call Center</div>
+        <div class="nav-item" onclick="showPage('page-block-list')">Order Block List</div><div class="nav-item" onclick="showPage('page-preorders')">Preorders</div>
+        <div class="nav-item" onclick="showPage('page-orders-dashboard')">Orders Dashboard</div>
       </div>
-      <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><circle cx="12" cy="12" r="10"/><polyline points="8 12.5 11 15.5 16 9.5"/></svg></span> Approved Orders <span class="chev">›</span></div>
+      <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.62l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/></svg></span> Delivery <span class="chev">›</span></div>
       <div class="sub-items">
-        <div class="nav-item" onclick="location.href='orders.html#order-list'">Order List</div><div class="nav-item" onclick="location.href='orders.html#orders-dashboard'">Orders Dashboard</div>
-        <div class="nav-item" onclick="location.href='orders.html#preorders'">Preorders</div><div class="nav-item" onclick="location.href='orders.html#super-edit'">Super Edit</div>
+        <div class="nav-item" onclick="location.href='delivery.html#ready-to-ship'">Ready to Ship <span id="rtsBadge" style="float:right;background:#411550;color:#fff;border-radius:99px;padding:0 8px;font-size:11.5px;font-weight:700;">2</span></div><div class="nav-item" onclick="location.href='delivery.html#courier-mgmt'">Courier Management</div>
         <div class="nav-item" onclick="location.href='delivery.html#scan-update'">Scan To Update</div><div class="nav-item" onclick="location.href='delivery.html#courier-invoice'">Courier Invoice Upload</div>
-        <div class="nav-item" onclick="location.href='delivery.html#courier-mgmt'">Courier Management</div>
+        <div class="nav-item" onclick="location.href='delivery.html#settlement'">Courier Ledger</div>
       </div>
       <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><path d="M21 8l-9-5-9 5v8l9 5 9-5V8z"/><path d="M3 8l9 5 9-5"/><path d="M12 13v8"/></svg></span> Inventory <span class="chev">›</span></div>
       <div class="sub-items">
@@ -417,8 +417,8 @@
       </div>
       <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></span> Messages <span class="chev">›</span></div>
       <div class="sub-items">
-        <div class="nav-item active" onclick="showPage('msg-inbox')">Inbox</div><div class="nav-item" onclick="showPage('msg-comments')">Comments</div>
-        <div class="nav-item" onclick="showPage('msg-autoreply')">Auto Replies</div><div class="nav-item" onclick="showPage('msg-ai')">AI Reply</div>
+        <div class="nav-item" onclick="showPage('msg-inbox')">Inbox</div><div class="nav-item" onclick="showPage('msg-comments')">Comments</div>
+        <div class="nav-item" onclick="showPage('msg-activity')">AI Activity</div><div class="nav-item" onclick="showPage('msg-activity')">AI Activity</div>
         <div class="nav-item" onclick="showPage('msg-report')">Report</div>
       </div>
       <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><circle cx="9" cy="21" r="1.6"/><circle cx="19" cy="21" r="1.6"/><path d="M2.5 3h2l2.6 12.5a2 2 0 0 0 2 1.5h8.7a2 2 0 0 0 2-1.6L21.5 7H6"/></svg></span> Purchase <span class="chev">›</span></div>
@@ -546,28 +546,57 @@
       
 
       <section class="page-panel active" id="msg-inbox">
-        <h3 style="font-size:19px;margin-bottom:18px;">Inbox</h3>
-        <div style="display:grid;grid-template-columns:320px 1fr;gap:18px;" class="grid-21x">
-          <div class="card" style="padding:14px;">
-            <input class="fld" placeholder="Search conversations...">
-            <div style="margin-top:12px;">
-              <div class="sum-row" style="cursor:pointer;background:#f4f0fa;border-radius:10px;padding:10px;"><span><b>Rahim Uddin</b> <span class="pill blue">Messenger</span><br><span class="muted-sm">আপু, এই শাড়িটার দাম কত?</span></span><span class="muted-sm">2m</span></div>
-              <div class="sum-row" style="cursor:pointer;padding:10px;"><span><b>Sharmin Akter</b> <span class="pill pink">Instagram</span><br><span class="muted-sm">Delivery charge koto?</span></span><span class="muted-sm">18m</span></div>
-              <div class="sum-row" style="cursor:pointer;padding:10px;"><span><b>+880 1712-XXXXXX</b> <span class="pill green">WhatsApp</span><br><span class="muted-sm">Order confirm korlam</span></span><span class="muted-sm">1h</span></div>
-            </div>
-          </div>
-          <div class="card">
-            <div style="display:flex;align-items:center;gap:10px;"><b>Rahim Uddin</b><span class="pill blue">Messenger</span><span style="margin-left:auto;"><button class="ctl-btn" onclick="toast('Order created from chat (UI prototype)')">Create Order</button></span></div>
-            <div style="margin:18px 0;display:flex;flex-direction:column;gap:10px;">
-              <div style="align-self:flex-start;background:#f2eefb;border-radius:14px;padding:11px 15px;max-width:75%;">আপু, এই শাড়িটার দাম কত?</div>
-              <div style="align-self:flex-end;background:var(--primary);color:#fff;border-radius:14px;padding:11px 15px;max-width:75%;">আসসালামু আলাইকুম! Kumkum Ikkat শাড়িটার দাম ৳699। অর্ডার করতে চাইলে নাম, ঠিকানা আর ফোন নম্বরটা দিন।</div>
-              <div style="align-self:flex-start;background:#f2eefb;border-radius:14px;padding:11px 15px;max-width:75%;">দামটা একটু কমানো যাবে না?</div>
-            </div>
-            <div style="background:#fdf6e3;border:1px solid #f0dfa0;border-radius:12px;padding:12px 14px;margin-bottom:12px;"><b>AI Suggested Reply</b> <span class="pill amber">Shadow Mode — needs your approval</span><p style="margin-top:6px;">বুঝতে পারছি আপু। আপনার জন্য ডেলিভারি চার্জ ফ্রি করে দিচ্ছি, সাথে 5% ডিসকাউন্ট কুপন — মোট ৳664-তে পেয়ে যাবেন।</p><div style="display:flex;gap:8px;margin-top:10px;"><button class="btn-primary" onclick="toast('Reply sent (UI prototype)')">Approve &amp; Send</button><button class="ctl-btn">Edit</button><button class="ctl-btn">Reject</button></div></div>
-            <div style="display:flex;gap:10px;"><input class="fld" placeholder="Type a message..."><button class="btn-primary" onclick="toast('Message sent (UI prototype)')">Send</button></div>
-          </div>
-        </div>
-      </section>
+<div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+  <h3 style="font-size:19px;">Inbox</h3>
+  <span style="display:inline-block;font-size:11px;font-weight:700;border-radius:99px;padding:2px 9px;background:#dcfce7;color:#15803d;">AI চালু আছে · Draft only — AI বানিয়ে রাখে, তুমি পাঠাও</span>
+  <span style="font-size:12.5px;color:#64748B;">প্রথম সপ্তাহের নিয়ম — ভুল উত্তর যেন customer-এর কাছে না যায়</span>
+  <button id="panicBtn" onclick="togglePanic()" style="margin-left:auto;background:#fff;color:#411550;border:1px solid #d8cfe0;padding:9px 14px;border-radius:8px;font-weight:600;cursor:pointer;font-size:13.5px;">Pause all AI</button>
+</div>
+<div style="display:flex;gap:14px;align-items:flex-start;">
+  <div class="card" style="width:290px;flex-shrink:0;padding:10px;">
+    <input placeholder="Search conversations..." style="width:100%;padding:9px 11px;border:1px solid #d1d5db;border-radius:8px;margin-bottom:9px;">
+    <div id="chFilters" style="display:flex;gap:6px;margin-bottom:10px;">
+      <span class="ch-chip" onclick="filterChannel('all',this)" style="display:inline-block;font-size:11px;font-weight:700;border-radius:99px;padding:2px 9px;background:#411550;color:#fff;cursor:pointer;padding:5px 12px;">All</span>
+      <span class="ch-chip" onclick="filterChannel('messenger',this)" style="display:inline-block;font-size:11px;font-weight:700;border-radius:99px;padding:2px 9px;background:#f3f4f6;color:#374151;cursor:pointer;padding:5px 12px;">Messenger</span>
+      <span class="ch-chip" onclick="filterChannel('whatsapp',this)" style="display:inline-block;font-size:11px;font-weight:700;border-radius:99px;padding:2px 9px;background:#f3f4f6;color:#374151;cursor:pointer;padding:5px 12px;">WhatsApp</span>
+      <span class="ch-chip" onclick="filterChannel('instagram',this)" style="display:inline-block;font-size:11px;font-weight:700;border-radius:99px;padding:2px 9px;background:#f3f4f6;color:#374151;cursor:pointer;padding:5px 12px;">Instagram</span>
+    </div>
+    <div id="convList">
+      <div class="conv-item" data-thread="rahim" data-channel="messenger" onclick="openThread('rahim')" style="padding:10px;border-radius:10px;cursor:pointer;background:#F4EDF7;">
+        <div style="display:flex;justify-content:space-between;"><b>Rahim Uddin</b><span style="font-size:11px;color:#94A3B8;">2m</span></div>
+        <div style="font-size:12px;color:#64748B;">দামটা একটু কমানো যাবে না?</div>
+        <span style="display:inline-block;font-size:11px;font-weight:700;border-radius:99px;padding:2px 9px;background:#dbeafe;color:#1d4ed8;">Messenger</span> <span style="display:inline-block;font-size:11px;font-weight:700;border-radius:99px;padding:2px 9px;background:#fef3c7;color:#92400e;">Draft ready</span>
+      </div>
+      <div class="conv-item" data-thread="sharmin" data-channel="instagram" onclick="openThread('sharmin')" style="padding:10px;border-radius:10px;cursor:pointer;">
+        <div style="display:flex;justify-content:space-between;"><b>Sharmin Akter</b><span style="font-size:11px;color:#94A3B8;">18m</span></div>
+        <div style="font-size:12px;color:#64748B;">Delivery charge koto?</div>
+        <span style="display:inline-block;font-size:11px;font-weight:700;border-radius:99px;padding:2px 9px;background:#fce7f3;color:#be185d;">Instagram</span> <span style="display:inline-block;font-size:11px;font-weight:700;border-radius:99px;padding:2px 9px;background:#dcfce7;color:#15803d;">AI replied</span>
+      </div>
+      <div class="conv-item" data-thread="karim" data-channel="whatsapp" onclick="openThread('karim')" style="padding:10px;border-radius:10px;cursor:pointer;">
+        <div style="display:flex;justify-content:space-between;"><b>+880 1712-345678</b><span style="font-size:11px;color:#94A3B8;">1h</span></div>
+        <div style="font-size:12px;color:#64748B;">Order confirm korlam</div>
+        <span style="display:inline-block;font-size:11px;font-weight:700;border-radius:99px;padding:2px 9px;background:#dcfce7;color:#065f46;">WhatsApp</span> <span style="display:inline-block;font-size:11px;font-weight:700;border-radius:99px;padding:2px 9px;background:#fef3c7;color:#92400e;">Draft ready</span>
+      </div>
+    </div>
+  </div>
+  <div class="card" style="flex:1;min-width:0;padding:18px;">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+      <b id="thName" style="font-size:15.5px;">Rahim Uddin</b>
+      <span id="thChannel" style="display:inline-block;font-size:11px;font-weight:700;border-radius:99px;padding:2px 9px;background:#dbeafe;color:#1d4ed8;">Messenger</span>
+      <span id="thWindow" style="display:inline-block;font-size:11px;font-weight:700;border-radius:99px;padding:2px 9px;background:#f3f4f6;color:#374151;">24h window: Open</span>
+      <button id="aiPauseBtn" onclick="toggleThreadAi()" style="margin-left:auto;background:#fff;color:#411550;border:1px solid #d8cfe0;padding:9px 14px;border-radius:8px;font-weight:600;cursor:pointer;font-size:13.5px;padding:6px 12px;">AI: On for this chat</button>
+      <button onclick="demoToast('Order form opened (demo)')" style="background:#411550;color:#fff;border:none;padding:9px 16px;border-radius:8px;font-weight:600;cursor:pointer;font-size:13.5px;padding:7px 13px;">Create Order</button>
+    </div>
+    <div id="thMsgs" style="display:flex;flex-direction:column;gap:9px;padding:12px 2px;min-height:300px;"></div>
+    <div id="thDraft"></div>
+    <div style="display:flex;gap:9px;margin-top:10px;">
+      <input placeholder="Type a message..." style="flex:1;padding:10px 12px;border:1px solid #d1d5db;border-radius:9px;">
+      <button onclick="demoToast('Message sent (demo)')" style="background:#411550;color:#fff;border:none;padding:9px 16px;border-radius:8px;font-weight:600;cursor:pointer;font-size:13.5px;">Send</button>
+    </div>
+  </div>
+  <div class="card" style="width:295px;flex-shrink:0;padding:16px;" id="custPanel"></div>
+</div>
+</section>
 
       <section class="page-panel" id="msg-comments">
         <h3 style="font-size:19px;margin-bottom:18px;">Comments</h3>
@@ -578,29 +607,57 @@
         </div>
       </section>
 
-      <section class="page-panel" id="msg-autoreply">
-        <div style="display:flex;align-items:center;gap:12px;"><h3 style="font-size:19px;">Auto Replies</h3><span style="margin-left:auto;"><button class="btn-primary" onclick="toast('Add rule (UI prototype)')">Add Rule</button></span></div>
-        <div class="card" style="margin-top:18px;">
-          <table><tr><th>When message contains</th><th>Reply with</th><th>Channel</th><th>Status</th></tr>
-          <tr><td>দাম / price / koto</td><td>প্রোডাক্টের দাম + অর্ডারের নিয়ম পাঠাও</td><td>Messenger</td><td><button class="switch on" onclick="this.classList.toggle('on')"></button></td></tr>
-          <tr><td>delivery charge</td><td>ঢাকার ভিতরে ৳60, বাইরে ৳120</td><td>All</td><td><button class="switch on" onclick="this.classList.toggle('on')"></button></td></tr>
-          <tr><td>offer / discount</td><td>চলমান অফারের তালিকা পাঠাও</td><td>WhatsApp</td><td><button class="switch" onclick="this.classList.toggle('on')"></button></td></tr></table>
-        </div>
-      </section>
+      <section class="page-panel" id="msg-activity">
+<h3 style="font-size:19px;margin-bottom:4px;">AI Activity</h3>
+<p class="muted-sm" style="margin-bottom:14px;">AI আজ কি করল — সব এক জায়গায়। নিয়ম বদলাতে হলে Settings থেকে বদলাও, এখানে শুধু দেখা আর approve করা যায়।</p>
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px;">
+  <div class="card" style="padding:14px;"><div style="font-size:24px;font-weight:800;">47</div><div style="font-size:12.5px;color:#64748B;">AI replies today</div></div>
+  <div class="card" style="padding:14px;"><div style="font-size:24px;font-weight:800;">31</div><div style="font-size:12.5px;color:#64748B;">Sent by AI itself</div></div>
+  <div class="card" style="padding:14px;"><div style="font-size:24px;font-weight:800;" id="draftCount">2</div><div style="font-size:12.5px;color:#64748B;">Drafts waiting for you</div></div>
+  <div class="card" style="padding:14px;"><div style="font-size:24px;font-weight:800;">3</div><div style="font-size:12.5px;color:#64748B;">Handed to human</div></div>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
+  <div class="card" style="padding:16px;">
+    <b style="font-size:15px;">Draft queue — তোমার অনুমোদনের অপেক্ষায়</b>
+    <div id="queueItem" style="border:1px solid #e5e7eb;border-radius:10px;padding:12px;margin-top:12px;">
+      <div style="display:flex;justify-content:space-between;"><b>Rahim Uddin</b><span style="display:inline-block;font-size:11px;font-weight:700;border-radius:99px;padding:2px 9px;background:#dbeafe;color:#1d4ed8;">Messenger</span></div>
+      <p style="font-size:13px;color:#374151;margin:7px 0;">Customer: "দামটা একটু কমানো যাবে না?"<br>AI draft: "…আপনার জন্য ৳665-এ দিতে পারব আপু।" <span style="color:#92400e;">(Negotiation — ধাপ ১)</span></p>
+      <button onclick="approveQueue()" style="background:#411550;color:#fff;border:none;padding:9px 16px;border-radius:8px;font-weight:600;cursor:pointer;font-size:13.5px;padding:7px 13px;">Approve &amp; Send</button>
+      <button onclick="showPage('msg-inbox');openThread('rahim')" style="background:#fff;color:#411550;border:1px solid #d8cfe0;padding:9px 14px;border-radius:8px;font-weight:600;cursor:pointer;font-size:13.5px;padding:7px 13px;">Open chat</button>
+    </div>
+    <div style="border:1px solid #e5e7eb;border-radius:10px;padding:12px;margin-top:10px;">
+      <div style="display:flex;justify-content:space-between;"><b>+880 1712-345678</b><span style="display:inline-block;font-size:11px;font-weight:700;border-radius:99px;padding:2px 9px;background:#dcfce7;color:#065f46;">WhatsApp</span></div>
+      <p style="font-size:13px;color:#374151;margin:7px 0;">Order-এর তথ্য এসেছে — AI order summary বানিয়ে রেখেছে।</p>
+      <button onclick="showPage('msg-inbox');openThread('karim')" style="background:#fff;color:#411550;border:1px solid #d8cfe0;padding:9px 14px;border-radius:8px;font-weight:600;cursor:pointer;font-size:13.5px;padding:7px 13px;">Open chat</button>
+    </div>
+  </div>
+  <div class="card" style="padding:16px;">
+    <b style="font-size:15px;">মানুষের হাতে দেওয়া হয়েছে — কেন?</b>
+    <div style="border:1px solid #fee2e2;background:#fff7f7;border-radius:10px;padding:12px;margin-top:12px;">
+      <b>Nusrat J.</b> <span style="display:inline-block;font-size:11px;font-weight:700;border-radius:99px;padding:2px 9px;background:#fee2e2;color:#dc2626;">Customer রেগে গেছে</span>
+      <p style="font-size:13px;color:#374151;margin:6px 0;">"দুই দিন হলো parcel পাইনি!" — AI থেমে তোমাকে ডেকেছে।</p>
+      <button onclick="showPage('msg-inbox')" style="background:#fff;color:#411550;border:1px solid #d8cfe0;padding:9px 14px;border-radius:8px;font-weight:600;cursor:pointer;font-size:13.5px;padding:7px 13px;">Open chat</button>
+    </div>
+    <div style="border:1px solid #e5e7eb;border-radius:10px;padding:12px;margin-top:10px;">
+      <b>Arif H.</b> <span style="display:inline-block;font-size:11px;font-weight:700;border-radius:99px;padding:2px 9px;background:#fef3c7;color:#92400e;">দাম floor-এ পৌঁছেছে</span>
+      <p style="font-size:13px;color:#374151;margin:6px 0;">AI ৳620 পর্যন্ত নেমেছে (floor) — আর নামা যাবে না, তাই তোমার হাতে।</p>
+      <button onclick="showPage('msg-inbox')" style="background:#fff;color:#411550;border:1px solid #d8cfe0;padding:9px 14px;border-radius:8px;font-weight:600;cursor:pointer;font-size:13.5px;padding:7px 13px;">Open chat</button>
+    </div>
+  </div>
+</div>
+<div class="card" style="padding:16px;">
+  <b style="font-size:15px;">কোন নিয়ম কতবার চলল — আজ</b>
+  <table style="width:100%;border-collapse:collapse;font-size:13.5px;margin-top:10px;">
+    <tr style="text-align:left;color:#64748B;"><th style="padding:7px 6px;">Rule</th><th>আজ কতবার</th><th>শেষ চলেছে</th><th></th></tr>
+    <tr style="border-top:1px solid #eef2f7;"><td style="padding:8px 6px;">Delivery charge answer</td><td>32</td><td>12 min ago</td><td><a href="settings.html#brain" style="color:#411550;font-weight:600;">Settings-এ নিয়মটা দেখো</a></td></tr>
+    <tr style="border-top:1px solid #eef2f7;"><td style="padding:8px 6px;">Price answer</td><td>28</td><td>4 min ago</td><td><a href="settings.html#brain" style="color:#411550;font-weight:600;">Settings-এ নিয়মটা দেখো</a></td></tr>
+    <tr style="border-top:1px solid #eef2f7;"><td style="padding:8px 6px;">Price negotiation (ladder)</td><td>9</td><td>2 min ago</td><td><a href="settings.html#negotiation" style="color:#411550;font-weight:600;">Settings-এ নিয়মটা দেখো</a></td></tr>
+    <tr style="border-top:1px solid #eef2f7;"><td style="padding:8px 6px;">Stock check</td><td>11</td><td>26 min ago</td><td><a href="settings.html#brain" style="color:#411550;font-weight:600;">Settings-এ নিয়মটা দেখো</a></td></tr>
+  </table>
+</div>
+</section>
 
-      <section class="page-panel" id="msg-ai">
-        <h3 style="font-size:19px;margin-bottom:18px;">AI Reply</h3>
-        <div class="card">
-          <div class="sum-row"><span><b>AI Auto Reply</b><br><span class="muted-sm">AI answers common questions on Messenger, Instagram and WhatsApp</span></span><button class="switch on" onclick="this.classList.toggle('on')"></button></div>
-          <div class="sum-row"><span><b>Shadow Mode (first week)</b><br><span class="muted-sm">AI only drafts replies — you approve before anything is sent</span></span><button class="switch on" onclick="this.classList.toggle('on')"></button></div>
-          <div class="sum-row"><span><b>AI can change prices (negotiation)</b><br><span class="muted-sm">AI may bargain down to each product's floor price — never below it</span></span><button class="switch" onclick="this.classList.toggle('on')"></button></div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:16px;">
-            <label class="fld-l">Reply Tone<select class="fld"><option>Friendly (Bangla + English mix)</option><option>Formal Bangla</option><option>English</option></select></label>
-            <label class="fld-l">AI Model<select class="fld"><option>Free AI (auto)</option><option>Rule Brain only — no AI</option></select></label>
-          </div>
-          <button class="btn-primary" style="margin-top:18px;" onclick="toast('AI settings saved (UI prototype)')">Save Settings</button>
-        </div>
-      </section>
+      
 
       <section class="page-panel" id="msg-report">
         <h3 style="font-size:19px;margin-bottom:18px;">Messages Report</h3>
@@ -792,7 +849,7 @@
     document.querySelectorAll('.sidebar .nav-item .ico').forEach(function(n){ n.style.display=''; });
   }
   // Dashboard view tabs
-  document.getElementById('viewTabs').addEventListener('click', function(e){
+  if(document.getElementById('viewTabs')) document.getElementById('viewTabs').addEventListener('click', function(e){
     if(e.target.tagName !== 'BUTTON') return;
     this.querySelectorAll('button').forEach(function(b){ b.classList.remove('active'); });
     e.target.classList.add('active');
@@ -1144,5 +1201,93 @@
   tickClock(); setInterval(tickClock, 1000);
 </script>
 <script>(function(){var m={inbox:'msg-inbox',comments:'msg-comments',autoreply:'msg-autoreply',ai:'msg-ai',report:'msg-report'};var h=location.hash.replace('#','');if(m[h])showPage(m[h]);})();</script>
+
+<script>
+var BTN = 'background:#411550;color:#fff;border:none;padding:9px 16px;border-radius:8px;font-weight:600;cursor:pointer;font-size:13.5px;';
+var BTN2 = 'background:#fff;color:#411550;border:1px solid #d8cfe0;padding:9px 14px;border-radius:8px;font-weight:600;cursor:pointer;font-size:13.5px;';
+function demoToast(t){ if(typeof toast==='function'){ toast(t); } else { var d=document.createElement('div'); d.textContent=t; d.style.cssText='position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:#411550;color:#fff;padding:11px 20px;border-radius:99px;font-size:13.5px;font-weight:600;z-index:999;box-shadow:0 8px 24px rgba(0,0,0,.25)'; document.body.appendChild(d); setTimeout(function(){ d.remove(); },2600); } }
+var BUB_C = 'align-self:flex-start;background:#F4EDF7;border-radius:14px;padding:10px 13px;max-width:75%;font-size:13.5px;';
+var BUB_B = 'align-self:flex-end;background:#411550;color:#fff;border-radius:14px;padding:10px 13px;max-width:75%;font-size:13.5px;';
+var CAP = 'align-self:flex-end;font-size:11.5px;color:#92400e;margin-top:-4px;';
+var THREADS = {
+  rahim: { name:'Rahim Uddin', ch:'Messenger', chBg:'#dbeafe', chTx:'#1d4ed8', win:'24h window: Open',
+    msgs: '<div style="' + BUB_C + '">আপু, এই শাড়িটার দাম কত?</div>'
+        + '<div style="' + BUB_B + '">আসসালামু আলাইকুম! Kumkum Ikkat শাড়িটার দাম ৳699। অর্ডার করতে চাইলে নাম, ঠিকানা আর ফোন নম্বরটা দিন।</div>'
+        + '<div style="' + CAP + '">Rule: Price answer · <a href="settings.html#brain" style="color:#92400e;font-weight:700;">Settings</a></div>'
+        + '<div style="' + BUB_C + '">দামটা একটু কমানো যাবে না?</div>',
+    draft: '<div style="background:#FFFBEB;border:1px solid #FDE68A;border-radius:12px;padding:13px;">'
+        + '<b style="font-size:13.5px;">AI Suggested Reply</b> <span style="background:#fef3c7;color:#92400e;font-size:11px;font-weight:700;border-radius:99px;padding:2px 9px;">তোমার অনুমোদন লাগবে</span>'
+        + '<p style="font-size:13.5px;margin:8px 0;">বুঝতে পারছি আপু। আপনার জন্য <b>৳665</b>-এ দিতে পারব। অর্ডার করবেন?</p>'
+        + '<div style="font-size:12px;color:#92400e;margin-bottom:9px;">Rule: Price negotiation — ladder ধাপ ১ (৳699 → ৳665) · <a href="settings.html#negotiation" style="color:#92400e;font-weight:700;">Settings-এ নিয়মটা বদলাও</a></div>'
+        + '<button onclick="approveDraft(this)" style="' + BTN + '">Approve &amp; Send</button> <button onclick="editDraft()" style="' + BTN2 + '">Edit</button> <button onclick="rejectDraft(this)" style="' + BTN2 + '">Reject</button></div>',
+    panel: '<div style="text-align:center;margin-bottom:10px;"><div style="width:52px;height:52px;border-radius:50%;background:#411550;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:19px;">R</div><div style="font-weight:700;margin-top:6px;">Rahim Uddin</div><div style="font-size:12px;color:#64748B;">01712-445566 · Mirpur 10, Dhaka</div></div>'
+        + '<div style="display:flex;justify-content:space-around;text-align:center;border-top:1px solid #eef2f7;border-bottom:1px solid #eef2f7;padding:10px 0;"><div><b>8</b><div style="font-size:11px;color:#64748B;">Orders</div></div><div><b style="color:#16a34a;">89%</b><div style="font-size:11px;color:#64748B;">Success rate</div></div><div><b>৳5,240</b><div style="font-size:11px;color:#64748B;">Lifetime value</div></div></div>'
+        + '<div style="margin-top:12px;"><b style="font-size:13px;">Negotiation — দামাদামি কোথায় আছে</b><div style="display:flex;align-items:center;gap:5px;margin-top:9px;flex-wrap:wrap;"><span style="background:#f3f4f6;border-radius:8px;padding:5px 9px;font-size:12.5px;">৳699 দাম</span>→<span style="background:#411550;color:#fff;border-radius:8px;padding:5px 9px;font-size:12.5px;font-weight:700;">৳665 এখন</span>→<span style="background:#f3f4f6;border-radius:8px;padding:5px 9px;font-size:12.5px;">৳640</span>→<span style="background:#fee2e2;color:#dc2626;border-radius:8px;padding:5px 9px;font-size:12.5px;font-weight:700;">৳620 floor</span></div><div style="font-size:12px;color:#64748B;margin-top:7px;">Floor-এর নিচে AI কখনো নামবে না — এটা code দিয়ে আটকানো।</div></div>'
+        + '<div style="margin-top:12px;"><b style="font-size:13px;">আগের order</b><div style="font-size:12.5px;color:#374151;margin-top:6px;">OB281 · 30L Bag · Delivered<br>OB265 · Mentara COMBO · Delivered</div></div>'
+        + '<button onclick="takeOver()" style="width:100%;margin-top:14px;' + BTN2 + '">Take over chat</button>' },
+  sharmin: { name:'Sharmin Akter', ch:'Instagram', chBg:'#fce7f3', chTx:'#be185d', win:'24h window: Open',
+    msgs: '<div style="' + BUB_C + '">Delivery charge koto?</div>'
+        + '<div style="' + BUB_B + '">ঢাকার ভিতরে ৳60, ঢাকার বাইরে ৳120 আপু। কোন এলাকায় ডেলিভারি চান?</div>'
+        + '<div style="' + CAP + '">Rule: Delivery charge answer · AI নিজে পাঠিয়েছে (Auto — safe replies) · <a href="settings.html#brain" style="color:#92400e;font-weight:700;">Settings</a></div>'
+        + '<div style="' + BUB_B + '">জি আপু, খুলনায় পাঠানো যাবে — delivery charge ৳120 পড়বে।</div>'
+        + '<div style="' + CAP + '">Rule: Delivery charge answer · AI নিজে পাঠিয়েছে (Auto — safe replies) · <a href="settings.html#brain" style="color:#92400e;font-weight:700;">Settings</a></div>'
+        + '<div style="' + BUB_C + '">Apu, saree tar kapor ta ki? Hate dhoa jabe?</div>',
+    draft: '<div style="background:#FFFBEB;border:1px solid #FDE68A;border-radius:12px;padding:13px;">'
+        + '<b style="font-size:13.5px;">AI Suggested Reply</b> <span style="background:#fef3c7;color:#92400e;font-size:11px;font-weight:700;border-radius:99px;padding:2px 9px;">তোমার অনুমোদন লাগবে</span>'
+        + '<p style="font-size:13.5px;margin:8px 0;">আপু, এটা <b>জর্জেট কাপড়ের</b> শাড়ি। হালকা হাতে ধোয়া যাবে, ছায়ায় শুকাবেন।</p>'
+        + '<div style="font-size:12px;color:#92400e;margin-bottom:9px;">কোনো নিয়ম মেলেনি — product-এর বিবরণ (description) পড়ে AI নিজে বানিয়েছে। পাঠানোর আগে দেখে নাও।</div>'
+        + '<button onclick="approveDraft(this)" style="' + BTN + '">Approve &amp; Send</button> <button onclick="editDraft()" style="' + BTN2 + '">Edit</button> <button onclick="rejectDraft(this)" style="' + BTN2 + '">Reject</button></div>',
+    panel: '<div style="text-align:center;margin-bottom:10px;"><div style="width:52px;height:52px;border-radius:50%;background:#be185d;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:19px;">S</div><div style="font-weight:700;margin-top:6px;">Sharmin Akter</div><div style="font-size:12px;color:#64748B;">Sonadanga, Khulna</div></div>'
+        + '<div style="display:flex;justify-content:space-around;text-align:center;border-top:1px solid #eef2f7;border-bottom:1px solid #eef2f7;padding:10px 0;"><div><b>2</b><div style="font-size:11px;color:#64748B;">Orders</div></div><div><b style="color:#16a34a;">100%</b><div style="font-size:11px;color:#64748B;">Success rate</div></div><div><b>৳1,180</b><div style="font-size:11px;color:#64748B;">Lifetime value</div></div></div>'
+        + '<div style="margin-top:12px;font-size:12.5px;color:#64748B;">কোনো দামাদামি চলছে না।</div>'
+        + '<button onclick="takeOver()" style="width:100%;margin-top:14px;' + BTN2 + '">Take over chat</button>' },
+  karim: { name:'+880 1712-345678', ch:'WhatsApp', chBg:'#dcfce7', chTx:'#065f46', win:'24h window: Open · 21h left',
+    msgs: '<div style="' + BUB_C + '">Order confirm korlam. Name: Karim Sheikh, Address: Uttara Sector 11, Dhaka. Product: Kumkum Ikkat 1</div>',
+    draft: '<div style="background:#FFFBEB;border:1px solid #FDE68A;border-radius:12px;padding:13px;">'
+        + '<b style="font-size:13.5px;">AI Order Summary</b> <span style="background:#fef3c7;color:#92400e;font-size:11px;font-weight:700;border-radius:99px;padding:2px 9px;">তোমার অনুমোদন লাগবে</span>'
+        + '<p style="font-size:13.5px;margin:8px 0;">Karim Sheikh · Uttara Sector 11, Dhaka<br>Kumkum Ikkat 1 ×1 — ৳699 + delivery ৳60 = <b>মোট ৳759</b> (Cash on Delivery)</p>'
+        + '<div style="font-size:12px;color:#92400e;margin-bottom:9px;">Rule: Order intake · <a href="settings.html#brain" style="color:#92400e;font-weight:700;">Settings</a></div>'
+        + '<button onclick="approveOrder(this)" style="' + BTN + '">Approve &amp; Create Order</button> <button onclick="rejectDraft(this)" style="' + BTN2 + '">Reject</button></div>',
+    panel: '<div style="text-align:center;margin-bottom:10px;"><div style="width:52px;height:52px;border-radius:50%;background:#065f46;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:19px;">K</div><div style="font-weight:700;margin-top:6px;">Karim Sheikh</div><div style="font-size:12px;color:#64748B;">+880 1712-345678 · Uttara, Dhaka</div></div>'
+        + '<div style="display:flex;justify-content:space-around;text-align:center;border-top:1px solid #eef2f7;border-bottom:1px solid #eef2f7;padding:10px 0;"><div><b>0</b><div style="font-size:11px;color:#64748B;">Orders</div></div><div><b>New</b><div style="font-size:11px;color:#64748B;">Customer</div></div><div><b>৳0</b><div style="font-size:11px;color:#64748B;">Lifetime value</div></div></div>'
+        + '<div style="margin-top:12px;font-size:12.5px;color:#64748B;">নতুন customer — এইটাই তার প্রথম order হবে।</div>' }
+};
+function filterChannel(ch, el){
+  document.querySelectorAll('#chFilters .ch-chip').forEach(function(c){ c.style.background = '#f3f4f6'; c.style.color = '#374151'; });
+  el.style.background = '#411550'; el.style.color = '#fff';
+  document.querySelectorAll('.conv-item').forEach(function(it){ it.style.display = (ch === 'all' || it.getAttribute('data-channel') === ch) ? '' : 'none'; });
+}
+var curThread = 'rahim', threadAiOn = true;
+function openThread(id){
+  curThread = id; var t = THREADS[id]; if(!t) return;
+  document.querySelectorAll('.conv-item').forEach(function(el){ el.style.background = el.getAttribute('data-thread') === id ? '#F4EDF7' : ''; });
+  document.getElementById('thName').textContent = t.name;
+  var ch = document.getElementById('thChannel'); ch.textContent = t.ch; ch.style.background = t.chBg; ch.style.color = t.chTx;
+  document.getElementById('thWindow').textContent = t.win;
+  document.getElementById('thMsgs').innerHTML = t.msgs;
+  document.getElementById('thDraft').innerHTML = t.draft;
+  document.getElementById('custPanel').innerHTML = t.panel;
+  threadAiOn = true; document.getElementById('aiPauseBtn').textContent = 'AI: On for this chat';
+}
+function editDraft(){ demoToast('Draft editable (demo)'); }
+function takeOver(){ demoToast('You took over this chat (demo) - AI paused'); }
+function approveDraft(btn){
+  var card = btn.closest('div'); var txt = card.querySelector('p').innerHTML;
+  document.getElementById('thMsgs').innerHTML += '<div style="' + BUB_B + '">' + txt + '</div><div style="' + CAP + '">AI reply পাঠানো হয়েছে · Rule: Price negotiation</div>';
+  card.remove(); demoToast('AI reply sent');
+}
+function approveOrder(btn){
+  document.getElementById('thMsgs').innerHTML += '<div style="' + BUB_B + '">ধন্যবাদ! আপনার order confirm হয়েছে। Invoice: OB287 — মোট ৳759, Cash on Delivery।</div><div style="' + CAP + '">Order OB287 তৈরি — Orders-এ Pending</div>';
+  btn.closest('div').remove(); demoToast('Order OB287 created — Orders-এ Pending');
+}
+function rejectDraft(btn){ btn.closest('div').remove(); demoToast('Draft rejected'); }
+function toggleThreadAi(){ threadAiOn = !threadAiOn; document.getElementById('aiPauseBtn').textContent = threadAiOn ? 'AI: On for this chat' : 'AI: Paused for this chat'; demoToast(threadAiOn ? 'AI resumed for this chat' : 'AI paused for this chat'); }
+var panic = false;
+function togglePanic(){ panic = !panic; document.getElementById('panicBtn').textContent = panic ? 'Resume all AI' : 'Pause all AI'; demoToast(panic ? 'All AI replies paused — drafts only' : 'AI replies resumed'); }
+function approveQueue(){ var q = document.getElementById('queueItem'); if(q) q.remove(); var c = document.getElementById('draftCount'); if(c) c.textContent = '1'; demoToast('Draft approved & sent'); }
+openThread('rahim');
+</script>
+<script>(function(){var m={'inbox':'msg-inbox','comments':'msg-comments','activity':'msg-activity','autoreply':'msg-activity','ai':'msg-activity','report':'msg-report'};var h=location.hash.replace('#','');if(m[h])showPage(m[h]);})();</script>
+
 </body>
 </html>
