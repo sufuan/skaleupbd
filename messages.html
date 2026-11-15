@@ -419,7 +419,6 @@
       <div class="sub-items">
         <div class="nav-item" onclick="showPage('msg-inbox')">Inbox</div><div class="nav-item" onclick="showPage('msg-comments')">Comments</div>
         <div class="nav-item" onclick="showPage('msg-activity')">AI Activity</div><div class="nav-item" onclick="showPage('msg-activity')">AI Activity</div>
-        <div class="nav-item" onclick="showPage('msg-report')">Report</div>
       </div>
       <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><circle cx="9" cy="21" r="1.6"/><circle cx="19" cy="21" r="1.6"/><path d="M2.5 3h2l2.6 12.5a2 2 0 0 0 2 1.5h8.7a2 2 0 0 0 2-1.6L21.5 7H6"/></svg></span> Purchase <span class="chev">›</span></div>
       <div class="sub-items">
@@ -546,6 +545,13 @@
       
 
       <section class="page-panel active" id="msg-inbox">
+<div class="inbox-toggle" style="display:flex;gap:8px;margin-bottom:12px;"><button id="inboxTabMain" onclick="inboxView('main')" style="background:#411550;color:#fff;border:none;padding:8px 18px;border-radius:99px;font-weight:700;cursor:pointer;font-size:13px;">Inbox</button><button id="inboxTabReport" onclick="inboxView('report')" style="background:#f3f4f6;color:#374151;border:none;padding:8px 18px;border-radius:99px;font-weight:700;cursor:pointer;font-size:13px;">Report</button></div>
+<div id="inboxReport" style="display:none;"><div class="kpi-grid" style="grid-template-columns:repeat(4,1fr);">
+          <div class="card kpi"><div class="lbl">CONVERSATIONS</div><div class="val">128</div><div class="sub">Last 30 days</div></div>
+          <div class="card kpi"><div class="lbl">AVG RESPONSE TIME</div><div class="val">3m 40s</div><div class="sub">All channels</div></div>
+          <div class="card kpi"><div class="lbl">AI REPLIES</div><div class="val">342</div><div class="sub">86 approved by staff</div></div>
+          <div class="card kpi"><div class="lbl">ORDERS FROM CHAT</div><div class="val">57</div><div class="sub">৳38,940 revenue</div></div>
+        </div></div>
 <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
   <h3 style="font-size:19px;">Inbox</h3>
   <span style="display:inline-block;font-size:11px;font-weight:700;border-radius:99px;padding:2px 9px;background:#dcfce7;color:#15803d;">AI চালু আছে · Draft only — AI বানিয়ে রাখে, তুমি পাঠাও</span>
@@ -659,15 +665,7 @@
 
       
 
-      <section class="page-panel" id="msg-report">
-        <h3 style="font-size:19px;margin-bottom:18px;">Messages Report</h3>
-        <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr);">
-          <div class="card kpi"><div class="lbl">CONVERSATIONS</div><div class="val">128</div><div class="sub">Last 30 days</div></div>
-          <div class="card kpi"><div class="lbl">AVG RESPONSE TIME</div><div class="val">3m 40s</div><div class="sub">All channels</div></div>
-          <div class="card kpi"><div class="lbl">AI REPLIES</div><div class="val">342</div><div class="sub">86 approved in shadow mode</div></div>
-          <div class="card kpi"><div class="lbl">ORDERS FROM CHAT</div><div class="val">57</div><div class="sub">৳38,940 revenue</div></div>
-        </div>
-      </section>
+      
 
     </div><!-- /content -->
   </div><!-- /main -->
@@ -870,7 +868,7 @@
     if(e.key === 'Escape'){ closeSearch(); }
   });
   // Quick Search (Ctrl+K)
-  var menuNames = ['Dashboard','Search Orders','New Order','Web Order List','Auto Pick Orders','Auto Call Center','Order Block List','Order List','Orders Dashboard','Preorders','Super Edit','Scan To Update','Courier Invoice Upload','Courier Management','Inventory Dashboard','Products','Add Product','Stock Ledger','Branches','Warranty','Stock Transfer','Low Stock Alert','Inbox','Comments','Auto Replies','AI Reply','Messages Report','Purchase Dashboard','Purchase List','New Purchase','Purchase Receive','Supplier Ledger','Suppliers','Ask for Quotation','Task Board','Agent Cockpit','Follow-up Management','My Follow-ups','Follow-up Performance','Call Center Dashboard','Call Center Reports','Contacts','My Work','Work Control','Ads Dashboard','Meta Ads','Record Ad Spend','Ad Profit Analysis','TikTok Ads','Google Ads','Automation','Email Marketing','SMS Marketing','Voice Marketing','Campaign List','Templates','Customer List','Bulk Upload','HR Dashboard','Attendance','Attendance Report','Shift Management','Departments & SOP','User & Role','Finance Dashboard','Accounts & Bank','Income & Expense','Courier Settlement','Cash Flow','Asset Management','Profit & Loss','Order Report','Courier Report','Product Report','Employee Report','Call Center Report','Customer Report','Business Reports','My Limits','Business Profile','Merchant Profile','Device Approvals','Website Integration','Courier Integration','App Integration','Messaging Channels','VoiceDrive PBX','Order Sources','Deletion Logs','Advanced Settings','Help Center','Updates','My Bug Reports','My Feedback','System Status'];
+  var menuNames = ['Dashboard','Search Orders','New Order','Web Order List','Auto Pick Orders','Auto Call Center','Order Block List','Order List','Orders Dashboard','Preorders','Super Edit','Scan To Update','Courier Invoice Upload','Courier Management','Inventory Dashboard','Products','Add Product','Stock Ledger','Branches','Warranty','Stock Transfer','Low Stock Alert','Inbox','Comments','Auto Replies','AI Reply','Purchase Dashboard','Purchase List','New Purchase','Purchase Receive','Supplier Ledger','Suppliers','Ask for Quotation','Task Board','Agent Cockpit','Follow-up Management','My Follow-ups','Follow-up Performance','Call Center Dashboard','Call Center Reports','Contacts','My Work','Work Control','Ads Dashboard','Meta Ads','Record Ad Spend','Ad Profit Analysis','TikTok Ads','Google Ads','Automation','Email Marketing','SMS Marketing','Voice Marketing','Campaign List','Templates','Customer List','Bulk Upload','HR Dashboard','Attendance','Attendance Report','Shift Management','Departments & SOP','User & Role','Finance Dashboard','Accounts & Bank','Income & Expense','Courier Settlement','Cash Flow','Asset Management','Profit & Loss','Order Report','Courier Report','Product Report','Employee Report','Call Center Report','Customer Report','Business Reports','My Limits','Business Profile','Merchant Profile','Device Approvals','Website Integration','Courier Integration','App Integration','Messaging Channels','VoiceDrive PBX','Order Sources','Deletion Logs','Advanced Settings','Help Center','Updates','My Bug Reports','My Feedback','System Status'];
   function openSearch(){
     document.getElementById('searchModal').style.display = 'block';
     filterSearch('');
@@ -1200,11 +1198,12 @@
   }
   tickClock(); setInterval(tickClock, 1000);
 </script>
-<script>(function(){var m={inbox:'msg-inbox',comments:'msg-comments',autoreply:'msg-autoreply',ai:'msg-ai',report:'msg-report'};var h=location.hash.replace('#','');if(m[h])showPage(m[h]);})();</script>
+<script>(function(){var m={inbox:'msg-inbox',comments:'msg-comments',autoreply:'msg-autoreply',ai:'msg-ai',report:'msg-inbox'};var h=location.hash.replace('#','');if(m[h])showPage(m[h]);})();</script>
 
 <script>
 var BTN = 'background:#411550;color:#fff;border:none;padding:9px 16px;border-radius:8px;font-weight:600;cursor:pointer;font-size:13.5px;';
 var BTN2 = 'background:#fff;color:#411550;border:1px solid #d8cfe0;padding:9px 14px;border-radius:8px;font-weight:600;cursor:pointer;font-size:13.5px;';
+function inboxView(v){ var sec=document.getElementById('msg-inbox'); if(!sec) return; var rep=document.getElementById('inboxReport'); var on=(v==='report'); rep.style.display=on?'block':'none'; Array.prototype.forEach.call(sec.children,function(c){ if(c!==rep && !c.classList.contains('inbox-toggle')) c.style.display=on?'none':''; }); var b1=document.getElementById('inboxTabMain'), b2=document.getElementById('inboxTabReport'); b1.style.background=on?'#f3f4f6':'#411550'; b1.style.color=on?'#374151':'#fff'; b2.style.background=on?'#411550':'#f3f4f6'; b2.style.color=on?'#fff':'#374151'; }
 function demoToast(t){ if(typeof toast==='function'){ toast(t); } else { var d=document.createElement('div'); d.textContent=t; d.style.cssText='position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:#411550;color:#fff;padding:11px 20px;border-radius:99px;font-size:13.5px;font-weight:600;z-index:999;box-shadow:0 8px 24px rgba(0,0,0,.25)'; document.body.appendChild(d); setTimeout(function(){ d.remove(); },2600); } }
 var BUB_C = 'align-self:flex-start;background:#F4EDF7;border-radius:14px;padding:10px 13px;max-width:75%;font-size:13.5px;';
 var BUB_B = 'align-self:flex-end;background:#411550;color:#fff;border-radius:14px;padding:10px 13px;max-width:75%;font-size:13.5px;';
@@ -1287,7 +1286,7 @@ function togglePanic(){ panic = !panic; document.getElementById('panicBtn').text
 function approveQueue(){ var q = document.getElementById('queueItem'); if(q) q.remove(); var c = document.getElementById('draftCount'); if(c) c.textContent = '1'; demoToast('Draft approved & sent'); }
 openThread('rahim');
 </script>
-<script>(function(){var m={'inbox':'msg-inbox','comments':'msg-comments','activity':'msg-activity','autoreply':'msg-activity','ai':'msg-activity','report':'msg-report'};var h=location.hash.replace('#','');if(m[h])showPage(m[h]);})();</script>
+<script>(function(){var m={'inbox':'msg-inbox','comments':'msg-comments','activity':'msg-activity','autoreply':'msg-activity','ai':'msg-activity','report':'msg-inbox'};var h=location.hash.replace('#','');if(m[h]){showPage(m[h]); if(h==='report'&&typeof inboxView==='function')inboxView('report');}})();</script>
 
 </body>
 </html>
