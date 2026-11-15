@@ -391,6 +391,14 @@
   .vb.risky{background:var(--red-bg);color:#991b1b;}
   .vb.none{background:var(--grey-bg);color:var(--grey-tx);}
   .big-action{width:100%;padding:14px 20px;font-size:15px;border-radius:12px;margin-top:14px;}
+  #view-list #woTable{table-layout:fixed;display:table;max-width:none;}
+  #view-list #woTable th{padding:13px 8px;white-space:normal;}
+  #view-list #woTable td{padding:14px 8px;}
+  /* Sticky Actions column: stays visible at the right edge of the orders table */
+  #view-list #woTable th:last-child,#view-list #woTable td:last-child{position:sticky;right:0;z-index:2;}
+  #view-list #woTable th:last-child{background:#E8E3EA;border-left:1px solid #D9D2E0;box-shadow:-8px 0 10px -8px rgba(65,21,80,.35);}
+  #view-list #woTable td:last-child{background:#fff;border-left:1px solid #EDE8F2;box-shadow:-8px 0 10px -8px rgba(65,21,80,.22);}
+  #view-list #woTable tr:hover td:last-child{background:#F7F2F8;}
   .sidebar.collapsed{display:none;}
   .main.expanded{margin-left:0;}
 </style>
@@ -652,9 +660,9 @@
         <div class="view-tabs" id="ordTabs"></div>
 
         <div class="card" style="padding:6px 10px 10px;">
-          <table id="woTable"><tr><th><input type="checkbox"></th><th>Created At <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 9 5-5 5 5"/><path d="m7 15 5 5 5-5"/></svg></th><th>Auto Call</th><th>Customer</th><th>Order Items</th><th>Success Rate <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 9 5-5 5 5"/><path d="m7 15 5 5 5-5"/></svg></th><th>Tags</th><th>Site</th><th>Status</th><th>PBX Calls</th><th>Processed By</th><th>Actions</th></tr>
+          <div style="overflow-x:auto;"><table id="woTable" style="width:1186px;"><colgroup><col style="width:32px"><col style="width:114px"><col style="width:52px"><col style="width:210px"><col style="width:108px"><col style="width:132px"><col style="width:94px"><col style="width:56px"><col style="width:94px"><col style="width:110px"><col style="width:92px"><col style="width:92px"></colgroup><tr><th><input type="checkbox"></th><th>Created At <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 9 5-5 5 5"/><path d="m7 15 5 5 5-5"/></svg></th><th>Auto Call</th><th>Customer</th><th>Order Items</th><th>Success Rate <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 9 5-5 5 5"/><path d="m7 15 5 5 5-5"/></svg></th><th>Tags</th><th>Site</th><th>Status</th><th>PBX Calls</th><th>Processed By</th><th>Actions</th></tr>
             <tbody id="ordBody"></tbody>
-          </table>
+          </table></div>
           <div style="display:flex;align-items:center;gap:14px;margin-top:14px;flex-wrap:wrap;"><span style="font-size:13.5px;color:#64748B;">Page 1</span><label style="font-size:13.5px;color:#64748B;display:inline-flex;align-items:center;gap:7px;">Rows per page <select style="height:26px;width:55px;background:#F8F7FB;border:1px solid #E8E3EE;border-radius:6px;font-size:13px;padding:0 4px;"><option>20</option><option>50</option><option>100</option></select></label><span style="margin-left:auto;display:flex;gap:14px;align-items:center;font-size:13.5px;"><b style="color:#111827;">Page 1</b><span style="color:#9CA3AF;">‹ Previous</span><button style="border:none;background:none;font-size:13.5px;color:#111827;cursor:pointer;padding:0;">Next ›</button></span></div>
         </div>
       </section>
