@@ -697,16 +697,16 @@
           <div class="stuck"><div class="n">0</div><div class="l">Warranty overdue</div></div>
           <div class="stuck"><div class="n">0</div><div class="l">Courier issue</div></div>
         </div>
-        <div class="card"><h3>Courier Table — Orders Not Sent To Courier</h3><div class="card-sub">8 orders · all assigned to M. Fahim · steadfast</div>
-          <table><tr><th>Invoice</th><th>Customer</th><th>Assigned To</th><th>Courier</th><th>Status</th></tr>
-          <tr><td>OB273</td><td>—</td><td>M. Fahim</td><td>steadfast</td><td><span class="pill amber">Pending</span></td></tr>
-          <tr><td>OB272</td><td>—</td><td>M. Fahim</td><td>steadfast</td><td><span class="pill amber">Pending</span></td></tr>
-          <tr><td>OB271</td><td>—</td><td>M. Fahim</td><td>steadfast</td><td><span class="pill amber">Pending</span></td></tr>
-          <tr><td>OB270</td><td>—</td><td>M. Fahim</td><td>steadfast</td><td><span class="pill amber">Pending</span></td></tr>
-          <tr><td>OB269</td><td>—</td><td>M. Fahim</td><td>steadfast</td><td><span class="pill amber">Pending</span></td></tr>
-          <tr><td>OB268</td><td>—</td><td>M. Fahim</td><td>steadfast</td><td><span class="pill amber">Pending</span></td></tr>
-          <tr><td>OB267</td><td>—</td><td>M. Fahim</td><td>steadfast</td><td><span class="pill amber">Pending</span></td></tr>
-          <tr><td>OB266</td><td>—</td><td>M. Fahim</td><td>steadfast</td><td><span class="pill amber">Pending</span></td></tr></table>
+        <div class="card"><h3>Courier Table — Orders Not Sent To Courier</h3><div class="card-sub">8 orders · steadfast</div>
+          <table><tr><th>Invoice</th><th>Customer</th><th>Courier</th><th>Status</th></tr>
+          <tr><td>OB273</td><td>—</td><td>steadfast</td><td><span class="pill amber">Pending</span></td></tr>
+          <tr><td>OB272</td><td>—</td><td>steadfast</td><td><span class="pill amber">Pending</span></td></tr>
+          <tr><td>OB271</td><td>—</td><td>steadfast</td><td><span class="pill amber">Pending</span></td></tr>
+          <tr><td>OB270</td><td>—</td><td>steadfast</td><td><span class="pill amber">Pending</span></td></tr>
+          <tr><td>OB269</td><td>—</td><td>steadfast</td><td><span class="pill amber">Pending</span></td></tr>
+          <tr><td>OB268</td><td>—</td><td>steadfast</td><td><span class="pill amber">Pending</span></td></tr>
+          <tr><td>OB267</td><td>—</td><td>steadfast</td><td><span class="pill amber">Pending</span></td></tr>
+          <tr><td>OB266</td><td>—</td><td>steadfast</td><td><span class="pill amber">Pending</span></td></tr></table>
         </div>
       </section>
 
@@ -755,8 +755,8 @@
       <!-- ===== CUSTOMERS & TEAM ===== -->
       <section class="view-panel" id="panel-customers">
         <div class="grid-2">
-          <div class="card"><h3>Agent Performance</h3><div class="card-sub">Ranked by assigned orders</div>
-            <table><tr><th>Rank</th><th>Agent</th><th>Assigned</th><th>Confirmed</th><th>Revenue</th></tr>
+          <div class="card"><h3>Agent Performance</h3><div class="card-sub">Ranked by processed orders</div>
+            <table><tr><th>Rank</th><th>Agent</th><th>Processed</th><th>Confirmed</th><th>Revenue</th></tr>
             <tr><td>1</td><td>M. Fahim</td><td>8</td><td>0%</td><td>৳4,342</td></tr></table>
           </div>
           <div class="card"><h3>Customer Details</h3><div class="card-sub">Customer quality</div>
@@ -1501,7 +1501,7 @@
     <div style="display:flex;align-items:center;"><h3 style="font-size:17px;">Filter Orders</h3><button class="icon-btn" style="margin-left:auto;" onclick="closeModal('filterModal')">✕</button></div>
     <label class="fld-l" style="margin-top:12px;">Date range counts on<select class="fld"><option>Order date</option><option>Status change date</option></select></label>
     <label class="fld-l" style="margin-top:12px;">Date Range<button class="ctl-btn" style="width:100%;justify-content:center;margin-top:5px;" onclick="toast('Date picker — Today / Yesterday / Last 7 days / Last 30 days / This month / Last month / This year / Last year / Lifetime / Custom range')">All dates</button></label>
-    <label class="fld-l" style="margin-top:12px;">Filter Field<select class="fld"><option>Reference</option><option>Incomplete Orders</option><option>Web Source</option><option>Tags</option><option>Previous Status</option><option>Employees</option><option>Product Code</option><option>Product Quantity</option><option>Order Value</option><option>Total Orders</option><option>Success Orders</option><option>Assignee</option></select></label>
+    <label class="fld-l" style="margin-top:12px;">Filter Field<select class="fld"><option>Reference</option><option>Incomplete Orders</option><option>Web Source</option><option>Tags</option><option>Previous Status</option><option>Employees</option><option>Product Code</option><option>Product Quantity</option><option>Order Value</option><option>Total Orders</option><option>Success Orders</option><option>Processed By</option></select></label>
     <div style="display:flex;gap:16px;margin-top:12px;font-size:13px;"><label><input type="checkbox"> Show Only Incomplete Order</label><label><input type="checkbox"> Hide Incomplete Order</label></div>
     <div style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end;"><button class="ctl-btn" onclick="closeModal('filterModal')">Cancel</button><button class="btn-primary" onclick="closeModal('filterModal');toast('Filter applied (UI prototype)')">Apply Filter</button></div>
   </div>
