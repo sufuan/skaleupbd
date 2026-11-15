@@ -1229,8 +1229,14 @@ var THREADS = {
     msgs: '<div style="' + BUB_C + '">Delivery charge koto?</div>'
         + '<div style="' + BUB_B + '">ঢাকার ভিতরে ৳60, ঢাকার বাইরে ৳120 আপু। কোন এলাকায় ডেলিভারি চান?</div>'
         + '<div style="' + CAP + '">Rule: Delivery charge answer · AI নিজে পাঠিয়েছে (Auto — safe replies) · <a href="settings-ai-demo.html#brain" style="color:#92400e;font-weight:700;">Settings</a></div>'
-        + '<div style="' + BUB_C + '">Khulna te pathaben</div>',
-    draft: '',
+        + '<div style="' + BUB_B + '">জি আপু, খুলনায় পাঠানো যাবে — delivery charge ৳120 পড়বে।</div>'
+        + '<div style="' + CAP + '">Rule: Delivery charge answer · AI নিজে পাঠিয়েছে (Auto — safe replies) · <a href="settings-ai-demo.html#brain" style="color:#92400e;font-weight:700;">Settings</a></div>'
+        + '<div style="' + BUB_C + '">Apu, saree tar kapor ta ki? Hate dhoa jabe?</div>',
+    draft: '<div style="background:#FFFBEB;border:1px solid #FDE68A;border-radius:12px;padding:13px;">'
+        + '<b style="font-size:13.5px;">AI Suggested Reply</b> <span style="background:#fef3c7;color:#92400e;font-size:11px;font-weight:700;border-radius:99px;padding:2px 9px;">তোমার অনুমোদন লাগবে</span>'
+        + '<p style="font-size:13.5px;margin:8px 0;">আপু, এটা <b>জর্জেট কাপড়ের</b> শাড়ি। হালকা হাতে ধোয়া যাবে, ছায়ায় শুকাবেন।</p>'
+        + '<div style="font-size:12px;color:#92400e;margin-bottom:9px;">কোনো নিয়ম মেলেনি — product-এর বিবরণ (description) পড়ে AI নিজে বানিয়েছে। পাঠানোর আগে দেখে নাও।</div>'
+        + '<button onclick="approveDraft(this)" style="' + BTN + '">Approve &amp; Send</button> <button onclick="editDraft()" style="' + BTN2 + '">Edit</button> <button onclick="rejectDraft(this)" style="' + BTN2 + '">Reject</button></div>',
     panel: '<div style="text-align:center;margin-bottom:10px;"><div style="width:52px;height:52px;border-radius:50%;background:#be185d;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:19px;">S</div><div style="font-weight:700;margin-top:6px;">Sharmin Akter</div><div style="font-size:12px;color:#64748B;">Sonadanga, Khulna</div></div>'
         + '<div style="display:flex;justify-content:space-around;text-align:center;border-top:1px solid #eef2f7;border-bottom:1px solid #eef2f7;padding:10px 0;"><div><b>2</b><div style="font-size:11px;color:#64748B;">Orders</div></div><div><b style="color:#16a34a;">100%</b><div style="font-size:11px;color:#64748B;">Success rate</div></div><div><b>৳1,180</b><div style="font-size:11px;color:#64748B;">Lifetime value</div></div></div>'
         + '<div style="margin-top:12px;font-size:12.5px;color:#64748B;">কোনো দামাদামি চলছে না।</div>'
