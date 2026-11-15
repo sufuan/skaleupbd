@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SkaleUp BD — Work Inbox (Step 4)</title>
+<title>SkaleUp BD — Work Inbox</title>
 <style>
   :root{
     --primary:#411550; --primary-dark:#3d0a57; --gradient-end:#6b21a8;
@@ -391,22 +391,22 @@
     <div class="quicksearch"><span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg></span> Quick Search <kbd>CTRL K</kbd></div>
 
     <nav class="side-nav">
-      <div class="nav-item" onclick="location.href='index.html'"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></span> Dashboard</div>
+      <div class="nav-item active" onclick="location.href='index.html'"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></span> Dashboard</div>
       <div class="nav-item"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg></span> Search</div>
 
       <div class="group-label">Operations</div>
-      <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></span> Web Orders <span class="chev">›</span></div>
+      <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><path d="M21 8l-9-5-9 5v8l9 5 9-5V8z"/><path d="M3 8l9 5 9-5"/><path d="M12 13v8"/></svg></span> Orders <span class="chev">›</span></div>
       <div class="sub-items">
-        <div class="nav-item" onclick="location.href='orders.html#new-order'">New Order</div><div class="nav-item" onclick="location.href='orders.html#web-orders'">Web Order List</div>
-        <div class="nav-item" onclick="location.href='orders.html#auto-pick'">Auto Pick Orders</div><div class="nav-item" onclick="location.href='orders.html#auto-call'">Auto Call Center</div>
-        <div class="nav-item" onclick="location.href='orders.html#block-list'">Order Block List</div>
+        <div class="nav-item" onclick="showPage('page-new-order')">New Order</div><div class="nav-item" onclick="openOrderList('All')">Order List</div>
+        <div class="nav-item" onclick="showPage('page-auto-pick')">Auto Pick Orders</div><div class="nav-item" onclick="showPage('page-auto-call')">Auto Call Center</div>
+        <div class="nav-item" onclick="showPage('page-block-list')">Order Block List</div><div class="nav-item" onclick="showPage('page-preorders')">Preorders</div>
+        <div class="nav-item" onclick="showPage('page-orders-dashboard')">Orders Dashboard</div>
       </div>
-      <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><circle cx="12" cy="12" r="10"/><polyline points="8 12.5 11 15.5 16 9.5"/></svg></span> Approved Orders <span class="chev">›</span></div>
+      <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.62l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/></svg></span> Delivery <span class="chev">›</span></div>
       <div class="sub-items">
-        <div class="nav-item" onclick="location.href='orders.html#order-list'">Order List</div><div class="nav-item" onclick="location.href='orders.html#orders-dashboard'">Orders Dashboard</div>
-        <div class="nav-item" onclick="location.href='orders.html#preorders'">Preorders</div><div class="nav-item" onclick="location.href='orders.html#super-edit'">Super Edit</div>
+        <div class="nav-item" onclick="location.href='delivery.html#ready-to-ship'">Ready to Ship <span id="rtsBadge" style="float:right;background:#411550;color:#fff;border-radius:99px;padding:0 8px;font-size:11.5px;font-weight:700;">2</span></div><div class="nav-item" onclick="location.href='delivery.html#courier-mgmt'">Courier Management</div>
         <div class="nav-item" onclick="location.href='delivery.html#scan-update'">Scan To Update</div><div class="nav-item" onclick="location.href='delivery.html#courier-invoice'">Courier Invoice Upload</div>
-        <div class="nav-item" onclick="location.href='delivery.html#courier-mgmt'">Courier Management</div>
+        <div class="nav-item" onclick="location.href='delivery.html#settlement'">Courier Ledger</div>
       </div>
       <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><path d="M21 8l-9-5-9 5v8l9 5 9-5V8z"/><path d="M3 8l9 5 9-5"/><path d="M12 13v8"/></svg></span> Inventory <span class="chev">›</span></div>
       <div class="sub-items">
@@ -417,9 +417,8 @@
       </div>
       <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></span> Messages <span class="chev">›</span></div>
       <div class="sub-items">
-        <div class="nav-item" onclick="location.href='messages.html#inbox'">Inbox</div><div class="nav-item" onclick="location.href='messages.html#comments'">Comments</div>
-        <div class="nav-item" onclick="location.href='messages.html#autoreply'">Auto Replies</div><div class="nav-item" onclick="location.href='messages.html#ai'">AI Reply</div>
-        <div class="nav-item" onclick="location.href='messages.html#report'">Report</div>
+        <div class="nav-item" onclick="showPage('msg-inbox')">Inbox</div><div class="nav-item" onclick="showPage('msg-comments')">Comments</div>
+        <div class="nav-item" onclick="showPage('msg-activity')">AI Activity</div>
       </div>
       <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><circle cx="9" cy="21" r="1.6"/><circle cx="19" cy="21" r="1.6"/><path d="M2.5 3h2l2.6 12.5a2 2 0 0 0 2 1.5h8.7a2 2 0 0 0 2-1.6L21.5 7H6"/></svg></span> Purchase <span class="chev">›</span></div>
       <div class="sub-items">
@@ -441,7 +440,7 @@
 
       <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.5 5.1L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.5-6.9A2 2 0 0 0 16.7 4H7.3a2 2 0 0 0-1.8 1.1z"/></svg></span> Work Inbox <span class="chev">›</span></div>
       <div class="sub-items">
-        <div class="nav-item active" onclick="showPage('wi-my')">My Work</div><div class="nav-item" onclick="showPage('wi-control')">Work Control</div><div class="nav-item" onclick="showPage('wi-settings')">Settings</div>
+        <div class="nav-item" onclick="showPage('wi-my')">My Work</div><div class="nav-item" onclick="showPage('wi-control')">Work Control</div><div class="nav-item" onclick="showPage('wi-settings')">Settings</div>
       </div>
 
       <div class="group-label">Growth</div>
@@ -545,36 +544,344 @@
     <div class="content subpage">
       
 
-      <section class="page-panel active" id="wi-my">
-        <h3 style="font-size:19px;margin-bottom:18px;">My Work</h3>
-        <div class="card">
-          <table><tr><th>Task</th><th>Created By</th><th>Due</th><th>Priority</th><th>Status</th><th></th></tr>
-          <tr><td>Call to confirm order OB273</td><td><span class="pill purple">Auto Rule</span></td><td>Today 2 PM</td><td><span class="pill amber">High</span></td><td><span class="pill blue">Pending</span></td><td><button class="ctl-btn" onclick="toast('Task done (UI prototype)')">Mark Done</button></td></tr>
-          <tr><td>Callback — missed call 018XXXXXXXX</td><td><span class="pill purple">Auto Rule</span></td><td>Today 4 PM</td><td><span class="pill amber">High</span></td><td><span class="pill blue">Pending</span></td><td><button class="ctl-btn" onclick="toast('Task done (UI prototype)')">Mark Done</button></td></tr>
-          <tr><td>Follow up returned order OB251</td><td><span class="pill grey">Manual</span></td><td>Tomorrow</td><td><span class="pill blue">Normal</span></td><td><span class="pill blue">Pending</span></td><td><button class="ctl-btn" onclick="toast('Task done (UI prototype)')">Mark Done</button></td></tr></table>
-        </div>
-      </section>
+      
+<style>
+.wi-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:16px;}
+.wi-kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:16px;}
+.wi-kpi{background:var(--card-bg,#fff);border:1px solid var(--card-border,#E7EAF0);border-radius:14px;padding:14px 16px;}
+.wi-kpi b{font-size:24px;color:#1E293B;display:block;}
+.wi-kpi span{font-size:13px;color:#64748B;}
+.wi-kpi.red b{color:#DC2626;} .wi-kpi.amber b{color:#D97706;}
+.wi-tools{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px;}
+.wi-tools input[type=text],.wi-tools select{height:38px;border:1px solid var(--input-border,#E2E8F0);border-radius:9px;padding:0 10px;font-size:14px;font-family:inherit;background:#fff;}
+.wi-tabs{display:flex;gap:6px;margin-bottom:14px;}
+.tk{background:#fff;border:1px solid #E7EAF0;border-radius:14px;padding:14px 16px;margin-bottom:10px;display:flex;gap:12px;align-items:flex-start;}
+.tk.done{opacity:.75;}
+.tk-main{flex:1;min-width:0;}
+.tk-title{font-size:15px;font-weight:600;color:#1E293B;margin-bottom:6px;}
+.tk-meta{display:flex;gap:6px;flex-wrap:wrap;align-items:center;font-size:13px;color:#64748B;margin-bottom:6px;}
+.tk-cap{font-size:12.5px;color:#94A3B8;}
+.tk-cap a{color:#7C3AED;text-decoration:none;font-weight:600;}
+.tk-actions{display:flex;flex-direction:column;gap:6px;flex-shrink:0;}
+.chip{display:inline-block;padding:2px 9px;border-radius:99px;font-size:12px;font-weight:600;}
+.chip-red{background:#FEF2F2;color:#DC2626;} .chip-amber{background:#FFFBEB;color:#D97706;}
+.chip-green{background:#F0FDF4;color:#16A34A;} .chip-grey{background:#F1F5F9;color:#64748B;} .chip-purple{background:#F5F3FF;color:#7C3AED;}
+.btn-p{background:#411550;color:#fff;border:none;padding:8px 14px;border-radius:8px;font-weight:600;cursor:pointer;font-size:13.5px;font-family:inherit;white-space:nowrap;}
+.btn-s{background:#fff;color:#411550;border:1px solid #D8CBE3;padding:8px 14px;border-radius:8px;font-weight:600;cursor:pointer;font-size:13.5px;font-family:inherit;white-space:nowrap;}
+.rule-group{font-size:15px;font-weight:700;color:#411550;margin:20px 0 8px;}
+.rule-row{display:flex;gap:12px;align-items:center;background:#fff;border:1px solid #E7EAF0;border-radius:12px;padding:11px 14px;margin-bottom:8px;flex-wrap:wrap;}
+.rule-main{flex:1;min-width:230px;}
+.rule-name{font-size:14.5px;font-weight:600;color:#1E293B;}
+.rule-desc{font-size:12.5px;color:#94A3B8;}
+.rule-fld{font-size:12.5px;color:#64748B;display:flex;align-items:center;gap:6px;}
+.rule-fld input{width:58px;height:34px;border:1px solid #E2E8F0;border-radius:8px;padding:0 8px;font-family:inherit;}
+.rule-fld select{height:34px;border:1px solid #E2E8F0;border-radius:8px;padding:0 6px;font-family:inherit;background:#fff;}
+.wi-modal{display:none;position:fixed;inset:0;background:rgba(15,10,25,.45);z-index:200;align-items:center;justify-content:center;}
+.wi-modal.open{display:flex;}
+.wi-modal-box{background:#fff;border-radius:16px;padding:22px;width:min(480px,92vw);}
+.wi-modal-box textarea,.wi-modal-box input[type=text],.wi-modal-box select{width:100%;border:1px solid #E2E8F0;border-radius:9px;padding:9px 11px;font-family:inherit;font-size:14px;margin:6px 0 12px;box-sizing:border-box;}
+table.wi-table{width:100%;border-collapse:collapse;background:#fff;border:1px solid #E7EAF0;border-radius:12px;overflow:hidden;}
+table.wi-table th,table.wi-table td{padding:10px 12px;font-size:13.5px;text-align:left;border-bottom:1px solid #F1F5F9;}
+table.wi-table th{background:#FAF8FC;color:#64748B;font-weight:600;}
+.pool-box{border:1.5px dashed #D97706;background:#FFFBEB;border-radius:14px;padding:14px 16px;margin-bottom:16px;}
+</style>
 
-      <section class="page-panel" id="wi-control">
-        <h3 style="font-size:19px;margin-bottom:6px;">Work Control</h3>
-        <p class="muted-sm" style="margin-bottom:18px;">12 automatic rules create tasks from orders, calls and stock events. Rules are checked about every 5 minutes.</p>
-        <div class="card">
-          <div class="sum-row"><span><b>New web order not called in 30 minutes</b><br><span class="muted-sm">Creates a call task for the assigned agent</span></span><button class="switch on" onclick="this.classList.toggle('on')"></button></div>
-          <div class="sum-row"><span><b>Missed call</b><br><span class="muted-sm">Creates a callback task automatically</span></span><button class="switch on" onclick="this.classList.toggle('on')"></button></div>
-          <div class="sum-row"><span><b>Order returned</b><br><span class="muted-sm">Creates a follow-up task for the customer</span></span><button class="switch on" onclick="this.classList.toggle('on')"></button></div>
-          <div class="sum-row"><span><b>Product goes out of stock</b><br><span class="muted-sm">Creates a restock task for the warehouse team</span></span><button class="switch" onclick="this.classList.toggle('on')"></button></div>
-        </div>
-      </section>
+<section class="page-panel active" id="wi-my">
+  <div class="wi-head">
+    <div><h3 style="font-size:20px;">My Work</h3>
+    <p style="color:#64748B;font-size:13.5px;margin-top:3px;">সিস্টেম যেসব জায়গায় তোমার হাত চায়, সব এখানে। একটার পর একটা শেষ করো — কিছুই হারাবে না।</p></div>
+    <button class="btn-p" onclick="wiNewOpen()">+ New Task</button>
+  </div>
+  <div class="wi-kpis">
+    <div class="wi-kpi"><b>8</b><span>খোলা কাজ</span></div>
+    <div class="wi-kpi red"><b>2</b><span>Overdue (সময় পার)</span></div>
+    <div class="wi-kpi amber"><b>4</b><span>আজকের মধ্যে</span></div>
+    <div class="wi-kpi red"><b>3</b><span>খুব জরুরি</span></div>
+    <div class="wi-kpi"><b>5</b><span>আজ শেষ করেছি</span></div>
+  </div>
+  <div class="wi-tools">
+    <input type="text" placeholder="Invoice, customer বা phone দিয়ে খোঁজো" style="flex:1;min-width:200px;" oninput="wiFilter()">
+    <select id="wiSource" onchange="wiFilter()"><option value="">সব উৎস</option><option value="orders">Orders</option><option value="delivery">Delivery</option><option value="messages">Messages</option><option value="inventory">Inventory</option><option value="purchase">Purchase</option><option value="followup">Follow-up</option><option value="system">System</option><option value="manual">Manual</option></select>
+    <select id="wiDue" onchange="wiFilter()"><option value="">সব সময়</option><option value="today">আজকের</option><option value="overdue">Overdue</option></select>
+    <button class="btn-s" id="wiBulkBtn" style="display:none;" onclick="wiBulkDone()">Complete selected</button>
+  </div>
+  <div class="wi-tabs">
+    <button class="ptab active" onclick="wiTab(this,'open')">Open</button>
+    <button class="ptab" onclick="wiTab(this,'progress')">চলছে</button>
+    <button class="ptab" onclick="wiTab(this,'done')">Done</button>
+  </div>
+  <div id="wiList">
+  
+<div class="tk" data-status="open" data-source="messages" data-due="today">
+  <input type="checkbox" class="tk-check" onchange="wiBulk()" style="margin-top:4px;width:16px;height:16px;">
+  <div class="tk-main">
+    <div class="tk-title">AI customer-কে মানুষের হাতে দিয়েছে — Sharmin Akter 18 মিনিট ধরে অপেক্ষা করছে, chat-টা ধরো</div>
+    <div class="tk-meta"><span class="chip chip-red">খুব জরুরি</span><span class="chip chip-amber">সময় বাকি 12 মিনিট</span><span>Chat · Sharmin Akter (Messenger)</span><span>তৈরি: 18 মিনিট আগে</span><span>দায়িত্বে: তুমি</span></div>
+    <div class="tk-cap">নিয়ম 17: AI handover, কেউ ধরেনি · <a href="#" onclick="showPage('wi-settings');return false;">Settings-এ নিয়মটা দেখো</a></div>
+  </div>
+  <div class="tk-actions">
+    <button class="btn-p" onclick="location.href='messages.html#inbox'">Chat খোলো</button>
+    <button class="btn-s" onclick="wiStart(this)">শুরু করো</button>
+    <button class="btn-s" onclick="wiDoneOpen(this,false)">Done</button>
+  </div>
+</div>
+  
+<div class="tk" data-status="open" data-source="orders" data-due="today">
+  <input type="checkbox" class="tk-check" onchange="wiBulk()" style="margin-top:4px;width:16px;height:16px;">
+  <div class="tk-main">
+    <div class="tk-title">OB-1051 order-টা fraud check-এ Risky এসেছে — advance নেওয়ার সিদ্ধান্ত নাও</div>
+    <div class="tk-meta"><span class="chip chip-red">খুব জরুরি</span><span class="chip chip-amber">আজকের মধ্যে</span><span>Order OB-1051 · ৳1,850</span><span>তৈরি: 40 মিনিট আগে</span><span>দায়িত্বে: তুমি (যে process করেছে)</span></div>
+    <div class="tk-cap">নিয়ম 2: Risky fraud, সিদ্ধান্ত হয়নি · <a href="#" onclick="showPage('wi-settings');return false;">Settings-এ নিয়মটা দেখো</a></div>
+  </div>
+  <div class="tk-actions">
+    <button class="btn-p" onclick="location.href='orders.html#list'">Order খোলো</button>
+    <button class="btn-s" onclick="wiStart(this)">শুরু করো</button>
+    <button class="btn-s" onclick="wiDoneOpen(this,true)">Done</button>
+  </div>
+</div>
+  
+<div class="tk" data-status="open" data-source="delivery" data-due="today">
+  <input type="checkbox" class="tk-check" onchange="wiBulk()" style="margin-top:4px;width:16px;height:16px;">
+  <div class="tk-main">
+    <div class="tk-title">Steadfast জানিয়েছে OB-1033-এর parcel হারিয়ে গেছে (lost) — customer-কে জানিয়ে নতুন করে পাঠানো বা refund-এর সিদ্ধান্ত নাও</div>
+    <div class="tk-meta"><span class="chip chip-red">খুব জরুরি</span><span class="chip chip-amber">আজকের মধ্যে</span><span>Parcel · OB-1033 · Steadfast</span><span>তৈরি: 1 ঘণ্টা আগে</span><span>দায়িত্বে: তুমি · Delivery role</span></div>
+    <div class="tk-cap">নিয়ম 13: Parcel lost / damaged · <a href="#" onclick="showPage('wi-settings');return false;">Settings-এ নিয়মটা দেখো</a></div>
+  </div>
+  <div class="tk-actions">
+    <button class="btn-p" onclick="location.href='delivery.html#courier'">Courier page খোলো</button>
+    <button class="btn-s" onclick="wiStart(this)">শুরু করো</button>
+    <button class="btn-s" onclick="wiDoneOpen(this,true)">Done</button>
+  </div>
+</div>
+  
+<div class="tk" data-status="open" data-source="delivery" data-due="overdue">
+  <input type="checkbox" class="tk-check" onchange="wiBulk()" style="margin-top:4px;width:16px;height:16px;">
+  <div class="tk-main">
+    <div class="tk-title">OB-1042 order-টা 2 দিন ধরে Ready to Ship-এ পড়ে আছে — courier-এ পাঠাও</div>
+    <div class="tk-meta"><span class="chip chip-red">Overdue · 1 দিন পার</span><span class="chip chip-amber">জরুরি</span><span>Order OB-1042 · Pathao</span><span>তৈরি: গতকাল 10:24</span><span>দায়িত্বে: তুমি · Delivery role</span></div>
+    <div class="tk-cap">নিয়ম 7: Ready to Ship-এ পাঠানো হয়নি · <a href="#" onclick="showPage('wi-settings');return false;">Settings-এ নিয়মটা দেখো</a></div>
+  </div>
+  <div class="tk-actions">
+    <button class="btn-p" onclick="location.href='delivery.html#ready'">Ready to Ship খোলো</button>
+    <button class="btn-s" onclick="wiStart(this)">শুরু করো</button>
+    <button class="btn-s" onclick="wiDoneOpen(this,true)">Done</button>
+  </div>
+</div>
+  
+<div class="tk" data-status="open" data-source="followup" data-due="overdue">
+  <input type="checkbox" class="tk-check" onchange="wiBulk()" style="margin-top:4px;width:16px;height:16px;">
+  <div class="tk-main">
+    <div class="tk-title">Rahim সাহেবকে বিকাল ৫টায় callback করার কথা ছিল — এখনো হয়নি, call করো</div>
+    <div class="tk-meta"><span class="chip chip-red">Overdue · 2 ঘণ্টা পার</span><span class="chip chip-amber">জরুরি</span><span>Customer · Rahim Uddin · 01712…</span><span>তৈরি: আজ 5:00 PM</span><span>দায়িত্বে: তুমি</span></div>
+    <div class="tk-cap">নিয়ম 29: Callback প্রতিশ্রুতি, হয়নি · <a href="#" onclick="showPage('wi-settings');return false;">Settings-এ নিয়মটা দেখো</a></div>
+  </div>
+  <div class="tk-actions">
+    <button class="btn-p" onclick="location.href='followup.html'">Follow-up খোলো</button>
+    <button class="btn-s" onclick="wiStart(this)">শুরু করো</button>
+    <button class="btn-s" onclick="wiDoneOpen(this,false)">Done</button>
+  </div>
+</div>
+  
+<div class="tk" data-status="open" data-source="inventory" data-due="today">
+  <input type="checkbox" class="tk-check" onchange="wiBulk()" style="margin-top:4px;width:16px;height:16px;">
+  <div class="tk-main">
+    <div class="tk-title">Warranty claim WR-88-এর 7 দিন পার হয়ে গেছে — supplier-এর সাথে কথা বলে customer-কে জানাও</div>
+    <div class="tk-meta"><span class="chip chip-amber">জরুরি</span><span class="chip chip-amber">আজকের মধ্যে</span><span>Claim WR-88 · 30L Bag</span><span>তৈরি: আজ সকালে</span><span>দায়িত্বে: তুমি · Claim handler</span></div>
+    <div class="tk-cap">নিয়ম 24: Warranty claim overdue · <a href="#" onclick="showPage('wi-settings');return false;">Settings-এ নিয়মটা দেখো</a></div>
+  </div>
+  <div class="tk-actions">
+    <button class="btn-p" onclick="location.href='inventory.html#warranty'">Warranty খোলো</button>
+    <button class="btn-s" onclick="wiStart(this)">শুরু করো</button>
+    <button class="btn-s" onclick="wiDoneOpen(this,false)">Done</button>
+  </div>
+</div>
+  
+<div class="tk" data-status="open" data-source="purchase" data-due="">
+  <input type="checkbox" class="tk-check" onchange="wiBulk()" style="margin-top:4px;width:16px;height:16px;">
+  <div class="tk-main">
+    <div class="tk-title">Kumkum Ikkat শাড়ির stock শেষ — কেনার সিদ্ধান্ত নাও, না কিনলে product-টা বন্ধ রাখো</div>
+    <div class="tk-meta"><span class="chip chip-grey">সাধারণ</span><span>Product · Kumkum Ikkat শাড়ি</span><span>তৈরি: গতকাল</span><span>দায়িত্বে: তুমি · Purchase role</span></div>
+    <div class="tk-cap">নিয়ম 22: Stock শেষ, সিদ্ধান্ত হয়নি · <a href="#" onclick="showPage('wi-settings');return false;">Settings-এ নিয়মটা দেখো</a></div>
+  </div>
+  <div class="tk-actions">
+    <button class="btn-p" onclick="location.href='purchase.html#list'">Purchase খোলো</button>
+    <button class="btn-s" onclick="wiStart(this)">শুরু করো</button>
+    <button class="btn-s" onclick="wiDoneOpen(this,false)">Done</button>
+  </div>
+</div>
+  
+<div class="tk" data-status="open" data-source="system" data-due="">
+  <input type="checkbox" class="tk-check" onchange="wiBulk()" style="margin-top:4px;width:16px;height:16px;">
+  <div class="tk-main">
+    <div class="tk-title">একটা নতুন device তোমার approval-এর জন্য অপেক্ষা করছে — চিনলে approve করো, না চিনলে reject</div>
+    <div class="tk-meta"><span class="chip chip-grey">সাধারণ</span><span>Device · Android · Dhaka</span><span>তৈরি: 2 ঘণ্টা আগে</span><span>দায়িত্বে: তুমি · Admin</span></div>
+    <div class="tk-cap">নিয়ম 34: নতুন device approval · <a href="#" onclick="showPage('wi-settings');return false;">Settings-এ নিয়মটা দেখো</a></div>
+  </div>
+  <div class="tk-actions">
+    <button class="btn-p" onclick="location.href='settings.html#devices'">Settings খোলো</button>
+    <button class="btn-s" onclick="wiStart(this)">শুরু করো</button>
+    <button class="btn-s" onclick="wiDoneOpen(this,false)">Done</button>
+  </div>
+</div>
+  
+<div class="tk" data-status="progress" data-source="orders" data-due="today">
+  <input type="checkbox" class="tk-check" onchange="wiBulk()" style="margin-top:4px;width:16px;height:16px;">
+  <div class="tk-main">
+    <div class="tk-title">OB-1055 order-টা 3 ঘণ্টা ধরে Pending — confirm করে Processing-এ নাও</div>
+    <div class="tk-meta"><span class="chip chip-grey">সাধারণ</span><span class="chip chip-amber">আজকের মধ্যে</span><span class="chip chip-purple">চলছে</span><span>Order OB-1055 · ৳940</span><span>তৈরি: 3 ঘণ্টা আগে</span><span>দায়িত্বে: তুমি</span></div>
+    <div class="tk-cap">নিয়ম 1: Pending order পড়ে আছে · <a href="#" onclick="showPage('wi-settings');return false;">Settings-এ নিয়মটা দেখো</a></div>
+  </div>
+  <div class="tk-actions">
+    <button class="btn-p" onclick="location.href='orders.html#list'">Order খোলো</button>
+    
+    <button class="btn-s" onclick="wiDoneOpen(this,false)">Done</button>
+  </div>
+</div>
+  <div class="tk done" data-status="done" data-source="delivery" data-due="">
+    <div class="tk-main">
+      <div class="tk-title">OB-1020-এর return এসেছে — সিদ্ধান্ত নেওয়া হয়েছে</div>
+      <div class="tk-meta"><span class="chip chip-green">Done</span><span>Order OB-1020</span><span>শেষ: আজ 11:05 · তুমি</span></div>
+      <div class="tk-cap">নিয়ম 15: Return-এর সিদ্ধান্ত হয়নি · <b>কীভাবে মিটলো:</b> কাপড়ে দাগ ছিল — Damage হিসেবে ধরা হয়েছে, stock-এ ওঠেনি</div>
+    </div>
+  </div>
+  <div class="tk done" data-status="done" data-source="delivery" data-due="">
+    <div class="tk-main">
+      <div class="tk-title">OB-1018 order-টা অনেকদিন Shipped-এ ছিল</div>
+      <div class="tk-meta"><span class="chip chip-grey">নিজে থেকে মিটে গেছে</span><span>Order OB-1018</span><span>বন্ধ: আজ 9:40</span></div>
+      <div class="tk-cap">নিয়ম 9: Shipped, Delivered হচ্ছে না · order Delivered হয়ে যাওয়ায় task নিজে থেকে বন্ধ হয়েছে — কারো কিছু করতে হয়নি</div>
+    </div>
+  </div>
+  </div>
+</section>
 
-      <section class="page-panel" id="wi-settings">
-        <h3 style="font-size:19px;margin-bottom:18px;">Work Inbox Settings</h3>
-        <div class="card">
-          <div class="sum-row"><span><b>Notify me about new tasks</b><br><span class="muted-sm">Bell notification when an auto rule assigns you a task</span></span><button class="switch on" onclick="this.classList.toggle('on')"></button></div>
-          <div class="sum-row"><span><b>Daily work summary</b><br><span class="muted-sm">A summary of pending and completed tasks every evening</span></span><button class="switch on" onclick="this.classList.toggle('on')"></button></div>
-          <div class="sum-row"><span><b>Overdue task alerts</b></span><button class="switch" onclick="this.classList.toggle('on')"></button></div>
-          <button class="btn-primary" style="margin-top:16px;" onclick="toast('Work Inbox settings saved (UI prototype)')">Save Settings</button>
-        </div>
-      </section>
+<section class="page-panel" id="wi-control">
+  <div class="wi-head">
+    <div><h3 style="font-size:20px;">Work Control</h3>
+    <p style="color:#64748B;font-size:13.5px;margin-top:3px;">Supervisor-এর পর্দা — সবার কাজ একসাথে। আটকে থাকা কাজ অন্য কাউকে সরিয়ে দাও।</p></div>
+  </div>
+  <div class="wi-kpis" style="grid-template-columns:repeat(4,1fr);">
+    <div class="wi-kpi"><b>23</b><span>মোট খোলা কাজ</span></div>
+    <div class="wi-kpi amber"><b>4</b><span>কাউকে দেওয়া হয়নি</span></div>
+    <div class="wi-kpi red"><b>5</b><span>Overdue</span></div>
+    <div class="wi-kpi"><b>11</b><span>আজ শেষ হয়েছে</span></div>
+  </div>
+  <div class="pool-box">
+    <div style="font-weight:700;color:#92400E;margin-bottom:4px;">কাউকে দেওয়া হয়নি — এগুলো আগে ধরো</div>
+    <div style="font-size:13px;color:#92400E;margin-bottom:10px;">পুলে পড়ে থাকা কাজ যে ফ্রি সে তুলে নিতে পারে, অথবা তুমি কাউকে দিয়ে দাও।</div>
+    
+<div class="tk" data-status="open" data-source="inventory" data-due="today">
+  <input type="checkbox" class="tk-check" onchange="wiBulk()" style="margin-top:4px;width:16px;height:16px;">
+  <div class="tk-main">
+    <div class="tk-title">Stock ledger-এ গরমিল — KURTI product-এ খাতায় 98, আসল stock 0</div>
+    <div class="tk-meta"><span class="chip chip-red">খুব জরুরি</span><span>Product · KURTI</span><span>তৈরি: 30 মিনিট আগে</span><span>দায়িত্বে: কেউ না (পুল)</span></div>
+    <div class="tk-cap">নিয়ম 23: Stock ledger-এ গরমিল · <a href="#" onclick="showPage('wi-settings');return false;">Settings-এ নিয়মটা দেখো</a></div>
+  </div>
+  <div class="tk-actions">
+    <button class="btn-p" onclick="location.href='inventory.html#ledger'">Ledger খোলো</button>
+    <button class="btn-s" onclick="wiStart(this)">শুরু করো</button>
+    <button class="btn-s" onclick="wiDoneOpen(this,false)">Done</button>
+  </div>
+</div>
+    
+<div class="tk" data-status="open" data-source="messages" data-due="today">
+  <input type="checkbox" class="tk-check" onchange="wiBulk()" style="margin-top:4px;width:16px;height:16px;">
+  <div class="tk-main">
+    <div class="tk-title">WhatsApp channel ভেঙে গেছে — token-এর মেয়াদ শেষ, আবার connect করতে হবে</div>
+    <div class="tk-meta"><span class="chip chip-red">খুব জরুরি</span><span>Channel · WhatsApp</span><span>তৈরি: 1 ঘণ্টা আগে</span><span>দায়িত্বে: কেউ না (পুল)</span></div>
+    <div class="tk-cap">নিয়ম 21: Channel ভেঙে গেছে · <a href="#" onclick="showPage('wi-settings');return false;">Settings-এ নিয়মটা দেখো</a></div>
+  </div>
+  <div class="tk-actions">
+    <button class="btn-p" onclick="location.href='settings.html#channels'">Channel খোলো</button>
+    <button class="btn-s" onclick="wiStart(this)">শুরু করো</button>
+    <button class="btn-s" onclick="wiDoneOpen(this,false)">Done</button>
+  </div>
+</div>
+    
+<div class="tk" data-status="open" data-source="orders" data-due="today">
+  <input type="checkbox" class="tk-check" onchange="wiBulk()" style="margin-top:4px;width:16px;height:16px;">
+  <div class="tk-main">
+    <div class="tk-title">৳500 advance এসেছে কিন্তু কোনো order-এর সাথে মেলেনি — খুঁজে বের করো কার টাকা</div>
+    <div class="tk-meta"><span class="chip chip-amber">জরুরি</span><span>Payment · bKash ৳500</span><span>তৈরি: আজ সকালে</span><span>দায়িত্বে: কেউ না (পুল)</span></div>
+    <div class="tk-cap">নিয়ম 5: Advance মেলেনি · <a href="#" onclick="showPage('wi-settings');return false;">Settings-এ নিয়মটা দেখো</a></div>
+  </div>
+  <div class="tk-actions">
+    <button class="btn-p" onclick="location.href='orders.html#list'">Orders খোলো</button>
+    <button class="btn-s" onclick="wiStart(this)">শুরু করো</button>
+    <button class="btn-s" onclick="wiDoneOpen(this,false)">Done</button>
+  </div>
+</div>
+    
+<div class="tk" data-status="open" data-source="finance" data-due="overdue">
+  <input type="checkbox" class="tk-check" onchange="wiBulk()" style="margin-top:4px;width:16px;height:16px;">
+  <div class="tk-main">
+    <div class="tk-title">গতকালের cash হিসাব ৳320 মেলেনি — আজকের হিসাব শুরুর আগে মেলাও</div>
+    <div class="tk-meta"><span class="chip chip-amber">জরুরি</span><span class="chip chip-red">Overdue</span><span>Finance · গতকালের হিসাব</span><span>তৈরি: আজ সকালে</span><span>দায়িত্বে: কেউ না (পুল)</span></div>
+    <div class="tk-cap">নিয়ম 32: দিনের cash মেলেনি · <a href="#" onclick="showPage('wi-settings');return false;">Settings-এ নিয়মটা দেখো</a></div>
+  </div>
+  <div class="tk-actions">
+    <button class="btn-p" onclick="location.href='finance.html'">Finance খোলো</button>
+    <button class="btn-s" onclick="wiStart(this)">শুরু করো</button>
+    <button class="btn-s" onclick="wiDoneOpen(this,false)">Done</button>
+  </div>
+</div>
+  </div>
+  <h4 style="font-size:16px;margin:6px 0 10px;">সবার খোলা কাজ</h4>
+  <table class="wi-table"><tr><th>কাজ</th><th>উৎস</th><th>দায়িত্বে</th><th>সময়</th><th>গুরুত্ব</th><th>অবস্থা</th><th>অন্য কাউকে দাও</th></tr>
+  <tr><td style="font-weight:600;color:#1E293B;">OB-1042 Ready to Ship-এ পড়ে আছে</td><td>Delivery</td><td>Arif Hossain</td><td>Overdue 1 দিন</td><td><span class="chip chip-amber">জরুরি</span></td><td><span class="chip chip-grey">Open</span></td>
+    <td><select onchange="wiReassign(this)" style="height:32px;border:1px solid #E2E8F0;border-radius:7px;font-family:inherit;"><option selected>Arif Hossain</option><option>Sumon Mia</option><option>Nabila Rahman</option><option>পুল (Unassigned)</option></select></td></tr>
+  <tr><td style="font-weight:600;color:#1E293B;">AI handover — Sharmin-এর chat</td><td>Messages</td><td>Arif Hossain</td><td>বাকি 12 মিনিট</td><td><span class="chip chip-red">খুব জরুরি</span></td><td><span class="chip chip-grey">Open</span></td>
+    <td><select onchange="wiReassign(this)" style="height:32px;border:1px solid #E2E8F0;border-radius:7px;font-family:inherit;"><option selected>Arif Hossain</option><option>Sumon Mia</option><option>Nabila Rahman</option><option>পুল (Unassigned)</option></select></td></tr>
+  <tr><td style="font-weight:600;color:#1E293B;">WR-88 warranty claim overdue</td><td>Inventory</td><td>Sumon Mia</td><td>আজকের মধ্যে</td><td><span class="chip chip-amber">জরুরি</span></td><td><span class="chip chip-purple">চলছে</span></td>
+    <td><select onchange="wiReassign(this)" style="height:32px;border:1px solid #E2E8F0;border-radius:7px;font-family:inherit;"><option>Arif Hossain</option><option selected>Sumon Mia</option><option>Nabila Rahman</option><option>পুল (Unassigned)</option></select></td></tr>
+  <tr><td style="font-weight:600;color:#1E293B;">Rahim সাহেবের callback হয়নি</td><td>Follow-up</td><td>Nabila Rahman</td><td>Overdue 2 ঘণ্টা</td><td><span class="chip chip-amber">জরুরি</span></td><td><span class="chip chip-grey">Open</span></td>
+    <td><select onchange="wiReassign(this)" style="height:32px;border:1px solid #E2E8F0;border-radius:7px;font-family:inherit;"><option>Arif Hossain</option><option>Sumon Mia</option><option selected>Nabila Rahman</option><option>পুল (Unassigned)</option></select></td></tr>
+  <tr><td style="font-weight:600;color:#1E293B;">Supplier পাওনা overdue — Zeotexbd</td><td>Purchase</td><td>Sumon Mia</td><td>আজকের মধ্যে</td><td><span class="chip chip-amber">জরুরি</span></td><td><span class="chip chip-grey">Open</span></td>
+    <td><select onchange="wiReassign(this)" style="height:32px;border:1px solid #E2E8F0;border-radius:7px;font-family:inherit;"><option>Arif Hossain</option><option selected>Sumon Mia</option><option>Nabila Rahman</option><option>পুল (Unassigned)</option></select></td></tr>
+  <tr><td style="font-weight:600;color:#1E293B;">OB-1051 Risky fraud-এর সিদ্ধান্ত</td><td>Orders</td><td>Nabila Rahman</td><td>আজকের মধ্যে</td><td><span class="chip chip-red">খুব জরুরি</span></td><td><span class="chip chip-grey">Open</span></td>
+    <td><select onchange="wiReassign(this)" style="height:32px;border:1px solid #E2E8F0;border-radius:7px;font-family:inherit;"><option>Arif Hossain</option><option>Sumon Mia</option><option selected>Nabila Rahman</option><option>পুল (Unassigned)</option></select></td></tr>
+  </table>
+</section>
+
+<section class="page-panel" id="wi-settings">
+  <div class="wi-head">
+    <div><h3 style="font-size:20px;">Work Inbox Settings</h3>
+    <p style="color:#64748B;font-size:13.5px;margin-top:3px;">সিস্টেম প্রতি ~5 মিনিটে এই নিয়মগুলো যাচাই করে। যেটা বন্ধ, সেটার task তৈরি হবে না। সময়, গুরুত্ব আর দায়িত্ব — সব এখান থেকে বদলানো যায়। মোট 36টা নিয়ম।</p></div>
+  </div>
+  <div class="rule-group">Orders (6টা নিয়ম)</div><div class="rule-row"><button class="switch on" onclick="this.classList.toggle('on')"></button><div class="rule-main"><div class="rule-name">1 · Pending order confirm না হয়ে পড়ে আছে</div><div class="rule-desc">Order Pending অবস্থায় এই সময় পার হলে</div></div><label class="rule-fld">সময় <input type="number" value="2"><select><option>মিনিট</option><option selected>ঘণ্টা</option><option>দিন</option></select></label><label class="rule-fld">গুরুত্ব <select><option>সাধারণ</option><option selected>জরুরি</option><option>খুব জরুরি</option></select></label><label class="rule-fld">কাকে যাবে <select><option selected>পুল (Unassigned)</option><option>Delivery role</option><option>Accounts role</option><option>Purchase role</option><option>যে process করেছে</option><option>Claim handler</option><option>যে chat-এ ছিল</option><option>মালিক / Admin</option><option>নির্দিষ্ট staff</option></select></label></div><div class="rule-row"><button class="switch on" onclick="this.classList.toggle('on')"></button><div class="rule-main"><div class="rule-name">2 · Fraud check-এ Risky, সিদ্ধান্ত হয়নি</div><div class="rule-desc">Risky আসার পর advance/সিদ্ধান্ত ছাড়া এই সময় পার হলে</div></div><label class="rule-fld">সময় <input type="number" value="1"><select><option>মিনিট</option><option selected>ঘণ্টা</option><option>দিন</option></select></label><label class="rule-fld">গুরুত্ব <select><option>সাধারণ</option><option>জরুরি</option><option selected>খুব জরুরি</option></select></label><label class="rule-fld">কাকে যাবে <select><option>পুল (Unassigned)</option><option>Delivery role</option><option>Accounts role</option><option>Purchase role</option><option selected>যে process করেছে</option><option>Claim handler</option><option>যে chat-এ ছিল</option><option>মালিক / Admin</option><option>নির্দিষ্ট staff</option></select></label></div><div class="rule-row"><button class="switch on" onclick="this.classList.toggle('on')"></button><div class="rule-main"><div class="rule-name">3 · Block List-এর order review হয়নি</div><div class="rule-desc">Block List-এ আটকানোর পর এই সময় পার হলে</div></div><label class="rule-fld">সময় <input type="number" value="4"><select><option>মিনিট</option><option selected>ঘণ্টা</option><option>দিন</option></select></label><label class="rule-fld">গুরুত্ব <select><option selected>সাধারণ</option><option>জরুরি</option><option>খুব জরুরি</option></select></label><label class="rule-fld">কাকে যাবে <select><option selected>পুল (Unassigned)</option><option>Delivery role</option><option>Accounts role</option><option>Purchase role</option><option>যে process করেছে</option><option>Claim handler</option><option>যে chat-এ ছিল</option><option>মালিক / Admin</option><option>নির্দিষ্ট staff</option></select></label></div><div class="rule-row"><button class="switch on" onclick="this.classList.toggle('on')"></button><div class="rule-main"><div class="rule-name">4 · Preorder এসেছে, customer-কে জানানো হয়নি</div><div class="rule-desc">Preorder-এর product stock-এ আসার পর এই সময় পার হলে</div></div><label class="rule-fld">সময় <input type="number" value="4"><select><option>মিনিট</option><option selected>ঘণ্টা</option><option>দিন</option></select></label><label class="rule-fld">গুরুত্ব <select><option selected>সাধারণ</option><option>জরুরি</option><option>খুব জরুরি</option></select></label><label class="rule-fld">কাকে যাবে <select><option selected>পুল (Unassigned)</option><option>Delivery role</option><option>Accounts role</option><option>Purchase role</option><option>যে process করেছে</option><option>Claim handler</option><option>যে chat-এ ছিল</option><option>মালিক / Admin</option><option>নির্দিষ্ট staff</option></select></label></div><div class="rule-row"><button class="switch on" onclick="this.classList.toggle('on')"></button><div class="rule-main"><div class="rule-name">5 · Advance টাকা এসেছে, order-এ মেলেনি</div><div class="rule-desc">Payment আসার পর কোনো order-এ না মিললে</div></div><label class="rule-fld">সময় <input type="number" value="1"><select><option>মিনিট</option><option>ঘণ্টা</option><option selected>দিন</option></select></label><label class="rule-fld">গুরুত্ব <select><option>সাধারণ</option><option selected>জরুরি</option><option>খুব জরুরি</option></select></label><label class="rule-fld">কাকে যাবে <select><option>পুল (Unassigned)</option><option>Delivery role</option><option selected>Accounts role</option><option>Purchase role</option><option>যে process করেছে</option><option>Claim handler</option><option>যে chat-এ ছিল</option><option>মালিক / Admin</option><option>নির্দিষ্ট staff</option></select></label></div><div class="rule-row"><button class="switch" onclick="this.classList.toggle('on')"></button><div class="rule-main"><div class="rule-name">6 · একই customer বারবার cancel করছে</div><div class="rule-desc">একই customer 3 বার cancel করলেই</div></div><span class="rule-fld">সাথে সাথে</span><label class="rule-fld">গুরুত্ব <select><option selected>সাধারণ</option><option>জরুরি</option><option>খুব জরুরি</option></select></label><label class="rule-fld">কাকে যাবে <select><option selected>পুল (Unassigned)</option><option>Delivery role</option><option>Accounts role</option><option>Purchase role</option><option>যে process করেছে</option><option>Claim handler</option><option>যে chat-এ ছিল</option><option>মালিক / Admin</option><option>নির্দিষ্ট staff</option></select></label></div><div class="rule-group">Delivery / Courier (10টা নিয়ম)</div><div class="rule-row"><button class="switch on" onclick="this.classList.toggle('on')"></button><div class="rule-main"><div class="rule-name">7 · Ready to Ship-এ আছে, পাঠানো হয়নি</div><div class="rule-desc">Ready to Ship-এ ঢোকার পর এই সময় পার হলে</div></div><label class="rule-fld">সময় <input type="number" value="1"><select><option>মিনিট</option><option>ঘণ্টা</option><option selected>দিন</option></select></label><label class="rule-fld">গুরুত্ব <select><option>সাধারণ</option><option selected>জরুরি</option><option>খুব জরুরি</option></select></label><label class="rule-fld">কাকে যাবে <select><option>পুল (Unassigned)</option><option selected>Delivery role</option><option>Accounts role</option><option>Purchase role</option><option>যে process করেছে</option><option>Claim handler</option><option>যে chat-এ ছিল</option><option>মালিক / Admin</option><option>নির্দিষ্ট staff</option></select></label></div><div class="rule-row"><button class="switch on" onclick="this.classList.toggle('on')"></button><div class="rule-main"><div class="rule-name">8 · Courier booking বারবার fail করছে</div><div class="rule-desc">একই order-এর booking 2 বার fail করলেই</div></div><span class="rule-fld">সাথে সাথে</span><label class="rule-fld">গুরুত্ব <select><option>সাধারণ</option><option>জরুরি</option><option selected>খুব জরুরি</option></select></label><label class="rule-fld">কাকে যাবে <select><option>পুল (Unassigned)</option><option selected>Delivery role</option><option>Accounts role</option><option>Purchase role</option><option>যে process করেছে</option><option>Claim handler</option><option>যে chat-এ ছিল</option><option>মালিক / Admin</option><option>নির্দিষ্ট staff</option></select></label></div><div class="rule-row"><button class="switch on" onclick="this.classList.toggle('on')"></button><div class="rule-main"><div class="rule-name">9 · Shipped, অনেকদিন Delivered হচ্ছে না</div><div class="rule-desc">Shipped হওয়ার পর এই কদিন পার হলে (প্রতি 12 ঘণ্টায় আবার যাচাই)</div></div><label class="rule-fld">সময় <input type="number" value="4"><select><option>মিনিট</option><option>ঘণ্টা</option><option selected>দিন</option></select></label><label class="rule-fld">গুরুত্ব <select><option>সাধারণ</option><option selected>জরুরি</option><option>খুব জরুরি</option></select></label><label class="rule-fld">কাকে যাবে <select><option>পুল (Unassigned)</option><option selected>Delivery role</option><option>Accounts role</option><option>Purchase role</option><option>যে process করেছে</option><option>Claim handler</option><option>যে chat-এ ছিল</option><option>মালিক / Admin</option><option>নির্দিষ্ট staff</option></select></label></div><div class="rule-row"><button class="switch on" onclick="this.classList.toggle('on')"></button><div class="rule-main"><div class="rule-name">10 · Courier hold — parcel নড়ছে না</div><div class="rule-desc">Parcel-এর status এই কদিন না বদলালে</div></div><label class="rule-fld">সময় <input type="number" value="2"><select><option>মিনিট</option><option>ঘণ্টা</option><option selected>দিন</option></select></label><label class="rule-fld">গুরুত্ব <select><option>সাধারণ</option><option selected>জরুরি</option><option>খুব জরুরি</option></select></label><label class="rule-fld">কাকে যাবে <select><option>পুল (Unassigned)</option><option selected>Delivery role</option><option>Accounts role</option><option>Purchase role</option><option>যে process করেছে</option><option>Claim handler</option><option>যে chat-এ ছিল</option><option>মালিক / Admin</option><option>নির্দিষ্ট staff</option></select></label></div><div class="rule-row"><button class="switch on" onclick="this.classList.toggle('on')"></button><div class="rule-main"><div class="rule-name">11 · Pathao-তে return requested</div><div class="rule-desc">Pathao panel-এ return request এলেই (সিস্টেম ~5 মিনিটে যাচাই করে)</div></div><label class="rule-fld">সময় <input type="number" value="30"><select><option selected>মিনিট</option><option>ঘণ্টা</option><option>দিন</option></select></label><label class="rule-fld">গুরুত্ব <select><option>সাধারণ</option><option selected>জরুরি</option><option>খুব জরুরি</option></select></label><label class="rule-fld">কাকে যাবে <select><option>পুল (Unassigned)</option><option selected>Delivery role</option><option>Accounts role</option><option>Purchase role</option><option>যে process করেছে</option><option>Claim handler</option><option>যে chat-এ ছিল</option><option>মালিক / Admin</option><option>নির্দিষ্ট staff</option></select></label></div><div class="rule-row"><button class="switch on" onclick="this.classList.toggle('on')"></button><div class="rule-main"><div class="rule-name">12 · Steadfast-এ cancel requested</div><div class="rule-desc">Steadfast-এ cancel request এলেই</div></div><label class="rule-fld">সময় <input type="number" value="30"><select><option selected>মিনিট</option><option>ঘণ্টা</option><option>দিন</option></select></label><label class="rule-fld">গুরুত্ব <select><option>সাধারণ</option><option selected>জরুরি</option><option>খুব জরুরি</option></select></label><label class="rule-fld">কাকে যাবে <select><option>পুল (Unassigned)</option><option selected>Delivery role</option><option>Accounts role</option><option>Purchase role</option><option>যে process করেছে</option><option>Claim handler</option><option>যে chat-এ ছিল</option><option>মালিক / Admin</option><option>নির্দিষ্ট staff</option></select></label></div><div class="rule-row"><button class="switch on" onclick="this.classList.toggle('on')"></button><div class="rule-main"><div class="rule-name">13 · Parcel lost / damaged</div><div class="rule-desc">Courier webhook-এ lost/damaged এলেই সাথে সাথে</div></div><span class="rule-fld">সাথে সাথে</span><label class="rule-fld">গুরুত্ব <select><option>সাধারণ</option><option>জরুরি</option><option selected>খুব জরুরি</option></select></label><label class="rule-fld">কাকে যাবে <select><option>পুল (Unassigned)</option><option selected>Delivery role</option><option>Accounts role</option><option>Purchase role</option><option>যে process করেছে</option><option>Claim handler</option><option>যে chat-এ ছিল</option><option>মালিক / Admin</option><option>নির্দিষ্ট staff</option></select></label></div><div class="rule-row"><button class="switch" onclick="this.classList.toggle('on')"></button><div class="rule-main"><div class="rule-name">14 · Parcel আবার পাঠানো (resent) হয়েছে</div><div class="rule-desc">Resent হলেই — চোখ রাখার জন্য</div></div><label class="rule-fld">সময় <input type="number" value="0"><select><option>মিনিট</option><option selected>ঘণ্টা</option><option>দিন</option></select></label><label class="rule-fld">গুরুত্ব <select><option selected>সাধারণ</option><option>জরুরি</option><option>খুব জরুরি</option></select></label><label class="rule-fld">কাকে যাবে <select><option>পুল (Unassigned)</option><option selected>Delivery role</option><option>Accounts role</option><option>Purchase role</option><option>যে process করেছে</option><option>Claim handler</option><option>যে chat-এ ছিল</option><option>মালিক / Admin</option><option>নির্দিষ্ট staff</option></select></label></div><div class="rule-row"><button class="switch on" onclick="this.classList.toggle('on')"></button><div class="rule-main"><div class="rule-name">15 · Return এসেছে, সিদ্ধান্ত হয়নি</div><div class="rule-desc">Return পৌঁছানোর পর এই সময়ে সিদ্ধান্ত না হলে</div></div><label class="rule-fld">সময় <input type="number" value="1"><select><option>মিনিট</option><option>ঘণ্টা</option><option selected>দিন</option></select></label><label class="rule-fld">গুরুত্ব <select><option>সাধারণ</option><option selected>জরুরি</option><option>খুব জরুরি</option></select></label><label class="rule-fld">কাকে যাবে <select><option>পুল (Unassigned)</option><option selected>Delivery role</option><option>Accounts role</option><option>Purchase role</option><option>যে process করেছে</option><option>Claim handler</option><option>যে chat-এ ছিল</option><option>মালিক / Admin</option><option>নির্দিষ্ট staff</option></select></label></div><div class="rule-row"><button class="switch on" onclick="this.classList.toggle('on')"></button><div class="rule-main"><div class="rule-name">16 · Courier-এর টাকা মেলেনি</div><div class="rule-desc">Ledger-এ unmatched টাকা এই কদিন পড়ে থাকলে</div></div><label class="rule-fld">সময় <input type="number" value="3"><select><option>মিনিট</option><option>ঘণ্টা</option><option selected>দিন</option></select></label><label class="rule-fld">গুরুত্ব <select><option>সাধারণ</option><option selected>জরুরি</option><option>খুব জরুরি</option></select></label><label class="rule-fld">কাকে যাবে <select><option>পুল (Unassigned)</option><option>Delivery role</option><option selected>Accounts role</option><option>Purchase role</option><option>যে process করেছে</option><option>Claim handler</option><option>যে chat-এ ছিল</option><option>মালিক / Admin</option><option>নির্দিষ্ট staff</option></select></label></div><div class="rule-group">Messages (5টা নিয়ম)</div><div class="rule-row"><button class="switch on" onclick="this.classList.toggle('on')"></button><div class="rule-main"><div class="rule-name">17 · AI handover করেছে, কেউ ধরেনি</div><div class="rule-desc">Handover-এর পর এই সময়ে কেউ chat না ধরলে</div></div><label class="rule-fld">সময় <input type="number" value="15"><select><option selected>মিনিট</option><option>ঘণ্টা</option><option>দিন</option></select></label><label class="rule-fld">গুরুত্ব <select><option>সাধারণ</option><option>জরুরি</option><option selected>খুব জরুরি</option></select></label><label class="rule-fld">কাকে যাবে <select><option>পুল (Unassigned)</option><option>Delivery role</option><option>Accounts role</option><option>Purchase role</option><option>যে process করেছে</option><option>Claim handler</option><option selected>যে chat-এ ছিল</option><option>মালিক / Admin</option><option>নির্দিষ্ট staff</option></select></label></div><div class="rule-row"><button class="switch on" onclick="this.classList.toggle('on')"></button><div class="rule-main"><div class="rule-name">18 · 24 ঘণ্টার window শেষ হওয়ার পথে, উত্তর বাকি</div><div class="rule-desc">Window শেষ হওয়ার এই সময় আগে, উত্তর বাকি থাকলে</div></div><label class="rule-fld">সময় <input type="number" value="2"><select><option>মিনিট</option><option selected>ঘণ্টা</option><option>দিন</option></select></label><label class="rule-fld">গুরুত্ব <select><option>সাধারণ</option><option selected>জরুরি</option><option>খুব জরুরি</option></select></label><label class="rule-fld">কাকে যাবে <select><option selected>পুল (Unassigned)</option><option>Delivery role</option><option>Accounts role</option><option>Purchase role</option><option>যে process করেছে</option><option>Claim handler</option><option>যে chat-এ ছিল</option><option>মালিক / Admin</option><option>নির্দিষ্ট staff</option></select></label></div><div class="rule-row"><button class="switch on" onclick="this.classList.toggle('on')"></button><div class="rule-main"><div class="rule-name">19 · AI draft পড়ে আছে, কেউ পাঠায়নি</div><div class="rule-desc">Draft তৈরি হওয়ার পর এই সময় পার হলে</div></div><label class="rule-fld">সময় <input type="number" value="1"><select><option>মিনিট</option><option selected>ঘণ্টা</option><option>দিন</option></select></label><label class="rule-fld">গুরুত্ব <select><option selected>সাধারণ</option><option>জরুরি</option><option>খুব জরুরি</option></select></label><label class="rule-fld">কাকে যাবে <select><option selected>পুল (Unassigned)</option><option>Delivery role</option><option>Accounts role</option><option>Purchase role</option><option>যে process করেছে</option><option>Claim handler</option><option>যে chat-এ ছিল</option><option>মালিক / Admin</option><option>নির্দিষ্ট staff</option></select></label></div><div class="rule-row"><button class="switch on" onclick="this.classList.toggle('on')"></button><div class="rule-main"><div class="rule-name">20 · Comment-এর private reply-এর সময় শেষের পথে</div><div class="rule-desc">7 দিনের সীমা শেষ হওয়ার এই সময় আগে</div></div><label class="rule-fld">সময় <input type="number" value="1"><select><option>মিনিট</option><option>ঘণ্টা</option><option selected>দিন</option></select></label><label class="rule-fld">গুরুত্ব <select><option selected>সাধারণ</option><option>জরুরি</option><option>খুব জরুরি</option></select></label><label class="rule-fld">কাকে যাবে <select><option selected>পুল (Unassigned)</option><option>Delivery role</option><option>Accounts role</option><option>Purchase role</option><option>যে process করেছে</option><option>Claim handler</option><option>যে chat-এ ছিল</option><option>মালিক / Admin</option><option>নির্দিষ্ট staff</option></select></label></div><div class="rule-row"><button class="switch on" onclick="this.classList.toggle('on')"></button><div class="rule-main"><div class="rule-name">21 · Channel ভেঙে গেছে</div><div class="rule-desc">Token-এর মেয়াদ শেষ / connection broken হলেই সাথে সাথে</div></div><span class="rule-fld">সাথে সাথে</span><label class="rule-fld">গুরুত্ব <select><option>সাধারণ</option><option>জরুরি</option><option selected>খুব জরুরি</option></select></label><label class="rule-fld">কাকে যাবে <select><option>পুল (Unassigned)</option><option>Delivery role</option><option>Accounts role</option><option>Purchase role</option><option>যে process করেছে</option><option>Claim handler</option><option>যে chat-এ ছিল</option><option selected>মালিক / Admin</option><option>নির্দিষ্ট staff</option></select></label></div><div class="rule-group">Inventory (4টা নিয়ম)</div><div class="rule-row"><button class="switch on" onclick="this.classList.toggle('on')"></button><div class="rule-main"><div class="rule-name">22 · Stock শেষ / low stock — কেনার সিদ্ধান্ত হয়নি</div><div class="rule-desc">Stock শেষ হওয়ার পর এই কদিন সিদ্ধান্ত না হলে</div></div><label class="rule-fld">সময় <input type="number" value="2"><select><option>মিনিট</option><option>ঘণ্টা</option><option selected>দিন</option></select></label><label class="rule-fld">গুরুত্ব <select><option selected>সাধারণ</option><option>জরুরি</option><option>খুব জরুরি</option></select></label><label class="rule-fld">কাকে যাবে <select><option>পুল (Unassigned)</option><option>Delivery role</option><option>Accounts role</option><option selected>Purchase role</option><option>যে process করেছে</option><option>Claim handler</option><option>যে chat-এ ছিল</option><option>মালিক / Admin</option><option>নির্দিষ্ট staff</option></select></label></div><div class="rule-row"><button class="switch on" onclick="this.classList.toggle('on')"></button><div class="rule-main"><div class="rule-name">23 · Stock ledger-এ গরমিল</div><div class="rule-desc">Integrity scan-এ গরমিল ধরা পড়লেই সাথে সাথে</div></div><span class="rule-fld">সাথে সাথে</span><label class="rule-fld">গুরুত্ব <select><option>সাধারণ</option><option selected>জরুরি</option><option>খুব জরুরি</option></select></label><label class="rule-fld">কাকে যাবে <select><option>পুল (Unassigned)</option><option>Delivery role</option><option>Accounts role</option><option>Purchase role</option><option>যে process করেছে</option><option>Claim handler</option><option>যে chat-এ ছিল</option><option selected>মালিক / Admin</option><option>নির্দিষ্ট staff</option></select></label></div><div class="rule-row"><button class="switch on" onclick="this.classList.toggle('on')"></button><div class="rule-main"><div class="rule-name">24 · Warranty claim overdue</div><div class="rule-desc">Claim-এর নির্ধারিত দিন পার হলেই</div></div><label class="rule-fld">সময় <input type="number" value="0"><select><option>মিনিট</option><option>ঘণ্টা</option><option selected>দিন</option></select></label><label class="rule-fld">গুরুত্ব <select><option>সাধারণ</option><option selected>জরুরি</option><option>খুব জরুরি</option></select></label><label class="rule-fld">কাকে যাবে <select><option>পুল (Unassigned)</option><option>Delivery role</option><option>Accounts role</option><option>Purchase role</option><option>যে process করেছে</option><option selected>Claim handler</option><option>যে chat-এ ছিল</option><option>মালিক / Admin</option><option>নির্দিষ্ট staff</option></select></label></div><div class="rule-row"><button class="switch on" onclick="this.classList.toggle('on')"></button><div class="rule-main"><div class="rule-name">25 · Stock negative হয়ে গেছে</div><div class="rule-desc">কোনো product-এর stock 0-এর নিচে গেলেই</div></div><span class="rule-fld">সাথে সাথে</span><label class="rule-fld">গুরুত্ব <select><option>সাধারণ</option><option selected>জরুরি</option><option>খুব জরুরি</option></select></label><label class="rule-fld">কাকে যাবে <select><option selected>পুল (Unassigned)</option><option>Delivery role</option><option>Accounts role</option><option>Purchase role</option><option>যে process করেছে</option><option>Claim handler</option><option>যে chat-এ ছিল</option><option>মালিক / Admin</option><option>নির্দিষ্ট staff</option></select></label></div><div class="rule-group">Purchase (3টা নিয়ম)</div><div class="rule-row"><button class="switch on" onclick="this.classList.toggle('on')"></button><div class="rule-main"><div class="rule-name">26 · Purchase পাঠানো হয়েছে, goods আসেনি</div><div class="rule-desc">Purchase-এর পর এই কদিনে goods না এলে</div></div><label class="rule-fld">সময় <input type="number" value="3"><select><option>মিনিট</option><option>ঘণ্টা</option><option selected>দিন</option></select></label><label class="rule-fld">গুরুত্ব <select><option selected>সাধারণ</option><option>জরুরি</option><option>খুব জরুরি</option></select></label><label class="rule-fld">কাকে যাবে <select><option>পুল (Unassigned)</option><option>Delivery role</option><option>Accounts role</option><option selected>Purchase role</option><option>যে process করেছে</option><option>Claim handler</option><option>যে chat-এ ছিল</option><option>মালিক / Admin</option><option>নির্দিষ্ট staff</option></select></label></div><div class="rule-row"><button class="switch on" onclick="this.classList.toggle('on')"></button><div class="rule-main"><div class="rule-name">27 · Supplier-এর পাওনা overdue</div><div class="rule-desc">পাওনার নির্ধারিত তারিখ পার হলেই</div></div><label class="rule-fld">সময় <input type="number" value="0"><select><option>মিনিট</option><option>ঘণ্টা</option><option selected>দিন</option></select></label><label class="rule-fld">গুরুত্ব <select><option>সাধারণ</option><option selected>জরুরি</option><option>খুব জরুরি</option></select></label><label class="rule-fld">কাকে যাবে <select><option>পুল (Unassigned)</option><option>Delivery role</option><option selected>Accounts role</option><option>Purchase role</option><option>যে process করেছে</option><option>Claim handler</option><option>যে chat-এ ছিল</option><option>মালিক / Admin</option><option>নির্দিষ্ট staff</option></select></label></div><div class="rule-row"><button class="switch on" onclick="this.classList.toggle('on')"></button><div class="rule-main"><div class="rule-name">28 · Receive-এ damaged/missing — সিদ্ধান্ত বাকি</div><div class="rule-desc">Damaged/missing ওঠার পর এই সময়ে সিদ্ধান্ত না হলে</div></div><label class="rule-fld">সময় <input type="number" value="1"><select><option>মিনিট</option><option>ঘণ্টা</option><option selected>দিন</option></select></label><label class="rule-fld">গুরুত্ব <select><option selected>সাধারণ</option><option>জরুরি</option><option>খুব জরুরি</option></select></label><label class="rule-fld">কাকে যাবে <select><option>পুল (Unassigned)</option><option>Delivery role</option><option>Accounts role</option><option selected>Purchase role</option><option>যে process করেছে</option><option>Claim handler</option><option>যে chat-এ ছিল</option><option>মালিক / Admin</option><option>নির্দিষ্ট staff</option></select></label></div><div class="rule-group">Call Center ও Follow-up (3টা নিয়ম)</div><div class="rule-row"><button class="switch on" onclick="this.classList.toggle('on')"></button><div class="rule-main"><div class="rule-name">29 · Callback প্রতিশ্রুতি, call হয়নি</div><div class="rule-desc">প্রতিশ্রুত সময়ের পর এই সময় পার হলে</div></div><label class="rule-fld">সময় <input type="number" value="30"><select><option selected>মিনিট</option><option>ঘণ্টা</option><option>দিন</option></select></label><label class="rule-fld">গুরুত্ব <select><option>সাধারণ</option><option selected>জরুরি</option><option>খুব জরুরি</option></select></label><label class="rule-fld">কাকে যাবে <select><option>পুল (Unassigned)</option><option>Delivery role</option><option>Accounts role</option><option>Purchase role</option><option>যে process করেছে</option><option>Claim handler</option><option selected>যে chat-এ ছিল</option><option>মালিক / Admin</option><option>নির্দিষ্ট staff</option></select></label></div><div class="rule-row"><button class="switch on" onclick="this.classList.toggle('on')"></button><div class="rule-main"><div class="rule-name">30 · Follow-up-এর নির্ধারিত call হয়নি</div><div class="rule-desc">Follow-up-এর সময় পার হওয়ার পর</div></div><label class="rule-fld">সময় <input type="number" value="1"><select><option>মিনিট</option><option selected>ঘণ্টা</option><option>দিন</option></select></label><label class="rule-fld">গুরুত্ব <select><option>সাধারণ</option><option selected>জরুরি</option><option>খুব জরুরি</option></select></label><label class="rule-fld">কাকে যাবে <select><option selected>পুল (Unassigned)</option><option>Delivery role</option><option>Accounts role</option><option>Purchase role</option><option>যে process করেছে</option><option>Claim handler</option><option>যে chat-এ ছিল</option><option>মালিক / Admin</option><option>নির্দিষ্ট staff</option></select></label></div><div class="rule-row"><button class="switch on" onclick="this.classList.toggle('on')"></button><div class="rule-main"><div class="rule-name">31 · Auto Call fail / balance শেষের পথে</div><div class="rule-desc">বারবার call fail হলে বা balance থ্রেশহোল্ডের নিচে গেলে</div></div><span class="rule-fld">সাথে সাথে</span><label class="rule-fld">গুরুত্ব <select><option>সাধারণ</option><option selected>জরুরি</option><option>খুব জরুরি</option></select></label><label class="rule-fld">কাকে যাবে <select><option>পুল (Unassigned)</option><option>Delivery role</option><option>Accounts role</option><option>Purchase role</option><option>যে process করেছে</option><option>Claim handler</option><option>যে chat-এ ছিল</option><option selected>মালিক / Admin</option><option>নির্দিষ্ট staff</option></select></label></div><div class="rule-group">Finance (2টা নিয়ম)</div><div class="rule-row"><button class="switch on" onclick="this.classList.toggle('on')"></button><div class="rule-main"><div class="rule-name">32 · দিনের cash হিসাব মেলেনি</div><div class="rule-desc">আগের দিনের হিসাব না মিললে পরদিন সকালে</div></div><label class="rule-fld">সময় <input type="number" value="0"><select><option>মিনিট</option><option selected>ঘণ্টা</option><option>দিন</option></select></label><label class="rule-fld">গুরুত্ব <select><option>সাধারণ</option><option selected>জরুরি</option><option>খুব জরুরি</option></select></label><label class="rule-fld">কাকে যাবে <select><option>পুল (Unassigned)</option><option>Delivery role</option><option selected>Accounts role</option><option>Purchase role</option><option>যে process করেছে</option><option>Claim handler</option><option>যে chat-এ ছিল</option><option>মালিক / Admin</option><option>নির্দিষ্ট staff</option></select></label></div><div class="rule-row"><button class="switch" onclick="this.classList.toggle('on')"></button><div class="rule-main"><div class="rule-name">33 · Customer-এর বকেয়া অনেকদিন</div><div class="rule-desc">বকেয়া এই কদিন পার হলে</div></div><label class="rule-fld">সময় <input type="number" value="7"><select><option>মিনিট</option><option>ঘণ্টা</option><option selected>দিন</option></select></label><label class="rule-fld">গুরুত্ব <select><option selected>সাধারণ</option><option>জরুরি</option><option>খুব জরুরি</option></select></label><label class="rule-fld">কাকে যাবে <select><option selected>পুল (Unassigned)</option><option>Delivery role</option><option>Accounts role</option><option>Purchase role</option><option>যে process করেছে</option><option>Claim handler</option><option>যে chat-এ ছিল</option><option>মালিক / Admin</option><option>নির্দিষ্ট staff</option></select></label></div><div class="rule-group">System (3টা নিয়ম)</div><div class="rule-row"><button class="switch on" onclick="this.classList.toggle('on')"></button><div class="rule-main"><div class="rule-name">34 · নতুন device approval অপেক্ষায়</div><div class="rule-desc">নতুন device এলেই সাথে সাথে</div></div><span class="rule-fld">সাথে সাথে</span><label class="rule-fld">গুরুত্ব <select><option selected>সাধারণ</option><option>জরুরি</option><option>খুব জরুরি</option></select></label><label class="rule-fld">কাকে যাবে <select><option>পুল (Unassigned)</option><option>Delivery role</option><option>Accounts role</option><option>Purchase role</option><option>যে process করেছে</option><option>Claim handler</option><option>যে chat-এ ছিল</option><option selected>মালিক / Admin</option><option>নির্দিষ্ট staff</option></select></label></div><div class="rule-row"><button class="switch on" onclick="this.classList.toggle('on')"></button><div class="rule-main"><div class="rule-name">35 · SMS / Auto Call balance কম</div><div class="rule-desc">Balance থ্রেশহোল্ডের নিচে গেলেই</div></div><span class="rule-fld">সাথে সাথে</span><label class="rule-fld">গুরুত্ব <select><option>সাধারণ</option><option selected>জরুরি</option><option>খুব জরুরি</option></select></label><label class="rule-fld">কাকে যাবে <select><option>পুল (Unassigned)</option><option>Delivery role</option><option>Accounts role</option><option>Purchase role</option><option>যে process করেছে</option><option>Claim handler</option><option>যে chat-এ ছিল</option><option selected>মালিক / Admin</option><option>নির্দিষ্ট staff</option></select></label></div><div class="rule-row"><button class="switch on" onclick="this.classList.toggle('on')"></button><div class="rule-main"><div class="rule-name">36 · Channel-এর data access-এর মেয়াদ শেষের পথে</div><div class="rule-desc">মেয়াদ শেষ হওয়ার এই কদিন আগে</div></div><label class="rule-fld">সময় <input type="number" value="7"><select><option>মিনিট</option><option>ঘণ্টা</option><option selected>দিন</option></select></label><label class="rule-fld">গুরুত্ব <select><option>সাধারণ</option><option selected>জরুরি</option><option>খুব জরুরি</option></select></label><label class="rule-fld">কাকে যাবে <select><option>পুল (Unassigned)</option><option>Delivery role</option><option>Accounts role</option><option>Purchase role</option><option>যে process করেছে</option><option>Claim handler</option><option>যে chat-এ ছিল</option><option selected>মালিক / Admin</option><option>নির্দিষ্ট staff</option></select></label></div>
+  <div class="rule-group">Notification</div>
+  <div class="rule-row"><button class="switch on" onclick="this.classList.toggle('on')"></button><div class="rule-main"><div class="rule-name">নতুন task এলে bell notification</div><div class="rule-desc">দায়িত্বের লোকের কাছে সাথে সাথে যাবে; sidebar-এ My Work-এর পাশে সংখ্যাও দেখাবে</div></div></div>
+  <div class="rule-row"><button class="switch on" onclick="this.classList.toggle('on')"></button><div class="rule-main"><div class="rule-name">Overdue হলে আবার মনে করিয়ে দেওয়া</div><div class="rule-desc">সময় পার হলে দায়িত্বের লোককে আরেকবার; খুব জরুরি হলে supervisor-ও পাবে</div></div></div>
+  <div class="rule-row"><button class="switch on" onclick="this.classList.toggle('on')"></button><div class="rule-main"><div class="rule-name">সমস্যা মিটে গেলে task নিজে থেকে বন্ধ</div><div class="rule-desc">যেমন order Delivered হয়ে গেলে "Shipped আটকে আছে" task নিজে বন্ধ হবে — ইতিহাসে কারণ লেখা থাকবে</div></div></div>
+</section>
+
+<div class="wi-modal" id="wiDoneModal"><div class="wi-modal-box">
+  <h4 style="font-size:17px;margin-bottom:4px;">কাজটা শেষ — কীভাবে মিটলো?</h4>
+  <p style="font-size:13px;color:#64748B;" id="wiDoneHint">এক লাইনে লিখে রাখো, পরে যে কেউ দেখলে বুঝবে।</p>
+  <textarea id="wiDoneNote" rows="3" placeholder="যেমন: courier-এ পাঠিয়ে দিয়েছি, CN নম্বর ..."></textarea>
+  <div id="wiDoneErr" style="display:none;color:#DC2626;font-size:13px;margin-bottom:8px;">এই কাজটায় note লেখা বাধ্যতামূলক — এক লাইন লিখে দাও।</div>
+  <div style="display:flex;gap:8px;justify-content:flex-end;">
+    <button class="btn-s" onclick="document.getElementById('wiDoneModal').classList.remove('open')">বাদ দাও</button>
+    <button class="btn-p" onclick="wiDoneSave()">Done — শেষ করো</button>
+  </div>
+</div></div>
+<div class="wi-modal" id="wiNewModal"><div class="wi-modal-box">
+  <h4 style="font-size:17px;margin-bottom:4px;">নতুন Task (হাতে বানানো)</h4>
+  <label style="font-size:13px;color:#64748B;">কী করতে হবে</label>
+  <input type="text" id="wiNewTitle" placeholder="যেমন: কাল সকালে Zeotexbd-কে phone করতে হবে">
+  <label style="font-size:13px;color:#64748B;">কাকে দেবে</label>
+  <select id="wiNewWho"><option>নিজেকে</option><option>Arif Hossain</option><option>Sumon Mia</option><option>Nabila Rahman</option><option>পুল (যে ফ্রি সে নেবে)</option></select>
+  <label style="font-size:13px;color:#64748B;">গুরুত্ব</label>
+  <select id="wiNewImp"><option>সাধারণ</option><option>জরুরি</option><option>খুব জরুরি</option></select>
+  <div style="display:flex;gap:8px;justify-content:flex-end;">
+    <button class="btn-s" onclick="document.getElementById('wiNewModal').classList.remove('open')">বাদ দাও</button>
+    <button class="btn-p" onclick="wiNewSave()">Task বানাও</button>
+  </div>
+</div></div>
+
+
+      
+
+      
 
     </div><!-- /content -->
   </div><!-- /main -->
@@ -756,7 +1063,7 @@
     document.querySelectorAll('.sidebar .nav-item .ico').forEach(function(n){ n.style.display=''; });
   }
   // Dashboard view tabs
-  document.getElementById('viewTabs').addEventListener('click', function(e){
+  if(document.getElementById('viewTabs')) document.getElementById('viewTabs').addEventListener('click', function(e){
     if(e.target.tagName !== 'BUTTON') return;
     this.querySelectorAll('button').forEach(function(b){ b.classList.remove('active'); });
     e.target.classList.add('active');
@@ -777,7 +1084,7 @@
     if(e.key === 'Escape'){ closeSearch(); }
   });
   // Quick Search (Ctrl+K)
-  var menuNames = ['Dashboard','Search Orders','New Order','Web Order List','Auto Pick Orders','Auto Call Center','Order Block List','Order List','Orders Dashboard','Preorders','Super Edit','Scan To Update','Courier Invoice Upload','Courier Management','Inventory Dashboard','Products','Stock Ledger','Branches','Warranty','Inbox','Comments','Auto Replies','AI Reply','Messages Report','Purchase Dashboard','Purchase List','New Purchase','Purchase Receive','Supplier Ledger','Suppliers','Ask for Quotation','Task Board','Agent Cockpit','Follow-up Management','My Follow-ups','Follow-up Performance','Call Center Dashboard','Call Center Reports','Contacts','My Work','Work Control','Ads Dashboard','Meta Ads','Record Ad Spend','Ad Profit Analysis','TikTok Ads','Google Ads','Automation','Email Marketing','SMS Marketing','Voice Marketing','Campaign List','Templates','Customer List','Bulk Upload','HR Dashboard','Attendance','Attendance Report','Shift Management','Departments & SOP','User & Role','Finance Dashboard','Accounts & Bank','Income & Expense','Courier Settlement','Cash Flow','Asset Management','Profit & Loss','Order Report','Courier Report','Product Report','Employee Report','Call Center Report','Customer Report','Business Reports','My Limits','Business Profile','Merchant Profile','Device Approvals','Website Integration','Courier Integration','App Integration','Messaging Channels','VoiceDrive PBX','Order Sources','Deletion Logs','Advanced Settings','Help Center','Updates','My Bug Reports','My Feedback','System Status'];
+  var menuNames = ['Dashboard','Search Orders','New Order','Web Order List','Auto Pick Orders','Auto Call Center','Order Block List','Order List','Orders Dashboard','Preorders','Super Edit','Scan To Update','Courier Invoice Upload','Courier Management','Inventory Dashboard','Products','Stock Ledger','Branches','Warranty','Inbox','Comments','Auto Replies','AI Reply','Purchase Dashboard','Purchase List','New Purchase','Purchase Receive','Supplier Ledger','Suppliers','Ask for Quotation','Task Board','Agent Cockpit','Follow-up Management','My Follow-ups','Follow-up Performance','Call Center Dashboard','Call Center Reports','Contacts','My Work','Work Control','Ads Dashboard','Meta Ads','Record Ad Spend','Ad Profit Analysis','TikTok Ads','Google Ads','Automation','Email Marketing','SMS Marketing','Voice Marketing','Campaign List','Templates','Customer List','Bulk Upload','HR Dashboard','Attendance','Attendance Report','Shift Management','Departments & SOP','User & Role','Finance Dashboard','Accounts & Bank','Income & Expense','Courier Settlement','Cash Flow','Asset Management','Profit & Loss','Order Report','Courier Report','Product Report','Employee Report','Call Center Report','Customer Report','Business Reports','My Limits','Business Profile','Merchant Profile','Device Approvals','Website Integration','Courier Integration','App Integration','Messaging Channels','VoiceDrive PBX','Order Sources','Deletion Logs','Advanced Settings','Help Center','Updates','My Bug Reports','My Feedback','System Status'];
   function openSearch(){
     document.getElementById('searchModal').style.display = 'block';
     filterSearch('');
@@ -1106,6 +1413,204 @@
     }catch(e){}
   }
   tickClock(); setInterval(tickClock, 1000);
+</script>
+
+
+<script>
+var BTN = 'background:#411550;color:#fff;border:none;padding:9px 16px;border-radius:8px;font-weight:600;cursor:pointer;font-size:13.5px;';
+var BTN2 = 'background:#fff;color:#411550;border:1px solid #d8cfe0;padding:9px 14px;border-radius:8px;font-weight:600;cursor:pointer;font-size:13.5px;';
+function inboxView(v){ var sec=document.getElementById('msg-inbox'); if(!sec) return; var rep=document.getElementById('inboxReport'); var on=(v==='report'); rep.style.display=on?'block':'none'; Array.prototype.forEach.call(sec.children,function(c){ if(c!==rep && !c.classList.contains('inbox-toggle')) c.style.display=on?'none':''; }); var b1=document.getElementById('inboxTabMain'), b2=document.getElementById('inboxTabReport'); b1.style.background=on?'#f3f4f6':'#411550'; b1.style.color=on?'#374151':'#fff'; b2.style.background=on?'#411550':'#f3f4f6'; b2.style.color=on?'#fff':'#374151'; }
+var cmtState = { channel: 'all', status: 'all' };
+function cmtStyleChips(cls, el){ document.querySelectorAll('.' + cls).forEach(function(c){ c.style.background = '#f3f4f6'; c.style.color = '#374151'; }); el.style.background = '#411550'; el.style.color = '#fff'; }
+function cmtFilter(kind, val, el){ cmtState[kind] = val; cmtStyleChips(kind === 'channel' ? 'cmt-chip' : 'cmt-schip', el); cmtApply(); }
+function cmtApply(){ var post = document.getElementById('cmtPost').value; var shown = 0; document.querySelectorAll('.cmt').forEach(function(c){ var ok = (cmtState.channel === 'all' || c.dataset.channel === cmtState.channel) && (cmtState.status === 'all' || c.dataset.status === cmtState.status) && (post === 'all' || c.dataset.post === post); c.style.display = ok ? '' : 'none'; if (ok) shown++; }); document.getElementById('cmtEmpty').style.display = shown ? 'none' : 'block'; }
+var CMT_PILLS = { awaiting: ['#FEF3C7', '#92400E', 'Reply বাকি'], replied: ['#DCFCE7', '#15803D', 'Replied'], private: ['#DBEAFE', '#1D4ED8', 'Private reply গেছে'], hidden: ['#E5E7EB', '#374151', 'Hidden'], done: ['#F3F4F6', '#64748B', 'Reply লাগবে না'] };
+function cmtSetStatus(card, st){ card.dataset.status = st; var p = card.querySelector('.cmt-pill'); var c = CMT_PILLS[st]; p.style.background = c[0]; p.style.color = c[1]; p.textContent = c[2]; }
+function cmtCard(el){ return el.closest('.cmt'); }
+function cmtReply(btn){ var box = cmtCard(btn).querySelector('.cmt-replybox'); box.style.display = box.style.display === 'none' ? 'block' : 'none'; }
+function cmtAddReply(card, text){ var d = document.createElement('div'); d.style.cssText = 'margin-top:10px;background:#F4EDF7;border-radius:10px;padding:9px 12px;font-size:13.5px;'; d.innerHTML = '<b>ONLINE BUSINESS</b> <span style="color:#64748B;font-size:12px;">(তোমার Page)</span><br>'; d.appendChild(document.createTextNode(text)); card.querySelector('.cmt-replybox').before(d); }
+function cmtSend(btn){ var card = cmtCard(btn); var ta = card.querySelector('.cmt-ta'); if (!ta.value.trim()){ demoToast('আগে reply-টা লেখো'); return; } cmtAddReply(card, ta.value.trim()); ta.value = ''; card.querySelector('.cmt-replybox').style.display = 'none'; cmtSetStatus(card, 'replied'); demoToast('Reply পাঠানো হয়েছে'); }
+function cmtPrivate(btn){ var card = cmtCard(btn); btn.disabled = true; btn.style.opacity = '.55'; btn.textContent = 'Private reply পাঠানো হয়েছে'; var note = document.createElement('div'); note.style.cssText = 'font-size:12px;color:#1d4ed8;margin-top:8px;'; note.textContent = 'Private reply পাঠানো হয়েছে — customer উত্তর দিলে chat-টা Inbox-এ আসবে। (এক comment-এ ৭ দিনের মধ্যে ১টাই পাঠানো যায়)'; btn.parentElement.before(note); cmtSetStatus(card, 'private'); demoToast('Private reply পাঠানো হয়েছে'); }
+function cmtHide(btn){ var card = cmtCard(btn); if (card.dataset.status === 'hidden'){ cmtSetStatus(card, card.dataset.prev || 'awaiting'); card.style.opacity = ''; btn.textContent = 'Hide'; demoToast('Comment আবার দেখানো হচ্ছে'); } else { card.dataset.prev = card.dataset.status; cmtSetStatus(card, 'hidden'); card.style.opacity = '.55'; btn.textContent = 'Unhide'; demoToast('Comment hide করা হয়েছে'); } }
+function cmtDelete(btn){ cmtCard(btn).remove(); cmtApply(); demoToast('Comment delete করা হয়েছে'); }
+function cmtDone(btn){ cmtSetStatus(cmtCard(btn), 'done'); demoToast('ঠিক আছে — এটায় reply লাগবে না'); }
+function cmtLike(btn){ if (btn.dataset.liked){ btn.dataset.liked = ''; btn.textContent = 'Like'; } else { btn.dataset.liked = '1'; btn.textContent = 'Liked'; } }
+function cmtApproveDraft(btn){ var card = cmtCard(btn); var box = btn.closest('.cmt-draft'); var text = box.querySelector('.cmt-draft-text').textContent.trim(); cmtAddReply(card, text); box.remove(); cmtSetStatus(card, 'replied'); demoToast('Draft approve হয়ে reply পাঠানো হয়েছে'); }
+function cmtEditDraft(btn){ var p = btn.closest('.cmt-draft').querySelector('.cmt-draft-text'); p.contentEditable = 'true'; p.style.outline = '2px solid #FDE68A'; p.focus(); demoToast('লেখাটা বদলে Approve & Send চাপো'); }
+function cmtRejectDraft(btn){ btn.closest('.cmt-draft').remove(); demoToast('Draft বাদ দেওয়া হয়েছে'); }
+function demoToast(t){ if(typeof toast==='function'){ toast(t); } else { var d=document.createElement('div'); d.textContent=t; d.style.cssText='position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:#411550;color:#fff;padding:11px 20px;border-radius:99px;font-size:13.5px;font-weight:600;z-index:999;box-shadow:0 8px 24px rgba(0,0,0,.25)'; document.body.appendChild(d); setTimeout(function(){ d.remove(); },2600); } }
+var BUB_C = 'align-self:flex-start;background:#F4EDF7;border-radius:14px;padding:10px 13px;max-width:75%;font-size:13.5px;';
+var BUB_B = 'align-self:flex-end;background:#411550;color:#fff;border-radius:14px;padding:10px 13px;max-width:75%;font-size:13.5px;';
+var CAP = 'align-self:flex-end;font-size:11.5px;color:#92400e;margin-top:-4px;';
+var THREADS = {
+  rahim: { name:'Rahim Uddin', ch:'Messenger', chBg:'#dbeafe', chTx:'#1d4ed8', win:'24h window: Open',
+    msgs: '<div style="' + BUB_C + '">আপু, এই শাড়িটার দাম কত?</div>'
+        + '<div style="' + BUB_B + '">আসসালামু আলাইকুম! Kumkum Ikkat শাড়িটার দাম ৳699। অর্ডার করতে চাইলে নাম, ঠিকানা আর ফোন নম্বরটা দিন।</div>'
+        + '<div style="' + CAP + '">Rule: Price answer · <a href="settings.html#brain" style="color:#92400e;font-weight:700;">Settings</a></div>'
+        + '<div style="' + BUB_C + '">দামটা একটু কমানো যাবে না?</div>',
+    draft: '<div style="background:#FFFBEB;border:1px solid #FDE68A;border-radius:12px;padding:13px;">'
+        + '<b style="font-size:13.5px;">AI Suggested Reply</b> <span style="background:#fef3c7;color:#92400e;font-size:11px;font-weight:700;border-radius:99px;padding:2px 9px;">তোমার অনুমোদন লাগবে</span>'
+        + '<p style="font-size:13.5px;margin:8px 0;">বুঝতে পারছি আপু। আপনার জন্য <b>৳665</b>-এ দিতে পারব। অর্ডার করবেন?</p>'
+        + '<div style="font-size:12px;color:#92400e;margin-bottom:9px;">Rule: Price negotiation — ladder ধাপ ১ (৳699 → ৳665) · <a href="settings.html#negotiation" style="color:#92400e;font-weight:700;">Settings-এ নিয়মটা বদলাও</a></div>'
+        + '<button onclick="approveDraft(this)" style="' + BTN + '">Approve &amp; Send</button> <button onclick="editDraft()" style="' + BTN2 + '">Edit</button> <button onclick="rejectDraft(this)" style="' + BTN2 + '">Reject</button></div>',
+    panel: '<div style="text-align:center;margin-bottom:10px;"><div style="width:52px;height:52px;border-radius:50%;background:#411550;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:19px;">R</div><div style="font-weight:700;margin-top:6px;">Rahim Uddin</div><div style="font-size:12px;color:#64748B;">01712-445566 · Mirpur 10, Dhaka</div></div>'
+        + '<div style="display:flex;justify-content:space-around;text-align:center;border-top:1px solid #eef2f7;border-bottom:1px solid #eef2f7;padding:10px 0;"><div><b>8</b><div style="font-size:11px;color:#64748B;">Orders</div></div><div><b style="color:#16a34a;">89%</b><div style="font-size:11px;color:#64748B;">Success rate</div></div><div><b>৳5,240</b><div style="font-size:11px;color:#64748B;">Lifetime value</div></div></div>'
+        + '<div style="margin-top:12px;"><b style="font-size:13px;">Negotiation — দামাদামি কোথায় আছে</b><div style="display:flex;align-items:center;gap:5px;margin-top:9px;flex-wrap:wrap;"><span style="background:#f3f4f6;border-radius:8px;padding:5px 9px;font-size:12.5px;">৳699 দাম</span>→<span style="background:#411550;color:#fff;border-radius:8px;padding:5px 9px;font-size:12.5px;font-weight:700;">৳665 এখন</span>→<span style="background:#f3f4f6;border-radius:8px;padding:5px 9px;font-size:12.5px;">৳640</span>→<span style="background:#fee2e2;color:#dc2626;border-radius:8px;padding:5px 9px;font-size:12.5px;font-weight:700;">৳620 floor</span></div><div style="font-size:12px;color:#64748B;margin-top:7px;">Floor-এর নিচে AI কখনো নামবে না — এটা code দিয়ে আটকানো।</div></div>'
+        + '<div style="margin-top:12px;"><b style="font-size:13px;">আগের order</b><div style="font-size:12.5px;color:#374151;margin-top:6px;">OB281 · 30L Bag · Delivered<br>OB265 · Mentara COMBO · Delivered</div></div>'
+        + '<button onclick="takeOver()" style="width:100%;margin-top:14px;' + BTN2 + '">Take over chat</button>' },
+  sharmin: { name:'Sharmin Akter', ch:'Instagram', chBg:'#fce7f3', chTx:'#be185d', win:'24h window: Open',
+    msgs: '<div style="' + BUB_C + '">Delivery charge koto?</div>'
+        + '<div style="' + BUB_B + '">ঢাকার ভিতরে ৳60, ঢাকার বাইরে ৳120 আপু। কোন এলাকায় ডেলিভারি চান?</div>'
+        + '<div style="' + CAP + '">Rule: Delivery charge answer · AI নিজে পাঠিয়েছে (Auto — safe replies) · <a href="settings.html#brain" style="color:#92400e;font-weight:700;">Settings</a></div>'
+        + '<div style="' + BUB_B + '">জি আপু, খুলনায় পাঠানো যাবে — delivery charge ৳120 পড়বে।</div>'
+        + '<div style="' + CAP + '">Rule: Delivery charge answer · AI নিজে পাঠিয়েছে (Auto — safe replies) · <a href="settings.html#brain" style="color:#92400e;font-weight:700;">Settings</a></div>'
+        + '<div style="' + BUB_C + '">Apu, saree tar kapor ta ki? Hate dhoa jabe?</div>',
+    draft: '<div style="background:#FFFBEB;border:1px solid #FDE68A;border-radius:12px;padding:13px;">'
+        + '<b style="font-size:13.5px;">AI Suggested Reply</b> <span style="background:#fef3c7;color:#92400e;font-size:11px;font-weight:700;border-radius:99px;padding:2px 9px;">তোমার অনুমোদন লাগবে</span>'
+        + '<p style="font-size:13.5px;margin:8px 0;">আপু, এটা <b>জর্জেট কাপড়ের</b> শাড়ি। হালকা হাতে ধোয়া যাবে, ছায়ায় শুকাবেন।</p>'
+        + '<div style="font-size:12px;color:#92400e;margin-bottom:9px;">কোনো নিয়ম মেলেনি — product-এর বিবরণ (description) পড়ে AI নিজে বানিয়েছে। পাঠানোর আগে দেখে নাও।</div>'
+        + '<button onclick="approveDraft(this)" style="' + BTN + '">Approve &amp; Send</button> <button onclick="editDraft()" style="' + BTN2 + '">Edit</button> <button onclick="rejectDraft(this)" style="' + BTN2 + '">Reject</button></div>',
+    panel: '<div style="text-align:center;margin-bottom:10px;"><div style="width:52px;height:52px;border-radius:50%;background:#be185d;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:19px;">S</div><div style="font-weight:700;margin-top:6px;">Sharmin Akter</div><div style="font-size:12px;color:#64748B;">Sonadanga, Khulna</div></div>'
+        + '<div style="display:flex;justify-content:space-around;text-align:center;border-top:1px solid #eef2f7;border-bottom:1px solid #eef2f7;padding:10px 0;"><div><b>2</b><div style="font-size:11px;color:#64748B;">Orders</div></div><div><b style="color:#16a34a;">100%</b><div style="font-size:11px;color:#64748B;">Success rate</div></div><div><b>৳1,180</b><div style="font-size:11px;color:#64748B;">Lifetime value</div></div></div>'
+        + '<div style="margin-top:12px;font-size:12.5px;color:#64748B;">কোনো দামাদামি চলছে না।</div>'
+        + '<button onclick="takeOver()" style="width:100%;margin-top:14px;' + BTN2 + '">Take over chat</button>' },
+  karim: { name:'+880 1712-345678', ch:'WhatsApp', chBg:'#dcfce7', chTx:'#065f46', win:'24h window: Open · 21h left',
+    msgs: '<div style="' + BUB_C + '">Order confirm korlam. Name: Karim Sheikh, Address: Uttara Sector 11, Dhaka. Product: Kumkum Ikkat 1</div>',
+    draft: '<div style="background:#FFFBEB;border:1px solid #FDE68A;border-radius:12px;padding:13px;">'
+        + '<b style="font-size:13.5px;">AI Order Summary</b> <span style="background:#fef3c7;color:#92400e;font-size:11px;font-weight:700;border-radius:99px;padding:2px 9px;">তোমার অনুমোদন লাগবে</span>'
+        + '<p style="font-size:13.5px;margin:8px 0;">Karim Sheikh · Uttara Sector 11, Dhaka<br>Kumkum Ikkat 1 ×1 — ৳699 + delivery ৳60 = <b>মোট ৳759</b> (Cash on Delivery)</p>'
+        + '<div style="font-size:12px;color:#92400e;margin-bottom:9px;">Rule: Order intake · <a href="settings.html#brain" style="color:#92400e;font-weight:700;">Settings</a></div>'
+        + '<button onclick="approveOrder(this)" style="' + BTN + '">Approve &amp; Create Order</button> <button onclick="rejectDraft(this)" style="' + BTN2 + '">Reject</button></div>',
+    panel: '<div style="text-align:center;margin-bottom:10px;"><div style="width:52px;height:52px;border-radius:50%;background:#065f46;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:19px;">K</div><div style="font-weight:700;margin-top:6px;">Karim Sheikh</div><div style="font-size:12px;color:#64748B;">+880 1712-345678 · Uttara, Dhaka</div></div>'
+        + '<div style="display:flex;justify-content:space-around;text-align:center;border-top:1px solid #eef2f7;border-bottom:1px solid #eef2f7;padding:10px 0;"><div><b>0</b><div style="font-size:11px;color:#64748B;">Orders</div></div><div><b>New</b><div style="font-size:11px;color:#64748B;">Customer</div></div><div><b>৳0</b><div style="font-size:11px;color:#64748B;">Lifetime value</div></div></div>'
+        + '<div style="margin-top:12px;font-size:12.5px;color:#64748B;">নতুন customer — এইটাই তার প্রথম order হবে।</div>' }
+};
+function filterChannel(ch, el){
+  document.querySelectorAll('#chFilters .ch-chip').forEach(function(c){ c.style.background = '#f3f4f6'; c.style.color = '#374151'; });
+  el.style.background = '#411550'; el.style.color = '#fff';
+  document.querySelectorAll('.conv-item').forEach(function(it){ it.style.display = (ch === 'all' || it.getAttribute('data-channel') === ch) ? '' : 'none'; });
+}
+var curThread = 'rahim', threadAiOn = true;
+function openThread(id){
+  curThread = id; var t = THREADS[id]; if(!t) return;
+  document.querySelectorAll('.conv-item').forEach(function(el){ el.style.background = el.getAttribute('data-thread') === id ? '#F4EDF7' : ''; });
+  document.getElementById('thName').textContent = t.name;
+  var ch = document.getElementById('thChannel'); ch.textContent = t.ch; ch.style.background = t.chBg; ch.style.color = t.chTx;
+  document.getElementById('thWindow').textContent = t.win;
+  document.getElementById('thMsgs').innerHTML = t.msgs;
+  document.getElementById('thDraft').innerHTML = t.draft;
+  document.getElementById('custPanel').innerHTML = t.panel;
+  threadAiOn = true; document.getElementById('aiPauseBtn').textContent = 'AI: On for this chat';
+}
+function editDraft(){ demoToast('Draft editable (demo)'); }
+function takeOver(){ demoToast('You took over this chat (demo) - AI paused'); }
+function approveDraft(btn){
+  var card = btn.closest('div'); var txt = card.querySelector('p').innerHTML;
+  document.getElementById('thMsgs').innerHTML += '<div style="' + BUB_B + '">' + txt + '</div><div style="' + CAP + '">AI reply পাঠানো হয়েছে · Rule: Price negotiation</div>';
+  card.remove(); demoToast('AI reply sent');
+}
+function approveOrder(btn){
+  document.getElementById('thMsgs').innerHTML += '<div style="' + BUB_B + '">ধন্যবাদ! আপনার order confirm হয়েছে। Invoice: OB287 — মোট ৳759, Cash on Delivery।</div><div style="' + CAP + '">Order OB287 তৈরি — Orders-এ Pending</div>';
+  btn.closest('div').remove(); demoToast('Order OB287 created — Orders-এ Pending');
+}
+function rejectDraft(btn){ btn.closest('div').remove(); demoToast('Draft rejected'); }
+function toggleThreadAi(){ threadAiOn = !threadAiOn; document.getElementById('aiPauseBtn').textContent = threadAiOn ? 'AI: On for this chat' : 'AI: Paused for this chat'; demoToast(threadAiOn ? 'AI resumed for this chat' : 'AI paused for this chat'); }
+var panic = false;
+function togglePanic(){ panic = !panic; document.getElementById('panicBtn').textContent = panic ? 'Resume all AI' : 'Pause all AI'; demoToast(panic ? 'All AI replies paused — drafts only' : 'AI replies resumed'); }
+function approveQueue(){ var q = document.getElementById('queueItem'); if(q) q.remove(); var c = document.getElementById('draftCount'); if(c) c.textContent = '1'; demoToast('Draft approved & sent'); }
+
+</script>
+
+
+
+<script>
+var wiCurTab = 'open', wiDoneCard = null, wiDoneReq = false;
+function wiTab(btn, name){
+  wiCurTab = name;
+  btn.parentElement.querySelectorAll('.ptab').forEach(function(b){ b.classList.remove('active'); });
+  btn.classList.add('active');
+  wiFilter();
+}
+function wiFilter(){
+  var q = (document.querySelector('#wi-my .wi-tools input[type=text]').value || '').toLowerCase();
+  var src = document.getElementById('wiSource').value;
+  var due = document.getElementById('wiDue').value;
+  document.querySelectorAll('#wiList .tk').forEach(function(c){
+    var ok = c.dataset.status === wiCurTab;
+    if (ok && src) ok = c.dataset.source === src;
+    if (ok && due) ok = c.dataset.due === due || (due === 'today' && c.dataset.due === 'overdue');
+    if (ok && q) ok = c.textContent.toLowerCase().includes(q);
+    c.style.display = ok ? '' : 'none';
+  });
+}
+function wiStart(btn){
+  var card = btn.closest('.tk');
+  card.dataset.status = 'progress';
+  btn.remove();
+  demoToast('কাজটা "চলছে"তে গেল');
+  wiFilter();
+}
+function wiDoneOpen(btn, req){
+  wiDoneCard = btn.closest('.tk');
+  wiDoneReq = req;
+  document.getElementById('wiDoneNote').value = '';
+  document.getElementById('wiDoneErr').style.display = 'none';
+  document.getElementById('wiDoneHint').textContent = req ? 'এই কাজটায় (courier / fraud / return জাতীয়) note লেখা বাধ্যতামূলক।' : 'এক লাইনে লিখে রাখো, পরে যে কেউ দেখলে বুঝবে।';
+  document.getElementById('wiDoneModal').classList.add('open');
+}
+function wiDoneSave(){
+  var note = document.getElementById('wiDoneNote').value.trim();
+  if (wiDoneReq && !note){ document.getElementById('wiDoneErr').style.display = 'block'; return; }
+  document.getElementById('wiDoneModal').classList.remove('open');
+  if (wiDoneCard){
+    wiDoneCard.dataset.status = 'done';
+    wiDoneCard.classList.add('done');
+    var acts = wiDoneCard.querySelector('.tk-actions'); if (acts) acts.remove();
+    var chk = wiDoneCard.querySelector('.tk-check'); if (chk) chk.remove();
+    if (note){
+      var cap = wiDoneCard.querySelector('.tk-cap');
+      if (cap) cap.innerHTML += ' · <b>কীভাবে মিটলো:</b> ' + note.replace(/</g, '&lt;');
+    }
+  }
+  demoToast('কাজ শেষ — Done তালিকায় গেল');
+  wiFilter();
+}
+function wiBulk(){
+  var n = document.querySelectorAll('#wiList .tk-check:checked').length;
+  document.getElementById('wiBulkBtn').style.display = n ? '' : 'none';
+  document.getElementById('wiBulkBtn').textContent = 'Complete selected (' + n + ')';
+}
+function wiBulkDone(){
+  document.querySelectorAll('#wiList .tk-check:checked').forEach(function(ch){
+    var c = ch.closest('.tk'); c.dataset.status = 'done'; c.classList.add('done');
+    var acts = c.querySelector('.tk-actions'); if (acts) acts.remove(); ch.remove();
+  });
+  document.getElementById('wiBulkBtn').style.display = 'none';
+  demoToast('বাছাই করা কাজগুলো Done');
+  wiFilter();
+}
+function wiReassign(sel){ demoToast('কাজটা এখন ' + sel.value + '-এর কাছে'); }
+function wiNewOpen(){ document.getElementById('wiNewModal').classList.add('open'); }
+function wiNewSave(){
+  var t = document.getElementById('wiNewTitle').value.trim();
+  if (!t){ demoToast('আগে লিখো কী করতে হবে'); return; }
+  var who = document.getElementById('wiNewWho').value;
+  var imp = document.getElementById('wiNewImp').value;
+  var impChip = imp === 'খুব জরুরি' ? '<span class="chip chip-red">খুব জরুরি</span>' : (imp === 'জরুরি' ? '<span class="chip chip-amber">জরুরি</span>' : '<span class="chip chip-grey">সাধারণ</span>');
+  var card = document.createElement('div');
+  card.className = 'tk'; card.dataset.status = 'open'; card.dataset.source = 'manual'; card.dataset.due = '';
+  card.innerHTML = '<input type="checkbox" class="tk-check" onchange="wiBulk()" style="margin-top:4px;width:16px;height:16px;">'
+    + '<div class="tk-main"><div class="tk-title">' + t.replace(/</g, '&lt;') + '</div>'
+    + '<div class="tk-meta">' + impChip + '<span>হাতে বানানো task</span><span>তৈরি: এখনই</span><span>দায়িত্বে: ' + who + '</span></div>'
+    + '<div class="tk-cap">উৎস: Manual — কোনো নিয়মে তৈরি হয়নি</div></div>'
+    + '<div class="tk-actions"><button class="btn-s" onclick="wiStart(this)">শুরু করো</button><button class="btn-s" onclick="wiDoneOpen(this,false)">Done</button></div>';
+  var list = document.getElementById('wiList');
+  list.insertBefore(card, list.firstChild);
+  document.getElementById('wiNewModal').classList.remove('open');
+  document.getElementById('wiNewTitle').value = '';
+  showPage('wi-my');
+  demoToast('নতুন task তৈরি হয়েছে');
+}
 </script>
 <script>(function(){var m={my:'wi-my',control:'wi-control',settings:'wi-settings'};var h=location.hash.replace('#','');if(m[h])showPage(m[h]);})();</script>
 </body>
