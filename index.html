@@ -233,6 +233,10 @@
     #invoiceModal[style*="flex"]{position:absolute !important;left:0 !important;top:0 !important;background:none !important;padding:0 !important;}
     #invoiceModal[style*="flex"] .modal-box{box-shadow:none !important;max-height:none !important;overflow:visible !important;max-width:100% !important;}
     #invoiceModal[style*="flex"] .inv-actions{display:none !important;}
+    #slipModal[style*="flex"], #slipModal[style*="flex"] *{visibility:visible !important;}
+    #slipModal[style*="flex"]{position:absolute !important;left:0 !important;top:0 !important;background:none !important;padding:0 !important;}
+    #slipModal[style*="flex"] .modal-box{box-shadow:none !important;max-height:none !important;overflow:visible !important;max-width:100% !important;}
+    #slipModal[style*="flex"] .inv-actions{display:none !important;}
   }
 
   .switch{width:42px;height:23px;border-radius:99px;background:var(--toggle-off);border:1px solid #c4bce0;cursor:pointer;position:relative;flex-shrink:0;}
@@ -424,9 +428,9 @@
       </div>
       <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.62l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/></svg></span> Delivery <span class="chev">›</span></div>
       <div class="sub-items">
-        <div class="nav-item" onclick="showPage('page-courier-mgmt')">Courier Management</div><div class="nav-item" onclick="showPage('page-scan-update')">Scan To Update</div>
-        <div class="nav-item" onclick="showPage('page-courier-invoice')">Courier Invoice Upload</div><div class="nav-item" onclick="showPage('page-delivery-methods')">Delivery Methods</div>
-        <div class="nav-item" onclick="showPage('page-courier-settlement')">Courier Settlement</div>
+        <div class="nav-item" onclick="showPage('page-ready-to-ship')">Ready to Ship <span id="rtsBadge" style="float:right;background:#411550;color:#fff;border-radius:99px;padding:0 8px;font-size:11.5px;font-weight:700;">2</span></div><div class="nav-item" onclick="showPage('page-courier-mgmt')">Courier Management</div>
+        <div class="nav-item" onclick="showPage('page-scan-update')">Scan To Update</div><div class="nav-item" onclick="showPage('page-courier-invoice')">Courier Invoice Upload</div>
+        <div class="nav-item" onclick="showPage('page-courier-settlement')">Courier Ledger</div>
       </div>
       <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><path d="M21 8l-9-5-9 5v8l9 5 9-5V8z"/><path d="M3 8l9 5 9-5"/><path d="M12 13v8"/></svg></span> Inventory <span class="chev">›</span></div>
       <div class="sub-items">
@@ -674,7 +678,7 @@
         <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr);">
           <div class="card kpi"><div class="lbl">Orders Received</div><div class="val">71</div><div class="sub">Web orders, all statuses</div></div>
           <div class="card kpi"><div class="lbl">Total Orders</div><div class="val">8</div><div class="sub"><span class="up">↗ 700.0%</span> Previous 1</div></div>
-          <div class="card kpi"><div class="lbl">Confirmed</div><div class="val">8</div><div class="sub">Approved from web + outside web</div></div>
+          <div class="card kpi"><div class="lbl">Processing</div><div class="val">8</div><div class="sub">Approved from web + outside web</div></div>
           <div class="card kpi"><div class="lbl">Shipped</div><div class="val">5</div><div class="sub">Of 65 website orders</div></div>
           <div class="card kpi"><div class="lbl">Delivered</div><div class="val">16</div><div class="sub">Website filter view</div></div>
           <div class="card kpi"><div class="lbl">Cancelled</div><div class="val">41</div><div class="sub">Approved list total</div></div>
@@ -686,10 +690,10 @@
           <div class="card kpi"><div class="lbl">Pending COD</div><div class="val">৳0</div><div class="sub">COD receivable</div></div>
         </div>
         <div class="grid-2">
-          <div class="card"><h3>Order Funnel</h3><div class="card-sub">Web → Incomplete → Confirmed</div>
+          <div class="card"><h3>Order Funnel</h3><div class="card-sub">Web → Incomplete → Processing</div>
             <div class="bar-row"><span class="nm">Web Orders</span><span class="bar-track"><span class="bar-fill" style="width:100%"></span></span><span class="amt">71</span></div>
             <div class="bar-row"><span class="nm">Incomplete</span><span class="bar-track"><span class="bar-fill" style="width:6%"></span></span><span class="amt">3</span></div>
-            <div class="bar-row"><span class="nm">Confirmed</span><span class="bar-track"><span class="bar-fill" style="width:56%"></span></span><span class="amt">40</span></div>
+            <div class="bar-row"><span class="nm">Processing</span><span class="bar-track"><span class="bar-fill" style="width:56%"></span></span><span class="amt">40</span></div>
           </div>
           <div class="card"><h3>Order Counts</h3><div class="card-sub">Created vs Sent to Courier</div>
             <div class="bar-row"><span class="nm">Created</span><span class="bar-track"><span class="bar-fill" style="width:100%"></span></span><span class="amt">15</span></div>
@@ -776,7 +780,7 @@
       <section class="view-panel" id="panel-customers">
         <div class="grid-2">
           <div class="card"><h3>Agent Performance</h3><div class="card-sub">Ranked by processed orders</div>
-            <table><tr><th>Rank</th><th>Agent</th><th>Processed</th><th>Confirmed</th><th>Revenue</th></tr>
+            <table><tr><th>Rank</th><th>Agent</th><th>Processed</th><th>Processing</th><th>Revenue</th></tr>
             <tr><td>1</td><td>M. Fahim</td><td>8</td><td>0%</td><td>৳4,342</td></tr></table>
           </div>
           <div class="card"><h3>Customer Details</h3><div class="card-sub">Customer quality</div>
@@ -899,7 +903,7 @@
 
             <section class="page-panel" id="page-web-orders">
         <div class="page-head">
-          <div><h1>Orders</h1><p>Every order in one place — pending, confirmed, shipped and delivered.</p></div>
+          <div><h1>Orders</h1><p>Every order in one place — pending, processing, shipped and delivered.</p></div>
           <span style="margin-left:auto;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
             <span class="wol-search" style="width:300px;height:44px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><input id="ordSearch" placeholder="Search invoice, phone or name…" oninput="renderTable()"></span>
             <button class="btn-primary" id="openNextBtn" style="padding:12px 22px;font-size:14.5px;border-radius:12px;" onclick="openNextFromList()">Open Next Order (3)</button>
@@ -927,6 +931,7 @@
               <div class="sum-row"><span>Address</span><b id="wodCustAddr">House 12, Road 5, Mirpur 10, Dhaka</b></div>
               <div class="sum-row"><span>Customer History</span><b id="wodCustHist">8 orders · Success rate 75%</b></div>
             </div>
+            <div id="wodFraud" style="margin-bottom:16px;"></div>
             <div class="card"><h3>Items</h3>
               <table id="wodItemsTable"><tr><th>Product</th><th>Qty</th><th>Price</th><th>Total</th></tr>
               <tr><td>Mentara Roll On Balm COMBO <span class="muted-sm">(MENT-COMBO)</span></td><td>1</td><td>৳539</td><td>৳539</td></tr></table>
@@ -1098,7 +1103,7 @@
             <div class="card kpi"><div class="lbl">PRESSED 2</div><div class="val">0</div><div class="sub">Customers cancelled from auto call</div></div>
             <div class="card kpi"><div class="lbl">FAILED</div><div class="val">0</div><div class="sub">0 rejected and 0 busy</div></div>
           </div>
-          <div class="card" style="margin-bottom:16px;"><h3>Confirmed Order Snapshot</h3><p class="muted-sm" style="margin:6px 0;">Current distribution of Pressed 1 approved orders.</p>
+          <div class="card" style="margin-bottom:16px;"><h3>Processing Order Snapshot</h3><p class="muted-sm" style="margin:6px 0;">Current distribution of Pressed 1 approved orders.</p>
             <div style="display:flex;gap:22px;flex-wrap:wrap;margin-top:8px;"><span>CONFIRMED APPROVED ORDERS <b>0</b></span><span>ACTIVE PIPELINE <b>0</b></span><span>DELIVERED <b>0</b></span><span>RETURNED / CANCELLED <b>0</b></span></div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;"><span class="pill grey">Pending 0</span><span class="pill grey">RTS 0</span><span class="pill grey">Shifted 0</span><span class="pill grey">Delivering 0</span><span class="pill grey">Delivered 0</span><span class="pill grey">Partial Delivery 0</span><span class="pill grey">Partial Return 0</span><span class="pill grey">Pending Return 0</span><span class="pill grey">Returned 0</span><span class="pill grey">Cancelled 0</span><span class="pill grey">Other 0</span></div>
           </div>
@@ -1117,7 +1122,7 @@
             <div style="display:flex;gap:16px;flex-wrap:wrap;font-size:13.5px;"><span>Wallet Balance <b>0.00TK</b></span><span>Pending Hold <b>0.00TK</b></span><span>Available Balance <b>0.00TK</b></span><span>Current Rate <b>1.00TK/min</b></span></div>
             <div class="filter-grid" style="margin-top:14px;">
               <label class="fld-l">Top-up amount (TK)<input class="fld" type="number"></label>
-              <label class="fld-l">Default Delivery Method for Auto-Confirmed Orders<select class="fld"><option selected>mr</option><option>Outlet</option><option>Outlet</option><option>steadfast</option><option>Test</option></select></label>
+              <label class="fld-l">Default Delivery Method for Auto-Approved Orders<select class="fld"><option selected>mr</option><option>Outlet</option><option>Outlet</option><option>steadfast</option><option>Test</option></select></label>
               <label class="fld-l">Test Call Mobile Number<input class="fld"></label>
               <label class="fld-l">Upload Voice File<input class="fld" type="file"></label>
               <label class="fld-l">Question Voice (Approved)<select class="fld"><option>Select approved question voice</option></select></label>
@@ -1160,7 +1165,7 @@
       <section class="page-panel" id="page-orders-dashboard">
         <div style="max-width:1520px;margin:0 auto;padding-top:42px;">
         <div class="page-head"><div style="display:flex;gap:12px;align-items:center;"><span style="display:inline-flex;width:44px;height:44px;border-radius:10px;background:#F4EDF7;align-items:center;justify-content:center;flex:none;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#411550" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span><div><h1 style="font-size:24px;font-weight:800;color:#18181B;letter-spacing:-0.02em;">Orders Report</h1><p>Apply filters to analyze your orders</p></div></div>
-        <span style="margin-left:auto;"><button class="btn-primary" onclick="openOrderList('Confirmed')">Open New All Orders List</button></span></div>
+        <span style="margin-left:auto;"><button class="btn-primary" onclick="openOrderList('Processing')">Open New All Orders List</button></span></div>
         <div class="card" style="margin-bottom:16px;margin-top:48px;">
           <div style="display:flex;align-items:center;margin-bottom:14px;border-bottom:1px solid var(--card-border);padding-bottom:12px;"><h3 style="font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#411550" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg> Filters</h3><button class="ctl-btn" style="margin-left:auto;">Hide <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg></button></div>
           <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;">
@@ -1283,6 +1288,16 @@
         </div>
       </div>
       </section>
+      <section class="page-panel" id="page-ready-to-ship">
+        <div class="page-head"><div><h1>Ready to Ship</h1><p>Approved orders being packed — print the invoice, pack the parcel, then send it to a courier.</p></div>
+        <span style="margin-left:auto;"><button class="btn-primary" id="rtsBulkBtn" onclick="openSendModal(null)" disabled style="opacity:.5;">Send Selected (0)</button></span></div>
+        <div class="card">
+          <table><tr><th style="width:34px;"><input type="checkbox" id="rtsAll" onchange="rtsToggleAll(this)"></th><th>Invoice</th><th>Customer</th><th>Area</th><th>Items</th><th>COD</th><th>Status</th><th>Waiting</th><th style="text-align:right;">Actions</th></tr>
+          <tbody id="rtsBody"></tbody></table>
+          <p class="empty-note" id="rtsEmpty" style="display:none;margin-top:12px;">No orders waiting — every approved order has been sent to a courier.</p>
+        </div>
+      </section>
+
       <section class="page-panel" id="page-courier-mgmt">
         <div style="max-width:1520px;margin:0 auto;padding-top:30px;">
         
@@ -1367,19 +1382,19 @@
       </section>
 
       <section class="page-panel" id="page-courier-settlement">
-        <div class="page-head"><div><h1>Courier Settlement</h1><p>Same page as Courier Report — COD and charge reconciliation per courier</p></div></div>
+        <div class="page-head"><div><h1>Courier Ledger</h1><p>COD collected, settled to you and still with the courier — per courier</p></div></div>
         <div class="kpi-grid">
-          <div class="card kpi"><div class="lbl">Total COD Receivable</div><div class="val">৳18,450</div><div class="sub">Sum of Expected COD on unsettled delivered parcels</div></div>
-          <div class="card kpi"><div class="lbl">COD Difference</div><div class="val">৳120</div><div class="sub">Actual minus Expected COD</div></div>
-          <div class="card kpi"><div class="lbl">Delivery Subsidy</div><div class="val">৳340</div><div class="sub">Actual charge minus what the customer paid</div></div>
-          <div class="card kpi"><div class="lbl">Charge Difference</div><div class="val">৳85</div><div class="sub">Actual minus Committed (rate card) charge</div></div>
+          <div class="card kpi"><div class="lbl">Collected by courier</div><div class="val">৳19,480</div><div class="sub">Cash couriers collected from your customers</div></div>
+          <div class="card kpi"><div class="lbl">Settled to you</div><div class="val">৳17,190</div><div class="sub">Money already paid to you</div></div>
+          <div class="card kpi"><div class="lbl">Still with courier</div><div class="val">৳2,290</div><div class="sub">Collected, but not paid to you yet</div></div>
         </div>
         <div class="utabs inner-tabs"><button class="active">Overview</button><button>COD Receivable</button><button>Differences</button><button>Reconciliation</button><button>Rate Card</button><button>Issues</button></div>
         <div class="card">
-          <table><tr><th>Courier</th><th>Delivered</th><th>Expected COD</th><th>Actual COD</th><th>COD Difference</th><th>Committed Charge</th><th>Actual Charge</th><th>Status</th></tr>
-          <tr><td>Steadfast</td><td>18</td><td>৳10,240</td><td>৳10,240</td><td>৳0</td><td>৳1,080</td><td>৳1,080</td><td><span class="pill green">Settled</span></td></tr>
-          <tr><td>Pathao</td><td>9</td><td>৳5,610</td><td>৳5,490</td><td><span class="pill red">−৳120</span></td><td>৳560</td><td>৳645</td><td><span class="pill amber">Difference Found</span></td></tr>
-          <tr><td>RedX</td><td>3</td><td>৳2,600</td><td>৳2,600</td><td>৳0</td><td>৳210</td><td>৳210</td><td><span class="pill green">Settled</span></td></tr></table>
+          <table><tr><th>Courier</th><th>Delivered</th><th>Collected</th><th>Settled to you</th><th>Still with courier</th><th>Status</th></tr>
+          <tr><td>Steadfast</td><td>18</td><td>৳10,240</td><td>৳10,240</td><td>৳0</td><td><span class="pill green">Settled</span></td></tr>
+          <tr><td>Pathao</td><td>9</td><td>৳5,490</td><td>৳3,200</td><td>৳2,290</td><td><span class="pill amber">Difference Found</span></td></tr>
+          <tr><td>RedX</td><td>3</td><td>৳2,600</td><td>৳2,600</td><td>৳0</td><td><span class="pill green">Settled</span></td></tr>
+          <tr><td>Sundarban <span class="muted-sm">(manual)</span></td><td>2</td><td>৳1,150</td><td>৳1,150</td><td>৳0</td><td><span class="pill green">Settled</span></td></tr></table>
           <p class="empty-note" style="margin-top:12px;">Committed charge is estimated from the rate card: zone Dhaka means Inside, anything else Outside; weight assumed up to 0.5 kg. Issue types tracked: COD Difference, Charge Mismatch, Duplicate Tracking, Invoice Line Missing, Charge Overcharge.</p>
         </div>
       </section>
@@ -1394,7 +1409,8 @@
 <div class="modal-overlay" id="approveModal" style="display:none;">
   <div class="modal-box">
     <h3 style="font-size:17px;">Approve this order?</h3>
-    <p id="apMdlText" style="color:var(--muted);font-size:13.5px;margin:10px 0;">OB273 will move to Approved Orders. Stock for 1 item will be reserved, and the order becomes ready to ship.</p>
+    <p id="apMdlText" style="color:var(--muted);font-size:13.5px;margin:10px 0;">OB273 will move to Ready to Ship (Delivery). Stock for 1 item will be reserved, and packing can begin.</p>
+    <p id="apMdlWarn" style="display:none;background:#FEF2F2;border:1px solid #FECACA;color:#B91C1C;border-radius:8px;padding:8px 11px;font-size:12.5px;font-weight:600;margin:0 0 10px;">Red alert: the courier network flags this customer as risky. Consider taking advance payment first.</p>
     <div class="sum-row"><span>Customer</span><b id="apMdlCustomer">M. Fahim</b></div>
     <div class="sum-row"><span>Total (COD)</span><b id="apMdlTotal">৳599</b></div>
     <div style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end;">
@@ -1414,6 +1430,43 @@
   </div>
 </div>
 
+
+<div class="modal-overlay" id="sendModal" style="display:none;">
+  <div class="modal-box" style="max-width:560px;">
+    <div id="sendMain">
+      <h3 style="font-size:17px;" id="sendTitle">Send to Courier</h3>
+      <p id="sendSub" style="color:var(--muted);font-size:13.5px;margin:8px 0 4px;"></p>
+      <div id="sendCards" style="display:flex;flex-direction:column;gap:10px;margin-top:12px;"></div>
+      <div id="sendCnRow" style="display:none;margin-top:14px;">
+        <label class="fld-l">Sundarban CN Number<input class="fld" id="sendCn" placeholder="e.g. CN-2026-884120"></label>
+        <p class="muted-sm" style="margin-top:6px;">Book the parcel in Sundarban's own app / panel / branch first, then enter the CN number here. The money accounts stay in this system.</p>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:18px;justify-content:flex-end;">
+        <button class="ctl-btn" onclick="closeModal('sendModal')">Cancel</button>
+        <button class="btn-primary" id="sendGoBtn" onclick="doSend()">Send</button>
+      </div>
+    </div>
+    <div id="sendDone" style="display:none;text-align:center;padding:8px 0;">
+      <div style="width:52px;height:52px;border-radius:50%;background:#F0FDF4;border:1.5px solid #22C55E;color:#16A34A;display:flex;align-items:center;justify-content:center;margin:0 auto;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+      <h3 style="font-size:17px;margin-top:12px;" id="sendDoneTitle">Sent to courier</h3>
+      <p id="sendDoneText" style="color:var(--muted);font-size:13.5px;margin:8px 0;line-height:1.7;"></p>
+      <div style="display:flex;gap:10px;margin-top:16px;justify-content:center;">
+        <button class="ctl-btn" onclick="closeModal('sendModal')">Done</button>
+        <button class="btn-primary" id="sendSlipBtn" onclick="openSlip()">Print Packing Slip</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="slipModal" style="display:none;">
+  <div class="modal-box" style="max-width:560px;">
+    <div id="slipSheet"></div>
+    <div class="inv-actions" style="display:flex;gap:10px;margin-top:18px;justify-content:flex-end;">
+      <button class="ctl-btn" onclick="closeModal('slipModal')">Close</button>
+      <button class="btn-primary" onclick="window.print()">Print</button>
+    </div>
+  </div>
+</div>
 
 <div class="modal-overlay" id="orderModal" style="display:none;">
   <div class="modal-box" style="max-width:640px;">
@@ -1493,7 +1546,7 @@
     <p style="font-size:13.5px;margin-top:10px;">Play a sound when a new web order arrives in the selected order types.</p>
     <div class="sum-row"><span>Play a sound when a new web order comes<br><span class="muted-sm">The alert works from the order list and keeps checking while this browser tab is open.</span></span><button class="switch" onclick="this.classList.toggle('on')"></button></div>
     <b style="display:block;margin-top:12px;">Order types</b><span class="muted-sm">Choose which new orders should play the alert.</span>
-    <label style="display:block;margin-top:8px;font-size:13.5px;"><input type="checkbox" checked> Processing orders — <span class="muted-sm">New confirmed web orders that need team action.</span></label>
+    <label style="display:block;margin-top:8px;font-size:13.5px;"><input type="checkbox" checked> Processing orders — <span class="muted-sm">New approved web orders that need team action.</span></label>
     <label style="display:block;margin-top:6px;font-size:13.5px;"><input type="checkbox"> Incomplete orders — <span class="muted-sm">New checkout attempts that were not completed.</span></label>
     <b style="display:block;margin-top:12px;">Alert sound</b><span class="muted-sm">Pick the volume for the new order sound.</span>
     <div style="display:flex;gap:14px;margin-top:8px;font-size:13.5px;"><label><input type="radio" name="vol"> Low</label><label><input type="radio" name="vol" checked> Medium</label><label><input type="radio" name="vol"> High</label><button class="ctl-btn">Test sound</button></div>
@@ -1708,11 +1761,11 @@
      courier:'Steadfast — Outside Dhaka', tracking:''},
     {id:'OB283', when:'15 Nov, 9:20 am', extId:'1794550330', name:'F.A. Rayhan', phone:'01812-334455', addr:'Dimla, Nilphamari',
      items:[{name:'Kumkum Ikkat 1', sku:'KK-1', qty:1, price:699}], delivery:60, advance:0,
-     rate:{pct:98, d:65, t:66, rating:65}, check:'safe', status:'Confirmed', site:'Main', tag:false,
+     rate:{pct:98, d:65, t:66, rating:65}, check:'safe', status:'Processing', wait:'2h 05m', site:'Main', tag:false,
      courier:'Steadfast — Outside Dhaka', tracking:''},
     {id:'OB282', when:'15 Nov, 8:57 am', extId:'1794550118', name:'Anwar Hossain', phone:'01765-909090', addr:'Mohammadpur, Dhaka',
      items:[{name:'Kumkum Ikkat 1', sku:'KK-1', qty:1, price:699}], delivery:60, advance:0,
-     rate:{pct:100, d:2, t:2, rating:2}, check:'safe', status:'Confirmed', site:'Main', tag:false,
+     rate:{pct:100, d:2, t:2, rating:2}, check:'safe', status:'Processing', wait:'2h 28m', site:'Main', tag:false,
      courier:'Pathao — Inside Dhaka', tracking:''},
     {id:'OB281', when:'14 Nov, 6:30 pm', extId:'1794498204', name:'Sharmin Akter', phone:'01678-445566', addr:'Uttara Sector 11, Dhaka',
      items:[{name:'30L Bag 109', sku:'BAG-109', qty:1, price:320}], delivery:60, advance:0,
@@ -1735,8 +1788,8 @@
      rate:null, check:'none', status:'Cancelled', site:'Alasil BD Demo', tag:false,
      courier:'Steadfast — Outside Dhaka', tracking:''}
   ];
-  var STATUSES = ['All','Pending','Confirmed','Shipped','Delivered','Returned','Cancelled'];
-  var STATUS_PILL = {Pending:'amber', Confirmed:'blue', Shipped:'purple', Delivered:'green', Returned:'red', Cancelled:'grey'};
+  var STATUSES = ['All','Pending','Processing','Shipped','Delivered','Returned','Cancelled'];
+  var STATUS_PILL = {Pending:'amber', Processing:'blue', Shipped:'purple', Delivered:'green', Returned:'red', Cancelled:'grey'};
   var curFilter = 'All', curOrder = null, detailOrigin = 'list', detailQueue = null, lastNav = 'list';
   var ICON_BTNS = "<span class=\"icon-btns\"><button class=\"mini-btn\" title=\"Call customer\"><svg width=\"12\" height=\"12\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z\"/></svg></button><button class=\"mini-btn\" title=\"Message customer on WhatsApp\"><svg width=\"12\" height=\"12\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z\"/></svg></button><button class=\"mini-btn\" title=\"Start PBX call\" disabled style=\"opacity:.4;\"><svg width=\"12\" height=\"12\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z\"/></svg></button><button class=\"mini-btn\" title=\"Copy customer details\"><svg width=\"12\" height=\"12\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"9\" y=\"9\" width=\"13\" height=\"13\" rx=\"2\"/><path d=\"M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1\"/></svg></button></span>";
   var PBX_CELL = "<span style=\"display:inline-block;background:#F3F4F6;color:#64748B;border-radius:999px;padding:2px 9px;font-size:11.5px;font-weight:600;white-space:nowrap;\">No Call Center</span><br><a href=\"#\" style=\"white-space:nowrap;\" onclick=\"toast('PBX setup (UI prototype)');return false;\">Set up PBX \u2192</a>";
@@ -1850,6 +1903,17 @@
     document.getElementById('wodCustPhone').textContent = o.phone;
     document.getElementById('wodCustAddr').textContent = o.addr;
     document.getElementById('wodCustHist').textContent = o.rate ? (o.rate.t + ' orders · Success rate ' + o.rate.pct + '%') : 'New customer · Not checked';
+    var fb = document.getElementById('wodFraud');
+    var alertSvg = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
+    if(o.check === 'risky'){
+      fb.innerHTML = '<div style="background:#FEF2F2;border:1.5px solid #DC2626;border-radius:12px;padding:14px 16px;"><div style="display:flex;align-items:center;gap:8px;color:#B91C1C;font-weight:800;font-size:14.5px;">' + alertSvg + 'RED ALERT — Risky customer</div><p style="font-size:13px;color:#7F1D1D;margin:8px 0 0;line-height:1.55;">Courier network check for ' + o.phone + ' (via connected couriers): Steadfast shows ' + o.rate.d + ' of ' + o.rate.t + ' orders delivered — the rest came back. Pathao rates this customer <b>risky</b>. Take advance payment before approving.</p></div>';
+    } else if(o.check === 'safe'){
+      fb.innerHTML = '<div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:12px;padding:12px 16px;font-size:13px;color:#166534;line-height:1.55;"><b>Courier network check: Safe.</b> Steadfast: ' + o.rate.d + '/' + o.rate.t + ' delivered · Pathao rating: ' + (o.rate.pct >= 90 ? 'excellent' : 'good') + ' · Checked just now via connected couriers.</div>';
+    } else {
+      fb.innerHTML = '<div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:12px;padding:12px 16px;font-size:13px;color:#475569;line-height:1.55;"><b>Courier network check: Not checked yet.</b> No courier history found for this number. <a href="#" onclick="toast(\'Fraud check queued (UI prototype)\');return false;">Check now</a></div>';
+    }
+    var aw = document.getElementById('apMdlWarn');
+    if(aw) aw.style.display = o.check === 'risky' ? 'block' : 'none';
     document.getElementById('wodItemsTable').innerHTML =
       '<tr><th>Product</th><th>Qty</th><th>Price</th><th>Total</th></tr>'
       + o.items.map(function(i){ return '<tr><td>' + i.name + ' <span class="muted-sm">(' + i.sku + ')</span></td><td>' + i.qty + '</td><td>' + money(i.price) + '</td><td>' + money(i.qty * i.price) + '</td></tr>'; }).join('');
@@ -1858,7 +1922,7 @@
     document.getElementById('wodDiscount').textContent = '৳0';
     document.getElementById('wodTotal').textContent = money(total(o));
     var itemCount = o.items.reduce(function(s,i){ return s + i.qty; }, 0);
-    document.getElementById('apMdlText').textContent = o.id + ' will move to Approved Orders. Stock for ' + itemCount + ' item' + (itemCount === 1 ? '' : 's') + ' will be reserved, and the order becomes ready to ship.';
+    document.getElementById('apMdlText').textContent = o.id + ' will move to Ready to Ship (Delivery). Stock for ' + itemCount + ' item' + (itemCount === 1 ? '' : 's') + ' will be reserved, and packing can begin.';
     document.getElementById('apMdlCustomer').textContent = o.name;
     document.getElementById('apMdlTotal').textContent = money(total(o));
     showPage('page-web-order-detail');
@@ -1867,9 +1931,10 @@
   function confirmApprove(){
     closeModal('approveModal');
     if(!curOrder) return;
-    curOrder.status = 'Confirmed';
+    curOrder.status = 'Processing';
+    curOrder.wait = 'Just now';
     toast('Order ' + curOrder.id + ' approved');
-    renderTabs(); renderTable();
+    renderTabs(); renderTable(); renderRTS();
     if(detailOrigin === 'autopick'){
       var sw = document.getElementById('apAutoSwitch');
       var on = sw && sw.classList.contains('on');
@@ -1899,6 +1964,141 @@
     document.querySelectorAll('.qlink').forEach(function(n){ var oc = n.getAttribute('onclick') || ''; n.classList.toggle('on', oc.indexOf("openOrderList('" + tab + "')") > -1); });
     document.querySelectorAll('.sidebar .nav-item').forEach(function(n){ var oc = n.getAttribute('onclick') || ''; if(oc.indexOf('openOrderList') > -1) n.classList.toggle('active', oc.indexOf("'" + tab + "'") > -1); });
   }
+  /* ===== Delivery — Ready to Ship & Send to Courier ===== */
+  var COURIERS = [
+    {key:'steadfast', name:'Steadfast', kind:'Automatic', configured:true, inside:60, outside:120, prefix:'STF'},
+    {key:'pathao', name:'Pathao', kind:'Automatic', configured:true, inside:60, outside:130, prefix:'PTH'},
+    {key:'redx', name:'RedX', kind:'Automatic', configured:false, inside:70, outside:130, prefix:'RDX'},
+    {key:'sundarban', name:'Sundarban', kind:'Manual', configured:true, inside:80, outside:150, prefix:'CN'}
+  ];
+  var sendTargets = [], sendCourier = null, lastSent = [];
+  function areaOf(o){ return /dhaka/i.test(o.addr) ? 'Inside Dhaka' : 'Outside Dhaka'; }
+  function codOf(o){ return total(o) - (o.advance || 0); }
+  function chargeOf(c, o){ return areaOf(o) === 'Inside Dhaka' ? c.inside : c.outside; }
+  function renderRTS(){
+    var list = ORDERS.filter(function(o){ return o.status === 'Processing'; });
+    var b = document.getElementById('rtsBadge');
+    if(b){ b.textContent = list.length; b.style.display = list.length ? '' : 'none'; }
+    var tb = document.getElementById('rtsBody'); if(!tb) return;
+    document.getElementById('rtsEmpty').style.display = list.length ? 'none' : '';
+    tb.innerHTML = list.map(function(o){
+      var items = o.items.map(function(i){ return i.name + ' ×' + i.qty; }).join(', ');
+      return '<tr><td><input type="checkbox" class="rtsChk" value="' + o.id + '" onchange="rtsSelChange()"></td>'
+        + '<td><b>' + o.id + '</b><br><span class="muted-sm">' + o.when + '</span></td>'
+        + '<td><b>' + o.name + '</b><br><span class="muted-sm">' + o.phone + '</span></td>'
+        + '<td>' + areaOf(o) + '<br><span class="muted-sm">' + o.addr + '</span></td>'
+        + '<td>' + items + '</td>'
+        + '<td><b>' + money(codOf(o)) + '</b></td>'
+        + '<td><span class="pill ' + STATUS_PILL[o.status] + '">' + o.status + '</span></td>'
+        + '<td>' + (o.wait || '—') + '</td>'
+        + '<td style="text-align:right;white-space:nowrap;"><button class="mini-btn" title="Print Invoice" onclick="openInvoice(\'' + o.id + '\')">' + DL_SVG + '</button> <button class="open-btn" onclick="openSendModal(\'' + o.id + '\')">Send to Courier</button></td></tr>';
+    }).join('');
+    rtsSelChange();
+  }
+  function rtsChecked(){ return Array.prototype.map.call(document.querySelectorAll('.rtsChk:checked'), function(c){ return c.value; }); }
+  function rtsSelChange(){
+    var n = rtsChecked().length;
+    var btn = document.getElementById('rtsBulkBtn');
+    if(btn){ btn.textContent = 'Send Selected (' + n + ')'; btn.disabled = !n; btn.style.opacity = n ? '' : '.5'; }
+  }
+  function rtsToggleAll(cb){
+    document.querySelectorAll('.rtsChk').forEach(function(c){ c.checked = cb.checked; });
+    rtsSelChange();
+  }
+  function suggestedFor(o){
+    var nm = (o.courier || '').split('—')[0].trim().toLowerCase();
+    var hit = COURIERS.filter(function(c){ return c.configured && c.name.toLowerCase() === nm; })[0];
+    if(hit) return {c:hit, reason:'Suggested by the assignment rules — ' + areaOf(o) + ' default for this shop'};
+    var d = COURIERS.filter(function(c){ return c.configured; })[0];
+    return d ? {c:d, reason:'Suggested — your default courier'} : null;
+  }
+  function openSendModal(id){
+    sendTargets = id ? [findOrder(id)] : rtsChecked().map(findOrder);
+    if(!sendTargets.length){ toast('Select at least one order first'); return; }
+    document.getElementById('sendMain').style.display = '';
+    document.getElementById('sendDone').style.display = 'none';
+    document.getElementById('sendCn').value = '';
+    var conf = COURIERS.filter(function(c){ return c.configured; });
+    var first = sendTargets[0];
+    document.getElementById('sendTitle').textContent = sendTargets.length > 1 ? 'Send ' + sendTargets.length + ' orders to Courier' : 'Send to Courier — ' + first.id;
+    document.getElementById('sendSub').innerHTML = sendTargets.length > 1 ? 'One courier will be used for all selected orders.' : ('Customer: <b>' + first.name + '</b> · ' + areaOf(first) + ' · COD <b>' + money(codOf(first)) + '</b>');
+    var box = document.getElementById('sendCards');
+    if(!conf.length){
+      box.innerHTML = '<div style="text-align:center;padding:22px 10px;border:1.5px dashed #E2E8F0;border-radius:12px;"><div style="font-weight:700;font-size:15px;">No courier configured yet</div><p class="muted-sm" style="margin:8px 0 14px;">Connect a courier in Settings first — only connected couriers appear here.</p><button class="btn-primary" onclick="location.href=\'settings.html#courier\'">Go to Settings</button></div>';
+      document.getElementById('sendGoBtn').style.display = 'none';
+      sendCourier = null;
+    } else {
+      document.getElementById('sendGoBtn').style.display = '';
+      var sug = suggestedFor(first);
+      sendCourier = sug ? sug.c.key : conf[0].key;
+      var ordered = sug ? [sug.c].concat(conf.filter(function(c){ return c.key !== sug.c.key; })) : conf;
+      box.innerHTML = ordered.map(function(c){
+        var isSug = sug && sug.c.key === c.key;
+        return '<div class="courier-card" data-key="' + c.key + '" onclick="pickCourier(\'' + c.key + '\')" style="display:flex;align-items:center;gap:10px;border:1.5px solid ' + (sendCourier === c.key ? '#411550' : '#E5E7EB') + ';background:' + (sendCourier === c.key ? '#F6F1FA' : '#fff') + ';border-radius:12px;padding:13px 15px;cursor:pointer;">'
+          + '<span style="font-weight:700;font-size:15px;">' + c.name + '</span>'
+          + '<span class="pill ' + (c.kind === 'Manual' ? 'amber' : 'green') + '">' + c.kind + '</span>'
+          + (isSug ? '<span class="pill blue">Suggested</span>' : '')
+          + '<span style="margin-left:auto;text-align:right;"><span class="muted-sm">Delivery charge · ' + areaOf(first) + '</span><br><b>' + money(chargeOf(c, first)) + '</b></span></div>'
+          + (isSug ? '<div class="muted-sm" style="margin:-4px 2px 2px;">' + sug.reason + '</div>' : '');
+      }).join('');
+    }
+    updCnRow();
+    openModal('sendModal');
+  }
+  function pickCourier(key){
+    sendCourier = key;
+    document.querySelectorAll('#sendCards .courier-card').forEach(function(el){
+      var on = el.getAttribute('data-key') === key;
+      el.style.borderColor = on ? '#411550' : '#E5E7EB';
+      el.style.background = on ? '#F6F1FA' : '#fff';
+    });
+    updCnRow();
+  }
+  function updCnRow(){
+    var c = COURIERS.filter(function(x){ return x.key === sendCourier; })[0];
+    document.getElementById('sendCnRow').style.display = (c && c.kind === 'Manual' && sendTargets.length === 1) ? '' : 'none';
+  }
+  function doSend(){
+    var c = COURIERS.filter(function(x){ return x.key === sendCourier; })[0];
+    if(!c) return;
+    if(c.kind === 'Manual' && sendTargets.length > 1){ toast('Sundarban CN numbers are entered one order at a time'); return; }
+    var cn = (document.getElementById('sendCn').value || '').trim();
+    if(c.kind === 'Manual' && !cn){ toast('Enter the Sundarban CN number first'); return; }
+    lastSent = [];
+    sendTargets.forEach(function(o, ix){
+      o.status = 'Shipped';
+      o.tracking = c.kind === 'Manual' ? cn : (c.prefix + '-' + (88000 + parseInt(o.id.replace(/\D/g, ''), 10) * 7 + ix));
+      o.courier = c.name + ' — ' + areaOf(o);
+      lastSent.push(o);
+    });
+    document.getElementById('sendMain').style.display = 'none';
+    document.getElementById('sendDone').style.display = '';
+    document.getElementById('sendDoneTitle').textContent = lastSent.length > 1 ? lastSent.length + ' orders sent to ' + c.name : 'Sent to ' + c.name;
+    document.getElementById('sendDoneText').innerHTML = lastSent.map(function(o){ return o.id + ' · ' + (c.kind === 'Manual' ? 'CN' : 'Tracking') + ': <b>' + o.tracking + '</b>'; }).join('<br>');
+    document.getElementById('sendSlipBtn').style.display = lastSent.length === 1 ? '' : 'none';
+    renderTabs(); renderTable(); renderRTS();
+    toast(lastSent.length + (lastSent.length === 1 ? ' order' : ' orders') + ' sent to ' + c.name);
+  }
+  function openSlip(){
+    var o = lastSent[0]; if(!o) return;
+    closeModal('sendModal');
+    var rows = o.items.map(function(i){
+      return '<tr><td style="padding:7px 8px;border-bottom:1px solid #F1EDF5;">' + i.name + ' <span style="color:#94A3B8;">(' + i.sku + ')</span></td><td style="padding:7px 8px;border-bottom:1px solid #F1EDF5;text-align:center;">' + i.qty + '</td></tr>';
+    }).join('');
+    document.getElementById('slipSheet').innerHTML =
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #411550;padding-bottom:12px;">'
+      + '<div><div style="font-size:19px;font-weight:800;color:#411550;">ONLINE BUSINESS</div><div style="font-size:12px;color:#64748B;margin-top:2px;">Workspace · SkaleUp BD</div></div>'
+      + '<div style="text-align:right;"><div style="font-size:15px;font-weight:800;letter-spacing:.14em;">PACKING SLIP</div><div style="font-size:12.5px;color:#64748B;margin-top:4px;">Invoice: <b style="color:#111827;">' + o.id + '</b></div></div></div>'
+      + '<div style="display:flex;justify-content:space-between;gap:16px;margin-top:14px;"><div style="font-size:13.5px;line-height:1.55;"><div style="font-weight:700;font-size:12px;letter-spacing:.08em;color:#64748B;">SHIP TO</div><b>' + o.name + '</b><br>' + o.phone + '<br><span style="color:#64748B;">' + o.addr + '</span></div>'
+      + '<div style="text-align:right;font-size:13.5px;line-height:1.55;"><div style="font-weight:700;font-size:12px;letter-spacing:.08em;color:#64748B;">COURIER</div><b>' + o.courier + '</b><br><span style="color:#64748B;">' + (o.courier.indexOf('Sundarban') === 0 ? 'CN' : 'Tracking') + ':</span> <b>' + o.tracking + '</b></div></div>'
+      + '<div style="margin-top:14px;height:42px;background:repeating-linear-gradient(90deg,#111827 0 2px,transparent 2px 5px,#111827 5px 6px,transparent 6px 10px,#111827 10px 13px,transparent 13px 15px);"></div>'
+      + '<div style="text-align:center;font-size:12px;letter-spacing:.3em;color:#475569;margin-top:4px;">' + o.tracking + '</div>'
+      + '<table style="width:100%;border-collapse:collapse;font-size:13.5px;margin-top:14px;"><tr style="background:#F8F7FB;"><th style="text-align:left;padding:8px;border-bottom:1px solid #E8E3EE;">Product</th><th style="padding:8px;border-bottom:1px solid #E8E3EE;">Qty</th></tr>' + rows + '</table>'
+      + '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:16px;background:#F8F7FB;border:1px solid #E8E3EE;border-radius:10px;padding:12px 14px;"><span style="font-weight:700;font-size:13px;letter-spacing:.06em;">COD TO COLLECT</span><span style="font-size:19px;font-weight:800;color:#411550;">' + money(codOf(o)) + '</span></div>';
+    openModal('slipModal');
+  }
+  renderRTS();
+
   renderTabs(); renderTable();
   // Web order pill filter
   document.querySelectorAll('#woPills .wo-pill').forEach(function(b){
@@ -2138,7 +2338,7 @@
   }
   tickClock(); setInterval(tickClock, 1000);
 </script>
-<script>(function(){var m={'new-order':'page-new-order','web-orders':'page-web-orders','web-order-detail':'page-web-order-detail','auto-pick':'page-auto-pick','auto-call':'page-auto-call','block-list':'page-block-list','order-list':'page-web-orders','orders-dashboard':'page-orders-dashboard','preorders':'page-preorders','super-edit':'page-super-edit','scan-update':'page-scan-update','courier-invoice':'page-courier-invoice','courier-mgmt':'page-courier-mgmt','delivery-methods':'page-delivery-methods','settlement':'page-courier-settlement'};var h=location.hash.replace('#','');if(m[h]){ if(h==='order-list' && typeof openOrderList==='function'){ openOrderList('Confirmed'); } else { showPage(m[h]); } }})();</script>
+<script>(function(){var m={'new-order':'page-new-order','web-orders':'page-web-orders','web-order-detail':'page-web-order-detail','auto-pick':'page-auto-pick','auto-call':'page-auto-call','block-list':'page-block-list','order-list':'page-web-orders','orders-dashboard':'page-orders-dashboard','preorders':'page-preorders','super-edit':'page-super-edit','scan-update':'page-scan-update','courier-invoice':'page-courier-invoice','courier-mgmt':'page-courier-mgmt','delivery-methods':'page-delivery-methods','settlement':'page-courier-settlement','ready-to-ship':'page-ready-to-ship'};var h=location.hash.replace('#','');if(m[h]){ if(h==='order-list' && typeof openOrderList==='function'){ openOrderList('Processing'); } else { showPage(m[h]); } }})();</script>
 <script>(function(){var el=document.getElementById('hourlySub');if(!el)return;var d=new Date(),y=new Date(Date.now()-86400000);function f(x){return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0');}el.textContent=f(d)+' vs '+f(y)+' (Until '+((d.getHours()+23)%24)+':00)';})();</script>
 </body>
 </html>

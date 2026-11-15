@@ -1,0 +1,1176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SkaleUp BD — Orders (Minimal Trial)</title>
+<style>
+  :root{
+    --primary:#411550; --primary-dark:#3d0a57; --gradient-end:#6b21a8;
+    --active-bg:#F4EDF7; --focus:#7c3aed;--toggle-off:#d1d5db; --page-bg:#F8F7FB;
+    --card-border:#e5e7eb; --input-border:#d1d5db;
+    --text:#111827; --muted:#64748B; --muted2:#94A3B8;
+    --green-bg:#dcfce7; --green-tx:#15803d; --green-solid:#16a34a;
+    --amber-bg:#fef3c7; --amber-tx:#92400e;
+    --red-bg:#fee2e2; --red-tx:#dc2626;
+    --blue-bg:#dbeafe; --blue-tx:#1d4ed8;
+    --mint-bg:#ecfdf5; --mint-tx:#065f46;
+    --pink-bg:#fce7f3; --pink-tx:#be185d;
+    --grey-bg:#f3f4f6; --grey-tx:#111827;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;}
+  body{background:var(--page-bg);color:var(--text);font-size:14px;}
+  html,body{overflow-x:hidden;overflow-anchor:none;}
+  .layout{display:flex;min-height:100vh;}
+
+  /* ============ SIDEBAR ============ */
+  .sidebar{width:268px;background:#fff;border-right:1px solid var(--card-border);position:fixed;top:0;bottom:0;left:0;overflow-y:auto;display:flex;flex-direction:column;z-index:20;scrollbar-width:none;}
+  .sidebar::-webkit-scrollbar{width:0;}
+  .ws-switcher{display:flex;align-items:center;gap:10px;padding:16px 16px 10px;cursor:pointer;}
+  .ws-chip{width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,var(--primary),var(--gradient-end));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px;flex-shrink:0;}
+  .ws-name{font-weight:700;font-size:13px;letter-spacing:.02em;}
+  .ws-sub{font-size:11px;color:var(--muted);}
+  .ws-chev{margin-left:auto;color:var(--muted);}
+  .quicksearch{margin:6px 14px 10px;background:var(--grey-bg);border:1px solid var(--card-border);border-radius:8px;padding:8px 10px;display:flex;align-items:center;gap:8px;color:var(--muted);font-size:13px;cursor:pointer;}
+  .quicksearch kbd{margin-left:auto;background:#fff;border:1px solid var(--input-border);border-radius:4px;padding:1px 5px;font-size:10px;color:var(--muted);}
+  .side-nav{padding:14px 15px 10px 8px;flex:1;}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;color:var(--grey-tx);font-size:14px;font-weight:500;cursor:pointer;margin-bottom:2px;}
+  .nav-item:hover{background:var(--active-bg);}
+  .nav-item.active{background:var(--active-bg);color:var(--primary);font-weight:600;}
+  .nav-item .ico{width:18px;text-align:center;flex-shrink:0;font-size:14px;}
+  .nav-item .chev{margin-left:auto;font-size:10px;color:var(--muted2);}
+  .nav-item .badge{margin-left:auto;background:var(--red-bg);color:var(--red-tx);font-size:10.5px;font-weight:700;border-radius:999px;padding:1px 7px;}
+  .group-label{font-size:11px;letter-spacing:.05em;color:var(--muted2);font-weight:600;text-transform:uppercase;padding:20px 12px 8px;}
+  .sub-items{margin-left:16px;border-left:1px solid var(--card-border);padding-left:6px;display:none;}
+  .sub-items.open{display:block;}
+  .sub-items .nav-item{font-size:14px;line-height:20px;}
+  .side-footer{padding:12px 16px;border-top:1px solid var(--card-border);display:flex;align-items:center;gap:8px;}
+  .pro-pill{background:var(--primary);color:#fff;font-size:11px;font-weight:700;border-radius:999px;padding:3px 10px;letter-spacing:.05em;}
+  .side-footer span{font-size:12px;color:var(--muted);}
+
+  /* ============ MAIN ============ */
+  .main{flex:1;margin-left:268px;display:flex;flex-direction:column;min-width:0;}
+  .topbar{height:56px;background:#F8F7FB;border-bottom:1px solid #EEF2F7;display:flex;align-items:center;gap:14px;padding:0 20px;position:sticky;top:0;z-index:15;}
+  .topbar .icon-btn{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--grey-tx);cursor:pointer;font-size:16px;border:none;background:transparent;}
+  .topbar .icon-btn:hover{background:var(--active-bg);}
+  .top-search{background:var(--grey-bg);border:1px solid var(--card-border);border-radius:8px;padding:7px 12px;display:flex;gap:8px;align-items:center;color:var(--muted);font-size:13px;width:230px;cursor:pointer;}
+  .top-search kbd{margin-left:auto;background:#fff;border:1px solid var(--input-border);border-radius:4px;padding:1px 5px;font-size:10px;}
+  .ask-btn{border:1.5px solid var(--focus);color:var(--primary);border-radius:999px;padding:7px 14px;font-weight:600;font-size:13px;background:#fff;cursor:pointer;white-space:nowrap;}
+  .bell-wrap{position:relative;}
+  .bell-badge{position:absolute;top:2px;right:2px;background:#f97316;color:#fff;font-size:9.5px;font-weight:700;border-radius:999px;padding:1px 5px;}
+  .avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--gradient-end));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;cursor:pointer;}
+  .bn-btn{font-weight:600;color:var(--grey-tx);cursor:pointer;background:none;border:none;font-size:13px;white-space:nowrap;}
+  .spacer{flex:1;}
+
+  .content{padding:32px 52px 120px;}
+  .step-banner{background:linear-gradient(90deg,#f3eff9,#ece5f5);border:1px solid var(--card-border);border-radius:12px;padding:12px 18px;display:flex;align-items:center;gap:12px;margin-bottom:20px;font-size:13px;}
+  .step-banner b{color:var(--primary);}
+  .step-dots{margin-left:auto;display:flex;gap:6px;}
+  .step-dots i{width:26px;height:8px;border-radius:99px;background:#d8cdea;display:block;}
+  .step-dots i.on{background:var(--primary);}
+  .page-head{display:flex;align-items:flex-start;gap:14px;margin-bottom:16px;}
+  .page-head h1{font-size:24px;font-weight:700;}
+  .page-head p{color:var(--muted);font-size:13px;margin-top:3px;}
+  .dhaka-clock{margin-left:auto;background:#fff;border:1px solid var(--card-border);border-radius:10px;padding:8px 14px;text-align:right;}
+  .dhaka-clock .lbl{font-size:10px;letter-spacing:.14em;color:var(--muted2);font-weight:700;}
+  .dhaka-clock .time{font-size:16px;font-weight:700;color:var(--primary);}
+
+  /* view tabs */
+  .view-tabs{display:flex;gap:6px;background:#fff;border:1px solid var(--card-border);border-radius:12px;padding:5px;width:max-content;margin-bottom:20px;flex-wrap:wrap;}
+  .view-tabs button{border:none;background:transparent;padding:8px 16px;border-radius:8px;font-size:13.5px;font-weight:600;color:var(--grey-tx);cursor:pointer;}
+  .view-tabs button.active{background:var(--primary);color:#fff;}
+  .view-panel{display:none;}
+  .view-panel.active{display:block;}
+
+  /* KPI cards */
+  .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-bottom:18px;}
+  .kpi-grid.c3{grid-template-columns:repeat(3,1fr);}
+  .card{background:#fff;border:1px solid #E5E7EB;border-radius:12px;padding:24px;box-shadow:0 1px 2px rgba(17,24,39,.03);}
+  .kpi .kpi-top{display:flex;align-items:center;gap:10px;margin-bottom:6px;}
+  .kpi .chip{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:17px;}
+  .kpi .lbl{font-size:13px;color:var(--muted);font-weight:500;}
+  .kpi .dots{margin-left:auto;color:var(--muted2);cursor:pointer;}
+  .kpi{padding:14px 20px 12px 16px;}
+  .kpi .val{font-size:30px;font-weight:700;color:#111827;line-height:34px;}
+  .kpi .sub{font-size:12.5px;color:var(--muted);margin-top:2px;}
+  .up{color:#1CA477;font-weight:600;}
+  .down{color:var(--red-tx);font-weight:700;}
+
+  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px;}
+  .grid-21{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:18px;}
+  .card h3{font-size:16px;font-weight:600;margin-bottom:4px;}
+  .card .card-sub{font-size:12.5px;color:var(--muted);margin-bottom:12px;}
+  table{width:100%;border-collapse:collapse;}
+  th{font-size:11.5px;text-transform:uppercase;letter-spacing:.07em;color:#6f6890;text-align:left;padding:12px 16px;border-bottom:1px solid #e3dcf0;font-weight:600;background:#f4f0fa;white-space:nowrap;}
+  td{font-size:13.5px;padding:15px 16px;border-bottom:1px solid #f0edf6;vertical-align:top;}
+  tr:last-child td{border-bottom:none;}
+  .pill{display:inline-block;border-radius:999px;padding:4px 11px;font-size:12px;font-weight:600;line-height:1.35;}
+  .pill.purple{background:var(--primary);color:#fff;}
+  .pill.lpurple{background:var(--active-bg);color:var(--primary);}
+  .pill.green{background:var(--green-bg);color:var(--green-tx);}
+  .pill.amber{background:var(--amber-bg);color:var(--amber-tx);}
+  .pill.red{background:var(--red-bg);color:var(--red-tx);}
+  .pill.blue{background:var(--blue-bg);color:var(--blue-tx);}
+  .pill.grey{background:var(--grey-bg);color:var(--grey-tx);}
+  .pill.mint{background:var(--mint-bg);color:var(--mint-tx);}
+  .pill.pink{background:var(--pink-bg);color:var(--pink-tx);}
+  .bar-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;font-size:13px;}
+  .bar-row .nm{width:170px;flex-shrink:0;}
+  .bar-track{flex:1;background:#f1f0f6;border-radius:99px;height:10px;overflow:hidden;}
+  .bar-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--primary),var(--gradient-end));}
+  .bar-row .amt{width:80px;text-align:right;font-weight:600;}
+  .heatmap{display:grid;grid-template-columns:repeat(12,1fr);gap:4px;}
+  .heatmap div{height:26px;border-radius:5px;background:#f1f0f6;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--muted);}
+  .heatmap .h1{background:#99f6e4;} .heatmap .h2{background:#5eead4;} .heatmap .h3{background:#14b8a6;color:#fff;font-weight:700;}
+  .feed-item{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid #f1f0f6;font-size:13px;}
+  .feed-item:last-child{border-bottom:none;}
+  .feed-dot{width:9px;height:9px;border-radius:50%;background:var(--focus);margin-top:5px;flex-shrink:0;}
+  .feed-item .t{color:var(--muted2);font-size:12px;margin-left:auto;white-space:nowrap;}
+  .decision-box{background:linear-gradient(135deg,var(--primary),var(--gradient-end));color:#fff;border-radius:12px;padding:22px;}
+  .decision-box h3{color:#fff;}
+  .decision-box .big{font-size:30px;font-weight:800;margin:8px 0 4px;}
+  .stuck-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:18px;}
+  .stuck{background:#fff;border:1px solid var(--card-border);border-radius:12px;padding:14px;text-align:center;}
+  .stuck .n{font-size:22px;font-weight:800;}
+  .stuck .l{font-size:12px;color:var(--muted);margin-top:2px;}
+  .donut-wrap{display:flex;align-items:center;gap:18px;}
+  .donut{width:120px;height:120px;border-radius:50%;background:conic-gradient(var(--primary) 0 60%,#a855f7 60% 77%,#e9d5ff 77% 100%);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .donut i{width:78px;height:78px;background:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-style:normal;font-weight:800;font-size:15px;}
+  .legend div{font-size:13px;margin-bottom:7px;display:flex;gap:8px;align-items:center;}
+  .legend i{width:11px;height:11px;border-radius:3px;display:block;}
+  .team-chat{position:fixed;right:22px;bottom:22px;width:52px;height:52px;background:var(--primary);color:#fff;border:none;border-radius:50%;padding:0;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 8px 24px rgba(65,21,80,.35);z-index:30;}
+  .empty-note{font-size:12.5px;color:var(--muted);background:var(--grey-bg);border-radius:8px;padding:10px 12px;}
+
+
+  /* ===== Mobile layout (phones) ===== */
+  @media (max-width:1150px){
+    .sidebar{transform:translateX(-105%);transition:transform .22s ease;z-index:120;box-shadow:none;}
+    .sidebar.mob-open{transform:none;box-shadow:0 0 60px rgba(0,0,0,.3);}
+    .main{margin-left:0 !important;}
+    .topbar{gap:8px;padding:0 12px;overflow-x:auto;}
+    .qlink{font-size:0;gap:0;padding:7px;}
+    .qlink svg{width:19px;height:19px;}
+    .ask-pill{display:none;}
+    .content{padding:14px 12px 70px;}
+    .kpi-grid{grid-template-columns:repeat(2,1fr) !important;}
+    .grid-2,.grid-21{grid-template-columns:1fr !important;}
+    .page-head{flex-wrap:wrap;}
+    .page-head h1{font-size:19px;}
+    table{display:block;overflow-x:auto;white-space:nowrap;}
+    .utabs{gap:14px;overflow-x:auto;}
+    .step-banner{font-size:12px;padding:10px 12px;}
+    .modal-box{max-width:94vw;}
+  }
+
+  /* ===== Web Orders rebuild additions ===== */
+  .opt-tag{font-size:10px;letter-spacing:.08em;color:var(--muted2);font-weight:700;}
+  .pop-panel{border:1px solid #e8e3f1;border-radius:14px;padding:18px;margin-top:14px;background:#fff;box-shadow:0 6px 18px rgba(61,10,87,.05);}
+  .tag-cloud{display:flex;gap:6px;flex-wrap:wrap;}
+  .tag-cloud span{background:var(--grey-bg);border-radius:99px;padding:4px 10px;font-size:12px;cursor:pointer;}
+  .tag-cloud span:hover{background:var(--active-bg);}
+  .prod-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px;}
+  .prod-card{display:flex;flex-direction:column;gap:4px;text-align:left;background:#fff;border:1px solid #e8e3f1;border-radius:12px;padding:14px;cursor:pointer;font-family:inherit;}
+  .prod-card:hover{border-color:var(--focus);}
+  .prod-card:disabled{opacity:.45;cursor:default;}
+  .pc-name{font-weight:600;font-size:13px;color:var(--text);}
+  .pc-fav{font-size:11px;color:var(--amber-tx);}
+  .ord-row{display:flex;align-items:center;gap:16px;padding:11px 0;border-bottom:1px solid #f3f4f6;flex-wrap:wrap;}
+  .queue-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:14px;}
+  .queue-card{text-align:left;}
+  .q-count{font-size:26px;font-weight:800;margin:10px 0;}
+  .filter-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px;}
+  .menu-list{display:flex;flex-direction:column;}
+  .menu-list span{padding:7px 8px;border-radius:6px;cursor:pointer;font-size:13.5px;}
+  .menu-list span:hover{background:var(--active-bg);}
+  .cfg-list{display:grid;grid-template-columns:1fr 1fr;gap:4px 18px;margin-top:10px;}
+  .cfg-list span{display:flex;align-items:center;font-size:13px;padding:3px 0;}
+  .cfg-list .switch{margin-left:auto;width:36px;height:20px;}
+  .cfg-list .switch::after{width:14px;height:14px;}
+  .cfg-list .switch.on::after{left:19px;}
+  .icon-btns button{border:none;background:#f2eefb;border-radius:8px;font-size:11px;padding:4px 8px;cursor:pointer;color:#57506e;}
+  .icon-btns button:disabled{opacity:.4;}
+  .sr-ring{display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:50%;font-size:11px;font-weight:700;border:3.5px solid var(--card-border);}
+  .sr-ring.red-ring{border-color:#fca5a5;color:var(--red-tx);}
+  .sr-ring.green-ring{border-color:#86efac;color:var(--green-tx);}
+  .fav-on{background:var(--amber-bg) !important;border-color:var(--amber-tx) !important;}
+  /* ===== Step 2 additions ===== */
+  .card table{display:block;overflow-x:auto;max-width:100%;}
+  .page-panel{display:none;}
+  .page-panel.active{display:block;}
+  .fld{width:100%;border:1px solid #d9d3e6;border-radius:10px;padding:12px 14px;font-size:14px;background:#fff;color:var(--text);font-family:inherit;}
+  .fld:focus{outline:2px solid var(--focus);outline-offset:-1px;border-color:transparent;}
+  .fld-l{display:block;font-size:13px;font-weight:600;color:#45405c;}
+  .fld-l .fld{margin-top:7px;font-weight:400;}
+  .btn-primary{background:var(--primary);color:#fff;border:none;border-radius:10px;padding:11px 20px;font-size:14px;font-weight:600;cursor:pointer;}
+  .btn-primary:hover{background:var(--primary2);}
+  .pill-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
+  .wo-pill{border:1px solid #e0daf0;background:#fff;border-radius:99px;padding:9px 16px;font-size:13px;font-weight:600;color:#57506e;cursor:pointer;}
+  .wo-pill b{opacity:.6;font-weight:700;margin-left:2px;}
+  .wo-pill.active{border-color:transparent;}
+  .wo-pill.active b{opacity:.85;}
+  .wo-pill.active{background:var(--primary);border-color:var(--primary);color:#fff;}
+  .wo-pill b{font-weight:700;}
+  .pager{font-size:12.5px;color:var(--muted);margin-top:12px;}
+  .sum-row{display:flex;justify-content:space-between;align-items:center;font-size:13.5px;padding:7px 0;border-bottom:1px solid #f3f4f6;gap:14px;}
+  .sum-row span{color:var(--muted);}
+  .sum-row.total{border-bottom:none;font-size:15px;}
+  .sum-row.total span{color:var(--text);font-weight:700;}
+  .prod-line{display:flex;align-items:center;gap:14px;padding:11px 0;border-bottom:1px solid #f3f4f6;}
+  .prod-line:last-child{border-bottom:none;}
+  .qty{display:inline-flex;align-items:center;gap:9px;margin-left:auto;}
+  .qty button{width:26px;height:26px;border-radius:7px;border:1px solid var(--card-border);background:#fff;cursor:pointer;font-size:15px;}
+  .muted-sm{font-size:12px;color:var(--muted);}
+  .row-menu{position:absolute;right:0;top:34px;background:#fff;border:1px solid var(--card-border);border-radius:10px;box-shadow:0 12px 30px rgba(0,0,0,.13);padding:5px;z-index:50;min-width:170px;}
+  .row-menu a{display:block;padding:7px 10px;border-radius:6px;font-size:13px;cursor:pointer;color:var(--text);}
+  .row-menu a:hover{background:var(--active-bg);}
+  .row-menu a.danger{color:var(--red-tx);}
+  .modal-overlay{position:fixed;inset:0;background:rgba(17,24,39,.5);display:flex;align-items:center;justify-content:center;z-index:200;padding:18px;}
+  .modal-box{background:#fff;border-radius:18px;padding:26px;width:100%;max-width:440px;max-height:88vh;overflow:auto;box-shadow:0 24px 60px rgba(30,10,50,.25);}
+  @media print{
+    body *{visibility:hidden !important;}
+    #invoiceModal[style*="flex"], #invoiceModal[style*="flex"] *{visibility:visible !important;}
+    #invoiceModal[style*="flex"]{position:absolute !important;left:0 !important;top:0 !important;background:none !important;padding:0 !important;}
+    #invoiceModal[style*="flex"] .modal-box{box-shadow:none !important;max-height:none !important;overflow:visible !important;max-width:100% !important;}
+    #invoiceModal[style*="flex"] .inv-actions{display:none !important;}
+  }
+
+  .switch{width:42px;height:23px;border-radius:99px;background:var(--toggle-off);border:1px solid #c4bce0;cursor:pointer;position:relative;flex-shrink:0;}
+  .switch::after{content:"";position:absolute;top:3px;left:3px;width:17px;height:17px;border-radius:50%;background:#fff;transition:left .15s;}
+  .switch.on{background:var(--focus);}
+  .switch.on::after{left:22px;}
+  .sum-chip{background:var(--grey-bg);border-radius:8px;padding:8px 12px;font-size:13px;}
+  #toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%);background:#111827;color:#fff;font-size:13.5px;padding:11px 18px;border-radius:10px;display:none;z-index:300;box-shadow:0 12px 30px rgba(0,0,0,.25);}
+  .utabs.inner-tabs{margin-bottom:16px;}
+  /* verification-fix additions (matched to live my_setup, 2026-11-10) */
+  .utabs{display:flex;gap:26px;border-bottom:1px solid var(--card-border);margin-bottom:18px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;}
+  .utabs::-webkit-scrollbar{display:none;}
+  .utabs button{white-space:nowrap;flex-shrink:0;}
+  .utabs button{border:none;background:transparent;padding:12px 2px;font-size:14px;font-weight:500;color:var(--grey-tx);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;}
+  .utabs button.active{color:#111827;border-bottom:2px solid #42174F;font-weight:600;}
+  .head-row{display:flex;align-items:center;gap:10px;margin-left:auto;}
+  .ctl-btn{background:#fff;border:1px solid #E5E7EB;border-radius:8px;padding:7px 12px;font-size:13px;font-weight:600;color:#374151;cursor:pointer;display:inline-flex;align-items:center;gap:6px;}
+  .ctl-btn:hover{background:var(--active-bg);}
+  .kpi .val{text-decoration:underline dotted;text-underline-offset:4px;cursor:pointer;}
+  .kpi-controls{display:flex;gap:6px;margin-left:auto;}
+  .donut-blue{width:210px;height:210px;border-radius:50%;background:conic-gradient(#4f46e5 0 100%);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .donut-blue i{width:146px;height:146px;background:#fff;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;font-style:normal;text-align:center;padding:6px;}
+  .seg{display:inline-flex;background:#efeaf8;border-radius:12px;padding:4px;gap:3px;}
+  .seg button{border:none;background:transparent;padding:8px 18px;border-radius:9px;font-size:13px;font-weight:600;color:#57506e;cursor:pointer;}
+  .seg button.on{background:var(--primary);color:#fff;box-shadow:0 2px 6px rgba(61,10,87,.25);}
+  .dashed-empty{border:1.5px dashed #d9d3e6;border-radius:14px;padding:38px 20px;text-align:center;color:var(--muted);}
+  .qlink{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:500;color:var(--grey-tx);cursor:pointer;padding:7px 9px;border-radius:8px;white-space:nowrap;}
+  .qlink:hover{background:var(--active-bg);}
+  .dropdown{position:absolute;background:#fff;border:1px solid var(--card-border);border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.12);padding:6px;z-index:60;min-width:210px;}
+  .dropdown div{padding:8px 10px;border-radius:6px;font-size:13px;cursor:pointer;}
+  .dropdown div:hover{background:var(--active-bg);}
+  @media (max-width:1100px){.kpi-grid{grid-template-columns:repeat(2,1fr);}.stuck-grid{grid-template-columns:repeat(3,1fr);}.grid-2,.grid-21{grid-template-columns:1fr;}}
+
+  .funnel-btn{width:auto;padding:0 6px;gap:2px;height:24px;border:1px solid #E5E7EB;background:#fff;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;color:#64748B;flex-shrink:0;}
+  .today-pill{height:23px;padding:0 10px;border:1px solid #E5E7EB;background:#fff;border-radius:999px;font-size:11.5px;font-weight:600;color:#374151;cursor:pointer;display:inline-flex;align-items:center;}
+  .kpi-lbl{font-size:13px;font-weight:500;color:#64748B;white-space:nowrap;}
+  .seg-light{display:inline-flex;background:#F3F4F6;border-radius:10px;padding:3px;gap:2px;}
+  .seg-light button{border:none;background:transparent;padding:6px 12px;border-radius:8px;font-size:12.5px;font-weight:600;color:#64748B;cursor:pointer;}
+  .seg-light button.on{background:#F4EDF7;color:#411550;}
+  .legend-box{display:inline-flex;align-items:center;gap:7px;border:1px solid #E5E7EB;background:#fff;border-radius:8px;padding:7px 12px;font-size:12.5px;font-weight:600;color:#374151;cursor:pointer;}
+  .legend-box.on{background:#F4EDF7;border-color:#E9DFF5;color:#411550;}
+  .legend-big{display:inline-flex;flex-direction:column;align-items:flex-start;gap:5px;border:1px solid #E5E7EB;background:#fff;border-radius:10px;padding:14px;cursor:pointer;width:118px;min-height:111px;}
+  .legend-big.on{background:#ECE7ED;border-color:#E3DCE5;}
+  .lb-lbl{font-size:11.5px;font-weight:600;color:#64748B;line-height:1.3;}
+  .lb-num{font-size:30px;font-weight:700;color:#111827;line-height:1.1;}
+
+  /* Page 2 — Web Order List (measured spec) */
+  .pill-row{display:flex;gap:15px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;border-bottom:1px solid #E5E7EB;margin-bottom:12px;}
+  .wo-pill{background:transparent;border:none;border-bottom:2px solid transparent;margin-bottom:-1px;padding:9px 1px;font-size:14px;font-weight:500;color:#64748B;cursor:pointer;display:inline-flex;align-items:center;gap:7px;white-space:nowrap;border-radius:0;}
+  .wo-pill b{background:#F1F5F9;color:#64748B;border-radius:999px;padding:0 7px;font-size:11.5px;font-weight:600;min-width:24px;height:18px;display:inline-flex;align-items:center;justify-content:center;}
+  .wo-pill.active{background:transparent;color:#42174F;font-weight:600;border-bottom:2px solid #42174F;}
+  .wo-pill.active b{background:#E3DCE5;color:#411550;}
+  .wol-btn{height:30px;padding:0 12px;background:#F8F7FB;border:1px solid #E5E7EB;border-radius:8px;font-size:13px;font-weight:500;color:#111827;display:inline-flex;gap:6px;align-items:center;cursor:pointer;white-space:nowrap;}
+  .wol-icon{width:34px;padding:0;justify-content:center;}
+  .wol-search{display:inline-flex;align-items:center;gap:8px;background:#F8F7FB;border:1px solid #E5E7EB;border-radius:8px;height:30px;padding:0 10px;width:340px;color:#64748B;}
+  .wol-search input{background:transparent;border:none;outline:none;font-size:14px;width:100%;color:#111827;}
+  .wol-search input::placeholder{color:#64748B;}
+  .cs-chip{height:24px;padding:0 8px;border-radius:999px;font-size:12px;font-weight:600;display:inline-flex;align-items:center;white-space:nowrap;}
+  .mini-btn{width:24px;height:24px;border:1px solid #E5E7EB;background:#fff;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;color:#42174F;padding:0;}
+  .open-btn{background:#fff;border:1px solid #E5E7EB;border-radius:999px;height:26px;width:85px;justify-content:center;padding:0 8px;font-size:13px;font-weight:500;color:#42174F;display:inline-flex;align-items:center;gap:5px;cursor:pointer;white-space:nowrap;}
+  #woTable th{background:#E8E3EA;color:#411550;font-size:13px;font-weight:600;padding:13px 14px;text-transform:none;letter-spacing:0;}
+  #woTable td{font-size:12.5px;padding:14px;color:#111827;}
+  #woTable tr:hover td{background:#F7F2F8;}
+
+  .content.subpage{padding:5px 25px 90px;}
+
+  .qlink.on{background:#E6E0EA;color:#411550;}
+  #woTable .addr{display:block;max-width:230px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  #woTable .iname{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+
+  .wo-pill{margin-bottom:0;padding:9px 1px 7px;}
+  .wo-pill.active{border-bottom-color:transparent;box-shadow:inset 0 -2px 0 #42174F;}
+  .wo-pill b{opacity:1;}
+  .wo-pill.active b{opacity:1;}
+
+  /* New Order — measured from saved live page (v2 form) */
+  #page-new-order .card{border-color:#EEF2F7;border-radius:16px;padding:20px;box-shadow:0 1px 2px rgba(17,24,39,.04),0 1px 3px rgba(17,24,39,.06);}
+  #page-new-order .seg{background:#F8F7FB;border:1px solid #EEF2F7;border-radius:8px;padding:4px;gap:2px;}
+  #page-new-order .seg button{padding:6px 12px;font-size:12px;font-weight:500;border-radius:6px;color:#64748B;background:transparent;}
+  #page-new-order .seg button.on{background:#411550;color:#fff;box-shadow:0 1px 2px rgba(17,24,39,.15);}
+  #page-new-order .fld-l{font-size:12px;font-weight:600;color:#64748B;}
+  #page-new-order .fld{height:40px;border-radius:6px;font-size:14px;border-color:#E8E3EE;padding:0 12px;}
+  #page-new-order textarea.fld{height:auto;padding:8px 12px;}
+  #prodGrid{display:grid;grid-template-columns:1fr;gap:0;}
+  #page-new-order .prod-card{display:block;width:100%;text-align:left;background:#fff;border:none;border-bottom:1px solid #EEF2F7;padding:22px 30px 22px 104px;cursor:pointer;position:relative;border-radius:0;}
+  #page-new-order .prod-card:hover{background:#F8F7FB;}
+  #page-new-order .pc-name{font-size:13.5px;font-weight:500;color:#111827;display:block;}
+  #page-new-order .prod-card .muted-sm{display:block;font-size:12px;}
+  #page-new-order .prod-card::before{content:'No Image';position:absolute;left:4px;top:50%;transform:translateY(-50%);width:85px;height:85px;border:1px solid #EEF2F7;border-radius:8px;color:#94A3B8;font-size:11px;display:flex;align-items:center;justify-content:center;background:#F8F7FB;}
+  #page-new-order .prod-card::after{content:'';position:absolute;right:8px;top:16px;width:20px;height:20px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23FFB900' stroke='none' stroke-width='2'%3E%3Cpolygon points='12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26'/%3E%3C/svg%3E") no-repeat center/contain;}
+  #page-new-order .pc-fav{font-size:11px;color:#94A3B8;}
+  /* Approved Orders — live tab strip is 48px in a rounded-lg card */
+  #aoPills{gap:8px;}
+  #aoPills .wo-pill{padding:13px 1px 11px;}
+  #page-approved-orders > .card{border-radius:8px;}
+  /* Orders Report — soft gradient page head */
+  #page-orders-dashboard{background:linear-gradient(180deg,rgba(244,234,247,.45),rgba(248,247,250,0) 220px);}
+
+  /* Auto Call — live uses a bordered segmented tab bar (accent border) and 20px card titles */
+  #page-auto-call .utabs.inner-tabs{display:inline-flex;background:#F6F2F9;border:none;border-radius:10px;padding:4px;gap:2px;}
+  #page-auto-call .utabs.inner-tabs button{border:none;border-bottom:none;padding:6px 12px;font-size:14px;font-weight:500;border-radius:6px;color:#64748B;background:transparent;}
+  #page-auto-call .utabs.inner-tabs button.active{background:linear-gradient(135deg,#411550,#5F1F6D);color:#fff;}
+  #page-auto-call h3{font-size:20px;font-weight:600;}
+
+  #page-new-order .fld{background:#F8F7FB;border-color:#ECE8F0;}
+  #page-new-order .sum-row.total{background:#F4EDF7;border-radius:8px;padding:10px 12px;border-bottom:none;}
+  #page-new-order .sum-row.total span{color:#411550;font-weight:600;}
+  #page-new-order .sum-row.total b{color:#411550;font-size:16px;font-weight:700;}
+  #sumDisc2,#sumAdv2{color:#009966;}
+  #sumGrand{font-weight:700;}
+  #page-new-order .empty-note{background:transparent;}
+
+  #page-auto-call .filter-grid{display:flex;flex-wrap:wrap;gap:13px;}
+  #page-auto-call .filter-grid > *{flex:1 0 250px;}
+  #page-auto-call table{display:table;}
+  #page-auto-call table{width:100%;}
+  #page-auto-call table th{background:#FAF9FB;text-transform:none;letter-spacing:0;}
+  #page-auto-pick .switch.on{background:#411550;}
+
+  #page-new-order .sum-row:has(#sumGrand){font-weight:700;}
+  #page-new-order .sum-row:has(#sumGrand) span{font-weight:600;}
+  #sumDisc2,#sumAdv2{font-weight:600;}
+  #ordEmpty{border:1.5px dashed #D8CFE4;border-radius:10px;padding:18px;text-align:center;}
+
+  #aoTable th{text-transform:none;letter-spacing:0;}
+
+  #page-auto-call .filter-grid > :nth-child(6){flex:0 1 190px;}
+  #page-auto-call .filter-grid > :nth-child(7){flex:0 1 165px;}
+  #page-auto-call .filter-grid > :nth-child(8){flex:0 1 165px;}
+  #page-auto-call .filter-grid > :nth-child(9){flex:0 1 200px;}
+  #page-auto-call .filter-grid > :nth-child(10){flex:0 1 190px;}
+
+  #page-courier-mgmt .utabs{border-bottom:none;gap:6px;}
+  #page-courier-mgmt .utabs button{border-bottom:none;border-radius:99px;padding:7px 14px;}
+  #page-courier-mgmt .utabs button.active{background:#F4EDF7;color:#411550;}
+  #page-courier-mgmt table th{text-transform:none;letter-spacing:0;}
+
+  #page-scan-update table th{text-transform:none;letter-spacing:0;}
+
+  .ptabs{display:flex;gap:6px;align-items:center;flex-wrap:wrap;}
+  .ptab{border:1px solid transparent;background:transparent;border-radius:99px;padding:7px 14px;font-size:14px;font-weight:500;color:#64748B;cursor:pointer;font-family:inherit;}
+  .ptab.active{background:#F4EDF7;color:#411550;}
+  #inv-dashboard .utabs,#inv-ledger .utabs{border-bottom:none;}
+  #inv-dashboard .utabs button,#inv-ledger .utabs button{border-bottom:none;border-radius:99px;padding:7px 14px;}
+  #inv-dashboard .utabs button.active,#inv-ledger .utabs button.active{background:#F4EDF7;color:#411550;box-shadow:none;}
+  .inv-table{display:table;width:100%;}
+  .inv-table th{background:#fff;color:#64748B;text-transform:none;letter-spacing:0;font-size:13px;font-weight:600;border-bottom:1px solid #EEF2F7;}
+
+  #pur-suppliers .utabs,#pur-supplier-detail .utabs{border-bottom:none;}
+  #pur-suppliers .utabs button,#pur-supplier-detail .utabs button{border-bottom:none;border-radius:99px;padding:7px 14px;}
+  #pur-suppliers .utabs button.active,#pur-supplier-detail .utabs button.active{background:#F4EDF7;color:#411550;box-shadow:none;}
+</style>
+<style>
+  /* ===== Orders Minimal (trial) additions ===== */
+  .view-tabs button .cnt{background:#F1F5F9;color:#64748B;border-radius:999px;padding:0 7px;font-size:11.5px;font-weight:700;margin-left:3px;display:inline-flex;align-items:center;height:18px;}
+  .view-tabs button.active .cnt{background:rgba(255,255,255,.28);color:#fff;}
+  #ordTable th{background:#E8E3EA;color:#411550;font-size:13px;font-weight:600;padding:13px 14px;text-transform:none;letter-spacing:0;}
+  #ordTable td{font-size:13.5px;padding:14px;color:#111827;vertical-align:middle;}
+  #ordTable tr:hover td{background:#F7F2F8;}
+  .inv-link{color:#411550;font-weight:700;cursor:pointer;}
+  .inv-link:hover{text-decoration:underline;}
+  .vb{border-radius:10px;padding:12px 14px;font-size:13.5px;margin-top:14px;line-height:1.55;}
+  .vb.safe{background:var(--mint-bg);color:var(--mint-tx);}
+  .vb.risky{background:var(--red-bg);color:#991b1b;}
+  .vb.none{background:var(--grey-bg);color:var(--grey-tx);}
+  .big-action{width:100%;padding:14px 20px;font-size:15px;border-radius:12px;margin-top:14px;}
+  #view-list #woTable{table-layout:fixed;display:table;max-width:none;}
+  #view-list #woTable th{padding:13px 8px;white-space:normal;}
+  #view-list #woTable td{padding:14px 8px;}
+  /* Sticky Actions column: stays visible at the right edge of the orders table */
+  #view-list #woTable th:last-child,#view-list #woTable td:last-child{position:sticky;right:0;z-index:2;}
+  #view-list #woTable th:last-child{background:#E8E3EA;border-left:1px solid #D9D2E0;box-shadow:-8px 0 10px -8px rgba(65,21,80,.35);}
+  #view-list #woTable td:last-child{background:#fff;border-left:1px solid #EDE8F2;box-shadow:-8px 0 10px -8px rgba(65,21,80,.22);}
+  #view-list #woTable tr:hover td:last-child{background:#F7F2F8;}
+  .sidebar.collapsed{display:none;}
+  .main.expanded{margin-left:0;}
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- ================= SIDEBAR ================= -->
+  <aside class="sidebar">
+    <div class="ws-switcher">
+      <div class="ws-chip">O</div>
+      <div><div class="ws-name">ONLINE BUSINESS</div><div class="ws-sub">Workspace</div></div>
+      <span class="ws-chev">▾</span>
+    </div>
+    <div class="quicksearch"><span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg></span> Quick Search <kbd>CTRL K</kbd></div>
+
+    <nav class="side-nav">
+      <div class="nav-item"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></span> Dashboard</div>
+      <div class="nav-item"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg></span> Search</div>
+
+      <div class="group-label">Operations</div>
+      <div class="nav-item active" onclick="toggleSub(this)"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><path d="M21 8l-9-5-9 5v8l9 5 9-5V8z"/><path d="M3 8l9 5 9-5"/><path d="M12 13v8"/></svg></span> Orders <span class="chev">›</span></div>
+      <div class="sub-items open">
+        <div class="nav-item ord-sub" data-nav="new-order" onclick="showView('new-order')">New Order</div>
+        <div class="nav-item ord-sub active" data-nav="list" onclick="showView('list')">Order List</div>
+        <div class="nav-item ord-sub" data-nav="auto-pick" onclick="showView('auto-pick')">Auto Pick Orders</div>
+      </div>
+      <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><path d="M21 8l-9-5-9 5v8l9 5 9-5V8z"/><path d="M3 8l9 5 9-5"/><path d="M12 13v8"/></svg></span> Inventory <span class="chev">›</span></div>
+      <div class="sub-items">
+        <div class="nav-item">Inventory Dashboard</div><div class="nav-item">Products</div>
+        <div class="nav-item">Add Product</div><div class="nav-item">Stock Ledger</div>
+        <div class="nav-item">Branches</div><div class="nav-item">Warranty</div>
+        <div class="nav-item">Stock Transfer</div><div class="nav-item">Low Stock Alert</div>
+      </div>
+      <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></span> Messages <span class="chev">›</span></div>
+      <div class="sub-items">
+        <div class="nav-item">Inbox</div><div class="nav-item">Comments</div>
+        <div class="nav-item">Auto Replies</div><div class="nav-item">AI Reply</div>
+        <div class="nav-item">Report</div>
+      </div>
+      <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><circle cx="9" cy="21" r="1.6"/><circle cx="19" cy="21" r="1.6"/><path d="M2.5 3h2l2.6 12.5a2 2 0 0 0 2 1.5h8.7a2 2 0 0 0 2-1.6L21.5 7H6"/></svg></span> Purchase <span class="chev">›</span></div>
+      <div class="sub-items">
+        <div class="nav-item">Purchase Dashboard</div><div class="nav-item">Purchase List</div>
+        <div class="nav-item">New Purchase</div><div class="nav-item">Purchase Receive</div>
+        <div class="nav-item">Supplier Ledger</div><div class="nav-item">Suppliers</div>
+        <div class="nav-item">Ask for Quotation</div>
+      </div>
+      <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></span> Task &amp; Follow-up <span class="chev">›</span></div>
+      <div class="sub-items">
+        <div class="nav-item">Task Board</div><div class="nav-item">Agent Cockpit</div>
+        <div class="nav-item">Follow-up Management</div><div class="nav-item">My Follow-ups</div>
+        <div class="nav-item">Follow-up Performance</div>
+      </div>
+      <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><path d="M3 14v-2a9 9 0 0 1 18 0v2"/><rect x="3" y="14" width="4" height="7" rx="1.5"/><rect x="17" y="14" width="4" height="7" rx="1.5"/></svg></span> Call Center <span class="chev">›</span></div>
+      <div class="sub-items">
+        <div class="nav-item">Dashboard</div><div class="nav-item">Reports</div><div class="nav-item">Contacts</div>
+      </div>
+
+      <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.5 5.1L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.5-6.9A2 2 0 0 0 16.7 4H7.3a2 2 0 0 0-1.8 1.1z"/></svg></span> Work Inbox <span class="chev">›</span></div>
+      <div class="sub-items">
+        <div class="nav-item">My Work</div><div class="nav-item">Work Control</div><div class="nav-item">Settings</div>
+      </div>
+
+      <div class="group-label">Growth</div>
+      <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><path d="M3 11l14-6v14L3 13v-2z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg></span> Ads <span class="chev">›</span></div>
+      <div class="sub-items">
+        <div class="nav-item">Ads Dashboard</div><div class="nav-item">Meta Ads</div>
+        <div class="nav-item">Record Ad Spend</div><div class="nav-item">Ad Profit Analysis</div>
+        <div class="nav-item">TikTok Ads</div><div class="nav-item">Google Ads</div>
+      </div>
+      <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><path d="M3 11l14-6v14L3 13v-2z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg></span> Marketing <span class="chev">›</span></div>
+      <div class="sub-items">
+        <div class="nav-item">Automation</div><div class="nav-item">Email Marketing</div>
+        <div class="nav-item">SMS Marketing</div><div class="nav-item">Voice Marketing</div>
+        <div class="nav-item">Campaign List</div><div class="nav-item">Templates</div>
+      </div>
+      <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.2 3.4-5 6.5-5s5.7 1.8 6.5 5"/><path d="M16 5a3.5 3.5 0 0 1 0 6.6"/><path d="M17.5 15.3c2 .6 3.4 2.1 4 4.7"/></svg></span> Customers <span class="chev">›</span></div>
+      <div class="sub-items">
+        <div class="nav-item">Customer List</div><div class="nav-item">Bulk Upload</div>
+      </div>
+
+      <div class="group-label">Business Control</div>
+      <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><circle cx="10" cy="8" r="3.5"/><path d="M3.5 20c.7-3.2 3.2-5 6.5-5s5.8 1.8 6.5 5"/><rect x="16" y="13" width="6" height="8" rx="1"/><path d="M16 16.5h6"/></svg></span> HRM <span class="chev">›</span></div>
+      <div class="sub-items">
+        <div class="nav-item">HR Dashboard</div><div class="nav-item">Attendance</div>
+        <div class="nav-item">Attendance Report</div><div class="nav-item">Shift Management</div>
+        <div class="nav-item">Departments &amp; SOP</div><div class="nav-item">User &amp; Role</div>
+        <div class="nav-item">Settings</div>
+      </div>
+      <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><rect x="2.5" y="6" width="19" height="13" rx="2.5"/><circle cx="12" cy="12.5" r="2.8"/><path d="M6 9.5h.01M18 15.5h.01"/></svg></span> Finance <span class="chev">›</span></div>
+      <div class="sub-items">
+        <div class="nav-item">Finance Dashboard</div><div class="nav-item">Accounts &amp; Bank</div>
+        <div class="nav-item">Income &amp; Expense</div><div class="nav-item">Courier Settlement</div>
+        <div class="nav-item">Cash Flow</div><div class="nav-item">Asset Management</div>
+      </div>
+      <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="15 7 21 7 21 13"/></svg></span> Reports <span class="chev">›</span></div>
+      <div class="sub-items">
+        <div class="nav-item">Profit &amp; Loss</div><div class="nav-item">Order Report</div>
+        <div class="nav-item">Courier Report</div><div class="nav-item">Product Report</div>
+        <div class="nav-item">Employee Report</div><div class="nav-item">Call Center Report</div>
+        <div class="nav-item">Customer Report</div><div class="nav-item">Business Reports</div>
+        <div class="nav-item">My Limits</div>
+      </div>
+
+      <div class="group-label">System</div>
+      <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v3M12 18.2v3M2.8 12h3M18.2 12h3M5.2 5.2l2.1 2.1M16.7 16.7l2.1 2.1M18.8 5.2l-2.1 2.1M7.3 16.7l-2.1 2.1"/></svg></span> Settings <span class="chev">›</span></div>
+      <div class="sub-items">
+        <div class="nav-item">Business Profile</div><div class="nav-item">Merchant Profile</div>
+        <div class="nav-item">Device Approvals</div><div class="nav-item">Website Integration</div>
+        <div class="nav-item">Courier Integration</div><div class="nav-item">App Integration</div>
+        <div class="nav-item">Messaging Channels</div><div class="nav-item">VoiceDrive PBX</div>
+        <div class="nav-item">Templates</div><div class="nav-item">Order Sources</div>
+        <div class="nav-item">Deletion Logs</div><div class="nav-item">Advanced Settings</div>
+      </div>
+      <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><circle cx="12" cy="12" r="9.5"/><circle cx="12" cy="12" r="4"/><path d="M5.6 5.6l3.4 3.4M15 15l3.4 3.4M18.4 5.6L15 9M9 15l-3.4 3.4"/></svg></span> Support <span class="chev">›</span></div>
+      <div class="sub-items">
+        <div class="nav-item">Help Center</div><div class="nav-item">Updates</div>
+        <div class="nav-item">My Bug Reports</div><div class="nav-item">My Feedback</div>
+        <div class="nav-item">System Status</div>
+      </div>
+    </nav>
+
+    <div class="side-footer"><span class="pro-pill">PRO</span><span>Expires 2027-12-31</span></div>
+  </aside>
+
+  <!-- ================= MAIN ================= -->
+  <div class="main" id="mainCol">
+    <header class="topbar">
+      <button class="icon-btn" onclick="collapseSidebar()" title="Collapse sidebar"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg></button>
+      <span class="qlink" onclick="openSearch()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg> Search</span>
+      <span class="qlink" onclick="showPage('page-new-order')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><circle cx="9" cy="21" r="1.6"/><circle cx="19" cy="21" r="1.6"/><path d="M2.5 3h2l2.6 12.5a2 2 0 0 0 2 1.5h8.7a2 2 0 0 0 2-1.6L21.5 7H6"/></svg> New Order</span>
+      <span class="qlink" onclick="showPage('page-web-orders')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg> Web Order List</span>
+      <span class="qlink" onclick="showPage('page-approved-orders')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg> Order List</span>
+      <span class="qlink" onclick="alert('Send Message (UI prototype)')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><rect x="2.5" y="5" width="19" height="14" rx="2"/><polyline points="3 7 12 13 21 7"/></svg> Send Message</span>
+      <div class="spacer"></div>
+      <button class="bn-btn" onclick="toggleLang(this)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg> BN</button>
+      <button class="ask-btn" onclick="alert('Ask EcomDrive — AI Assistant (UI prototype)')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><path d="M12 3l1.9 5.6L19.5 10l-5.6 1.9L12 17.5l-1.9-5.6L4.5 10l5.6-1.4z"/></svg> Ask EcomDrive</button>
+      <button class="icon-btn" title="What's New"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><path d="M3 11l14-6v14L3 13v-2z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg></button>
+      <button class="icon-btn" onclick="alert('Feedback and bug reports (UI prototype)')" title="Feedback and bug reports"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><path d="M9 18h6"/><path d="M10 21h4"/><path d="M12 3a6 6 0 0 0-3.6 10.8c.7.6 1.1 1.3 1.3 2.2h4.6c.2-.9.6-1.6 1.3-2.2A6 6 0 0 0 12 3z"/></svg></button>
+      <div class="bell-wrap"><button class="icon-btn" onclick="toggleNotif()" title="Notifications (Alt+T)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 8-3 8h18s-3-1-3-8"/><path d="M10.3 21a2 2 0 0 0 3.4 0"/></svg></button><span class="bell-badge">11</span></div>
+      <button class="icon-btn" onclick="toggleTheme(this)" title="Theme"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></button>
+      <div class="avatar" title="Jodu doe — test@gmail.com">JD</div>
+    </header>
+
+    <!-- Notifications drawer -->
+    <div id="notifDrawer" style="display:none;position:fixed;top:62px;right:0;width:340px;max-height:80vh;overflow:auto;background:#fff;border-left:1px solid var(--card-border);box-shadow:-8px 0 24px rgba(0,0,0,.08);z-index:40;padding:16px;">
+      <h3 style="font-size:15px;margin-bottom:10px;">Notifications <span class="pill red">Urgent 2</span> <span class="pill amber">Warning 5</span> <span class="pill blue">Info 4</span></h3>
+      <div class="feed-item"><span class="feed-dot" style="background:#dc2626"></span><div><b>WooCommerce sync failed</b> ×3<br><span style="color:var(--muted);font-size:12px;">HTTP 401 — check connection credentials</span></div><span class="t">2h ago</span></div>
+      <div class="feed-item"><span class="feed-dot" style="background:#f59e0b"></span><div><b>Low Stock Products</b> ×18<br><span style="color:var(--muted);font-size:12px;">Stock below alert quantity</span></div><span class="t">5h ago</span></div>
+      <div class="feed-item"><span class="feed-dot" style="background:#f59e0b"></span><div><b>Shipped 15+ days</b> ×2<br><span style="color:var(--muted);font-size:12px;">Parcels not delivered yet</span></div><span class="t">1d ago</span></div>
+      <div class="feed-item"><span class="feed-dot"></span><div><b>View all notifications</b><br><span style="color:var(--muted);font-size:12px;">Open the full notification list</span></div></div>
+    </div>
+
+    <!-- Quick Search modal -->
+    <div id="searchModal" style="display:none;position:fixed;inset:0;background:rgba(20,10,30,.45);z-index:50;" onclick="if(event.target===this)closeSearch()">
+      <div style="background:#fff;border-radius:16px;max-width:560px;margin:90px auto;padding:18px;">
+        <input id="searchInput" placeholder="Search menus, orders, products…" style="width:100%;height:46px;border:1px solid var(--input-border);border-radius:8px;padding:0 14px;font-size:14px;outline:none;" oninput="filterSearch(this.value)">
+        <div id="searchResults" style="margin-top:12px;max-height:300px;overflow:auto;"></div>
+      </div>
+    </div>
+
+    
+    <div class="content">
+
+      <!-- ============ ORDERS — NEW ORDER VIEW ============ -->
+      <section id="view-new-order" style="display:none;">
+<section class="page-panel active" id="page-new-order" style="max-width:1400px;margin-left:auto;margin-right:auto;">
+        
+        
+        <div class="grid-21" style="grid-template-columns:minmax(0,1fr) clamp(16rem,25%,28rem);gap:16px;">
+          <div>
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap;background:#fff;border:1px solid #EEF2F7;border-radius:16px;padding:10px 16px;box-shadow:0 1px 2px rgba(17,24,39,.04),0 1px 3px rgba(17,24,39,.06);">
+          <span class="seg" style="font-size:13.5px;"><button onclick="orderMode(this,'manual')">Manual</button><button class="on" onclick="orderMode(this,'approved')">Approved</button><button onclick="orderMode(this,'preorder')">Pre-Order</button></span>
+          <span style="margin-left:auto;display:flex;gap:8px;"><button class="ctl-btn" style="border-color:#EEF2F7;border-radius:8px;font-size:12px;" onclick="toast('Screenshot picker (UI prototype)')">স্ক্রিনশট থেকে পূরণ</button><button class="ctl-btn">Guide</button><button class="ctl-btn" onclick="openModal('layoutsModal')">Layouts &amp; Fields</button></span>
+        </div>
+            <div class="card" style="margin-bottom:16px;">
+              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;">
+                <label class="fld-l">Mobile Number *<input class="fld" placeholder="01XXXXXXXXX"></label>
+                <label class="fld-l">Customer Name *<input class="fld" placeholder="Customer name"></label>
+                <label class="fld-l">Email <span class="opt-tag">OPTIONAL</span><input class="fld" placeholder="customer@example.com"></label>
+                <label class="fld-l">Address *<textarea class="fld" rows="6" placeholder="Enter address"></textarea></label>
+                <label class="fld-l">Shipping Note <span class="opt-tag">OPTIONAL</span> <span class="muted-sm">0/350</span><textarea class="fld" rows="6" placeholder="Note printed on invoice / shared with courier"></textarea></label>
+                <div style="display:flex;flex-direction:column;gap:10px;">
+                  <label class="fld-l" id="dmWrap">Delivery Method *<select class="fld"><option>Select delivery method</option><option>mr</option><option>Outlet</option><option>Outlet</option><option>steadfast</option><option>Test</option></select></label>
+                  <div class="fld-l" id="dmHelp" style="display:none;">Delivery Method<div class="muted-sm" style="margin-top:8px;font-weight:400;">Courier will be assigned during Online Order approval.</div></div>
+                  <div style="display:flex;gap:8px;align-items:center;"><button class="ctl-btn" onclick="popToggle('tagPop')">Tag</button><span class="fld-l" style="display:inline-flex;align-items:center;gap:8px;">Cross Sale <button class="switch" onclick="this.classList.toggle('on')"></button></span></div>
+                  <div style="display:flex;gap:8px;"><button class="ctl-btn" onclick="popToggle('refPop')">Reference Link</button><button class="ctl-btn" onclick="popToggle('notePop')">Note</button></div>
+                  <div style="display:flex;gap:8px;"><button class="ctl-btn" onclick="popToggle('attPop')">Attachment</button><button class="ctl-btn" onclick="popToggle('morePop')">More</button></div>
+                  <label class="fld-l" id="preReason" style="display:none;">Preorder Reason<select class="fld"><option>Select reason</option><option>Out of Stock</option><option>Others</option></select></label>
+                  <label class="fld-l" id="preDate" style="display:none;">Notification Date<input class="fld" type="datetime-local"></label>
+                </div>
+              </div>
+              <div id="tagPop" class="pop-panel" style="display:none;"><b>Order Tags</b><div class="muted-sm" style="margin:6px 0;">Select Custom Tags</div><div class="tag-cloud"><span>storola</span><span>diaper</span><span>diaper + feeding item</span><span>age 0 to 1 year</span><span>Custom Tag 5</span><span>Custom Tag 6</span><span>Custom Tag 7</span><span>Custom Tag 8</span><span>Custom Tag 9</span><span>Custom Tag 10</span><span>Custom Tag 11</span><span>Custom Tag 12</span><span>Custom Tag 13</span><span>Custom Tag 14</span><span>Custom Tag 15</span></div></div>
+              <div id="refPop" class="pop-panel" style="display:none;"><label class="fld-l">Reference link<input class="fld" placeholder="https://…"></label></div>
+              <div id="notePop" class="pop-panel" style="display:none;"><label class="fld-l">Order note<textarea class="fld" rows="2" placeholder="Add an order note"></textarea></label></div>
+              <div id="attPop" class="pop-panel" style="display:none;"><b>Upload Attachments</b><div class="dashed-empty" style="margin-top:8px;">Drag and drop your files here, or click to select<br><span class="muted-sm">Supported formats: JPG, PNG, GIF, WEBP, AVIF, SVG, PDF (max 5MB)</span></div></div>
+              <div id="morePop" class="pop-panel" style="display:none;"><label class="fld-l">Invoice prefix<input class="fld" placeholder="Optional invoice prefix"></label></div>
+              <div style="display:grid;grid-template-columns:1fr 2fr;gap:16px;margin-top:16px;">
+                <label class="fld-l">Payment Method <span class="opt-tag">OPTIONAL</span><select class="fld"><option>Select account</option><option>Brack Bank</option><option>Rocket</option><option>Test</option><option>bKash</option></select></label>
+                <label class="fld-l">Order Source *<select class="fld"><option>Select order source</option><option>Facebook</option><option>Website</option><option>Direct</option><option>Instagram</option><option>TikTok</option><option>WhatsApp</option><option>Exchange</option><option>MESSENGER</option><option>Custom Source</option><option>Custom Source 2</option><option>Incomplete Order</option><option>Upsale</option></select></label>
+              </div>
+            </div>
+            <div class="card">
+              <div style="display:flex;gap:8px;flex-wrap:wrap;"><button class="ctl-btn" style="background:#F8F7FB;border-color:#E8D8EF;" style="display:inline-flex;align-items:center;gap:5px;" onclick="toast('Product picker focused (UI prototype)')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Add Product</button><button class="ctl-btn" style="background:#F8F7FB;border-color:#E8D8EF;" style="display:inline-flex;align-items:center;gap:5px;" onclick="toast('Scan Barcode — Code/sku search focused (UI prototype)')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Scan Barcode</button><button class="ctl-btn" style="background:#F8F7FB;border-color:#E8D8EF;" style="display:inline-flex;align-items:center;gap:5px;" onclick="openModal('customProductModal')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Add Custom Product</button></div>
+              <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);gap:16px;margin-top:16px;">
+                <div style="border:1px solid #EEF2F7;border-radius:12px;padding:16px;">
+                  <h3 >Click To Add Products <button class="ctl-btn" style="padding:2px 8px;">?</button></h3>
+                  <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:10px;margin:12px 0;align-items:end;">
+                  <label class="fld-l">Code/sku<input class="fld" placeholder="Type to Search.." oninput="prodSearch()"></label>
+                  <label class="fld-l">Name<input class="fld" placeholder="Type to Search.." oninput="prodSearch()"></label>
+                  <button style="width:40px;height:40px;border-radius:8px;background:#FFB900;border:1px solid #FFB900;color:#FFFBEB;font-size:17px;cursor:pointer;" title="Favourites only" onclick="this.classList.toggle('fav-on')">★</button>
+                </div>
+                  <div class="prod-grid" id="prodGrid"></div>
+                </div>
+                <div style="border:1px solid #EEF2F7;border-radius:12px;padding:16px;">
+                  
+              <h3>Ordered Products <span class="muted-sm" id="ordCount">0 item(s)</span></h3>
+              <div id="ordEmpty" class="empty-note" style="margin-top:10px;">Search and add products from the "Click To Add Products" panel.</div>
+              <div id="ordList"></div>
+            
+                </div>
+              </div>
+            </div>
+          </div>
+          <div>
+            <div style="position:sticky;top:61px;">
+              <div class="card" style="margin-bottom:16px;"><h3>Calculation Details</h3>
+                <label class="fld-l" style="margin-top:12px;">Discount (৳)<input class="fld" type="number" value="0" id="calcDisc" oninput="calcSummary()"></label>
+                <label class="fld-l" style="margin-top:12px;">Delivery Charge (৳)<input class="fld" type="number" value="0" id="calcDel" oninput="calcSummary()"></label>
+                <label class="fld-l" style="margin-top:12px;">Advance (৳)<input class="fld" type="number" value="0" id="calcAdv" oninput="calcSummary()"></label>
+                <label class="fld-l" style="margin-top:12px;">Transaction ID<input class="fld" placeholder="TrxId (bKash/Nagad/Bank)" disabled></label>
+              </div>
+              <div class="card"><h3>Order Summary</h3>
+                <div class="sum-row"><span>Items Total</span><b id="sumItems">৳0</b></div>
+                <div class="sum-row"><span>Discount</span><b id="sumDisc2">৳0</b></div>
+                <div class="sum-row"><span>Delivery Charge</span><b id="sumDel2">৳0</b></div>
+                <div class="sum-row"><span>Grand Total</span><b id="sumGrand">৳0</b></div>
+                <div class="sum-row"><span>Advance</span><b id="sumAdv2">৳0</b></div>
+                <div class="sum-row total"><span>Due Amount</span><b id="sumDue">৳0</b></div>
+                <button class="btn-primary" style="width:100%;margin-top:16px;height:44px;border-radius:8px;font-size:14px;" id="createOrderBtn" onclick="toast('Order saved (UI prototype)')">Create Approved Order</button>
+                <p class="empty-note" style="text-align:center;margin-top:8px;">Order will be saved as soon as you click.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+      </section>
+
+      <!-- ============ ORDERS — LIST VIEW ============ -->
+      <section id="view-list">
+        <div class="page-head">
+          <div><h1>Orders</h1><p>Every order in one place — pending, confirmed, shipped and delivered.</p></div>
+          <span style="margin-left:auto;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+            <span class="wol-search" style="width:300px;height:44px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><input id="ordSearch" placeholder="Search invoice, phone or name…" oninput="renderTable()"></span>
+            <button class="btn-primary" id="openNextBtn" style="padding:12px 22px;font-size:14.5px;border-radius:12px;" onclick="openNextFromList()">Open Next Order (3)</button>
+          </span>
+        </div>
+
+        <div class="view-tabs" id="ordTabs"></div>
+
+        <div class="card" style="padding:6px 10px 10px;">
+          <div style="overflow-x:auto;"><table id="woTable" style="width:1222px;"><colgroup><col style="width:32px"><col style="width:114px"><col style="width:52px"><col style="width:210px"><col style="width:108px"><col style="width:132px"><col style="width:94px"><col style="width:56px"><col style="width:94px"><col style="width:110px"><col style="width:92px"><col style="width:128px"></colgroup><tr><th><input type="checkbox"></th><th>Invoice</th><th>Auto Call</th><th>Customer</th><th>Order Items</th><th>Success Rate <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 9 5-5 5 5"/><path d="m7 15 5 5 5-5"/></svg></th><th>Tags</th><th>Site</th><th>Status</th><th>PBX Calls</th><th>Processed By</th><th>Actions</th></tr>
+            <tbody id="ordBody"></tbody>
+          </table></div>
+          <div style="display:flex;align-items:center;gap:14px;margin-top:14px;flex-wrap:wrap;"><span style="font-size:13.5px;color:#64748B;">Page 1</span><label style="font-size:13.5px;color:#64748B;display:inline-flex;align-items:center;gap:7px;">Rows per page <select style="height:26px;width:55px;background:#F8F7FB;border:1px solid #E8E3EE;border-radius:6px;font-size:13px;padding:0 4px;"><option>20</option><option>50</option><option>100</option></select></label><span style="margin-left:auto;display:flex;gap:14px;align-items:center;font-size:13.5px;"><b style="color:#111827;">Page 1</b><span style="color:#9CA3AF;">‹ Previous</span><button style="border:none;background:none;font-size:13.5px;color:#111827;cursor:pointer;padding:0;">Next ›</button></span></div>
+        </div>
+      </section>
+
+      <!-- ============ ORDERS — AUTO PICK VIEW ============ -->
+      <section id="view-auto-pick" style="display:none;">
+<section class="page-panel active" id="page-auto-pick" style="max-width:1490px;margin-left:auto;margin-right:auto;padding-top:24px;">
+        <div class="card" style="padding:24px;">
+          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+            <h3 style="font-size:18px;font-weight:700;">Auto Order Dashboard</h3>
+            <span style="margin-left:auto;display:flex;align-items:center;gap:10px;"><span class="muted-sm">Updated just now</span><button class="ctl-btn">Guide</button><button class="ctl-btn" style="padding:6px 8px;" title="Refresh data" onclick="toast('Refreshed (UI prototype)')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><polyline points="21 3 21 9 15 9"/></svg></button></span>
+          </div>
+          <div style="display:flex;align-items:center;gap:14px;margin:18px 0 20px;background:#F8F7FB;border:1px solid #EEF2F7;border-radius:12px;padding:14px 16px;">
+            <div><div style="font-weight:600;font-size:14.5px;">Open next automatically after status update</div><div class="muted-sm">When enabled, auto-order continues with the next item in the same queue after you update a status.</div></div>
+            <button class="switch on" id="apAutoSwitch" style="margin-left:auto;" onclick="this.classList.toggle('on')" aria-label="Open next automatically"></button>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:18px;">
+        <div style="border:1px solid #E5E7EB;border-radius:12px;padding:20px;min-height:122px;">
+          <div style="display:flex;align-items:center;gap:8px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 13.5"/></svg><span style="font-size:14px;font-weight:500;">Processing</span><span style="margin-left:auto;background:#FCFCFC;border:1px solid #E5E7EB;color:#411550;border-radius:99px;padding:1px 9px;font-size:12px;font-weight:600;">23</span></div>
+          <button class="btn-primary" onclick="apOpenNext('Processing')" style="width:100%;height:36px;margin-top:26px;border-radius:8px;background:linear-gradient(90deg,#431652,#581E6B);position:relative;">Open Next<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg></button>
+        </div><div style="border:1px solid #E5E7EB;border-radius:12px;padding:20px;min-height:122px;">
+          <div style="display:flex;align-items:center;gap:8px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><polyline points="3.29 7 12 12 20.71 7"/><line x1="12" y1="22" x2="12" y2="12"/></svg><span style="font-size:14px;font-weight:500;">Incomplete</span><span style="margin-left:auto;background:#FCFCFC;border:1px solid #E5E7EB;color:#411550;border-radius:99px;padding:1px 9px;font-size:12px;font-weight:600;">3</span></div>
+          <button class="btn-primary" onclick="apOpenNext('Incomplete')" style="width:100%;height:36px;margin-top:26px;border-radius:8px;background:linear-gradient(90deg,#431652,#581E6B);position:relative;">Open Next<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg></button>
+        </div><div style="border:1px solid #E5E7EB;border-radius:12px;padding:20px;min-height:122px;">
+          <div style="display:flex;align-items:center;gap:8px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="8.5 12.2 11 14.7 15.5 9.5"/></svg><span style="font-size:14px;font-weight:500;">Good But No Response</span><span style="margin-left:auto;background:#FCFCFC;border:1px solid #E5E7EB;color:#411550;border-radius:99px;padding:1px 9px;font-size:12px;font-weight:600;">1</span></div>
+          <button class="btn-primary" onclick="apOpenNext('Good But No Response')" style="width:100%;height:36px;margin-top:26px;border-radius:8px;background:linear-gradient(90deg,#431652,#581E6B);position:relative;">Open Next<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg></button>
+        </div><div style="border:1px solid #E5E7EB;border-radius:12px;padding:20px;min-height:122px;">
+          <div style="display:flex;align-items:center;gap:8px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.42 19.42 0 0 1-3.33-2.67m-2.67-3.34a19.79 19.79 0 0 1-3.07-8.63A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91"/><line x1="2" y1="2" x2="22" y2="22"/></svg><span style="font-size:14px;font-weight:500;">No Response</span><span style="margin-left:auto;background:#FCFCFC;border:1px solid #E5E7EB;color:#411550;border-radius:99px;padding:1px 9px;font-size:12px;font-weight:600;">0</span></div>
+          <button style="width:100%;height:36px;margin-top:26px;border-radius:8px;background:#E9E4EE;color:#A08AB0;border:none;font-weight:600;cursor:not-allowed;">Open Next</button>
+        </div><div style="border:1px solid #E5E7EB;border-radius:12px;padding:20px;min-height:122px;">
+          <div style="display:flex;align-items:center;gap:8px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg><span style="font-size:14px;font-weight:500;">Advance Payment</span><span style="margin-left:auto;background:#FCFCFC;border:1px solid #E5E7EB;color:#411550;border-radius:99px;padding:1px 9px;font-size:12px;font-weight:600;">1</span></div>
+          <button class="btn-primary" onclick="apOpenNext('Advance Payment')" style="width:100%;height:36px;margin-top:26px;border-radius:8px;background:linear-gradient(90deg,#431652,#581E6B);position:relative;">Open Next<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg></button>
+        </div><div style="border:1px solid #E5E7EB;border-radius:12px;padding:20px;min-height:122px;">
+          <div style="display:flex;align-items:center;gap:8px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><polyline points="3.29 7 12 12 20.71 7"/><line x1="12" y1="22" x2="12" y2="12"/></svg><span style="font-size:14px;font-weight:500;">On Hold</span><span style="margin-left:auto;background:#FCFCFC;border:1px solid #E5E7EB;color:#411550;border-radius:99px;padding:1px 9px;font-size:12px;font-weight:600;">0</span></div>
+          <button style="width:100%;height:36px;margin-top:26px;border-radius:8px;background:#E9E4EE;color:#A08AB0;border:none;font-weight:600;cursor:not-allowed;">Open Next</button>
+        </div><div style="border:1px solid #E5E7EB;border-radius:12px;padding:20px;min-height:122px;">
+          <div style="display:flex;align-items:center;gap:8px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><polyline points="3.29 7 12 12 20.71 7"/><line x1="12" y1="22" x2="12" y2="12"/></svg><span style="font-size:14px;font-weight:500;">Stock Out</span><span style="margin-left:auto;background:#FCFCFC;border:1px solid #E5E7EB;color:#411550;border-radius:99px;padding:1px 9px;font-size:12px;font-weight:600;">0</span></div>
+          <button style="width:100%;height:36px;margin-top:26px;border-radius:8px;background:#E9E4EE;color:#A08AB0;border:none;font-weight:600;cursor:not-allowed;">Open Next</button>
+        </div>
+          </div>
+        </div>
+        <div class="card" style="margin-top:24px;padding:24px;">
+          <h3 style="font-size:18px;font-weight:700;margin-bottom:16px;">My Daily Report</h3>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;">
+        <div style="border:1px solid #E5E7EB;border-left:4px solid #411550;border-radius:8px;padding:14px 16px;">
+          <div style="font-size:12px;color:#64748B;font-weight:600;letter-spacing:.05em;">TAKEN</div><div style="font-size:22px;font-weight:700;margin-top:2px;">8</div></div><div style="border:1px solid #E5E7EB;border-left:4px solid #411550;border-radius:8px;padding:14px 16px;">
+          <div style="font-size:12px;color:#64748B;font-weight:600;letter-spacing:.05em;">SHIPPED</div><div style="font-size:22px;font-weight:700;margin-top:2px;">0</div></div><div style="border:1px solid #E5E7EB;border-left:4px solid #411550;border-radius:8px;padding:14px 16px;">
+          <div style="font-size:12px;color:#64748B;font-weight:600;letter-spacing:.05em;">DELIVERED</div><div style="font-size:22px;font-weight:700;margin-top:2px;">0</div></div><div style="border:1px solid #E5E7EB;border-left:4px solid #411550;border-radius:8px;padding:14px 16px;">
+          <div style="font-size:12px;color:#64748B;font-weight:600;letter-spacing:.05em;">RETURNED</div><div style="font-size:22px;font-weight:700;margin-top:2px;">0</div></div>
+          </div>
+        </div>
+      </section>
+      </section>
+
+      <!-- ============ ORDERS — DETAIL / APPROVE VIEW ============ -->
+      <section id="view-detail" style="display:none;">
+<section class="page-panel active" id="page-web-order-detail">
+        <div class="page-head"><div><h1 id="wodTitle">Web Order — OB273</h1><p id="wodSub">10 Nov 2026, 4:12 PM · Source: Website</p></div>
+        <span style="margin-left:auto;display:flex;gap:8px;align-items:center;"><span class="pill lpurple" id="wodStatus">Processing</span><button class="btn-primary" id="wodApproveBtn" onclick="openModal('approveModal')">Approve Order (599৳)</button></span></div>
+        <div class="grid-21">
+          <div>
+            <div class="card" style="margin-bottom:16px;"><h3>Customer</h3>
+              <div class="sum-row"><span>Name</span><b id="wodCustName">M. Fahim</b></div>
+              <div class="sum-row"><span>Phone</span><b id="wodCustPhone">01712-445566</b></div>
+              <div class="sum-row"><span>Address</span><b id="wodCustAddr">House 12, Road 5, Mirpur 10, Dhaka</b></div>
+              <div class="sum-row"><span>Customer History</span><b id="wodCustHist">8 orders · Success rate 75%</b></div>
+            </div>
+            <div class="card"><h3>Items</h3>
+              <table id="wodItemsTable"><tr><th>Product</th><th>Qty</th><th>Price</th><th>Total</th></tr>
+              <tr><td>Mentara Roll On Balm COMBO <span class="muted-sm">(MENT-COMBO)</span></td><td>1</td><td>৳539</td><td>৳539</td></tr></table>
+              <div class="sum-row" style="margin-top:12px;"><span>Subtotal</span><b id="wodSubTotal">৳539</b></div>
+              <div class="sum-row"><span>Delivery Charge</span><b id="wodDelCharge">৳60</b></div>
+              <div class="sum-row"><span>Discount</span><b id="wodDiscount">৳0</b></div>
+              <div class="sum-row total"><span>Total</span><b id="wodTotal">৳599</b></div>
+            </div>
+          </div>
+          <div>
+            <div class="card" style="margin-bottom:16px;"><h3>Process Order</h3>
+              <label class="fld-l" style="margin-top:12px;">Change Status<select class="fld" onchange="document.getElementById('wodStatus').textContent=this.value"><option>Processing</option><option>Good But No Response</option><option>No Response</option><option>Advance Payment</option><option>On Hold</option><option>Stock Out</option><option>Cancel</option></select></label>
+              <label class="fld-l" style="margin-top:12px;">Delivery Method<select class="fld"><option>Steadfast — Inside Dhaka</option><option>Pathao — Inside Dhaka</option><option>RedX — Dhaka</option><option>Carrybee</option><option>Manual</option></select></label>
+              <label class="fld-l" style="margin-top:12px;">Delivery Note<textarea class="fld" rows="2" placeholder="Note for courier"></textarea></label>
+              <button class="ctl-btn" style="width:100%;justify-content:center;margin-top:12px;" onclick="toast('Status saved (UI prototype)')">Save Changes</button>
+              <button class="ctl-btn" style="width:100%;justify-content:center;margin-top:8px;" onclick="goBackFromDetail()">Back to List</button>
+            </div>
+            <div class="card"><h3>Timeline</h3>
+              <div class="sum-row"><span>Order created via External API</span><b>4:12 PM</b></div>
+              <div class="sum-row"><span>Status: Processing</span><b>4:12 PM</b></div>
+              <div class="sum-row"><span>Auto task check (Work Inbox)</span><b>4:15 PM</b></div>
+            </div>
+          </div>
+        </div>
+      </section>
+      </section>
+
+    </div>
+  </div>
+</div>
+<button class="team-chat" onclick="alert('Open Team Chat (UI prototype)')" title="Team Chat"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></button>
+<div class="modal-overlay" id="approveModal" style="display:none;">
+  <div class="modal-box">
+    <h3 style="font-size:17px;">Approve this order?</h3>
+    <p id="apMdlText" style="color:var(--muted);font-size:13.5px;margin:10px 0;">OB273 will move to Approved Orders. Stock for 1 item will be reserved, and the order becomes ready to ship.</p>
+    <div class="sum-row"><span>Customer</span><b id="apMdlCustomer">M. Fahim</b></div>
+    <div class="sum-row"><span>Total (COD)</span><b id="apMdlTotal">৳599</b></div>
+    <div style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end;">
+      <button class="ctl-btn" onclick="closeModal('approveModal')">Cancel</button>
+      <button class="btn-primary" onclick="confirmApprove()">Confirm Approve</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="invoiceModal" style="display:none;">
+  <div class="modal-box" style="max-width:640px;">
+    <div id="invoiceSheet"></div>
+    <div class="inv-actions" style="display:flex;gap:10px;margin-top:18px;justify-content:flex-end;">
+      <button class="ctl-btn" onclick="closeModal('invoiceModal')">Close</button>
+      <button class="btn-primary" onclick="window.print()">Print / Download</button>
+    </div>
+  </div>
+</div>
+
+
+<div class="modal-overlay" id="layoutsModal" style="display:none;">
+  <div class="modal-box" style="max-width:640px;">
+    <div style="display:flex;align-items:center;"><h3 style="font-size:17px;">Order Form Options</h3><button class="icon-btn" style="margin-left:auto;" onclick="closeModal('layoutsModal')">✕</button></div>
+    <div class="utabs inner-tabs" style="margin-top:10px;"><button class="active">Layouts</button><button>Fields</button><button>Courier Cards</button></div>
+    <p class="muted-sm">Layouts apply on wider screens. On a phone every layout stacks into one column.</p>
+    <div class="card" style="box-shadow:none;border:1px solid var(--focus);margin-top:12px;"><b>V2 Default</b> <span class="pill green">ACTIVE</span><p class="muted-sm" style="margin-top:6px;">Two columns with the calculation details pinned in a sticky rail on the right, so the total and the submit button stay on screen.</p></div>
+    <div class="card" style="box-shadow:none;border:1px solid var(--card-border);margin-top:10px;"><b>V2 Full Width Stacked</b><p class="muted-sm" style="margin-top:6px;">Like V2 Default, but the product picker gets a full-width row with the ordered products below it, the way a phone shows them.</p></div>
+    <div class="card" style="box-shadow:none;border:1px solid var(--card-border);margin-top:10px;"><b>V1 Classic</b><p class="muted-sm" style="margin-top:6px;">The legacy arrangement: full width, ordered products beside the picker, and the money fields in a band across the bottom. Scroll down to submit.</p></div>
+    <p class="muted-sm" style="margin-top:12px;">Fields templates: Default Template (ACTIVE), Compact Template, Wholesale Template, Pre-Order Template, Call Center Fast Entry Template. Courier Cards order: Overall, Pathao, Steadfast, RedX, CarryBee.</p>
+    <div style="display:flex;gap:10px;margin-top:14px;justify-content:space-between;align-items:center;"><span class="muted-sm">Active: V2 Default + Default Template</span><button class="btn-primary" onclick="closeModal('layoutsModal')">Close</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="customProductModal" style="display:none;">
+  <div class="modal-box">
+    <div style="display:flex;align-items:center;"><h3 style="font-size:17px;">Add Custom Product</h3><button class="icon-btn" style="margin-left:auto;" onclick="closeModal('customProductModal')">✕</button></div>
+    <label class="fld-l" style="margin-top:12px;">Product Name *<input class="fld" placeholder="e.g. Special Offer Box"></label>
+    <label class="fld-l" style="margin-top:12px;">SKU (optional)<input class="fld" placeholder="Auto-generated if left blank"></label>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;">
+      <label class="fld-l">Price (৳) *<input class="fld" type="number" value="0"></label>
+      <label class="fld-l">Quantity *<input class="fld" type="number" value="1"></label>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end;"><button class="ctl-btn" onclick="closeModal('customProductModal')">Cancel</button><button class="btn-primary" onclick="closeModal('customProductModal');toast('Custom product added (UI prototype)')">Add Product</button></div>
+  </div>
+</div>
+<div id="toast"></div>
+
+<script>
+  /* ===== shell helpers (mirrors of the original prototype) ===== */
+  function toggleSub(el){ var s = el.nextElementSibling; if(s && s.classList.contains('sub-items')) s.classList.toggle('open'); }
+  function collapseSidebar(){
+    var sb = document.querySelector('.sidebar'), mn = document.getElementById('mainCol');
+    var hidden = sb.classList.toggle('collapsed'); mn.classList.toggle('expanded', hidden);
+  }
+  function toggleNotif(){ var d = document.getElementById('notifDrawer'); d.style.display = d.style.display === 'none' ? 'block' : 'none'; }
+  function openSearch(){ document.getElementById('searchModal').style.display = 'block'; document.getElementById('searchInput').focus(); filterSearch(''); }
+  function closeSearch(){ document.getElementById('searchModal').style.display = 'none'; }
+  var SEARCH_ITEMS = ['Orders','Dashboard','Inventory','Products','Messages','Purchase','Customers','Finance','Reports','Settings'];
+  function filterSearch(q){
+    var box = document.getElementById('searchResults');
+    box.innerHTML = SEARCH_ITEMS.filter(function(x){ return x.toLowerCase().indexOf(q.toLowerCase()) > -1; })
+      .map(function(x){ return '<div style="padding:9px 10px;border-radius:8px;font-size:13.5px;cursor:pointer;" onmouseover="this.style.background=\'#F4EDF7\'" onmouseout="this.style.background=\'\'" onclick="closeSearch()">' + x + '</div>'; }).join('')
+      || '<div style="padding:9px 10px;color:var(--muted);font-size:13px;">No matches</div>';
+  }
+  function toggleTheme(){ toast('Theme (UI prototype)'); }
+  var bn = false;
+  function toggleLang(btn){ bn = !bn; for(var i=0;i<btn.childNodes.length;i++){ var nd = btn.childNodes[i]; if(nd.nodeType===3 && nd.textContent.trim()) nd.textContent = bn ? ' EN' : ' BN'; } }
+  function showPage(){ /* inert in this trial file */ }
+  function toast(msg){ var t = document.getElementById('toast'); t.textContent = msg; t.style.display = 'block'; setTimeout(function(){ t.style.display = 'none'; }, 2400); }
+
+  /* ===== modal helpers (from the original prototype) ===== */
+  function openModal(id){ var el = document.getElementById(id); if(el) el.style.display = 'flex'; }
+  function closeModal(id){ var el = document.getElementById(id); if(el) el.style.display = 'none'; }
+
+  /* ===== New Order product picker (copied from the original prototype) ===== */
+var PRODUCTS = [
+    {name:'Mobile Phone Umbrella Cute Phone Holder', sku:'11143', price:400, stock:153, feat:1},
+    {name:'Kumkum Ikkat 1', sku:'KIK-1', price:699, stock:2084, feat:1},
+    {name:'Kumkum Ikkat 2', sku:'KIK-2', price:699, stock:195, feat:1},
+    {name:'Neela Pankh 2', sku:'NP-2', price:699, stock:198, feat:1},
+    {name:'Jeans Pant', sku:'1001', price:1000, stock:53},
+    {name:'30L Bag', sku:'109', price:320, stock:1001},
+    {name:'Student Penknife', sku:'11142', price:350, stock:148},
+    {name:'Computer Arm Rest', sku:'11144', price:750, stock:151},
+    {name:'Pink Minnie Kids Plush Bag', sku:'11145', price:300, stock:null},
+    {name:'Kids Backpack', sku:'11146', price:350, stock:151},
+    {name:'Spider man bag', sku:'11147', price:350, stock:151},
+    {name:'Memory Cotton U-shaped Pillow', sku:'11148', price:650, stock:151},
+    {name:'Washing machine cover', sku:'11149', price:400, stock:151},
+    {name:'Carat Key Ring', sku:'11150', price:300, stock:10005},
+    {name:'Kitchen Watermelon Slicer', sku:'11151', price:499, stock:151},
+    {name:'Tactical waist Bag', sku:'11152', price:600, stock:150},
+    {name:'মিনি পকেট ক্যারাবিনার ফোল্ডিং নাইফ', sku:'11153', price:200, stock:150},
+    {name:'ক্যাট & ডগ গ্রুমিং হ্যামক', sku:'11154', price:400, stock:150},
+    {name:'Door bottom sealing strip', sku:'11212', price:310, stock:null},
+    {name:'Door bottom sealing strip', sku:'11213', price:380, stock:150},
+    {name:'30L Bag', sku:'11310', price:320, stock:150},
+    {name:'শিশুদের ইলেকট্রনিক লার্নিং মেশিন', sku:'11323', price:1400, stock:150},
+    {name:'রেফ্রিজারেটর ওয়াটারপ্রুফ প্যাড', sku:'11324', price:900, stock:150},
+    {name:'ফিশ শেপ মিনি নাইফ', sku:'11325', price:300, stock:150},
+    {name:'মাইক্রোফাইবার মহিলা বাথ ড্রেস টাওয়েল', sku:'11326', price:1400, stock:150},
+    {name:'মাল্টিফাংশনাল ফোল্ডিং কাঁচি', sku:'11327', price:250, stock:150},
+    {name:'বি-পিলার কার ওয়েদারস্ট্রিপস', sku:'11370', price:1000, stock:150},
+    {name:'মাল্টি-পারপাস স্ট্যাকেবল র‍্যাক', sku:'11371', price:700, stock:150},
+    {name:'ম্যানুফ্যাকচার এপিডিএম রাবার ওয়েদারস্ট্রিপ', sku:'11372', price:900, stock:150},
+    {name:'K-American Birthday Cake (Pink)', sku:'001', price:1890, stock:0}
+  ];
+  var orderedItems = {};
+  function renderProducts(){
+    var g = document.getElementById('prodGrid');
+    if(!g) return;
+    g.innerHTML = PRODUCTS.map(function(pr, i){
+      var dis = (orderedItems[i] || (pr.stock === 0 && currentOrderMode !== 'preorder')) ? ' disabled' : '';
+      return '<button class="prod-card" data-name="' + pr.name.toLowerCase() + '" data-sku="' + pr.sku.toLowerCase() + '" onclick="addToOrder(' + i + ')"' + dis + '>'
+        + '<span class="pc-name">' + pr.name + '</span>'
+        + '<span class="muted-sm">SKU: ' + pr.sku + '</span>'
+        + '<span class="muted-sm">Price: ৳' + pr.price + ' · Stock: ' + (pr.stock === null ? '—' : pr.stock) + (pr.stock === 0 ? ' — Pre-order allowed' : '') + '</span>'
+        + '<span class="pc-fav">' + (pr.feat ? 'Remove from featured' : 'Mark as featured') + '</span></button>';
+    }).join('');
+  }
+  function prodSearch(){
+    var inputs = document.querySelectorAll('#page-new-order .card input[placeholder*="Type to Search"]');
+    var q1 = inputs[0] ? inputs[0].value.toLowerCase() : '';
+    var q2 = inputs[1] ? inputs[1].value.toLowerCase() : '';
+    document.querySelectorAll('.prod-card').forEach(function(c){
+      var okSku = !q1 || c.getAttribute('data-sku').indexOf(q1) > -1;
+      var okName = !q2 || c.getAttribute('data-name').indexOf(q2) > -1;
+      c.style.display = (okSku && okName) ? '' : 'none';
+    });
+  }
+  function addToOrder(i){
+    orderedItems[i] = { qty: 1, price: PRODUCTS[i].price };
+    renderOrdered(); renderProducts();
+  }
+  function removeFromOrder(i){ delete orderedItems[i]; renderOrdered(); renderProducts(); }
+  function ordQty(i, d){ orderedItems[i].qty = Math.max(1, orderedItems[i].qty + d); renderOrdered(); }
+  function ordPrice(i, d){ orderedItems[i].price = Math.max(0, orderedItems[i].price + d); renderOrdered(); }
+  function renderOrdered(){
+    var keys = Object.keys(orderedItems);
+    document.getElementById('ordCount').textContent = keys.length + ' item(s)';
+    document.getElementById('ordEmpty').style.display = keys.length ? 'none' : '';
+    document.getElementById('ordList').innerHTML = keys.map(function(k){
+      var pr = PRODUCTS[k], it = orderedItems[k];
+      return '<div class="ord-row"><span><b>' + pr.name + '</b><br><span class="muted-sm">SKU ' + pr.sku + ' · ৳' + pr.price + ' · Stock:' + (pr.stock === null ? '—' : pr.stock) + '</span></span>'
+        + '<span class="qty">Qty <button onclick="ordQty(' + k + ',-1)">−</button><b>' + it.qty + '</b><button onclick="ordQty(' + k + ',1)">+</button></span>'
+        + '<span class="qty">Price <button onclick="ordPrice(' + k + ',-10)">−</button><b>' + it.price + '</b><button onclick="ordPrice(' + k + ',10)">+</button></span>'
+        + '<b>Total ৳' + (it.qty * it.price).toFixed(2) + '</b>'
+        + '<button class="ctl-btn" onclick="removeFromOrder(' + k + ')">×</button></div>';
+    }).join('');
+    calcSummary();
+  }
+  function calcSummary(){
+    var items = 0;
+    Object.keys(orderedItems).forEach(function(k){ items += orderedItems[k].qty * orderedItems[k].price; });
+    var disc = parseInt((document.getElementById('calcDisc') || {}).value) || 0;
+    var del = parseInt((document.getElementById('calcDel') || {}).value) || 0;
+    var adv = parseInt((document.getElementById('calcAdv') || {}).value) || 0;
+    var grand = items - disc + del;
+    document.getElementById('sumItems').textContent = '৳' + items.toLocaleString('en-IN');
+    document.getElementById('sumDisc2').textContent = '৳' + disc.toLocaleString('en-IN');
+    document.getElementById('sumDel2').textContent = '৳' + del.toLocaleString('en-IN');
+    document.getElementById('sumGrand').textContent = '৳' + grand.toLocaleString('en-IN');
+    document.getElementById('sumAdv2').textContent = '৳' + adv.toLocaleString('en-IN');
+    document.getElementById('sumDue').textContent = '৳' + (grand - adv).toLocaleString('en-IN');
+  }
+  var currentOrderMode = 'approved';
+  function orderMode(btn, mode){
+    currentOrderMode = mode;
+    btn.parentElement.querySelectorAll('button').forEach(function(b){ b.classList.remove('on'); });
+    btn.classList.add('on');
+    document.getElementById('dmWrap').style.display = mode === 'manual' ? 'none' : '';
+    document.getElementById('dmHelp').style.display = mode === 'manual' ? '' : 'none';
+    document.getElementById('preReason').style.display = mode === 'preorder' ? '' : 'none';
+    document.getElementById('preDate').style.display = mode === 'preorder' ? '' : 'none';
+    document.getElementById('createOrderBtn').textContent = mode === 'manual' ? 'Create Order' : (mode === 'preorder' ? 'Create Pre-Order' : 'Create Approved Order');
+    renderProducts();
+  }
+  function popToggle(id){
+    var el = document.getElementById(id);
+    var show = el.style.display !== 'block';
+    document.querySelectorAll('.pop-panel').forEach(function(x){ x.style.display = 'none'; });
+    el.style.display = show ? 'block' : 'none';
+  }
+  renderProducts();
+  // Live Dhaka clock
+  
+  /* ===== Orders — merged list, shared detail page & flows ===== */
+  var ORDERS = [
+    {id:'OB286', when:'15 Nov, 10:42 am', extId:'1794551201', name:'M. Fahim', phone:'01712-445566', addr:'House 12, Road 5, Mirpur 10, Dhaka',
+     items:[{name:'Mentara Roll On Balm COMBO', sku:'MENT-COMBO', qty:1, price:539}], delivery:60, advance:0,
+     rate:{pct:89, d:8, t:9, rating:8}, check:'safe', status:'Pending', site:'Main', tag:true,
+     courier:'Steadfast — Inside Dhaka', tracking:''},
+    {id:'OB285', when:'15 Nov, 10:15 am', extId:'1794550987', name:'Khan Tanvir Islam', phone:'01788-221190', addr:'Sonadanga, Khulna',
+     items:[{name:'Pink Minnie Kids Plush Bag', sku:'11145', qty:1, price:300}], delivery:60, advance:100,
+     rate:{pct:40, d:2, t:5, rating:12}, check:'risky', status:'Pending', site:'Main', tag:false,
+     courier:'Pathao — Inside Dhaka', tracking:''},
+    {id:'OB284', when:'15 Nov, 9:48 am', extId:'1794550712', name:'Nozrul Islam', phone:'01923-778811', addr:'Board Bazar, Gazipur',
+     items:[{name:'Neela Pankh 2', sku:'NP-2', qty:2, price:350}], delivery:60, advance:0,
+     rate:null, check:'none', status:'Pending', site:'Alasil BD Demo', tag:false,
+     courier:'Steadfast — Outside Dhaka', tracking:''},
+    {id:'OB283', when:'15 Nov, 9:20 am', extId:'1794550330', name:'F.A. Rayhan', phone:'01812-334455', addr:'Dimla, Nilphamari',
+     items:[{name:'Kumkum Ikkat 1', sku:'KK-1', qty:1, price:699}], delivery:60, advance:0,
+     rate:{pct:98, d:65, t:66, rating:65}, check:'safe', status:'Confirmed', site:'Main', tag:false,
+     courier:'Steadfast — Outside Dhaka', tracking:''},
+    {id:'OB282', when:'15 Nov, 8:57 am', extId:'1794550118', name:'Anwar Hossain', phone:'01765-909090', addr:'Mohammadpur, Dhaka',
+     items:[{name:'Kumkum Ikkat 1', sku:'KK-1', qty:1, price:699}], delivery:60, advance:0,
+     rate:{pct:100, d:2, t:2, rating:2}, check:'safe', status:'Confirmed', site:'Main', tag:false,
+     courier:'Pathao — Inside Dhaka', tracking:''},
+    {id:'OB281', when:'14 Nov, 6:30 pm', extId:'1794498204', name:'Sharmin Akter', phone:'01678-445566', addr:'Uttara Sector 11, Dhaka',
+     items:[{name:'30L Bag 109', sku:'BAG-109', qty:1, price:320}], delivery:60, advance:0,
+     rate:{pct:100, d:5, t:5, rating:5}, check:'safe', status:'Shipped', site:'Alasil BD Demo', tag:false,
+     courier:'Steadfast — Inside Dhaka', tracking:'STF-88213'},
+    {id:'OB280', when:'14 Nov, 5:12 pm', extId:'1794497551', name:'Tanvir Ahmed', phone:'01555-667788', addr:'Chawkbazar, Chattogram',
+     items:[{name:'Mentara Roll On Balm COMBO', sku:'MENT-COMBO', qty:2, price:539}], delivery:60, advance:0,
+     rate:null, check:'none', status:'Shipped', site:'Main', tag:false,
+     courier:'Pathao — Outside Dhaka', tracking:'PTH-55190'},
+    {id:'OB279', when:'14 Nov, 3:05 pm', extId:'1794495902', name:'Rumana Parvin', phone:'01999-112233', addr:'Rajshahi Sadar, Rajshahi',
+     items:[{name:'Neela Pankh 2', sku:'NP-2', qty:1, price:350}], delivery:60, advance:0,
+     rate:{pct:100, d:4, t:4, rating:4}, check:'safe', status:'Delivered', site:'Main', tag:false,
+     courier:'Steadfast — Outside Dhaka', tracking:'STF-87702'},
+    {id:'OB278', when:'13 Nov, 7:44 pm', extId:'1794408240', name:'Imran Hossain', phone:'01877-665544', addr:'Kushtia Sadar, Kushtia',
+     items:[{name:'30L Bag 109', sku:'BAG-109', qty:1, price:320}], delivery:60, advance:0,
+     rate:{pct:33, d:1, t:3, rating:9}, check:'risky', status:'Returned', site:'Main', tag:false,
+     courier:'Pathao — Outside Dhaka', tracking:'PTH-54087'},
+    {id:'OB277', when:'13 Nov, 2:18 pm', extId:'1794389915', name:'Sadia Afrin', phone:'01733-998877', addr:'Sylhet Sadar, Sylhet',
+     items:[{name:'Pink Minnie Kids Plush Bag', sku:'11145', qty:1, price:300}], delivery:60, advance:0,
+     rate:null, check:'none', status:'Cancelled', site:'Alasil BD Demo', tag:false,
+     courier:'Steadfast — Outside Dhaka', tracking:''}
+  ];
+  var STATUSES = ['All','Pending','Confirmed','Shipped','Delivered','Returned','Cancelled'];
+  var STATUS_PILL = {Pending:'amber', Confirmed:'blue', Shipped:'purple', Delivered:'green', Returned:'red', Cancelled:'grey'};
+  var curFilter = 'All', curOrder = null, detailOrigin = 'list', detailQueue = null, lastNav = 'list';
+  var ICON_BTNS = "<span class=\"icon-btns\"><button class=\"mini-btn\" title=\"Call customer\"><svg width=\"12\" height=\"12\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z\"/></svg></button><button class=\"mini-btn\" title=\"Message customer on WhatsApp\"><svg width=\"12\" height=\"12\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z\"/></svg></button><button class=\"mini-btn\" title=\"Start PBX call\" disabled style=\"opacity:.4;\"><svg width=\"12\" height=\"12\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z\"/></svg></button><button class=\"mini-btn\" title=\"Copy customer details\"><svg width=\"12\" height=\"12\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"9\" y=\"9\" width=\"13\" height=\"13\" rx=\"2\"/><path d=\"M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1\"/></svg></button></span>";
+  var PBX_CELL = "<span style=\"display:inline-block;background:#F3F4F6;color:#64748B;border-radius:999px;padding:2px 9px;font-size:11.5px;font-weight:600;white-space:nowrap;\">No Call Center</span><br><a href=\"#\" style=\"white-space:nowrap;\" onclick=\"toast('PBX setup (UI prototype)');return false;\">Set up PBX \u2192</a>";
+  var TAG_CHIP = "<span style=\"display:inline-flex;align-items:center;gap:5px;background:#FCE7F3;color:#BE185D;border-radius:999px;padding:3px 9px;font-size:12px;font-weight:600;\">storola <span style=\"cursor:pointer;font-weight:700;\">\u00d7</span></span> <button class=\"mini-btn\" title=\"Add Tag\"><svg width=\"13\" height=\"13\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\"><path d=\"M12 5v14\"/><path d=\"M5 12h14\"/></svg></button>";
+  var ADD_TAG = "<button class=\"mini-btn\" title=\"Add Tag\"><svg width=\"13\" height=\"13\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\"><path d=\"M12 5v14\"/><path d=\"M5 12h14\"/></svg></button>";
+  var OPEN_SVG = "<svg width=\"12\" height=\"12\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6\"/><path d=\"M15 3h6v6\"/><path d=\"M10 14L21 3\"/></svg>";
+  var DL_SVG = "<svg width=\"13\" height=\"13\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4\"/><polyline points=\"7 10 12 15 17 10\"/><line x1=\"12\" y1=\"15\" x2=\"12\" y2=\"3\"/></svg>";
+  function openInvoice(id){
+    var o = findOrder(id); if(!o) return;
+    var rows = o.items.map(function(i){
+      return '<tr><td style="padding:8px;border-bottom:1px solid #F1EDF5;">' + i.name + ' <span style="color:#94A3B8;">(' + i.sku + ')</span></td><td style="padding:8px;border-bottom:1px solid #F1EDF5;text-align:center;">' + i.qty + '</td><td style="padding:8px;border-bottom:1px solid #F1EDF5;text-align:right;">' + money(i.price) + '</td><td style="padding:8px;border-bottom:1px solid #F1EDF5;text-align:right;">' + money(i.qty * i.price) + '</td></tr>';
+    }).join('');
+    document.getElementById('invoiceSheet').innerHTML =
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;border-bottom:2px solid #411550;padding-bottom:14px;">'
+      + '<div><div style="font-size:20px;font-weight:800;color:#411550;letter-spacing:.01em;">ONLINE BUSINESS</div><div style="font-size:12px;color:#64748B;margin-top:2px;">Workspace \u00b7 SkaleUp BD</div></div>'
+      + '<div style="text-align:right;"><div style="font-size:16px;font-weight:800;letter-spacing:.14em;">INVOICE</div>'
+      + '<div style="font-size:12.5px;color:#64748B;margin-top:4px;">Invoice No: <b style="color:#111827;">' + o.id + '</b></div>'
+      + '<div style="font-size:12.5px;color:#64748B;">Date: ' + o.when + '</div>'
+      + '<div style="margin-top:6px;"><span class="pill ' + STATUS_PILL[o.status] + '">' + o.status + '</span></div></div></div>'
+      + '<div style="margin-top:16px;font-size:13.5px;line-height:1.55;"><div style="font-weight:700;font-size:12px;letter-spacing:.08em;color:#64748B;">BILL TO</div>'
+      + '<b>' + o.name + '</b><br>' + o.phone + '<br><span style="color:#64748B;">' + o.addr + '</span></div>'
+      + '<table style="width:100%;border-collapse:collapse;font-size:13.5px;margin-top:14px;"><tr style="background:#F8F7FB;"><th style="text-align:left;padding:8px;border-bottom:1px solid #E8E3EE;">Product</th><th style="padding:8px;border-bottom:1px solid #E8E3EE;">Qty</th><th style="text-align:right;padding:8px;border-bottom:1px solid #E8E3EE;">Price</th><th style="text-align:right;padding:8px;border-bottom:1px solid #E8E3EE;">Total</th></tr>'
+      + rows + '</table>'
+      + '<div style="margin-left:auto;width:240px;margin-top:12px;font-size:13.5px;">'
+      + '<div class="sum-row"><span>Subtotal</span><b>' + money(subtotal(o)) + '</b></div>'
+      + '<div class="sum-row"><span>Delivery Charge</span><b>' + money(o.delivery) + '</b></div>'
+      + '<div class="sum-row"><span>Discount</span><b>\u09f30</b></div>'
+      + '<div class="sum-row total"><span>Grand Total</span><b>' + money(total(o)) + '</b></div></div>'
+      + '<div style="margin-top:20px;font-size:11.5px;color:#94A3B8;">Order status at download: ' + o.status + ' \u00b7 Thank you for shopping with us.</div>';
+    openModal('invoiceModal');
+  }
+
+
+  function money(n){ return '৳' + n.toLocaleString('en-IN'); }
+  function subtotal(o){ return o.items.reduce(function(s,i){ return s + i.qty * i.price; }, 0); }
+  function total(o){ return subtotal(o) + o.delivery; }
+  function findOrder(id){ return ORDERS.filter(function(o){ return o.id === id; })[0]; }
+  function nextPending(){ return ORDERS.filter(function(o){ return o.status === 'Pending'; })[0] || null; }
+
+  function showView(name){
+    ['new-order','list','auto-pick','detail'].forEach(function(v){
+      document.getElementById('view-' + v).style.display = (v === name) ? 'block' : 'none';
+    });
+    if(name !== 'detail') lastNav = name;
+    document.querySelectorAll('.ord-sub').forEach(function(el){
+      el.classList.toggle('active', el.getAttribute('data-nav') === lastNav);
+    });
+    window.scrollTo(0, 0);
+  }
+
+  function ringHTML(o){
+    if(!o.rate){
+      return '<span style="display:inline-flex;align-items:center;gap:8px;"><svg width="28" height="28" viewBox="0 0 28 28"><circle cx="14" cy="14" r="11" fill="none" stroke="#E5E7EB" stroke-width="3.5"/><circle cx="14" cy="14" r="11" fill="none" stroke="#CBD5E1" stroke-width="3.5" stroke-linecap="round" stroke-dasharray="69.1" stroke-dashoffset="69.1" transform="rotate(-90 14 14)"/></svg><span style="font-size:12px;line-height:1.5;white-space:nowrap;"><span style="color:#94A3B8;font-weight:600;">Success: —</span><br>Order: 0/0<br><span style="color:#64748B;">Rating: —</span></span></span>';
+    }
+    var pct = o.rate.pct;
+    var color = pct >= 70 ? '#16A34A' : (pct >= 40 ? '#F59E0B' : '#EF4444');
+    var off = (69.1 * (1 - pct / 100)).toFixed(1);
+    return '<span style="display:inline-flex;align-items:center;gap:8px;"><svg width="28" height="28" viewBox="0 0 28 28"><circle cx="14" cy="14" r="11" fill="none" stroke="#E5E7EB" stroke-width="3.5"/><circle cx="14" cy="14" r="11" fill="none" stroke="' + color + '" stroke-width="3.5" stroke-linecap="round" stroke-dasharray="69.1" stroke-dashoffset="' + off + '" transform="rotate(-90 14 14)"/></svg><span style="font-size:12px;line-height:1.5;white-space:nowrap;"><span style="color:' + color + ';font-weight:600;">Success: ' + pct + '%</span><br>Order: ' + o.rate.d + '/' + o.rate.t + '<br><span style="color:#64748B;">Rating: ' + o.rate.rating + '</span></span></span>';
+  }
+  function verdictHTML(o){
+    if(o.check === 'safe') return '<span style="font-size:11.5px;font-weight:600;color:#16A34A;">Safe</span>';
+    if(o.check === 'risky') return '<span style="font-size:11.5px;font-weight:600;color:#DC2626;">Risky — take advance</span>';
+    return '<span style="font-size:11.5px;font-weight:600;color:#64748B;">Not checked</span>';
+  }
+
+  function rowHTML(o){
+    var items = o.items.map(function(i){
+      return '<span style="display:flex;gap:8px;align-items:flex-start;"><span style="display:inline-block;width:32px;height:32px;border-radius:6px;background:var(--active-bg);flex-shrink:0;"></span><a class="iname" href="#" style="color:#111827;text-decoration:none;font-weight:500;" onclick="openDetail(\'' + o.id + '\',\'list\');return false;">' + i.name + ' ' + i.qty + 'x ৳' + i.price + '</a></span>';
+    }).join('');
+    return '<tr data-status="' + o.status + '">'
+      + '<td><input type="checkbox"></td>'
+      + '<td><b style="white-space:nowrap;font-size:13px;">' + o.id + '</b><br><span class="muted-sm" style="white-space:nowrap;">' + o.when + '</span></td>'
+      + '<td>—</td>'
+      + '<td><b>' + o.phone + '</b> ' + ICON_BTNS + '<br>' + o.name + '<br><span class="muted-sm addr">' + o.addr + '</span></td>'
+      + '<td>' + items + '</td>'
+      + '<td><span style="display:inline-block;">' + ringHTML(o) + '<br>' + verdictHTML(o) + '</span></td>'
+      + '<td>' + (o.tag ? TAG_CHIP : ADD_TAG) + '</td>'
+      + '<td>' + o.site + '</td>'
+      + '<td><span class="pill ' + STATUS_PILL[o.status] + '">' + o.status + '</span></td>'
+      + '<td>' + PBX_CELL + '</td>'
+      + '<td>—</td>'
+      + '<td><span style="display:inline-flex;gap:6px;align-items:center;"><button class="mini-btn" title="Download Invoice" onclick="openInvoice(\'' + o.id + '\')">' + DL_SVG + '</button><button class="open-btn" onclick="openDetail(\'' + o.id + '\',\'list\')">Open ' + OPEN_SVG + '</button></span></td>'
+      + '</tr>';
+  }
+
+  function renderTabs(){
+    document.getElementById('ordTabs').innerHTML = STATUSES.map(function(s){
+      var n = s === 'All' ? ORDERS.length : ORDERS.filter(function(o){ return o.status === s; }).length;
+      return '<button class="' + (curFilter === s ? 'active' : '') + '" onclick="setFilter(\'' + s + '\')">' + s + ' <span class="cnt">' + n + '</span></button>';
+    }).join('');
+    updateOpenNextBtn();
+  }
+  function setFilter(s){ curFilter = s; renderTabs(); renderTable(); }
+  function updateOpenNextBtn(){
+    var n = ORDERS.filter(function(o){ return o.status === 'Pending'; }).length;
+    document.getElementById('openNextBtn').textContent = 'Open Next Order (' + n + ')';
+  }
+
+  function renderTable(){
+    var q = (document.getElementById('ordSearch').value || '').toLowerCase();
+    var rows = ORDERS.filter(function(o){
+      if(curFilter !== 'All' && o.status !== curFilter) return false;
+      if(q && (o.id + ' ' + o.name + ' ' + o.phone).toLowerCase().indexOf(q) === -1) return false;
+      return true;
+    });
+    document.getElementById('ordBody').innerHTML = rows.map(rowHTML).join('')
+      || '<tr><td colspan="12" style="text-align:center;color:var(--muted);padding:26px;">No orders found</td></tr>';
+  }
+
+  function openDetail(id, origin, queue){
+    var o = findOrder(id); if(!o) return;
+    curOrder = o; detailOrigin = origin || 'list'; detailQueue = queue || null;
+    document.getElementById('wodTitle').textContent = 'Web Order — ' + o.id;
+    document.getElementById('wodSub').textContent = o.when + ' · Source: Website';
+    var pill = document.getElementById('wodStatus');
+    pill.textContent = o.status; pill.className = 'pill ' + STATUS_PILL[o.status];
+    var ab = document.getElementById('wodApproveBtn');
+    if(o.status === 'Pending'){ ab.style.display = ''; ab.textContent = 'Approve Order (' + total(o).toLocaleString('en-IN') + '৳)'; }
+    else { ab.style.display = 'none'; }
+    document.getElementById('wodCustName').textContent = o.name;
+    document.getElementById('wodCustPhone').textContent = o.phone;
+    document.getElementById('wodCustAddr').textContent = o.addr;
+    document.getElementById('wodCustHist').textContent = o.rate ? (o.rate.t + ' orders · Success rate ' + o.rate.pct + '%') : 'New customer · Not checked';
+    document.getElementById('wodItemsTable').innerHTML =
+      '<tr><th>Product</th><th>Qty</th><th>Price</th><th>Total</th></tr>'
+      + o.items.map(function(i){ return '<tr><td>' + i.name + ' <span class="muted-sm">(' + i.sku + ')</span></td><td>' + i.qty + '</td><td>' + money(i.price) + '</td><td>' + money(i.qty * i.price) + '</td></tr>'; }).join('');
+    document.getElementById('wodSubTotal').textContent = money(subtotal(o));
+    document.getElementById('wodDelCharge').textContent = money(o.delivery);
+    document.getElementById('wodDiscount').textContent = '৳0';
+    document.getElementById('wodTotal').textContent = money(total(o));
+    var itemCount = o.items.reduce(function(s,i){ return s + i.qty; }, 0);
+    document.getElementById('apMdlText').textContent = o.id + ' will move to Approved Orders. Stock for ' + itemCount + ' item' + (itemCount === 1 ? '' : 's') + ' will be reserved, and the order becomes ready to ship.';
+    document.getElementById('apMdlCustomer').textContent = o.name;
+    document.getElementById('apMdlTotal').textContent = money(total(o));
+    showView('detail');
+  }
+
+  function confirmApprove(){
+    closeModal('approveModal');
+    if(!curOrder) return;
+    curOrder.status = 'Confirmed';
+    toast('Order ' + curOrder.id + ' approved');
+    renderTabs(); renderTable();
+    if(detailOrigin === 'autopick'){
+      var sw = document.getElementById('apAutoSwitch');
+      var on = sw && sw.classList.contains('on');
+      var n = on ? nextPending() : null;
+      if(n){ openDetail(n.id, 'autopick', detailQueue); } else { showView('auto-pick'); }
+    } else {
+      var n2 = nextPending();
+      if(n2){ openDetail(n2.id, 'list'); } else { showView('list'); }
+    }
+  }
+
+  function openNextFromList(){
+    var n = nextPending();
+    if(n){ openDetail(n.id, 'list'); } else { toast('No pending orders waiting'); }
+  }
+  function apOpenNext(queue){
+    var n = nextPending();
+    if(n){ openDetail(n.id, 'autopick', queue); } else { toast('No pending orders waiting in this queue'); }
+  }
+  function goBackFromDetail(){
+    showView(detailOrigin === 'autopick' ? 'auto-pick' : 'list');
+  }
+
+  renderTabs(); renderTable();
+</script>
+</body>
+</html>

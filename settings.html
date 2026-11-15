@@ -407,6 +407,7 @@
         <div class="nav-item" onclick="location.href='index.html#preorders'">Preorders</div><div class="nav-item" onclick="location.href='index.html#super-edit'">Super Edit</div>
         <div class="nav-item" onclick="location.href='index.html#scan-update'">Scan To Update</div><div class="nav-item" onclick="location.href='index.html#courier-invoice'">Courier Invoice Upload</div>
         <div class="nav-item" onclick="location.href='index.html#courier-mgmt'">Courier Management</div>
+        <div class="nav-item" onclick="location.href='index.html#ready-to-ship'">Ready to Ship</div><div class="nav-item" onclick="location.href='index.html#settlement'">Courier Ledger</div>
       </div>
       <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><path d="M21 8l-9-5-9 5v8l9 5 9-5V8z"/><path d="M3 8l9 5 9-5"/><path d="M12 13v8"/></svg></span> Inventory <span class="chev">›</span></div>
       <div class="sub-items">
@@ -650,7 +651,8 @@
   <tr><td><b>RedX</b></td><td>—</td><td><span class="pill grey">Not connected</span></td><td><button class="ctl-btn" onclick="openCourier('RedX')">Configure</button></td></tr>
   <tr><td><b>eCourier</b></td><td>—</td><td><span class="pill grey">Not connected</span></td><td><button class="ctl-btn" onclick="openCourier('eCourier')">Configure</button></td></tr>
   <tr><td><b>Paperfly</b></td><td>—</td><td><span class="pill grey">Not connected</span></td><td><button class="ctl-btn" onclick="openCourier('Paperfly')">Configure</button></td></tr>
-  <tr><td><b>Carrybee</b></td><td>—</td><td><span class="pill grey">Not connected</span></td><td><button class="ctl-btn" onclick="openCourier('Carrybee')">Configure</button></td></tr></table>
+  <tr><td><b>Carrybee</b></td><td>—</td><td><span class="pill grey">Not connected</span></td><td><button class="ctl-btn" onclick="openCourier('Carrybee')">Configure</button></td></tr>
+  <tr><td><b>Sundarban</b></td><td>Manual courier — no API</td><td><span class="pill green">Enabled</span></td><td><button class="ctl-btn" onclick="openCourier('Sundarban')">Configure</button></td></tr></table>
   <p class="muted-sm" style="margin-top:12px;">Each courier is connected with your own courier account — delivery charges and COD fees are billed by the courier to you, never to this platform. There is no API or integration fee.</p>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px;">
     <label class="fld-l">Default courier<select class="fld"><option>Pathao</option><option>Steadfast</option><option>RedX</option></select></label>
@@ -1346,10 +1348,19 @@
   <div class="modal-box">
     <h3 style="font-size:17px;" id="courierModalTitle">Configure Courier</h3>
     <p style="color:var(--muted);font-size:13.5px;margin:10px 0;">Use your own courier account details. The courier bills delivery and COD charges to you directly.</p>
-    <label class="fld-l">API Key<input class="fld" placeholder="Paste API key"></label>
-    <label class="fld-l" style="margin-top:12px;">API Secret / Client Secret<input class="fld" placeholder="Paste secret"></label>
+    <div id="cmManualNote" style="display:none;background:#FFFBEB;border:1px solid #FDE68A;border-radius:10px;padding:10px 12px;font-size:13px;color:#92400E;margin-bottom:12px;">Manual courier — no API credentials. Bookings are made in the courier's own app / panel / branch and recorded in Ready to Ship with the CN number. All money accounts stay in this system.</div>
+    <label class="fld-l" id="cmCredKey">API Key<input class="fld" placeholder="Paste API key"></label>
+    <label class="fld-l" id="cmCredSecret" style="margin-top:12px;">API Secret / Client Secret<input class="fld" placeholder="Paste secret"></label>
     <label class="fld-l" style="margin-top:12px;">Sender Phone<input class="fld" value="01XXXXXXXXX"></label>
     <label class="fld-l" style="margin-top:12px;">Pickup Address<input class="fld" value="Dhaka, Bangladesh"></label>
+    <div style="border-top:1px solid #EEE7F3;margin-top:16px;padding-top:14px;">
+      <div style="font-weight:700;font-size:13.5px;margin-bottom:10px;">Delivery charge for this courier</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <label class="fld-l">Inside Dhaka (৳)<input class="fld" id="cmChargeIn" type="number" value="60"></label>
+        <label class="fld-l">Outside Dhaka (৳)<input class="fld" id="cmChargeOut" type="number" value="120"></label>
+      </div>
+      <p class="muted-sm" style="margin-top:8px;">Set per courier, right under its connection. Applied by the customer's district when this courier is picked in Send to Courier.</p>
+    </div>
     <div style="display:flex;gap:10px;margin-top:18px;justify-content:flex-end;">
       <button class="ctl-btn" onclick="sClose('courierModal')">Cancel</button>
       <button class="btn-primary" onclick="sClose('courierModal');toast('Courier account saved (UI prototype)')">Save Courier</button>
@@ -1381,7 +1392,7 @@
 <script>
 function sOpen(id){var m=document.getElementById(id);if(m)m.style.display='flex';}
 function sClose(id){var m=document.getElementById(id);if(m)m.style.display='none';}
-function openCourier(name){var t=document.getElementById('courierModalTitle');if(t)t.textContent='Configure '+name;sOpen('courierModal');}
+function openCourier(name){var t=document.getElementById('courierModalTitle');if(t)t.textContent='Configure '+name;var manual=name==='Sundarban';var note=document.getElementById('cmManualNote');if(note)note.style.display=manual?'':'none';['cmCredKey','cmCredSecret'].forEach(function(id){var el=document.getElementById(id);if(el)el.style.display=manual?'none':'';});var charges={'Steadfast':[60,120],'Pathao':[60,130],'RedX':[70,130],'eCourier':[60,120],'Paperfly':[60,120],'Carrybee':[60,120],'Sundarban':[80,150]};var ch=charges[name]||[60,120];var ci=document.getElementById('cmChargeIn'),co=document.getElementById('cmChargeOut');if(ci)ci.value=ch[0];if(co)co.value=ch[1];sOpen('courierModal');}
 function addSource(){
   var inp=document.getElementById('sourceName');var name=(inp.value||'').trim();
   if(!name){toast('Type a source name first');return;}
