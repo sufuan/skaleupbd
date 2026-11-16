@@ -408,8 +408,8 @@
   <!-- ================= SIDEBAR ================= -->
   <aside class="sidebar">
     <div class="ws-switcher">
-      <div class="ws-chip">O</div>
-      <div><div class="ws-name">ONLINE BUSINESS</div><div class="ws-sub">Workspace</div></div>
+      <div class="ws-chip">D</div>
+      <div><div class="ws-name">Demo Shop</div><div class="ws-sub">Workspace</div></div>
       <span class="ws-chev">▾</span>
     </div>
     <div class="quicksearch"><span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg></span> Quick Search <kbd>CTRL K</kbd></div>
@@ -428,7 +428,7 @@
       </div>
       <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.62l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/></svg></span> Delivery <span class="chev">›</span></div>
       <div class="sub-items">
-        <div class="nav-item" onclick="location.href='delivery.html#ready-to-ship'">Ready to Ship <span id="rtsBadge" style="float:right;background:#411550;color:#fff;border-radius:99px;padding:0 8px;font-size:11.5px;font-weight:700;">2</span></div><div class="nav-item" onclick="location.href='delivery.html#courier-mgmt'">Courier Management</div>
+        <div class="nav-item" onclick="location.href=\'delivery.html#ready-to-ship\'">Ready to Ship <span id="rtsBadge" style="float:right;background:#411550;color:#fff;border-radius:99px;padding:0 8px;font-size:11.5px;font-weight:700;">2</span></div><div class="nav-item" onclick="location.href='delivery.html#courier-mgmt'">Courier Management</div>
         <div class="nav-item" onclick="location.href='delivery.html#scan-update'">Scan To Update</div><div class="nav-item" onclick="location.href='delivery.html#courier-invoice'">Courier Invoice Upload</div>
         <div class="nav-item" onclick="location.href='delivery.html#settlement'">Courier Ledger</div>
       </div>
@@ -442,6 +442,8 @@
       <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></span> Messages <span class="chev">›</span></div>
       <div class="sub-items">
         <div class="nav-item" onclick="location.href='messages.html#inbox'">Inbox</div><div class="nav-item" onclick="location.href='messages.html#comments'">Comments</div>
+        <div class="nav-item" onclick="location.href='messages.html#activity'">AI Activity</div>
+      </div><div class="nav-item" onclick="location.href='messages.html#comments'">Comments</div>
         <div class="nav-item" onclick="location.href='messages.html#autoreply'">Auto Replies</div><div class="nav-item" onclick="location.href='messages.html#ai'">AI Reply</div>
         <div class="nav-item" onclick="location.href='messages.html#report'">Report</div>
       </div>
@@ -515,7 +517,7 @@
         <div class="nav-item" onclick="location.href='settings.html#business'">Business Profile</div><div class="nav-item" onclick="location.href='settings.html#merchant'">Merchant Profile</div>
         <div class="nav-item" onclick="location.href='settings.html#devices'">Device Approvals</div><div class="nav-item" onclick="location.href='settings.html#website'">Website Integration</div>
         <div class="nav-item" onclick="location.href='settings.html#courier'">Courier Integration</div><div class="nav-item" onclick="location.href='settings.html#app'">App Integration</div>
-        <div class="nav-item" onclick="location.href='settings.html#channels'">Messaging Channels</div><div class="nav-item" onclick="location.href='settings.html#pbx'">VoiceDrive PBX</div>
+        <div class="nav-item" onclick="location.href='settings.html#channels'">Messaging Channels</div><div class="nav-item" onclick="location.href='settings.html#pbx'">PBX & Auto Call</div>
         <div class="nav-item" onclick="location.href='settings.html#templates'">Templates</div><div class="nav-item" onclick="location.href='settings.html#sources'">Order Sources</div>
         <div class="nav-item" onclick="location.href='settings.html#deletion'">Deletion Logs</div><div class="nav-item" onclick="location.href='settings.html#advanced'">Advanced Settings</div>
       </div>
@@ -540,7 +542,7 @@
       <span class="qlink" onclick="alert('Send Message (UI prototype)')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><rect x="2.5" y="5" width="19" height="14" rx="2"/><polyline points="3 7 12 13 21 7"/></svg>️ Send Message</span>
       <div class="spacer"></div>
       <button class="bn-btn" onclick="toggleLang(this)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg> BN</button>
-      <button class="ask-btn" onclick="alert('Ask EcomDrive — AI Assistant (UI prototype)')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><path d="M12 3l1.9 5.6L19.5 10l-5.6 1.9L12 17.5l-1.9-5.6L4.5 10l5.6-1.4z"/></svg> Ask EcomDrive</button>
+      <button class="ask-btn" onclick="alert('Ask SkaleUp — AI Assistant (UI prototype)')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><path d="M12 3l1.9 5.6L19.5 10l-5.6 1.9L12 17.5l-1.9-5.6L4.5 10l5.6-1.4z"/></svg> Ask SkaleUp</button>
       <button class="icon-btn" title="What's New"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><path d="M3 11l14-6v14L3 13v-2z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg></button>
       <button class="icon-btn" onclick="alert('Feedback and bug reports (UI prototype)')" title="Feedback and bug reports"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><path d="M9 18h6"/><path d="M10 21h4"/><path d="M12 3a6 6 0 0 0-3.6 10.8c.7.6 1.1 1.3 1.3 2.2h4.6c.2-.9.6-1.6 1.3-2.2A6 6 0 0 0 12 3z"/></svg></button>
       <div class="bell-wrap"><button class="icon-btn" onclick="toggleNotif()" title="Notifications (Alt+T)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 8-3 8h18s-3-1-3-8"/><path d="M10.3 21a2 2 0 0 0 3.4 0"/></svg></button><span class="bell-badge">11</span></div>
@@ -626,7 +628,7 @@
           </div>
         </div>
         <div class="card"><div style="display:flex;align-items:flex-start;flex-wrap:wrap;gap:8px;"><div><h3>Order Counts</h3><div class="card-sub" style="margin:2px 0 0;">Orders created vs sent to courier in the selected range</div></div>
-            <span style="margin-left:auto;display:flex;gap:8px;align-items:center;"><select class="ctl-btn"><option>Last 30 days</option><option>Last 7 days</option><option>Today</option></select><span class="legend-big on"><span class="lb-lbl">Created</span><span class="lb-num" style="color:#2563EB;">15</span></span><span class="legend-big"><span class="lb-lbl">Sent to Courier</span><span class="lb-num">0</span></span></span></div>
+            <span style="margin-left:auto;display:flex;gap:8px;align-items:center;"><select class="ctl-btn"><option>Last 30 days</option><option>Last 7 days</option><option>Today</option></select><span class="legend-big on"><span class="lb-lbl">Created</span><span class="lb-num" style="color:#2563EB;">8</span></span><span class="legend-big"><span class="lb-lbl">Sent to Courier</span><span class="lb-num">0</span></span></span></div>
             <div style="height:14px;"></div>
             <div style="display:flex;align-items:flex-end;gap:3px;height:110px;border-bottom:1px solid var(--card-border);"><div style="flex:1;"></div><div style="flex:1;"></div><div style="flex:1;"></div><div style="flex:1;"></div><div style="flex:1;"></div><div style="flex:1;"></div><div style="flex:1;"></div><div style="flex:1;"></div><div style="flex:1;"></div><div style="flex:1;"></div><div style="flex:1;"></div><div style="flex:1;"></div><div style="flex:1;"></div><div title="Oct 25" style="flex:1;background:#2563eb;height:12.5%;border-radius:3px 3px 0 0;"></div><div style="flex:1;"></div><div style="flex:1;"></div><div title="Oct 28" style="flex:1;background:#2563eb;height:12.5%;border-radius:3px 3px 0 0;"></div><div style="flex:1;"></div><div style="flex:1;"></div><div style="flex:1;"></div><div style="flex:1;"></div><div style="flex:1;"></div><div style="flex:1;"></div><div style="flex:1;"></div><div style="flex:1;"></div><div style="flex:1;"></div><div title="Nov 7" style="flex:1;background:#2563eb;height:50%;border-radius:3px 3px 0 0;"></div><div title="Nov 8" style="flex:1;background:#2563eb;height:12.5%;border-radius:3px 3px 0 0;"></div><div title="Nov 9" style="flex:1;background:#2563eb;height:12.5%;border-radius:3px 3px 0 0;"></div><div title="Nov 10" style="flex:1;background:#2563eb;height:100%;border-radius:3px 3px 0 0;"></div></div>
             <div style="display:flex;justify-content:space-between;font-size:9.5px;color:var(--muted2);margin-top:5px;"><span>Oct 13</span><span>Oct 15</span><span>Oct 17</span><span>Oct 19</span><span>Oct 21</span><span>Oct 23</span><span>Oct 25</span><span>Oct 27</span><span>Oct 29</span><span>Oct 31</span><span>Nov 2</span><span>Nov 4</span><span>Nov 6</span><span>Nov 8</span><span>Nov 10</span></div>
@@ -676,14 +678,14 @@
       <section class="view-panel" id="panel-overview">
         <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr);">
           <div class="card kpi"><div class="lbl">Orders Received</div><div class="val">71</div><div class="sub">Web orders, all statuses</div></div>
-          <div class="card kpi"><div class="lbl">Total Orders</div><div class="val">8</div><div class="sub"><span class="up">↗ 700.0%</span> Previous 1</div></div>
-          <div class="card kpi"><div class="lbl">Processing</div><div class="val">8</div><div class="sub">Approved from web + outside web</div></div>
-          <div class="card kpi"><div class="lbl">Shipped</div><div class="val">5</div><div class="sub">Of 65 website orders</div></div>
-          <div class="card kpi"><div class="lbl">Delivered</div><div class="val">16</div><div class="sub">Website filter view</div></div>
-          <div class="card kpi"><div class="lbl">Cancelled</div><div class="val">41</div><div class="sub">Approved list total</div></div>
-          <div class="card kpi"><div class="lbl">Return</div><div class="val">7</div><div class="sub">Returned orders</div></div>
-          <div class="card kpi"><div class="lbl">Revenue</div><div class="val">৳4,342</div><div class="sub"><span class="up">↗ 985.5%</span> Previous ৳400</div></div>
-          <div class="card kpi"><div class="lbl">Profit</div><div class="val">৳2,942</div><div class="sub">Estimated</div></div>
+          <div class="card kpi"><div class="lbl">Approved Orders</div><div class="val">57</div><div class="sub">Processing + Shipped + Delivered</div></div>
+          <div class="card kpi"><div class="lbl">Processing</div><div class="val">40</div><div class="sub">Approved, not yet shipped</div></div>
+          <div class="card kpi"><div class="lbl">Shipped</div><div class="val">5</div><div class="sub">Of 71 web orders</div></div>
+          <div class="card kpi"><div class="lbl">Delivered</div><div class="val">12</div><div class="sub">Website filter view</div></div>
+          <div class="card kpi"><div class="lbl">Cancelled</div><div class="val">11</div><div class="sub">Of 71 web orders (15%)</div></div>
+          <div class="card kpi"><div class="lbl">Return</div><div class="val">2</div><div class="sub">Returned orders</div></div>
+          <div class="card kpi"><div class="lbl">Revenue</div><div class="val">৳38,650</div><div class="sub"><span class="up">↗ 12.4%</span> Previous ৳34,380</div></div>
+          <div class="card kpi"><div class="lbl">Profit</div><div class="val">৳11,240</div><div class="sub">Estimated</div></div>
           <div class="card kpi"><div class="lbl">Ad Spend</div><div class="val">৳0</div><div class="sub">No ad accounts connected</div></div>
           <div class="card kpi"><div class="lbl">Courier Cost</div><div class="val">৳0</div><div class="sub">Today</div></div>
           <div class="card kpi"><div class="lbl">Pending COD</div><div class="val">৳0</div><div class="sub">COD receivable</div></div>
@@ -695,15 +697,15 @@
             <div class="bar-row"><span class="nm">Processing</span><span class="bar-track"><span class="bar-fill" style="width:56%"></span></span><span class="amt">40</span></div>
           </div>
           <div class="card"><h3>Order Counts</h3><div class="card-sub">Created vs Sent to Courier</div>
-            <div class="bar-row"><span class="nm">Created</span><span class="bar-track"><span class="bar-fill" style="width:100%"></span></span><span class="amt">15</span></div>
-            <div class="bar-row"><span class="nm">Sent to Courier</span><span class="bar-track"><span class="bar-fill" style="width:0%"></span></span><span class="amt">0</span></div>
+            <div class="bar-row"><span class="nm">Created</span><span class="bar-track"><span class="bar-fill" style="width:100%"></span></span><span class="amt">71</span></div>
+            <div class="bar-row"><span class="nm">Sent to Courier</span><span class="bar-track"><span class="bar-fill" style="width:24%"></span></span><span class="amt">17</span></div>
           </div>
         </div>
       </section>
 
       <!-- ===== DECISION ===== -->
       <section class="view-panel" id="panel-decision">
-        <div class="decision-box"><div style="font-size:12px;letter-spacing:.12em;opacity:.85;font-weight:700;">DECISION BOX</div><div class="big">No major rule breach</div><div style="opacity:.9;">Confidence 65% · All operational rules within limits today.</div></div>
+        <div class="decision-box"><div style="font-size:12px;letter-spacing:.12em;opacity:.85;font-weight:700;">DECISION BOX</div><div class="big">No major rule breach</div><div style="opacity:.9;">Confidence 65% · আজকের নিয়মগুলোর কতভাগ ঠিকঠাক চলছে (order, stock, courier মিলিয়ে) · All operational rules within limits today.</div></div>
       </section>
 
       <!-- ===== OPERATIONS ===== -->
@@ -720,16 +722,8 @@
           <div class="stuck"><div class="n">0</div><div class="l">Warranty overdue</div></div>
           <div class="stuck"><div class="n">0</div><div class="l">Courier issue</div></div>
         </div>
-        <div class="card"><h3>Courier Table — Orders Not Sent To Courier</h3><div class="card-sub">8 orders · steadfast</div>
-          <table><tr><th>Invoice</th><th>Customer</th><th>Courier</th><th>Status</th></tr>
-          <tr><td>OB273</td><td>—</td><td>steadfast</td><td><span class="pill amber">Pending</span></td></tr>
-          <tr><td>OB272</td><td>—</td><td>steadfast</td><td><span class="pill amber">Pending</span></td></tr>
-          <tr><td>OB271</td><td>—</td><td>steadfast</td><td><span class="pill amber">Pending</span></td></tr>
-          <tr><td>OB270</td><td>—</td><td>steadfast</td><td><span class="pill amber">Pending</span></td></tr>
-          <tr><td>OB269</td><td>—</td><td>steadfast</td><td><span class="pill amber">Pending</span></td></tr>
-          <tr><td>OB268</td><td>—</td><td>steadfast</td><td><span class="pill amber">Pending</span></td></tr>
-          <tr><td>OB267</td><td>—</td><td>steadfast</td><td><span class="pill amber">Pending</span></td></tr>
-          <tr><td>OB266</td><td>—</td><td>steadfast</td><td><span class="pill amber">Pending</span></td></tr></table>
+        <div class="card"><h3>Courier Table — Orders Not Sent To Courier</h3><div class="card-sub">5 orders · steadfast</div>
+          <table><tr><th>Invoice</th><th>Customer</th><th>Courier</th><th>Status</th></tr> <tr><td>OB286</td><td>M. Fahim</td><td>steadfast</td><td><span class="pill amber">Pending</span></td></tr> <tr><td>OB285</td><td>Khan Tanvir Islam</td><td>steadfast</td><td><span class="pill amber">Pending</span></td></tr> <tr><td>OB284</td><td>Nozrul Islam</td><td>steadfast</td><td><span class="pill amber">Pending</span></td></tr> <tr><td>OB283</td><td>F.A. Rayhan</td><td>steadfast</td><td><span class="pill blue">Processing</span></td></tr> <tr><td>OB282</td><td>Anwar Hossain</td><td>steadfast</td><td><span class="pill blue">Processing</span></td></tr> </table>
         </div>
       </section>
 
@@ -857,20 +851,6 @@
 <button class="team-chat" onclick="alert('Open Team Chat (UI prototype)')" title="Team Chat"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></button>
 
 
-<div class="modal-overlay" id="approveModal" style="display:none;">
-  <div class="modal-box">
-    <h3 style="font-size:17px;">Approve this order?</h3>
-    <p id="apMdlText" style="color:var(--muted);font-size:13.5px;margin:10px 0;">OB273 will move to Ready to Ship (Delivery). Stock for 1 item will be reserved, and packing can begin.</p>
-    <p id="apMdlWarn" style="display:none;background:#FEF2F2;border:1px solid #FECACA;color:#B91C1C;border-radius:8px;padding:8px 11px;font-size:12.5px;font-weight:600;margin:0 0 10px;">Red alert: the courier network flags this customer as risky. Consider taking advance payment first.</p>
-    <div class="sum-row"><span>Customer</span><b id="apMdlCustomer">M. Fahim</b></div>
-    <div class="sum-row"><span>Total (COD)</span><b id="apMdlTotal">৳599</b></div>
-    <div style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end;">
-      <button class="ctl-btn" onclick="closeModal('approveModal')">Cancel</button>
-      <button class="btn-primary" onclick="confirmApprove()">Confirm Approve</button>
-    </div>
-  </div>
-</div>
-
 <div class="modal-overlay" id="invoiceModal" style="display:none;">
   <div class="modal-box" style="max-width:640px;">
     <div id="invoiceSheet"></div>
@@ -881,176 +861,6 @@
   </div>
 </div>
 
-
-<div class="modal-overlay" id="sendModal" style="display:none;">
-  <div class="modal-box" style="max-width:560px;">
-    <div id="sendMain">
-      <h3 style="font-size:17px;" id="sendTitle">Send to Courier</h3>
-      <p id="sendSub" style="color:var(--muted);font-size:13.5px;margin:8px 0 4px;"></p>
-      <div id="sendCards" style="display:flex;flex-direction:column;gap:10px;margin-top:12px;"></div>
-      <div id="sendCnRow" style="display:none;margin-top:14px;">
-        <label class="fld-l">Sundarban CN Number<input class="fld" id="sendCn" placeholder="e.g. CN-2026-884120"></label>
-        <p class="muted-sm" style="margin-top:6px;">Book the parcel in Sundarban's own app / panel / branch first, then enter the CN number here. The money accounts stay in this system.</p>
-      </div>
-      <div style="display:flex;gap:10px;margin-top:18px;justify-content:flex-end;">
-        <button class="ctl-btn" onclick="closeModal('sendModal')">Cancel</button>
-        <button class="btn-primary" id="sendGoBtn" onclick="doSend()">Send</button>
-      </div>
-    </div>
-    <div id="sendDone" style="display:none;text-align:center;padding:8px 0;">
-      <div style="width:52px;height:52px;border-radius:50%;background:#F0FDF4;border:1.5px solid #22C55E;color:#16A34A;display:flex;align-items:center;justify-content:center;margin:0 auto;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
-      <h3 style="font-size:17px;margin-top:12px;" id="sendDoneTitle">Sent to courier</h3>
-      <p id="sendDoneText" style="color:var(--muted);font-size:13.5px;margin:8px 0;line-height:1.7;"></p>
-      <div style="display:flex;gap:10px;margin-top:16px;justify-content:center;">
-        <button class="ctl-btn" onclick="closeModal('sendModal')">Done</button>
-        <button class="btn-primary" id="sendSlipBtn" onclick="openSlip()">Print Packing Slip</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="modal-overlay" id="slipModal" style="display:none;">
-  <div class="modal-box" style="max-width:560px;">
-    <div id="slipSheet"></div>
-    <div class="inv-actions" style="display:flex;gap:10px;margin-top:18px;justify-content:flex-end;">
-      <button class="ctl-btn" onclick="closeModal('slipModal')">Close</button>
-      <button class="btn-primary" onclick="window.print()">Print</button>
-    </div>
-  </div>
-</div>
-
-<div class="modal-overlay" id="orderModal" style="display:none;">
-  <div class="modal-box" style="max-width:640px;">
-    <div style="display:flex;align-items:center;"><h3 style="font-size:17px;">Order Details — OB266</h3><button class="icon-btn" style="margin-left:auto;" onclick="closeModal('orderModal')">✕</button></div>
-    <div class="sum-row" style="margin-top:10px;"><span>Customer</span><b>M. Fahim · 01712-445566</b></div>
-    <div class="sum-row"><span>Address</span><b>House 12, Road 5, Mirpur 10, Dhaka</b></div>
-    <div class="sum-row"><span>Status</span><b><span class="pill amber">Pending</span></b></div>
-    <div class="sum-row"><span>Courier</span><b>Steadfast — Inside Dhaka</b></div>
-    <table style="margin-top:10px;"><tr><th>Product</th><th>Qty</th><th>Total</th></tr>
-    <tr><td>Mentara Roll On Balm COMBO (MENT-COMBO)</td><td>1</td><td>৳539</td></tr></table>
-    <div class="sum-row" style="margin-top:10px;"><span>Delivery Charge</span><b>৳60</b></div>
-    <div class="sum-row total"><span>COD Total</span><b>৳599</b></div>
-    <div style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end;">
-      <button class="ctl-btn" onclick="toast('Print sent — invoice renders in a hidden print frame')">Print</button>
-      <button class="btn-primary" onclick="closeModal('orderModal')">Close</button>
-    </div>
-  </div>
-</div>
-
-<div class="modal-overlay" id="methodModal" style="display:none;">
-  <div class="modal-box" style="max-width:560px;">
-    <div style="display:flex;align-items:center;"><h3 style="font-size:17px;" id="methodTitle">Add Delivery Method</h3><button class="icon-btn" style="margin-left:auto;" onclick="closeModal('methodModal')">✕</button></div>
-    <label class="fld-l" style="margin-top:12px;">Method Name<input class="fld" id="mName" placeholder="e.g. Steadfast — Inside Dhaka"></label>
-    <label class="fld-l" style="margin-top:12px;">Courier Type<select class="fld" id="mType" onchange="methodFields(this.value)">
-      <option>PATHAO</option><option>STEADFAST</option><option>REDX</option><option>CARRYBEE</option><option>PAPERFLY</option><option>ECOURIER</option><option>BAHOK</option><option>OTHERS (Manual)</option></select></label>
-    <div id="mFields" style="margin-top:6px;"></div>
-    <label class="fld-l" style="margin-top:12px;">Default Shipping Note<input class="fld" placeholder="Optional"></label>
-    <div class="sum-row" style="margin-top:12px;"><span>Active</span><button class="switch on" onclick="this.classList.toggle('on')"></button></div>
-    <div style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end;">
-      <button class="ctl-btn" onclick="closeModal('methodModal')">Cancel</button>
-      <button class="btn-primary" onclick="closeModal('methodModal');toast('Delivery method saved (UI prototype)')">Save Method</button>
-    </div>
-  </div>
-</div>
-
-
-<div class="modal-overlay" id="layoutsModal" style="display:none;">
-  <div class="modal-box" style="max-width:640px;">
-    <div style="display:flex;align-items:center;"><h3 style="font-size:17px;">Order Form Options</h3><button class="icon-btn" style="margin-left:auto;" onclick="closeModal('layoutsModal')">✕</button></div>
-    <div class="utabs inner-tabs" style="margin-top:10px;"><button class="active">Layouts</button><button>Fields</button><button>Courier Cards</button></div>
-    <p class="muted-sm">Layouts apply on wider screens. On a phone every layout stacks into one column.</p>
-    <div class="card" style="box-shadow:none;border:1px solid var(--focus);margin-top:12px;"><b>V2 Default</b> <span class="pill green">ACTIVE</span><p class="muted-sm" style="margin-top:6px;">Two columns with the calculation details pinned in a sticky rail on the right, so the total and the submit button stay on screen.</p></div>
-    <div class="card" style="box-shadow:none;border:1px solid var(--card-border);margin-top:10px;"><b>V2 Full Width Stacked</b><p class="muted-sm" style="margin-top:6px;">Like V2 Default, but the product picker gets a full-width row with the ordered products below it, the way a phone shows them.</p></div>
-    <div class="card" style="box-shadow:none;border:1px solid var(--card-border);margin-top:10px;"><b>V1 Classic</b><p class="muted-sm" style="margin-top:6px;">The legacy arrangement: full width, ordered products beside the picker, and the money fields in a band across the bottom. Scroll down to submit.</p></div>
-    <p class="muted-sm" style="margin-top:12px;">Fields templates: Default Template (ACTIVE), Compact Template, Wholesale Template, Pre-Order Template, Call Center Fast Entry Template. Courier Cards order: Overall, Pathao, Steadfast, RedX, CarryBee.</p>
-    <div style="display:flex;gap:10px;margin-top:14px;justify-content:space-between;align-items:center;"><span class="muted-sm">Active: V2 Default + Default Template</span><button class="btn-primary" onclick="closeModal('layoutsModal')">Close</button></div>
-  </div>
-</div>
-
-<div class="modal-overlay" id="customProductModal" style="display:none;">
-  <div class="modal-box">
-    <div style="display:flex;align-items:center;"><h3 style="font-size:17px;">Add Custom Product</h3><button class="icon-btn" style="margin-left:auto;" onclick="closeModal('customProductModal')">✕</button></div>
-    <label class="fld-l" style="margin-top:12px;">Product Name *<input class="fld" placeholder="e.g. Special Offer Box"></label>
-    <label class="fld-l" style="margin-top:12px;">SKU (optional)<input class="fld" placeholder="Auto-generated if left blank"></label>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;">
-      <label class="fld-l">Price (৳) *<input class="fld" type="number" value="0"></label>
-      <label class="fld-l">Quantity *<input class="fld" type="number" value="1"></label>
-    </div>
-    <div style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end;"><button class="ctl-btn" onclick="closeModal('customProductModal')">Cancel</button><button class="btn-primary" onclick="closeModal('customProductModal');toast('Custom product added (UI prototype)')">Add Product</button></div>
-  </div>
-</div>
-
-<div class="modal-overlay" id="filterModal" style="display:none;">
-  <div class="modal-box" style="max-width:520px;">
-    <div style="display:flex;align-items:center;"><h3 style="font-size:17px;">Filter Orders</h3><button class="icon-btn" style="margin-left:auto;" onclick="closeModal('filterModal')">✕</button></div>
-    <label class="fld-l" style="margin-top:12px;">Date range counts on<select class="fld"><option>Order date</option><option>Status change date</option></select></label>
-    <label class="fld-l" style="margin-top:12px;">Date Range<button class="ctl-btn" style="width:100%;justify-content:center;margin-top:5px;" onclick="toast('Date picker — Today / Yesterday / Last 7 days / Last 30 days / This month / Last month / This year / Last year / Lifetime / Custom range')">All dates</button></label>
-    <label class="fld-l" style="margin-top:12px;">Filter Field<select class="fld"><option>Reference</option><option>Incomplete Orders</option><option>Web Source</option><option>Tags</option><option>Previous Status</option><option>Employees</option><option>Product Code</option><option>Product Quantity</option><option>Order Value</option><option>Total Orders</option><option>Success Orders</option><option>Processed By</option></select></label>
-    <div style="display:flex;gap:16px;margin-top:12px;font-size:13px;"><label><input type="checkbox"> Show Only Incomplete Order</label><label><input type="checkbox"> Hide Incomplete Order</label></div>
-    <div style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end;"><button class="ctl-btn" onclick="closeModal('filterModal')">Cancel</button><button class="btn-primary" onclick="closeModal('filterModal');toast('Filter applied (UI prototype)')">Apply Filter</button></div>
-  </div>
-</div>
-
-<div class="modal-overlay" id="alertsModal" style="display:none;">
-  <div class="modal-box" style="max-width:520px;">
-    <div style="display:flex;align-items:center;"><h3 style="font-size:17px;">New web order alerts</h3><button class="icon-btn" style="margin-left:auto;" onclick="closeModal('alertsModal')">✕</button></div>
-    <p style="font-size:13.5px;margin-top:10px;">Play a sound when a new web order arrives in the selected order types.</p>
-    <div class="sum-row"><span>Play a sound when a new web order comes<br><span class="muted-sm">The alert works from the order list and keeps checking while this browser tab is open.</span></span><button class="switch" onclick="this.classList.toggle('on')"></button></div>
-    <b style="display:block;margin-top:12px;">Order types</b><span class="muted-sm">Choose which new orders should play the alert.</span>
-    <label style="display:block;margin-top:8px;font-size:13.5px;"><input type="checkbox" checked> Processing orders — <span class="muted-sm">New approved web orders that need team action.</span></label>
-    <label style="display:block;margin-top:6px;font-size:13.5px;"><input type="checkbox"> Incomplete orders — <span class="muted-sm">New checkout attempts that were not completed.</span></label>
-    <b style="display:block;margin-top:12px;">Alert sound</b><span class="muted-sm">Pick the volume for the new order sound.</span>
-    <div style="display:flex;gap:14px;margin-top:8px;font-size:13.5px;"><label><input type="radio" name="vol"> Low</label><label><input type="radio" name="vol" checked> Medium</label><label><input type="radio" name="vol"> High</label><button class="ctl-btn">Test sound</button></div>
-    <p class="muted-sm" style="margin-top:10px;">Your browser will ask for permission when you turn this on.</p>
-    <div style="display:flex;gap:10px;margin-top:14px;justify-content:flex-end;"><button class="ctl-btn" onclick="closeModal('alertsModal')">Cancel</button><button class="btn-primary" onclick="closeModal('alertsModal');toast('Alert settings saved (UI prototype)')">Save changes</button></div>
-  </div>
-</div>
-
-<div class="modal-overlay" id="ruleModal" style="display:none;">
-  <div class="modal-box" style="max-width:560px;">
-    <div style="display:flex;align-items:center;"><h3 style="font-size:17px;">Create Rule</h3><button class="icon-btn" style="margin-left:auto;" onclick="closeModal('ruleModal')">✕</button></div>
-    <label class="fld-l" style="margin-top:12px;">Rule Name<input class="fld" placeholder="Hold orders follow-up"></label>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;">
-      <label class="fld-l">Order Type<select class="fld"><option>Web Order</option><option>Approved Order</option></select></label>
-      <label class="fld-l">Order Status<select class="fld"><option>Processing</option><option>Incomplete</option><option>Good But No Response</option><option>No Response</option><option>Advance Payment</option><option>On Hold</option><option>Stock Out</option><option>Approved</option><option>Cancel</option></select></label>
-      <label class="fld-l">Schedule Type<select class="fld"><option>Everyday</option><option>Today Only</option></select></label>
-      <label class="fld-l">Call Limit<input class="fld" value="3" readonly></label>
-    </div>
-    <label class="fld-l" style="margin-top:12px;">Time Slots <button class="ctl-btn" style="margin-left:8px;">Add Time</button><input class="fld" type="time" value="10:00" style="margin-top:6px;"></label>
-    <div class="sum-row"><span>Rule Active<br><span class="muted-sm">Disabled rules will not auto-trigger.</span></span><button class="switch on" onclick="this.classList.toggle('on')"></button></div>
-    <div class="sum-row"><span>Custom Voices For This Rule<br><span class="muted-sm">Using global Auto Call Center voices for this rule.</span></span><button class="switch" onclick="this.classList.toggle('on')"></button></div>
-    <div style="margin-top:12px;"><b>Keypad Actions</b> <button class="ctl-btn">Add Key</button><p class="muted-sm" style="margin-top:6px;">No key actions configured. Press results will still be logged.</p></div>
-    <div style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end;"><button class="ctl-btn" onclick="closeModal('ruleModal')">Cancel</button><button class="btn-primary" onclick="closeModal('ruleModal');toast('Rule created (UI prototype)')">Create Rule</button></div>
-  </div>
-</div>
-
-<div class="modal-overlay" id="blockIpModal" style="display:none;">
-  <div class="modal-box">
-    <div style="display:flex;align-items:center;"><h3 style="font-size:17px;">Block IP Address</h3><button class="icon-btn" style="margin-left:auto;" onclick="closeModal('blockIpModal')">✕</button></div>
-    <label class="fld-l" style="margin-top:12px;">IP Address<input class="fld" placeholder="Enter IP address"></label>
-    <label class="fld-l" style="margin-top:12px;">Duration (minutes)<input class="fld" type="number" placeholder="Enter duration in minutes"></label>
-    <div style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end;"><button class="btn-primary" onclick="closeModal('blockIpModal');toast('IP blocked (UI prototype)')">Block IP</button></div>
-  </div>
-</div>
-
-<div class="modal-overlay" id="blockMobileModal" style="display:none;">
-  <div class="modal-box">
-    <div style="display:flex;align-items:center;"><h3 style="font-size:17px;">Block Mobile Number</h3><button class="icon-btn" style="margin-left:auto;" onclick="closeModal('blockMobileModal')">✕</button></div>
-    <label class="fld-l" style="margin-top:12px;">Mobile Number<input class="fld" placeholder="Enter mobile number"></label>
-    <div class="sum-row"><span>Permanent Block</span><button class="switch" onclick="this.classList.toggle('on')"></button></div>
-    <label class="fld-l" style="margin-top:12px;">Duration (minutes)<input class="fld" type="number" placeholder="Enter duration in minutes"></label>
-    <div style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end;"><button class="btn-primary" onclick="closeModal('blockMobileModal');toast('Mobile number blocked (UI prototype)')">Block Mobile</button></div>
-  </div>
-</div>
-
-<div class="modal-overlay" id="blockDeviceModal" style="display:none;">
-  <div class="modal-box">
-    <div style="display:flex;align-items:center;"><h3 style="font-size:17px;">Block Device</h3><button class="icon-btn" style="margin-left:auto;" onclick="closeModal('blockDeviceModal')">✕</button></div>
-    <label class="fld-l" style="margin-top:12px;">Device Key<input class="fld" placeholder="Enter device key"></label>
-    <div class="sum-row"><span>Permanent Block</span><button class="switch on" onclick="this.classList.toggle('on')"></button></div>
-    <div style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end;"><button class="btn-primary" onclick="closeModal('blockDeviceModal');toast('Device blocked (UI prototype)')">Block Device</button></div>
-  </div>
-</div>
 
 <div id="toast"></div>
 
@@ -1100,7 +910,7 @@
     if(e.key === 'Escape'){ closeSearch(); }
   });
   // Quick Search (Ctrl+K)
-  var menuNames = ['Dashboard','Search Orders','New Order','Auto Pick Orders','Auto Call Center','Order Block List','Order List','Orders Dashboard','Preorders','Ready to Ship','Scan To Update','Courier Invoice Upload','Courier Management','Inventory Dashboard','Products','Stock Ledger','Branches','Warranty','Inbox','Comments','Auto Replies','AI Reply','Messages Report','Purchase Dashboard','Purchase List','New Purchase','Purchase Receive','Supplier Ledger','Suppliers','Ask for Quotation','Task Board','Agent Cockpit','Follow-up Management','My Follow-ups','Follow-up Performance','Call Center Dashboard','Call Center Reports','Contacts','My Work','Work Control','Ads Dashboard','Meta Ads','TikTok Ads','Automation','SMS Marketing','Templates','Customer List','Bulk Upload','HR Dashboard','Attendance','Departments & SOP','User & Role','Finance Dashboard','Accounts & Bank','Income & Expense','Courier Ledger','Cash Flow','Asset Management','Profit & Loss','Order Report','Courier Report','Product Report','Employee Report','Call Center Report','Customer Report','Business Profile','Merchant Profile','Device Approvals','Website Integration','Courier Integration','App Integration','Messaging Channels','VoiceDrive PBX','Order Sources','Deletion Logs','Advanced Settings','Help Center','Updates','My Bug Reports','My Feedback','System Status'];
+  var menuNames = ['Dashboard','Search Orders','New Order','Auto Pick Orders','Auto Call Center','Order Block List','Order List','Orders Dashboard','Preorders','Ready to Ship','Scan To Update','Courier Invoice Upload','Courier Management','Inventory Dashboard','Products','Stock Ledger','Branches','Warranty','Inbox','Comments','Auto Replies','AI Reply','Messages Report','Purchase Dashboard','Purchase List','New Purchase','Purchase Receive','Supplier Ledger','Suppliers','Ask for Quotation','Task Board','Agent Cockpit','Follow-up Management','My Follow-ups','Follow-up Performance','Call Center Dashboard','Call Center Reports','Contacts','My Work','Work Control','Ads Dashboard','Meta Ads','TikTok Ads','Automation','SMS Marketing','Templates','Customer List','Bulk Upload','HR Dashboard','Attendance','Departments & SOP','User & Role','Finance Dashboard','Accounts & Bank','Income & Expense','Courier Ledger','Cash Flow','Asset Management','Profit & Loss','Order Report','Courier Report','Product Report','Employee Report','Call Center Report','Customer Report','Business Profile','Merchant Profile','Device Approvals','Website Integration','Courier Integration','App Integration','Messaging Channels','PBX & Auto Call','Order Sources','Deletion Logs','Advanced Settings','Help Center','Updates','My Bug Reports','My Feedback','System Status'];
   function openSearch(){
     document.getElementById('searchModal').style.display = 'block';
     filterSearch('');
@@ -1255,7 +1065,7 @@
     }).join('');
     document.getElementById('invoiceSheet').innerHTML =
       '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;border-bottom:2px solid #411550;padding-bottom:14px;">'
-      + '<div><div style="font-size:20px;font-weight:800;color:#411550;letter-spacing:.01em;">ONLINE BUSINESS</div><div style="font-size:12px;color:#64748B;margin-top:2px;">Workspace \u00b7 SkaleUp BD</div></div>'
+      + '<div><div style="font-size:20px;font-weight:800;color:#411550;letter-spacing:.01em;">Demo Shop</div><div style="font-size:12px;color:#64748B;margin-top:2px;">Workspace \u00b7 SkaleUp BD</div></div>'
       + '<div style="text-align:right;"><div style="font-size:16px;font-weight:800;letter-spacing:.14em;">INVOICE</div>'
       + '<div style="font-size:12.5px;color:#64748B;margin-top:4px;">Invoice No: <b style="color:#111827;">' + o.id + '</b></div>'
       + '<div style="font-size:12.5px;color:#64748B;">Date: ' + o.when + '</div>'
@@ -1442,7 +1252,7 @@
         + '<td><b>' + money(codOf(o)) + '</b></td>'
         + '<td><span class="pill ' + STATUS_PILL[o.status] + '">' + o.status + '</span></td>'
         + '<td>' + (o.wait || '—') + '</td>'
-        + '<td style="text-align:right;white-space:nowrap;"><button class="mini-btn" title="Print Invoice" onclick="openInvoice(\'' + o.id + '\')">' + DL_SVG + '</button> <button class="open-btn" onclick="openSendModal(\'' + o.id + '\')">Send to Courier</button></td></tr>';
+        + '<td style="text-align:right;white-space:nowrap;"><button class="mini-btn" title="Print Invoice" onclick="openInvoice(\'' + o.id + '\')">' + DL_SVG + '</button> <button class="open-btn" onclick="location.href=\'delivery.html#ready-to-ship\'">Send to Courier</button></td></tr>';
     }).join('');
     rtsSelChange();
   }
@@ -1538,7 +1348,7 @@
     }).join('');
     document.getElementById('slipSheet').innerHTML =
       '<div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #411550;padding-bottom:12px;">'
-      + '<div><div style="font-size:19px;font-weight:800;color:#411550;">ONLINE BUSINESS</div><div style="font-size:12px;color:#64748B;margin-top:2px;">Workspace · SkaleUp BD</div></div>'
+      + '<div><div style="font-size:19px;font-weight:800;color:#411550;">Demo Shop</div><div style="font-size:12px;color:#64748B;margin-top:2px;">Workspace · SkaleUp BD</div></div>'
       + '<div style="text-align:right;"><div style="font-size:15px;font-weight:800;letter-spacing:.14em;">PACKING SLIP</div><div style="font-size:12.5px;color:#64748B;margin-top:4px;">Invoice: <b style="color:#111827;">' + o.id + '</b></div></div></div>'
       + '<div style="display:flex;justify-content:space-between;gap:16px;margin-top:14px;"><div style="font-size:13.5px;line-height:1.55;"><div style="font-weight:700;font-size:12px;letter-spacing:.08em;color:#64748B;">SHIP TO</div><b>' + o.name + '</b><br>' + o.phone + '<br><span style="color:#64748B;">' + o.addr + '</span></div>'
       + '<div style="text-align:right;font-size:13.5px;line-height:1.55;"><div style="font-weight:700;font-size:12px;letter-spacing:.08em;color:#64748B;">COURIER</div><b>' + o.courier + '</b><br><span style="color:#64748B;">' + (o.courier.indexOf('Sundarban') === 0 ? 'CN' : 'Tracking') + ':</span> <b>' + o.tracking + '</b></div></div>'
