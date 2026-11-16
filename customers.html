@@ -395,18 +395,18 @@
       <div class="nav-item"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg></span> Search</div>
 
       <div class="group-label">Operations</div>
-      <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></span> Web Orders <span class="chev">›</span></div>
+      <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><path d="M21 8l-9-5-9 5v8l9 5 9-5V8z"/><path d="M3 8l9 5 9-5"/><path d="M12 13v8"/></svg></span> Orders <span class="chev">›</span></div>
       <div class="sub-items">
-        <div class="nav-item" onclick="location.href='orders.html#new-order'">New Order</div><div class="nav-item" onclick="location.href='orders.html#web-orders'">Web Order List</div>
+        <div class="nav-item" onclick="location.href='orders.html#new-order'">New Order</div><div class="nav-item" onclick="location.href='orders.html#order-list'">Order List</div>
         <div class="nav-item" onclick="location.href='orders.html#auto-pick'">Auto Pick Orders</div><div class="nav-item" onclick="location.href='orders.html#auto-call'">Auto Call Center</div>
-        <div class="nav-item" onclick="location.href='orders.html#block-list'">Order Block List</div>
+        <div class="nav-item" onclick="location.href='orders.html#block-list'">Order Block List</div><div class="nav-item" onclick="location.href='orders.html#preorders'">Preorders</div>
+        <div class="nav-item" onclick="location.href='orders.html#orders-dashboard'">Orders Dashboard</div>
       </div>
-      <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><circle cx="12" cy="12" r="10"/><polyline points="8 12.5 11 15.5 16 9.5"/></svg></span> Approved Orders <span class="chev">›</span></div>
+      <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.62l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/></svg></span> Delivery <span class="chev">›</span></div>
       <div class="sub-items">
-        <div class="nav-item" onclick="location.href='orders.html#order-list'">Order List</div><div class="nav-item" onclick="location.href='orders.html#orders-dashboard'">Orders Dashboard</div>
-        <div class="nav-item" onclick="location.href='orders.html#preorders'">Preorders</div><div class="nav-item" onclick="location.href='orders.html#super-edit'">Super Edit</div>
+        <div class="nav-item" onclick="location.href='delivery.html#ready-to-ship'">Ready to Ship <span id="rtsBadge" style="float:right;background:#411550;color:#fff;border-radius:99px;padding:0 8px;font-size:11.5px;font-weight:700;">2</span></div><div class="nav-item" onclick="location.href='delivery.html#courier-mgmt'">Courier Management</div>
         <div class="nav-item" onclick="location.href='delivery.html#scan-update'">Scan To Update</div><div class="nav-item" onclick="location.href='delivery.html#courier-invoice'">Courier Invoice Upload</div>
-        <div class="nav-item" onclick="location.href='delivery.html#courier-mgmt'">Courier Management</div>
+        <div class="nav-item" onclick="location.href='delivery.html#settlement'">Courier Ledger</div>
       </div>
       <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><path d="M21 8l-9-5-9 5v8l9 5 9-5V8z"/><path d="M3 8l9 5 9-5"/><path d="M12 13v8"/></svg></span> Inventory <span class="chev">›</span></div>
       <div class="sub-items">
@@ -466,14 +466,14 @@
       <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><circle cx="10" cy="8" r="3.5"/><path d="M3.5 20c.7-3.2 3.2-5 6.5-5s5.8 1.8 6.5 5"/><rect x="16" y="13" width="6" height="8" rx="1"/><path d="M16 16.5h6"/></svg></span> HRM <span class="chev">›</span></div>
       <div class="sub-items">
         <div class="nav-item" onclick="location.href='hrm.html#dash'">HR Dashboard</div><div class="nav-item" onclick="location.href='hrm.html#attendance'">Attendance</div>
-        <div class="nav-item" onclick="location.href='hrm.html#attreport'">Attendance Report</div><div class="nav-item" onclick="location.href='hrm.html#shift'">Shift Management</div>
+        
         <div class="nav-item" onclick="location.href='hrm.html#dept'">Departments &amp; SOP</div><div class="nav-item" onclick="location.href='hrm.html#userrole'">User &amp; Role</div>
         <div class="nav-item" onclick="location.href='hrm.html#settings'">Settings</div>
       </div>
       <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><rect x="2.5" y="6" width="19" height="13" rx="2.5"/><circle cx="12" cy="12.5" r="2.8"/><path d="M6 9.5h.01M18 15.5h.01"/></svg></span> Finance <span class="chev">›</span></div>
       <div class="sub-items">
         <div class="nav-item" onclick="location.href='finance.html#dash'">Finance Dashboard</div><div class="nav-item" onclick="location.href='finance.html#accounts'">Accounts &amp; Bank</div>
-        <div class="nav-item" onclick="location.href='finance.html#ie'">Income &amp; Expense</div><div class="nav-item" onclick="location.href='finance.html#settlement'">Courier Settlement</div>
+        <div class="nav-item" onclick="location.href='finance.html#ie'">Income &amp; Expense</div>
         <div class="nav-item" onclick="location.href='finance.html#cashflow'">Cash Flow</div><div class="nav-item" onclick="location.href='finance.html#assets'">Asset Management</div>
       </div>
       <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="15 7 21 7 21 13"/></svg></span> Reports <span class="chev">›</span></div>
@@ -481,8 +481,8 @@
         <div class="nav-item" onclick="location.href='reports.html#pl'">Profit &amp; Loss</div><div class="nav-item" onclick="location.href='reports.html#order'">Order Report</div>
         <div class="nav-item" onclick="location.href='reports.html#courier'">Courier Report</div><div class="nav-item" onclick="location.href='reports.html#product'">Product Report</div>
         <div class="nav-item" onclick="location.href='reports.html#employee'">Employee Report</div><div class="nav-item" onclick="location.href='reports.html#call'">Call Center Report</div>
-        <div class="nav-item" onclick="location.href='reports.html#customer'">Customer Report</div><div class="nav-item" onclick="location.href='reports.html#business'">Business Reports</div>
-        <div class="nav-item" onclick="location.href='reports.html#limits'">My Limits</div>
+        <div class="nav-item" onclick="location.href='reports.html#customer'">Customer Report</div>
+        
       </div>
 
       <div class="group-label">System</div>
@@ -776,7 +776,7 @@
     if(e.key === 'Escape'){ closeSearch(); }
   });
   // Quick Search (Ctrl+K)
-  var menuNames = ['Dashboard','Search Orders','New Order','Web Order List','Auto Pick Orders','Auto Call Center','Order Block List','Order List','Orders Dashboard','Preorders','Super Edit','Scan To Update','Courier Invoice Upload','Courier Management','Inventory Dashboard','Products','Stock Ledger','Branches','Warranty','Inbox','Comments','Auto Replies','AI Reply','Messages Report','Purchase Dashboard','Purchase List','New Purchase','Purchase Receive','Supplier Ledger','Suppliers','Ask for Quotation','Task Board','Agent Cockpit','Follow-up Management','My Follow-ups','Follow-up Performance','Call Center Dashboard','Call Center Reports','Contacts','My Work','Work Control','Ads Dashboard','Meta Ads','TikTok Ads','Automation','SMS Marketing','Templates','Customer List','Bulk Upload','HR Dashboard','Attendance','Attendance Report','Shift Management','Departments & SOP','User & Role','Finance Dashboard','Accounts & Bank','Income & Expense','Courier Settlement','Cash Flow','Asset Management','Profit & Loss','Order Report','Courier Report','Product Report','Employee Report','Call Center Report','Customer Report','Business Reports','My Limits','Business Profile','Merchant Profile','Device Approvals','Website Integration','Courier Integration','App Integration','Messaging Channels','VoiceDrive PBX','Order Sources','Deletion Logs','Advanced Settings','Help Center','Updates','My Bug Reports','My Feedback','System Status'];
+  var menuNames = ['Dashboard','Search Orders','New Order','Web Order List','Auto Pick Orders','Auto Call Center','Order Block List','Order List','Orders Dashboard','Preorders','Super Edit','Scan To Update','Courier Invoice Upload','Courier Management','Inventory Dashboard','Products','Stock Ledger','Branches','Warranty','Inbox','Comments','Auto Replies','AI Reply','Messages Report','Purchase Dashboard','Purchase List','New Purchase','Purchase Receive','Supplier Ledger','Suppliers','Ask for Quotation','Task Board','Agent Cockpit','Follow-up Management','My Follow-ups','Follow-up Performance','Call Center Dashboard','Call Center Reports','Contacts','My Work','Work Control','Ads Dashboard','Meta Ads','TikTok Ads','Automation','SMS Marketing','Templates','Customer List','Bulk Upload','HR Dashboard','Attendance','Departments & SOP','User & Role','Finance Dashboard','Accounts & Bank','Income & Expense','Cash Flow','Asset Management','Profit & Loss','Order Report','Courier Report','Product Report','Employee Report','Call Center Report','Customer Report','Business Profile','Merchant Profile','Device Approvals','Website Integration','Courier Integration','App Integration','Messaging Channels','VoiceDrive PBX','Order Sources','Deletion Logs','Advanced Settings','Help Center','Updates','My Bug Reports','My Feedback','System Status'];
   function openSearch(){
     document.getElementById('searchModal').style.display = 'block';
     filterSearch('');

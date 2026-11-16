@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SkaleUp BD — Finance (Step 5)</title>
+<title>SkaleUp BD — Finance</title>
 <style>
   :root{
     --primary:#411550; --primary-dark:#3d0a57; --gradient-end:#6b21a8;
@@ -391,22 +391,22 @@
     <div class="quicksearch"><span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg></span> Quick Search <kbd>CTRL K</kbd></div>
 
     <nav class="side-nav">
-      <div class="nav-item" onclick="location.href='index.html'"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></span> Dashboard</div>
+      <div class="nav-item active" onclick="location.href='index.html'"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></span> Dashboard</div>
       <div class="nav-item"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg></span> Search</div>
 
       <div class="group-label">Operations</div>
-      <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></span> Web Orders <span class="chev">›</span></div>
+      <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><path d="M21 8l-9-5-9 5v8l9 5 9-5V8z"/><path d="M3 8l9 5 9-5"/><path d="M12 13v8"/></svg></span> Orders <span class="chev">›</span></div>
       <div class="sub-items">
-        <div class="nav-item" onclick="location.href='orders.html#new-order'">New Order</div><div class="nav-item" onclick="location.href='orders.html#web-orders'">Web Order List</div>
+        <div class="nav-item" onclick="location.href='orders.html#new-order'">New Order</div><div class="nav-item" onclick="location.href='orders.html#order-list'">Order List</div>
         <div class="nav-item" onclick="location.href='orders.html#auto-pick'">Auto Pick Orders</div><div class="nav-item" onclick="location.href='orders.html#auto-call'">Auto Call Center</div>
-        <div class="nav-item" onclick="location.href='orders.html#block-list'">Order Block List</div>
+        <div class="nav-item" onclick="location.href='orders.html#block-list'">Order Block List</div><div class="nav-item" onclick="location.href='orders.html#preorders'">Preorders</div>
+        <div class="nav-item" onclick="location.href='orders.html#orders-dashboard'">Orders Dashboard</div>
       </div>
-      <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><circle cx="12" cy="12" r="10"/><polyline points="8 12.5 11 15.5 16 9.5"/></svg></span> Approved Orders <span class="chev">›</span></div>
+      <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.62l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/></svg></span> Delivery <span class="chev">›</span></div>
       <div class="sub-items">
-        <div class="nav-item" onclick="location.href='orders.html#order-list'">Order List</div><div class="nav-item" onclick="location.href='orders.html#orders-dashboard'">Orders Dashboard</div>
-        <div class="nav-item" onclick="location.href='orders.html#preorders'">Preorders</div><div class="nav-item" onclick="location.href='orders.html#super-edit'">Super Edit</div>
+        <div class="nav-item" onclick="location.href='delivery.html#ready-to-ship'">Ready to Ship <span id="rtsBadge" style="float:right;background:#411550;color:#fff;border-radius:99px;padding:0 8px;font-size:11.5px;font-weight:700;">2</span></div><div class="nav-item" onclick="location.href='delivery.html#courier-mgmt'">Courier Management</div>
         <div class="nav-item" onclick="location.href='delivery.html#scan-update'">Scan To Update</div><div class="nav-item" onclick="location.href='delivery.html#courier-invoice'">Courier Invoice Upload</div>
-        <div class="nav-item" onclick="location.href='delivery.html#courier-mgmt'">Courier Management</div>
+        <div class="nav-item" onclick="location.href='delivery.html#settlement'">Courier Ledger</div>
       </div>
       <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><path d="M21 8l-9-5-9 5v8l9 5 9-5V8z"/><path d="M3 8l9 5 9-5"/><path d="M12 13v8"/></svg></span> Inventory <span class="chev">›</span></div>
       <div class="sub-items">
@@ -417,9 +417,8 @@
       </div>
       <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></span> Messages <span class="chev">›</span></div>
       <div class="sub-items">
-        <div class="nav-item" onclick="location.href='messages.html#inbox'">Inbox</div><div class="nav-item" onclick="location.href='messages.html#comments'">Comments</div>
-        <div class="nav-item" onclick="location.href='messages.html#autoreply'">Auto Replies</div><div class="nav-item" onclick="location.href='messages.html#ai'">AI Reply</div>
-        <div class="nav-item" onclick="location.href='messages.html#report'">Report</div>
+        <div class="nav-item" onclick="showPage('msg-inbox')">Inbox</div><div class="nav-item" onclick="showPage('msg-comments')">Comments</div>
+        <div class="nav-item" onclick="showPage('msg-activity')">AI Activity</div>
       </div>
       <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><circle cx="9" cy="21" r="1.6"/><circle cx="19" cy="21" r="1.6"/><path d="M2.5 3h2l2.6 12.5a2 2 0 0 0 2 1.5h8.7a2 2 0 0 0 2-1.6L21.5 7H6"/></svg></span> Purchase <span class="chev">›</span></div>
       <div class="sub-items">
@@ -466,14 +465,14 @@
       <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><circle cx="10" cy="8" r="3.5"/><path d="M3.5 20c.7-3.2 3.2-5 6.5-5s5.8 1.8 6.5 5"/><rect x="16" y="13" width="6" height="8" rx="1"/><path d="M16 16.5h6"/></svg></span> HRM <span class="chev">›</span></div>
       <div class="sub-items">
         <div class="nav-item" onclick="location.href='hrm.html#dash'">HR Dashboard</div><div class="nav-item" onclick="location.href='hrm.html#attendance'">Attendance</div>
-        <div class="nav-item" onclick="location.href='hrm.html#attreport'">Attendance Report</div><div class="nav-item" onclick="location.href='hrm.html#shift'">Shift Management</div>
+        
         <div class="nav-item" onclick="location.href='hrm.html#dept'">Departments &amp; SOP</div><div class="nav-item" onclick="location.href='hrm.html#userrole'">User &amp; Role</div>
         <div class="nav-item" onclick="location.href='hrm.html#settings'">Settings</div>
       </div>
       <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><rect x="2.5" y="6" width="19" height="13" rx="2.5"/><circle cx="12" cy="12.5" r="2.8"/><path d="M6 9.5h.01M18 15.5h.01"/></svg></span> Finance <span class="chev">›</span></div>
       <div class="sub-items">
-        <div class="nav-item active" onclick="showPage('fin-dash')">Finance Dashboard</div><div class="nav-item" onclick="showPage('fin-accounts')">Accounts &amp; Bank</div>
-        <div class="nav-item" onclick="showPage('fin-ie')">Income &amp; Expense</div><div class="nav-item" onclick="showPage('fin-settlement')">Courier Settlement</div>
+        <div class="nav-item" onclick="showPage('fin-dash')">Finance Dashboard</div><div class="nav-item" onclick="showPage('fin-accounts')">Accounts &amp; Bank</div>
+        <div class="nav-item" onclick="showPage('fin-ie')">Income &amp; Expense</div>
         <div class="nav-item" onclick="showPage('fin-cashflow')">Cash Flow</div><div class="nav-item" onclick="showPage('fin-assets')">Asset Management</div>
       </div>
       <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="15 7 21 7 21 13"/></svg></span> Reports <span class="chev">›</span></div>
@@ -481,8 +480,8 @@
         <div class="nav-item" onclick="location.href='reports.html#pl'">Profit &amp; Loss</div><div class="nav-item" onclick="location.href='reports.html#order'">Order Report</div>
         <div class="nav-item" onclick="location.href='reports.html#courier'">Courier Report</div><div class="nav-item" onclick="location.href='reports.html#product'">Product Report</div>
         <div class="nav-item" onclick="location.href='reports.html#employee'">Employee Report</div><div class="nav-item" onclick="location.href='reports.html#call'">Call Center Report</div>
-        <div class="nav-item" onclick="location.href='reports.html#customer'">Customer Report</div><div class="nav-item" onclick="location.href='reports.html#business'">Business Reports</div>
-        <div class="nav-item" onclick="location.href='reports.html#limits'">My Limits</div>
+        <div class="nav-item" onclick="location.href='reports.html#customer'">Customer Report</div>
+        
       </div>
 
       <div class="group-label">System</div>
@@ -545,75 +544,69 @@
     <div class="content subpage">
       
 
-      <section class="page-panel active" id="fin-dash">
-        <h3 style="font-size:19px;">Finance Dashboard</h3>
-        <div class="kpi-grid" style="margin:18px 0;">
-          <div class="card kpi"><div class="lbl">TOTAL INCOME (MONTH)</div><div class="val">৳2,14,300</div><div class="sub">Delivered orders + other income</div></div>
-          <div class="card kpi"><div class="lbl">TOTAL EXPENSE (MONTH)</div><div class="val">৳96,450</div><div class="sub">All categories</div></div>
-          <div class="card kpi"><div class="lbl">NET PROFIT</div><div class="val">৳1,17,850</div><div class="sub">Income − expense</div></div>
-          <div class="card kpi"><div class="lbl">CASH IN HAND</div><div class="val">৳48,200</div><div class="sub">Across all accounts</div></div>
-        </div>
-        <div class="card"><h3>Recent Transactions</h3>
-          <table><tr><th>Date</th><th>Particular</th><th>Account</th><th>Amount</th></tr>
-          <tr><td>10 Nov</td><td>COD received — Steadfast batch</td><td>bKash Merchant</td><td><span class="pill green">+ ৳12,450</span></td></tr>
-          <tr><td>10 Nov</td><td>Office rent</td><td>Cash</td><td><span class="pill red">− ৳15,000</span></td></tr>
-          <tr><td>09 Nov</td><td>Purchase payment — Zeotexbd</td><td>Bank</td><td><span class="pill red">− ৳50,000</span></td></tr></table>
-        </div>
-      </section>
+      
+<style>
+.x-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;}
+.x-kpi{background:#fff;border:1px solid #E7EAF0;border-radius:14px;padding:14px 16px;}
+.x-kpi b{font-size:23px;color:#1E293B;display:block;}
+.x-kpi span{font-size:13px;color:#64748B;}
+.x-kpi.red b{color:#DC2626;} .x-kpi.green b{color:#16A34A;} .x-kpi.purple b{color:#411550;}
+.x-card{background:#fff;border:1px solid #E7EAF0;border-radius:14px;padding:16px 18px;margin-bottom:14px;}
+.x-card h4{font-size:16px;margin-bottom:10px;color:#1E293B;}
+table.x-table{width:100%;border-collapse:collapse;background:#fff;border:1px solid #E7EAF0;border-radius:12px;overflow:hidden;}
+table.x-table th,table.x-table td{padding:10px 12px;font-size:13.5px;text-align:left;border-bottom:1px solid #F1F5F9;}
+table.x-table th{background:#FAF8FC;color:#64748B;font-weight:600;}
+.chip{display:inline-block;padding:2px 9px;border-radius:99px;font-size:12px;font-weight:600;}
+.chip-green{background:#F0FDF4;color:#16A34A;} .chip-amber{background:#FFFBEB;color:#D97706;} .chip-red{background:#FEF2F2;color:#DC2626;} .chip-grey{background:#F1F5F9;color:#64748B;}
+.btn-p{background:#411550;color:#fff;border:none;padding:9px 16px;border-radius:8px;font-weight:600;cursor:pointer;font-size:13.5px;font-family:inherit;}
+.btn-s{background:#fff;color:#411550;border:1px solid #D8CBE3;padding:8px 14px;border-radius:8px;font-weight:600;cursor:pointer;font-size:13.5px;font-family:inherit;}
+.x-head{margin-bottom:14px;} .x-head p{color:#64748B;font-size:13.5px;margin-top:3px;}
+.x-note{font-size:13px;color:#94A3B8;margin-top:10px;}
+.date-chips{display:flex;gap:6px;margin-bottom:14px;}
+</style>
 
-      <section class="page-panel" id="fin-accounts">
-        <h3 style="font-size:19px;margin-bottom:18px;">Accounts &amp; Bank</h3>
-        <div class="card">
-          <table><tr><th>Account</th><th>Type</th><th>Number</th><th>Balance</th><th>Status</th></tr>
-          <tr><td><b>Cash Account</b></td><td>Cash</td><td>—</td><td>৳48,200</td><td><span class="pill green">Active</span></td></tr>
-          <tr><td><b>bKash Merchant</b></td><td>Mobile Banking</td><td>01XXX-XXXXXX</td><td>৳86,540</td><td><span class="pill green">Active</span></td></tr>
-          <tr><td><b>Asia Bank</b></td><td>Bank</td><td>XXXX-4521</td><td>৳2,34,900</td><td><span class="pill green">Active</span></td></tr></table>
-        </div>
-      </section>
+<section class="page-panel active" id="fin-dash">
+  <div class="x-head"><h3 style="font-size:20px;">Finance Dashboard</h3><p>দোকানের টাকার পুরো ছবি এক পর্দায়। Courier-এর টাকার হিসাব এখানে নেই — ওটা Delivery → Courier Ledger-এ, একটাই জায়গায় থাকে।</p></div>
+  <div class="x-kpis"><div class="x-kpi "><b>৳86,400</b><span>সব account মিলিয়ে balance</span></div><div class="x-kpi green"><b>৳12,300</b><span>আজকের আয়</span></div><div class="x-kpi "><b>৳4,150</b><span>আজকের খরচ</span></div><div class="x-kpi red"><b>৳9,600</b><span>Customer-দের কাছে বকেয়া</span></div></div>
+  <div class="x-card"><h4>আজকের হিসাব মেলানো</h4>
+    <div style="display:flex;gap:26px;flex-wrap:wrap;align-items:center;">
+      <div><div style="font-size:13px;color:#64748B;">আজ cash-এ আসা উচিত</div><b style="font-size:20px;">৳12,300</b></div>
+      <div><div style="font-size:13px;color:#64748B;">হাতে গুনে পাওয়া</div><b style="font-size:20px;">৳12,300</b></div>
+      <div><span class="chip chip-green">মিলেছে</span></div>
+      <button class="btn-s" style="margin-left:auto;" onclick="demoToast('আজকের হিসাব মেলানো হয়েছে বলে ধরা হলো')">হিসাব মেলাও</button>
+    </div>
+    <div class="x-note">না মিললে Work Inbox-এ নিজে থেকে task উঠবে (নিয়ম 32) — যাতে পরদিন সকালেই চোখে পড়ে।</div>
+  </div>
+  <h4 style="font-size:16px;margin:16px 0 10px;">সাম্প্রতিক লেনদেন</h4>
+  <table class="x-table"><tr><th>তারিখ</th><th>বিবরণ</th><th>Account</th><th>আয় / খরচ</th></tr><tr><td>আজ 12:40</td><td>COD জমা — Steadfast settlement</td><td>bKash</td><td><b style="color:#16A34A;">+ ৳8,450</b></td></tr><tr><td>আজ 11:15</td><td>Packaging সামগ্রী কেনা</td><td>Cash</td><td><b style="color:#DC2626;">− ৳1,850</b></td></tr><tr><td>আজ 10:02</td><td>Ad খরচ — Meta (sync)</td><td>Bank</td><td><b style="color:#DC2626;">− ৳2,300</b></td></tr><tr><td>গতকাল</td><td>Supplier-কে payment — Zeotexbd</td><td>Bank</td><td><b style="color:#DC2626;">− ৳15,000</b></td></tr><tr><td>গতকাল</td><td>COD জমা — Pathao (invoice মিলিয়ে)</td><td>bKash</td><td><b style="color:#16A34A;">+ ৳11,275</b></td></tr></table>
+</section>
+<section class="page-panel" id="fin-accounts">
+  <div class="x-head"><h3 style="font-size:20px;">Accounts & Bank</h3><p>টাকা কোথায় কোথায় আছে — প্রতিটা account-এর আজকের অবস্থা।</p></div>
+  <div class="x-kpis"><div class="x-kpi "><b>৳18,200</b><span>Cash (দোকানের ক্যাশ বাক্স)</span></div><div class="x-kpi "><b>৳32,750</b><span>bKash Merchant</span></div><div class="x-kpi "><b>৳8,450</b><span>Nagad</span></div><div class="x-kpi "><b>৳27,000</b><span>Bank — Sonali Bank</span></div></div>
+  <table class="x-table"><tr><th>Account</th><th>আজকে এসেছে</th><th>আজকে গেছে</th><th>Balance</th></tr><tr><td>Cash</td><td>৳12,300</td><td>৳1,850</td><td>৳18,200</td></tr><tr><td>bKash Merchant</td><td>৳19,725</td><td>৳0</td><td>৳32,750</td></tr><tr><td>Nagad</td><td>৳2,400</td><td>৳600</td><td>৳8,450</td></tr><tr><td>Sonali Bank</td><td>৳0</td><td>৳17,300</td><td>৳27,000</td></tr></table>
+</section>
+<section class="page-panel" id="fin-ie">
+  <div class="x-head"><h3 style="font-size:20px;">Income & Expense</h3><p>সব আয় আর খরচের খাতা। Ad-এর sync-হওয়া খরচ নিজে থেকে এখানে আসে — হাতে আবার লিখলে দুইবার হবে।</p></div>
+  <div style="display:flex;gap:8px;margin-bottom:14px;">
+    <button class="btn-p" onclick="demoToast('আয় যোগ করার form (prototype)')">+ আয় যোগ করো</button>
+    <button class="btn-s" onclick="demoToast('খরচ যোগ করার form (prototype)')">+ খরচ যোগ করো</button>
+  </div>
+  <table class="x-table"><tr><th>তারিখ</th><th>বিবরণ</th><th>Category</th><th>Account</th><th>টাকা</th></tr><tr><td>আজ</td><td>COD settlement — Steadfast</td><td>বিক্রি</td><td>bKash</td><td><b style="color:#16A34A;">+ ৳8,450</b></td></tr><tr><td>আজ</td><td>Packaging সামগ্রী</td><td>পরিচালনা</td><td>Cash</td><td><b style="color:#DC2626;">− ৳1,850</b></td></tr><tr><td>আজ</td><td>Meta ad খরচ (sync)</td><td>বিজ্ঞাপন</td><td>Bank</td><td><b style="color:#DC2626;">− ৳2,300</b></td></tr><tr><td>গতকাল</td><td>দোকান ভাড়া</td><td>ভাড়া</td><td>Bank</td><td><b style="color:#DC2626;">− ৳12,000</b></td></tr><tr><td>গতকাল</td><td>COD settlement — Pathao</td><td>বিক্রি</td><td>bKash</td><td><b style="color:#16A34A;">+ ৳11,275</b></td></tr><tr><td>গতকাল</td><td>SMS balance কেনা</td><td>পরিচালনা</td><td>Nagad</td><td><b style="color:#DC2626;">− ৳600</b></td></tr></table>
+</section>
+<section class="page-panel" id="fin-cashflow">
+  <div class="x-head"><h3 style="font-size:20px;">Cash Flow</h3><p>গত 7 দিনে টাকা কেমন এসেছে-গেছে — হাতে কত রইল।</p></div>
+  <table class="x-table"><tr><th>দিন</th><th>এসেছে</th><th>গেছে</th><th>হাতে রইল (net)</th></tr><tr><td>আজ</td><td>৳34,425</td><td>৳21,450</td><td><b style="color:#16A34A;">+ ৳12,975</b></td></tr><tr><td>গতকাল</td><td>৳21,150</td><td>৳27,600</td><td><b style="color:#DC2626;">− ৳6,450</b></td></tr><tr><td>রবিবার</td><td>৳18,940</td><td>৳9,320</td><td><b style="color:#16A34A;">+ ৳9,620</b></td></tr><tr><td>শনিবার</td><td>৳26,300</td><td>৳14,780</td><td><b style="color:#16A34A;">+ ৳11,520</b></td></tr><tr><td>শুক্রবার</td><td>৳9,850</td><td>৳3,200</td><td><b style="color:#16A34A;">+ ৳6,650</b></td></tr><tr><td>বৃহস্পতিবার</td><td>৳22,475</td><td>৳31,900</td><td><b style="color:#DC2626;">− ৳9,425</b></td></tr><tr><td>বুধবার</td><td>৳19,600</td><td>৳11,050</td><td><b style="color:#16A34A;">+ ৳8,550</b></td></tr></table>
+  <div class="x-note">7 দিনে মোট net: <b style="color:#16A34A;">+ ৳33,440</b> — বড় খরচের দিনগুলোতে (ভাড়া, supplier payment) net কমে যায়, এটা স্বাভাবিক।</div>
+</section>
+<section class="page-panel" id="fin-assets">
+  <div class="x-head"><h3 style="font-size:20px;">Asset Management</h3><p>দোকানের সম্পদ — কী আছে, কত দামে কেনা, এখন কত মূল্য।</p></div>
+  <table class="x-table"><tr><th>সম্পদ</th><th>কেনা</th><th>কেনা দাম</th><th>বর্তমান মূল্য</th><th>অবস্থা</th></tr><tr><td>ডেলিভারি মোটরসাইকেল</td><td>2024</td><td>৳1,45,000</td><td>৳95,000</td><td><span class="chip chip-green">চলছে</span></td></tr><tr><td>কম্পিউটার (2টা)</td><td>2025</td><td>৳86,000</td><td>৳60,000</td><td><span class="chip chip-green">চলছে</span></td></tr><tr><td>প্রিন্টার (invoice)</td><td>2025</td><td>৳24,500</td><td>৳18,000</td><td><span class="chip chip-green">চলছে</span></td></tr><tr><td>CCTV system</td><td>2024</td><td>৳32,000</td><td>৳15,000</td><td><span class="chip chip-amber">একটা ক্যামেরা নষ্ট</span></td></tr><tr><td>আসবাব ও rack</td><td>2023</td><td>৳55,000</td><td>৳30,000</td><td><span class="chip chip-green">চলছে</span></td></tr></table>
+  <div class="x-note">মোট সম্পদের বর্তমান মূল্য: <b>৳2,18,000</b></div>
+</section>
 
-      <section class="page-panel" id="fin-ie">
-        <div style="display:flex;align-items:center;gap:12px;"><h3 style="font-size:19px;">Income &amp; Expense</h3><span style="margin-left:auto;"><button class="btn-primary" onclick="toast('Add entry (UI prototype)')">Add Entry</button></span></div>
-        <div class="card" style="margin-top:18px;">
-          <table><tr><th>Date</th><th>Type</th><th>Category</th><th>Note</th><th>Amount</th></tr>
-          <tr><td>10 Nov</td><td><span class="pill green">Income</span></td><td>Sales</td><td>COD batch — Steadfast</td><td>৳12,450</td></tr>
-          <tr><td>10 Nov</td><td><span class="pill red">Expense</span></td><td>Rent</td><td>Office rent — November</td><td>৳15,000</td></tr>
-          <tr><td>09 Nov</td><td><span class="pill red">Expense</span></td><td>Purchase</td><td>Zeotexbd payment</td><td>৳50,000</td></tr>
-          <tr><td>08 Nov</td><td><span class="pill green">Income</span></td><td>Sales</td><td>COD batch — Pathao</td><td>৳9,870</td></tr></table>
-        </div>
-      </section>
+      
 
-      <section class="page-panel" id="fin-settlement">
-        <h3 style="font-size:19px;margin-bottom:18px;">Courier Settlement</h3>
-        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px;">
-          <span class="sum-chip">Total COD Receivable <b>৳38,450</b></span><span class="sum-chip">COD Difference <b>৳120</b></span><span class="sum-chip">Delivery Subsidy <b>৳0</b></span><span class="sum-chip">Charge Difference <b>৳85</b></span>
-        </div>
-        <div class="card">
-          <table><tr><th>Courier</th><th>Invoice</th><th>Expected COD</th><th>Actual COD</th><th>Difference</th><th>Status</th></tr>
-          <tr><td>Steadfast</td><td>STF-2211</td><td>৳12,450</td><td>৳12,450</td><td>৳0</td><td><span class="pill green">Matched</span></td></tr>
-          <tr><td>Pathao</td><td>PTH-8841</td><td>৳9,990</td><td>৳9,870</td><td>−৳120</td><td><span class="pill amber">COD Difference</span></td></tr>
-          <tr><td>RedX</td><td>RDX-1177</td><td>৳6,300</td><td>৳6,300</td><td>৳0</td><td><span class="pill green">Matched</span></td></tr></table>
-        </div>
-      </section>
-
-      <section class="page-panel" id="fin-cashflow">
-        <h3 style="font-size:19px;margin-bottom:18px;">Cash Flow</h3>
-        <div class="card">
-          <table><tr><th>Month</th><th>Cash In</th><th>Cash Out</th><th>Net</th><th>Closing Balance</th></tr>
-          <tr><td>November 2026</td><td>৳2,14,300</td><td>৳96,450</td><td>৳1,17,850</td><td>৳3,69,640</td></tr>
-          <tr><td>October 2026</td><td>৳1,86,900</td><td>৳88,200</td><td>৳98,700</td><td>৳2,51,790</td></tr>
-          <tr><td>September 2026</td><td>৳1,42,600</td><td>৳79,300</td><td>৳63,300</td><td>৳1,53,090</td></tr></table>
-        </div>
-      </section>
-
-      <section class="page-panel" id="fin-assets">
-        <div style="display:flex;align-items:center;gap:12px;"><h3 style="font-size:19px;">Asset Management</h3><span style="margin-left:auto;"><button class="btn-primary" onclick="toast('Add Asset (UI prototype)')">Add Asset</button></span></div>
-        <div class="card" style="margin-top:18px;">
-          <table><tr><th>Asset</th><th>Purchase Date</th><th>Value</th><th>Status</th></tr>
-          <tr><td>Office Computers (3)</td><td>Jan 2026</td><td>৳1,35,000</td><td><span class="pill green">In Use</span></td></tr>
-          <tr><td>Label Printer</td><td>Mar 2026</td><td>৳18,500</td><td><span class="pill green">In Use</span></td></tr>
-          <tr><td>Delivery Bike</td><td>Jun 2026</td><td>৳92,000</td><td><span class="pill amber">In Repair</span></td></tr></table>
-        </div>
-      </section>
+      
 
     </div><!-- /content -->
   </div><!-- /main -->
@@ -795,7 +788,7 @@
     document.querySelectorAll('.sidebar .nav-item .ico').forEach(function(n){ n.style.display=''; });
   }
   // Dashboard view tabs
-  document.getElementById('viewTabs').addEventListener('click', function(e){
+  if(document.getElementById('viewTabs')) document.getElementById('viewTabs').addEventListener('click', function(e){
     if(e.target.tagName !== 'BUTTON') return;
     this.querySelectorAll('button').forEach(function(b){ b.classList.remove('active'); });
     e.target.classList.add('active');
@@ -816,7 +809,7 @@
     if(e.key === 'Escape'){ closeSearch(); }
   });
   // Quick Search (Ctrl+K)
-  var menuNames = ['Dashboard','Search Orders','New Order','Web Order List','Auto Pick Orders','Auto Call Center','Order Block List','Order List','Orders Dashboard','Preorders','Super Edit','Scan To Update','Courier Invoice Upload','Courier Management','Inventory Dashboard','Products','Stock Ledger','Branches','Warranty','Inbox','Comments','Auto Replies','AI Reply','Messages Report','Purchase Dashboard','Purchase List','New Purchase','Purchase Receive','Supplier Ledger','Suppliers','Ask for Quotation','Task Board','Agent Cockpit','Follow-up Management','My Follow-ups','Follow-up Performance','Call Center Dashboard','Call Center Reports','Contacts','My Work','Work Control','Ads Dashboard','Meta Ads','TikTok Ads','Automation','SMS Marketing','Templates','Customer List','Bulk Upload','HR Dashboard','Attendance','Attendance Report','Shift Management','Departments & SOP','User & Role','Finance Dashboard','Accounts & Bank','Income & Expense','Courier Settlement','Cash Flow','Asset Management','Profit & Loss','Order Report','Courier Report','Product Report','Employee Report','Call Center Report','Customer Report','Business Reports','My Limits','Business Profile','Merchant Profile','Device Approvals','Website Integration','Courier Integration','App Integration','Messaging Channels','VoiceDrive PBX','Order Sources','Deletion Logs','Advanced Settings','Help Center','Updates','My Bug Reports','My Feedback','System Status'];
+  var menuNames = ['Dashboard','Search Orders','New Order','Web Order List','Auto Pick Orders','Auto Call Center','Order Block List','Order List','Orders Dashboard','Preorders','Super Edit','Scan To Update','Courier Invoice Upload','Courier Management','Inventory Dashboard','Products','Stock Ledger','Branches','Warranty','Inbox','Comments','Auto Replies','AI Reply','Purchase Dashboard','Purchase List','New Purchase','Purchase Receive','Supplier Ledger','Suppliers','Ask for Quotation','Task Board','Agent Cockpit','Follow-up Management','My Follow-ups','Follow-up Performance','Call Center Dashboard','Call Center Reports','Contacts','My Work','Work Control','Ads Dashboard','Meta Ads','TikTok Ads','Automation','SMS Marketing','Templates','Customer List','Bulk Upload','HR Dashboard','Attendance','Departments & SOP','User & Role','Finance Dashboard','Accounts & Bank','Income & Expense','Cash Flow','Asset Management','Profit & Loss','Order Report','Courier Report','Product Report','Employee Report','Call Center Report','Customer Report','Business Profile','Merchant Profile','Device Approvals','Website Integration','Courier Integration','App Integration','Messaging Channels','VoiceDrive PBX','Order Sources','Deletion Logs','Advanced Settings','Help Center','Updates','My Bug Reports','My Feedback','System Status'];
   function openSearch(){
     document.getElementById('searchModal').style.display = 'block';
     filterSearch('');
@@ -1146,6 +1139,114 @@
   }
   tickClock(); setInterval(tickClock, 1000);
 </script>
-<script>(function(){var m={dash:'fin-dash',accounts:'fin-accounts',ie:'fin-ie',settlement:'fin-settlement',cashflow:'fin-cashflow',assets:'fin-assets'};var h=location.hash.replace('#','');if(m[h])showPage(m[h]);})();</script>
+
+
+<script>
+var BTN = 'background:#411550;color:#fff;border:none;padding:9px 16px;border-radius:8px;font-weight:600;cursor:pointer;font-size:13.5px;';
+var BTN2 = 'background:#fff;color:#411550;border:1px solid #d8cfe0;padding:9px 14px;border-radius:8px;font-weight:600;cursor:pointer;font-size:13.5px;';
+function inboxView(v){ var sec=document.getElementById('msg-inbox'); if(!sec) return; var rep=document.getElementById('inboxReport'); var on=(v==='report'); rep.style.display=on?'block':'none'; Array.prototype.forEach.call(sec.children,function(c){ if(c!==rep && !c.classList.contains('inbox-toggle')) c.style.display=on?'none':''; }); var b1=document.getElementById('inboxTabMain'), b2=document.getElementById('inboxTabReport'); b1.style.background=on?'#f3f4f6':'#411550'; b1.style.color=on?'#374151':'#fff'; b2.style.background=on?'#411550':'#f3f4f6'; b2.style.color=on?'#fff':'#374151'; }
+var cmtState = { channel: 'all', status: 'all' };
+function cmtStyleChips(cls, el){ document.querySelectorAll('.' + cls).forEach(function(c){ c.style.background = '#f3f4f6'; c.style.color = '#374151'; }); el.style.background = '#411550'; el.style.color = '#fff'; }
+function cmtFilter(kind, val, el){ cmtState[kind] = val; cmtStyleChips(kind === 'channel' ? 'cmt-chip' : 'cmt-schip', el); cmtApply(); }
+function cmtApply(){ var post = document.getElementById('cmtPost').value; var shown = 0; document.querySelectorAll('.cmt').forEach(function(c){ var ok = (cmtState.channel === 'all' || c.dataset.channel === cmtState.channel) && (cmtState.status === 'all' || c.dataset.status === cmtState.status) && (post === 'all' || c.dataset.post === post); c.style.display = ok ? '' : 'none'; if (ok) shown++; }); document.getElementById('cmtEmpty').style.display = shown ? 'none' : 'block'; }
+var CMT_PILLS = { awaiting: ['#FEF3C7', '#92400E', 'Reply বাকি'], replied: ['#DCFCE7', '#15803D', 'Replied'], private: ['#DBEAFE', '#1D4ED8', 'Private reply গেছে'], hidden: ['#E5E7EB', '#374151', 'Hidden'], done: ['#F3F4F6', '#64748B', 'Reply লাগবে না'] };
+function cmtSetStatus(card, st){ card.dataset.status = st; var p = card.querySelector('.cmt-pill'); var c = CMT_PILLS[st]; p.style.background = c[0]; p.style.color = c[1]; p.textContent = c[2]; }
+function cmtCard(el){ return el.closest('.cmt'); }
+function cmtReply(btn){ var box = cmtCard(btn).querySelector('.cmt-replybox'); box.style.display = box.style.display === 'none' ? 'block' : 'none'; }
+function cmtAddReply(card, text){ var d = document.createElement('div'); d.style.cssText = 'margin-top:10px;background:#F4EDF7;border-radius:10px;padding:9px 12px;font-size:13.5px;'; d.innerHTML = '<b>ONLINE BUSINESS</b> <span style="color:#64748B;font-size:12px;">(তোমার Page)</span><br>'; d.appendChild(document.createTextNode(text)); card.querySelector('.cmt-replybox').before(d); }
+function cmtSend(btn){ var card = cmtCard(btn); var ta = card.querySelector('.cmt-ta'); if (!ta.value.trim()){ demoToast('আগে reply-টা লেখো'); return; } cmtAddReply(card, ta.value.trim()); ta.value = ''; card.querySelector('.cmt-replybox').style.display = 'none'; cmtSetStatus(card, 'replied'); demoToast('Reply পাঠানো হয়েছে'); }
+function cmtPrivate(btn){ var card = cmtCard(btn); btn.disabled = true; btn.style.opacity = '.55'; btn.textContent = 'Private reply পাঠানো হয়েছে'; var note = document.createElement('div'); note.style.cssText = 'font-size:12px;color:#1d4ed8;margin-top:8px;'; note.textContent = 'Private reply পাঠানো হয়েছে — customer উত্তর দিলে chat-টা Inbox-এ আসবে। (এক comment-এ ৭ দিনের মধ্যে ১টাই পাঠানো যায়)'; btn.parentElement.before(note); cmtSetStatus(card, 'private'); demoToast('Private reply পাঠানো হয়েছে'); }
+function cmtHide(btn){ var card = cmtCard(btn); if (card.dataset.status === 'hidden'){ cmtSetStatus(card, card.dataset.prev || 'awaiting'); card.style.opacity = ''; btn.textContent = 'Hide'; demoToast('Comment আবার দেখানো হচ্ছে'); } else { card.dataset.prev = card.dataset.status; cmtSetStatus(card, 'hidden'); card.style.opacity = '.55'; btn.textContent = 'Unhide'; demoToast('Comment hide করা হয়েছে'); } }
+function cmtDelete(btn){ cmtCard(btn).remove(); cmtApply(); demoToast('Comment delete করা হয়েছে'); }
+function cmtDone(btn){ cmtSetStatus(cmtCard(btn), 'done'); demoToast('ঠিক আছে — এটায় reply লাগবে না'); }
+function cmtLike(btn){ if (btn.dataset.liked){ btn.dataset.liked = ''; btn.textContent = 'Like'; } else { btn.dataset.liked = '1'; btn.textContent = 'Liked'; } }
+function cmtApproveDraft(btn){ var card = cmtCard(btn); var box = btn.closest('.cmt-draft'); var text = box.querySelector('.cmt-draft-text').textContent.trim(); cmtAddReply(card, text); box.remove(); cmtSetStatus(card, 'replied'); demoToast('Draft approve হয়ে reply পাঠানো হয়েছে'); }
+function cmtEditDraft(btn){ var p = btn.closest('.cmt-draft').querySelector('.cmt-draft-text'); p.contentEditable = 'true'; p.style.outline = '2px solid #FDE68A'; p.focus(); demoToast('লেখাটা বদলে Approve & Send চাপো'); }
+function cmtRejectDraft(btn){ btn.closest('.cmt-draft').remove(); demoToast('Draft বাদ দেওয়া হয়েছে'); }
+function demoToast(t){ if(typeof toast==='function'){ toast(t); } else { var d=document.createElement('div'); d.textContent=t; d.style.cssText='position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:#411550;color:#fff;padding:11px 20px;border-radius:99px;font-size:13.5px;font-weight:600;z-index:999;box-shadow:0 8px 24px rgba(0,0,0,.25)'; document.body.appendChild(d); setTimeout(function(){ d.remove(); },2600); } }
+var BUB_C = 'align-self:flex-start;background:#F4EDF7;border-radius:14px;padding:10px 13px;max-width:75%;font-size:13.5px;';
+var BUB_B = 'align-self:flex-end;background:#411550;color:#fff;border-radius:14px;padding:10px 13px;max-width:75%;font-size:13.5px;';
+var CAP = 'align-self:flex-end;font-size:11.5px;color:#92400e;margin-top:-4px;';
+var THREADS = {
+  rahim: { name:'Rahim Uddin', ch:'Messenger', chBg:'#dbeafe', chTx:'#1d4ed8', win:'24h window: Open',
+    msgs: '<div style="' + BUB_C + '">আপু, এই শাড়িটার দাম কত?</div>'
+        + '<div style="' + BUB_B + '">আসসালামু আলাইকুম! Kumkum Ikkat শাড়িটার দাম ৳699। অর্ডার করতে চাইলে নাম, ঠিকানা আর ফোন নম্বরটা দিন।</div>'
+        + '<div style="' + CAP + '">Rule: Price answer · <a href="settings.html#brain" style="color:#92400e;font-weight:700;">Settings</a></div>'
+        + '<div style="' + BUB_C + '">দামটা একটু কমানো যাবে না?</div>',
+    draft: '<div style="background:#FFFBEB;border:1px solid #FDE68A;border-radius:12px;padding:13px;">'
+        + '<b style="font-size:13.5px;">AI Suggested Reply</b> <span style="background:#fef3c7;color:#92400e;font-size:11px;font-weight:700;border-radius:99px;padding:2px 9px;">তোমার অনুমোদন লাগবে</span>'
+        + '<p style="font-size:13.5px;margin:8px 0;">বুঝতে পারছি আপু। আপনার জন্য <b>৳665</b>-এ দিতে পারব। অর্ডার করবেন?</p>'
+        + '<div style="font-size:12px;color:#92400e;margin-bottom:9px;">Rule: Price negotiation — ladder ধাপ ১ (৳699 → ৳665) · <a href="settings.html#negotiation" style="color:#92400e;font-weight:700;">Settings-এ নিয়মটা বদলাও</a></div>'
+        + '<button onclick="approveDraft(this)" style="' + BTN + '">Approve &amp; Send</button> <button onclick="editDraft()" style="' + BTN2 + '">Edit</button> <button onclick="rejectDraft(this)" style="' + BTN2 + '">Reject</button></div>',
+    panel: '<div style="text-align:center;margin-bottom:10px;"><div style="width:52px;height:52px;border-radius:50%;background:#411550;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:19px;">R</div><div style="font-weight:700;margin-top:6px;">Rahim Uddin</div><div style="font-size:12px;color:#64748B;">01712-445566 · Mirpur 10, Dhaka</div></div>'
+        + '<div style="display:flex;justify-content:space-around;text-align:center;border-top:1px solid #eef2f7;border-bottom:1px solid #eef2f7;padding:10px 0;"><div><b>8</b><div style="font-size:11px;color:#64748B;">Orders</div></div><div><b style="color:#16a34a;">89%</b><div style="font-size:11px;color:#64748B;">Success rate</div></div><div><b>৳5,240</b><div style="font-size:11px;color:#64748B;">Lifetime value</div></div></div>'
+        + '<div style="margin-top:12px;"><b style="font-size:13px;">Negotiation — দামাদামি কোথায় আছে</b><div style="display:flex;align-items:center;gap:5px;margin-top:9px;flex-wrap:wrap;"><span style="background:#f3f4f6;border-radius:8px;padding:5px 9px;font-size:12.5px;">৳699 দাম</span>→<span style="background:#411550;color:#fff;border-radius:8px;padding:5px 9px;font-size:12.5px;font-weight:700;">৳665 এখন</span>→<span style="background:#f3f4f6;border-radius:8px;padding:5px 9px;font-size:12.5px;">৳640</span>→<span style="background:#fee2e2;color:#dc2626;border-radius:8px;padding:5px 9px;font-size:12.5px;font-weight:700;">৳620 floor</span></div><div style="font-size:12px;color:#64748B;margin-top:7px;">Floor-এর নিচে AI কখনো নামবে না — এটা code দিয়ে আটকানো।</div></div>'
+        + '<div style="margin-top:12px;"><b style="font-size:13px;">আগের order</b><div style="font-size:12.5px;color:#374151;margin-top:6px;">OB281 · 30L Bag · Delivered<br>OB265 · Mentara COMBO · Delivered</div></div>'
+        + '<button onclick="takeOver()" style="width:100%;margin-top:14px;' + BTN2 + '">Take over chat</button>' },
+  sharmin: { name:'Sharmin Akter', ch:'Instagram', chBg:'#fce7f3', chTx:'#be185d', win:'24h window: Open',
+    msgs: '<div style="' + BUB_C + '">Delivery charge koto?</div>'
+        + '<div style="' + BUB_B + '">ঢাকার ভিতরে ৳60, ঢাকার বাইরে ৳120 আপু। কোন এলাকায় ডেলিভারি চান?</div>'
+        + '<div style="' + CAP + '">Rule: Delivery charge answer · AI নিজে পাঠিয়েছে (Auto — safe replies) · <a href="settings.html#brain" style="color:#92400e;font-weight:700;">Settings</a></div>'
+        + '<div style="' + BUB_B + '">জি আপু, খুলনায় পাঠানো যাবে — delivery charge ৳120 পড়বে।</div>'
+        + '<div style="' + CAP + '">Rule: Delivery charge answer · AI নিজে পাঠিয়েছে (Auto — safe replies) · <a href="settings.html#brain" style="color:#92400e;font-weight:700;">Settings</a></div>'
+        + '<div style="' + BUB_C + '">Apu, saree tar kapor ta ki? Hate dhoa jabe?</div>',
+    draft: '<div style="background:#FFFBEB;border:1px solid #FDE68A;border-radius:12px;padding:13px;">'
+        + '<b style="font-size:13.5px;">AI Suggested Reply</b> <span style="background:#fef3c7;color:#92400e;font-size:11px;font-weight:700;border-radius:99px;padding:2px 9px;">তোমার অনুমোদন লাগবে</span>'
+        + '<p style="font-size:13.5px;margin:8px 0;">আপু, এটা <b>জর্জেট কাপড়ের</b> শাড়ি। হালকা হাতে ধোয়া যাবে, ছায়ায় শুকাবেন।</p>'
+        + '<div style="font-size:12px;color:#92400e;margin-bottom:9px;">কোনো নিয়ম মেলেনি — product-এর বিবরণ (description) পড়ে AI নিজে বানিয়েছে। পাঠানোর আগে দেখে নাও।</div>'
+        + '<button onclick="approveDraft(this)" style="' + BTN + '">Approve &amp; Send</button> <button onclick="editDraft()" style="' + BTN2 + '">Edit</button> <button onclick="rejectDraft(this)" style="' + BTN2 + '">Reject</button></div>',
+    panel: '<div style="text-align:center;margin-bottom:10px;"><div style="width:52px;height:52px;border-radius:50%;background:#be185d;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:19px;">S</div><div style="font-weight:700;margin-top:6px;">Sharmin Akter</div><div style="font-size:12px;color:#64748B;">Sonadanga, Khulna</div></div>'
+        + '<div style="display:flex;justify-content:space-around;text-align:center;border-top:1px solid #eef2f7;border-bottom:1px solid #eef2f7;padding:10px 0;"><div><b>2</b><div style="font-size:11px;color:#64748B;">Orders</div></div><div><b style="color:#16a34a;">100%</b><div style="font-size:11px;color:#64748B;">Success rate</div></div><div><b>৳1,180</b><div style="font-size:11px;color:#64748B;">Lifetime value</div></div></div>'
+        + '<div style="margin-top:12px;font-size:12.5px;color:#64748B;">কোনো দামাদামি চলছে না।</div>'
+        + '<button onclick="takeOver()" style="width:100%;margin-top:14px;' + BTN2 + '">Take over chat</button>' },
+  karim: { name:'+880 1712-345678', ch:'WhatsApp', chBg:'#dcfce7', chTx:'#065f46', win:'24h window: Open · 21h left',
+    msgs: '<div style="' + BUB_C + '">Order confirm korlam. Name: Karim Sheikh, Address: Uttara Sector 11, Dhaka. Product: Kumkum Ikkat 1</div>',
+    draft: '<div style="background:#FFFBEB;border:1px solid #FDE68A;border-radius:12px;padding:13px;">'
+        + '<b style="font-size:13.5px;">AI Order Summary</b> <span style="background:#fef3c7;color:#92400e;font-size:11px;font-weight:700;border-radius:99px;padding:2px 9px;">তোমার অনুমোদন লাগবে</span>'
+        + '<p style="font-size:13.5px;margin:8px 0;">Karim Sheikh · Uttara Sector 11, Dhaka<br>Kumkum Ikkat 1 ×1 — ৳699 + delivery ৳60 = <b>মোট ৳759</b> (Cash on Delivery)</p>'
+        + '<div style="font-size:12px;color:#92400e;margin-bottom:9px;">Rule: Order intake · <a href="settings.html#brain" style="color:#92400e;font-weight:700;">Settings</a></div>'
+        + '<button onclick="approveOrder(this)" style="' + BTN + '">Approve &amp; Create Order</button> <button onclick="rejectDraft(this)" style="' + BTN2 + '">Reject</button></div>',
+    panel: '<div style="text-align:center;margin-bottom:10px;"><div style="width:52px;height:52px;border-radius:50%;background:#065f46;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:19px;">K</div><div style="font-weight:700;margin-top:6px;">Karim Sheikh</div><div style="font-size:12px;color:#64748B;">+880 1712-345678 · Uttara, Dhaka</div></div>'
+        + '<div style="display:flex;justify-content:space-around;text-align:center;border-top:1px solid #eef2f7;border-bottom:1px solid #eef2f7;padding:10px 0;"><div><b>0</b><div style="font-size:11px;color:#64748B;">Orders</div></div><div><b>New</b><div style="font-size:11px;color:#64748B;">Customer</div></div><div><b>৳0</b><div style="font-size:11px;color:#64748B;">Lifetime value</div></div></div>'
+        + '<div style="margin-top:12px;font-size:12.5px;color:#64748B;">নতুন customer — এইটাই তার প্রথম order হবে।</div>' }
+};
+function filterChannel(ch, el){
+  document.querySelectorAll('#chFilters .ch-chip').forEach(function(c){ c.style.background = '#f3f4f6'; c.style.color = '#374151'; });
+  el.style.background = '#411550'; el.style.color = '#fff';
+  document.querySelectorAll('.conv-item').forEach(function(it){ it.style.display = (ch === 'all' || it.getAttribute('data-channel') === ch) ? '' : 'none'; });
+}
+var curThread = 'rahim', threadAiOn = true;
+function openThread(id){
+  curThread = id; var t = THREADS[id]; if(!t) return;
+  document.querySelectorAll('.conv-item').forEach(function(el){ el.style.background = el.getAttribute('data-thread') === id ? '#F4EDF7' : ''; });
+  document.getElementById('thName').textContent = t.name;
+  var ch = document.getElementById('thChannel'); ch.textContent = t.ch; ch.style.background = t.chBg; ch.style.color = t.chTx;
+  document.getElementById('thWindow').textContent = t.win;
+  document.getElementById('thMsgs').innerHTML = t.msgs;
+  document.getElementById('thDraft').innerHTML = t.draft;
+  document.getElementById('custPanel').innerHTML = t.panel;
+  threadAiOn = true; document.getElementById('aiPauseBtn').textContent = 'AI: On for this chat';
+}
+function editDraft(){ demoToast('Draft editable (demo)'); }
+function takeOver(){ demoToast('You took over this chat (demo) - AI paused'); }
+function approveDraft(btn){
+  var card = btn.closest('div'); var txt = card.querySelector('p').innerHTML;
+  document.getElementById('thMsgs').innerHTML += '<div style="' + BUB_B + '">' + txt + '</div><div style="' + CAP + '">AI reply পাঠানো হয়েছে · Rule: Price negotiation</div>';
+  card.remove(); demoToast('AI reply sent');
+}
+function approveOrder(btn){
+  document.getElementById('thMsgs').innerHTML += '<div style="' + BUB_B + '">ধন্যবাদ! আপনার order confirm হয়েছে। Invoice: OB287 — মোট ৳759, Cash on Delivery।</div><div style="' + CAP + '">Order OB287 তৈরি — Orders-এ Pending</div>';
+  btn.closest('div').remove(); demoToast('Order OB287 created — Orders-এ Pending');
+}
+function rejectDraft(btn){ btn.closest('div').remove(); demoToast('Draft rejected'); }
+function toggleThreadAi(){ threadAiOn = !threadAiOn; document.getElementById('aiPauseBtn').textContent = threadAiOn ? 'AI: On for this chat' : 'AI: Paused for this chat'; demoToast(threadAiOn ? 'AI resumed for this chat' : 'AI paused for this chat'); }
+var panic = false;
+function togglePanic(){ panic = !panic; document.getElementById('panicBtn').textContent = panic ? 'Resume all AI' : 'Pause all AI'; demoToast(panic ? 'All AI replies paused — drafts only' : 'AI replies resumed'); }
+function approveQueue(){ var q = document.getElementById('queueItem'); if(q) q.remove(); var c = document.getElementById('draftCount'); if(c) c.textContent = '1'; demoToast('Draft approved & sent'); }
+
+</script>
+
+
+<script>(function(){var m={dash:'fin-dash',accounts:'fin-accounts',ie:'fin-ie',settlement:'fin-dash',cashflow:'fin-cashflow',assets:'fin-assets'};var h=location.hash.replace('#','');if(m[h])showPage(m[h]);})();</script>
 </body>
 </html>

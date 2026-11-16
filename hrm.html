@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SkaleUp BD — HRM (Step 5)</title>
+<title>SkaleUp BD — HRM</title>
 <style>
   :root{
     --primary:#411550; --primary-dark:#3d0a57; --gradient-end:#6b21a8;
@@ -391,22 +391,22 @@
     <div class="quicksearch"><span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg></span> Quick Search <kbd>CTRL K</kbd></div>
 
     <nav class="side-nav">
-      <div class="nav-item" onclick="location.href='index.html'"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></span> Dashboard</div>
+      <div class="nav-item active" onclick="location.href='index.html'"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></span> Dashboard</div>
       <div class="nav-item"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg></span> Search</div>
 
       <div class="group-label">Operations</div>
-      <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></span> Web Orders <span class="chev">›</span></div>
+      <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><path d="M21 8l-9-5-9 5v8l9 5 9-5V8z"/><path d="M3 8l9 5 9-5"/><path d="M12 13v8"/></svg></span> Orders <span class="chev">›</span></div>
       <div class="sub-items">
-        <div class="nav-item" onclick="location.href='orders.html#new-order'">New Order</div><div class="nav-item" onclick="location.href='orders.html#web-orders'">Web Order List</div>
+        <div class="nav-item" onclick="location.href='orders.html#new-order'">New Order</div><div class="nav-item" onclick="location.href='orders.html#order-list'">Order List</div>
         <div class="nav-item" onclick="location.href='orders.html#auto-pick'">Auto Pick Orders</div><div class="nav-item" onclick="location.href='orders.html#auto-call'">Auto Call Center</div>
-        <div class="nav-item" onclick="location.href='orders.html#block-list'">Order Block List</div>
+        <div class="nav-item" onclick="location.href='orders.html#block-list'">Order Block List</div><div class="nav-item" onclick="location.href='orders.html#preorders'">Preorders</div>
+        <div class="nav-item" onclick="location.href='orders.html#orders-dashboard'">Orders Dashboard</div>
       </div>
-      <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><circle cx="12" cy="12" r="10"/><polyline points="8 12.5 11 15.5 16 9.5"/></svg></span> Approved Orders <span class="chev">›</span></div>
+      <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.62l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/></svg></span> Delivery <span class="chev">›</span></div>
       <div class="sub-items">
-        <div class="nav-item" onclick="location.href='orders.html#order-list'">Order List</div><div class="nav-item" onclick="location.href='orders.html#orders-dashboard'">Orders Dashboard</div>
-        <div class="nav-item" onclick="location.href='orders.html#preorders'">Preorders</div><div class="nav-item" onclick="location.href='orders.html#super-edit'">Super Edit</div>
+        <div class="nav-item" onclick="location.href='delivery.html#ready-to-ship'">Ready to Ship <span id="rtsBadge" style="float:right;background:#411550;color:#fff;border-radius:99px;padding:0 8px;font-size:11.5px;font-weight:700;">2</span></div><div class="nav-item" onclick="location.href='delivery.html#courier-mgmt'">Courier Management</div>
         <div class="nav-item" onclick="location.href='delivery.html#scan-update'">Scan To Update</div><div class="nav-item" onclick="location.href='delivery.html#courier-invoice'">Courier Invoice Upload</div>
-        <div class="nav-item" onclick="location.href='delivery.html#courier-mgmt'">Courier Management</div>
+        <div class="nav-item" onclick="location.href='delivery.html#settlement'">Courier Ledger</div>
       </div>
       <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><path d="M21 8l-9-5-9 5v8l9 5 9-5V8z"/><path d="M3 8l9 5 9-5"/><path d="M12 13v8"/></svg></span> Inventory <span class="chev">›</span></div>
       <div class="sub-items">
@@ -417,9 +417,8 @@
       </div>
       <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></span> Messages <span class="chev">›</span></div>
       <div class="sub-items">
-        <div class="nav-item" onclick="location.href='messages.html#inbox'">Inbox</div><div class="nav-item" onclick="location.href='messages.html#comments'">Comments</div>
-        <div class="nav-item" onclick="location.href='messages.html#autoreply'">Auto Replies</div><div class="nav-item" onclick="location.href='messages.html#ai'">AI Reply</div>
-        <div class="nav-item" onclick="location.href='messages.html#report'">Report</div>
+        <div class="nav-item" onclick="showPage('msg-inbox')">Inbox</div><div class="nav-item" onclick="showPage('msg-comments')">Comments</div>
+        <div class="nav-item" onclick="showPage('msg-activity')">AI Activity</div>
       </div>
       <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><circle cx="9" cy="21" r="1.6"/><circle cx="19" cy="21" r="1.6"/><path d="M2.5 3h2l2.6 12.5a2 2 0 0 0 2 1.5h8.7a2 2 0 0 0 2-1.6L21.5 7H6"/></svg></span> Purchase <span class="chev">›</span></div>
       <div class="sub-items">
@@ -465,15 +464,15 @@
       <div class="group-label">Business Control</div>
       <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><circle cx="10" cy="8" r="3.5"/><path d="M3.5 20c.7-3.2 3.2-5 6.5-5s5.8 1.8 6.5 5"/><rect x="16" y="13" width="6" height="8" rx="1"/><path d="M16 16.5h6"/></svg></span> HRM <span class="chev">›</span></div>
       <div class="sub-items">
-        <div class="nav-item active" onclick="showPage('hrm-dash')">HR Dashboard</div><div class="nav-item" onclick="showPage('hrm-attendance')">Attendance</div>
-        <div class="nav-item" onclick="showPage('hrm-att-report')">Attendance Report</div><div class="nav-item" onclick="showPage('hrm-shift')">Shift Management</div>
+        <div class="nav-item" onclick="showPage('hrm-dash')">HR Dashboard</div><div class="nav-item" onclick="showPage('hrm-attendance')">Attendance</div>
+        
         <div class="nav-item" onclick="showPage('hrm-dept')">Departments &amp; SOP</div><div class="nav-item" onclick="showPage('hrm-userrole')">User &amp; Role</div>
         <div class="nav-item" onclick="showPage('hrm-settings')">Settings</div>
       </div>
       <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><rect x="2.5" y="6" width="19" height="13" rx="2.5"/><circle cx="12" cy="12.5" r="2.8"/><path d="M6 9.5h.01M18 15.5h.01"/></svg></span> Finance <span class="chev">›</span></div>
       <div class="sub-items">
         <div class="nav-item" onclick="location.href='finance.html#dash'">Finance Dashboard</div><div class="nav-item" onclick="location.href='finance.html#accounts'">Accounts &amp; Bank</div>
-        <div class="nav-item" onclick="location.href='finance.html#ie'">Income &amp; Expense</div><div class="nav-item" onclick="location.href='finance.html#settlement'">Courier Settlement</div>
+        <div class="nav-item" onclick="location.href='finance.html#ie'">Income &amp; Expense</div>
         <div class="nav-item" onclick="location.href='finance.html#cashflow'">Cash Flow</div><div class="nav-item" onclick="location.href='finance.html#assets'">Asset Management</div>
       </div>
       <div class="nav-item" onclick="toggleSub(this)"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="15 7 21 7 21 13"/></svg></span> Reports <span class="chev">›</span></div>
@@ -481,8 +480,8 @@
         <div class="nav-item" onclick="location.href='reports.html#pl'">Profit &amp; Loss</div><div class="nav-item" onclick="location.href='reports.html#order'">Order Report</div>
         <div class="nav-item" onclick="location.href='reports.html#courier'">Courier Report</div><div class="nav-item" onclick="location.href='reports.html#product'">Product Report</div>
         <div class="nav-item" onclick="location.href='reports.html#employee'">Employee Report</div><div class="nav-item" onclick="location.href='reports.html#call'">Call Center Report</div>
-        <div class="nav-item" onclick="location.href='reports.html#customer'">Customer Report</div><div class="nav-item" onclick="location.href='reports.html#business'">Business Reports</div>
-        <div class="nav-item" onclick="location.href='reports.html#limits'">My Limits</div>
+        <div class="nav-item" onclick="location.href='reports.html#customer'">Customer Report</div>
+        
       </div>
 
       <div class="group-label">System</div>
@@ -545,81 +544,97 @@
     <div class="content subpage">
       
 
-      <section class="page-panel active" id="hrm-dash">
-        <h3 style="font-size:19px;">HR Dashboard</h3>
-        <div class="kpi-grid" style="margin:18px 0;">
-          <div class="card kpi"><div class="lbl">TOTAL EMPLOYEES</div><div class="val">8</div><div class="sub">All departments</div></div>
-          <div class="card kpi"><div class="lbl">PRESENT TODAY</div><div class="val">7</div><div class="sub">Checked in</div></div>
-          <div class="card kpi"><div class="lbl">ON LEAVE</div><div class="val">1</div><div class="sub">Approved leave</div></div>
-          <div class="card kpi"><div class="lbl">DEPARTMENTS</div><div class="val">4</div><div class="sub">Sales, Warehouse, Support, Accounts</div></div>
-        </div>
-        <div class="card"><h3>Today's Attendance</h3>
-          <table><tr><th>Employee</th><th>Department</th><th>Check In</th><th>Status</th></tr>
-          <tr><td>M. Fahim</td><td>Sales</td><td>9:02 am</td><td><span class="pill green">Present</span></td></tr>
-          <tr><td>Rokeya Begum</td><td>Sales</td><td>9:15 am</td><td><span class="pill amber">Late</span></td></tr>
-          <tr><td>Arif Hossain</td><td>Warehouse</td><td>—</td><td><span class="pill blue">On Leave</span></td></tr></table>
-        </div>
-      </section>
+      
+<style>
+.x-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;}
+.x-kpi{background:#fff;border:1px solid #E7EAF0;border-radius:14px;padding:14px 16px;}
+.x-kpi b{font-size:23px;color:#1E293B;display:block;}
+.x-kpi span{font-size:13px;color:#64748B;}
+.x-kpi.red b{color:#DC2626;} .x-kpi.green b{color:#16A34A;} .x-kpi.purple b{color:#411550;}
+.x-card{background:#fff;border:1px solid #E7EAF0;border-radius:14px;padding:16px 18px;margin-bottom:14px;}
+.x-card h4{font-size:16px;margin-bottom:10px;color:#1E293B;}
+table.x-table{width:100%;border-collapse:collapse;background:#fff;border:1px solid #E7EAF0;border-radius:12px;overflow:hidden;}
+table.x-table th,table.x-table td{padding:10px 12px;font-size:13.5px;text-align:left;border-bottom:1px solid #F1F5F9;}
+table.x-table th{background:#FAF8FC;color:#64748B;font-weight:600;}
+.chip{display:inline-block;padding:2px 9px;border-radius:99px;font-size:12px;font-weight:600;}
+.chip-green{background:#F0FDF4;color:#16A34A;} .chip-amber{background:#FFFBEB;color:#D97706;} .chip-red{background:#FEF2F2;color:#DC2626;} .chip-grey{background:#F1F5F9;color:#64748B;}
+.btn-p{background:#411550;color:#fff;border:none;padding:9px 16px;border-radius:8px;font-weight:600;cursor:pointer;font-size:13.5px;font-family:inherit;}
+.btn-s{background:#fff;color:#411550;border:1px solid #D8CBE3;padding:8px 14px;border-radius:8px;font-weight:600;cursor:pointer;font-size:13.5px;font-family:inherit;}
+.x-head{margin-bottom:14px;} .x-head p{color:#64748B;font-size:13.5px;margin-top:3px;}
+.x-note{font-size:13px;color:#94A3B8;margin-top:10px;}
+.date-chips{display:flex;gap:6px;margin-bottom:14px;}
+</style>
 
-      <section class="page-panel" id="hrm-attendance">
-        <h3 style="font-size:19px;margin-bottom:18px;">Attendance</h3>
-        <div class="card">
-          <table><tr><th>Employee</th><th>Date</th><th>Check In</th><th>Check Out</th><th>Worked</th><th>Status</th></tr>
-          <tr><td>M. Fahim</td><td>10 Nov</td><td>9:02 am</td><td>6:05 pm</td><td>9h 03m</td><td><span class="pill green">Present</span></td></tr>
-          <tr><td>Rokeya Begum</td><td>10 Nov</td><td>9:15 am</td><td>6:00 pm</td><td>8h 45m</td><td><span class="pill amber">Late</span></td></tr>
-          <tr><td>Arif Hossain</td><td>10 Nov</td><td>—</td><td>—</td><td>—</td><td><span class="pill blue">Leave</span></td></tr></table>
-        </div>
-      </section>
+<section class="page-panel active" id="hrm-dash">
+  <div class="x-head"><h3 style="font-size:20px;">HR Dashboard</h3><p>আজ দলের অবস্থা এক নজরে — কে এসেছে, কে ছুটিতে, কার সিদ্ধান্ত বাকি।</p></div>
+  <div class="x-kpis"><div class="x-kpi "><b>6 জন</b><span>মোট staff</span></div><div class="x-kpi green"><b>5 জন</b><span>আজ এসেছে</span></div><div class="x-kpi "><b>1 জন</b><span>ছুটিতে</span></div><div class="x-kpi red"><b>1 জন</b><span>আজ দেরি করেছে</span></div></div>
+  <table class="x-table"><tr><th>নাম</th><th>দায়িত্ব</th><th>Check-in</th><th>অবস্থা</th></tr><tr><td>Arif Hossain</td><td>Orders ও Delivery</td><td>9:04 AM</td><td><span class="chip chip-green">এসেছে</span></td></tr><tr><td>Sumon Mia</td><td>Orders</td><td>9:12 AM</td><td><span class="chip chip-green">এসেছে</span></td></tr><tr><td>Nabila Rahman</td><td>Messages ও Support</td><td>9:21 AM</td><td><span class="chip chip-amber">দেরি (grace-এর ভিতরে)</span></td></tr><tr><td>Tanvir Ahmed</td><td>Delivery</td><td>8:58 AM</td><td><span class="chip chip-green">এসেছে</span></td></tr><tr><td>Riya Chowdhury</td><td>Accounts</td><td>9:02 AM</td><td><span class="chip chip-green">এসেছে</span></td></tr><tr><td>Imran Khan</td><td>Messages</td><td>—</td><td><span class="chip chip-grey">ছুটিতে (অনুমোদিত)</span></td></tr></table>
+  <div class="x-card" style="margin-top:16px;"><h4>ছুটির আবেদন — সিদ্ধান্ত বাকি</h4>
+    <div id="leaveList">
+      <div style="display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid #F1F5F9;">
+        <div style="flex:1;"><b>Sumon Mia</b> — আগামী বৃহস্পতিবার, 1 দিন (পারিবারিক কাজ)</div>
+        <button class="btn-p" onclick="leaveAct(this, true)">Approve</button>
+        <button class="btn-s" onclick="leaveAct(this, false)">Reject</button>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;padding:8px 0;">
+        <div style="flex:1;"><b>Riya Chowdhury</b> — 25–27 তারিখ, 3 দিন (অসুস্থতা)</div>
+        <button class="btn-p" onclick="leaveAct(this, true)">Approve</button>
+        <button class="btn-s" onclick="leaveAct(this, false)">Reject</button>
+      </div>
+    </div>
+  </div>
+</section>
+<section class="page-panel" id="hrm-attendance">
+  <div class="x-head"><h3 style="font-size:20px;">Attendance</h3><p>কে কখন এলো-গেল। নিজের check-in এখান থেকেই।</p></div>
+  <div class="ptabs" style="margin-bottom:16px;"><button class="ptab active">আজকের উপস্থিতি</button><button class="ptab" onclick="showPage('hrm-att-report')">মাসের Report</button><button class="ptab" onclick="showPage('hrm-shift')">Shifts</button></div>
+  <div class="x-card"><h4>তোমার আজকের দিন</h4>
+    <div style="display:flex;gap:26px;flex-wrap:wrap;align-items:center;">
+      <div><div style="font-size:13px;color:#64748B;">Check-in</div><b style="font-size:19px;">9:04 AM</b></div>
+      <div><div style="font-size:13px;color:#64748B;">এখন পর্যন্ত কাজ</div><b style="font-size:19px;">6 ঘণ্টা 12 মিনিট</b></div>
+      <div><div style="font-size:13px;color:#64748B;">Break</div><b style="font-size:19px;">35 মিনিট</b></div>
+      <button class="btn-p" style="margin-left:auto;" onclick="demoToast('Check-out ধরা হয়েছে (prototype)')">Check Out</button>
+    </div>
+  </div>
+  <table class="x-table"><tr><th>নাম</th><th>Check-in</th><th>Check-out</th><th>মোট কাজ</th><th>অবস্থা</th></tr><tr><td>Arif Hossain</td><td>9:04 AM</td><td>—</td><td>চলছে</td><td><span class="chip chip-green">Present</span></td></tr><tr><td>Sumon Mia</td><td>9:12 AM</td><td>—</td><td>চলছে</td><td><span class="chip chip-green">Present</span></td></tr><tr><td>Nabila Rahman</td><td>9:21 AM</td><td>—</td><td>চলছে</td><td><span class="chip chip-amber">Late</span></td></tr><tr><td>Tanvir Ahmed</td><td>8:58 AM</td><td>—</td><td>চলছে</td><td><span class="chip chip-green">Present</span></td></tr><tr><td>Riya Chowdhury</td><td>9:02 AM</td><td>—</td><td>চলছে</td><td><span class="chip chip-green">Present</span></td></tr><tr><td>Imran Khan</td><td>—</td><td>—</td><td>—</td><td><span class="chip chip-grey">Leave</span></td></tr></table>
+</section>
+<section class="page-panel" id="hrm-att-report">
+  <div class="x-head"><h3 style="font-size:20px;">Attendance Report</h3><p>এই মাসে কার কদিন উপস্থিতি, কদিন দেরি — বেতনের হিসাবের আগে এটাই দেখা হয়।</p></div>
+  <div class="ptabs" style="margin-bottom:16px;"><button class="ptab" onclick="showPage('hrm-attendance')">আজকের উপস্থিতি</button><button class="ptab active">মাসের Report</button><button class="ptab" onclick="showPage('hrm-shift')">Shifts</button></div>
+  <table class="x-table"><tr><th>নাম</th><th>উপস্থিত (দিন)</th><th>ছুটি (দিন)</th><th>দেরি (দিন)</th><th>মোট কাজের ঘণ্টা</th></tr><tr><td>Arif Hossain</td><td>24</td><td>1</td><td>0</td><td>196</td></tr><tr><td>Sumon Mia</td><td>23</td><td>2</td><td>3</td><td>188</td></tr><tr><td>Nabila Rahman</td><td>24</td><td>0</td><td>2</td><td>192</td></tr><tr><td>Tanvir Ahmed</td><td>25</td><td>0</td><td>0</td><td>201</td></tr><tr><td>Riya Chowdhury</td><td>22</td><td>3</td><td>1</td><td>179</td></tr><tr><td>Imran Khan</td><td>21</td><td>4</td><td>2</td><td>170</td></tr></table>
+  <div style="margin-top:12px;"><button class="btn-s" onclick="demoToast('Report download হচ্ছে (prototype)')">Download / Print</button></div>
+</section>
+<section class="page-panel" id="hrm-shift">
+  <div class="x-head"><h3 style="font-size:20px;">Shift Management</h3><p>কার কোন সময়ে duty — shift বদলালে সবার attendance-এ নিজে থেকে বদলে যাবে।</p></div>
+  <div class="ptabs" style="margin-bottom:16px;"><button class="ptab" onclick="showPage('hrm-attendance')">আজকের উপস্থিতি</button><button class="ptab" onclick="showPage('hrm-att-report')">মাসের Report</button><button class="ptab active">Shifts</button></div>
+  <div class="x-card"><h4>সকালের Shift — 9:00 AM – 6:00 PM</h4><div style="font-size:14px;color:#475569;">Arif Hossain · Sumon Mia · Riya Chowdhury · Tanvir Ahmed</div></div>
+  <div class="x-card"><h4>দুপুরের Shift — 12:00 PM – 9:00 PM</h4><div style="font-size:14px;color:#475569;">Nabila Rahman · Imran Khan <span style="color:#94A3B8;">(Messages-এর সন্ধ্যার চাপ সামলাতে)</span></div></div>
+  <div class="x-note">সাপ্তাহিক ছুটি: শুক্রবার (সবার)। ঈদের ছুটি Settings থেকে ঠিক করা যায়।</div>
+</section>
+<section class="page-panel" id="hrm-dept">
+  <div class="x-head"><h3 style="font-size:20px;">Departments & SOP</h3><p>কোন দলে কে আছে, আর প্রতিটা কাজের ধাপে-ধাপে নিয়ম (SOP) — SOP-র মূল জায়গা এটাই; Task page-এ শুধু নিজের SOP দেখা যায়।</p></div>
+  <table class="x-table"><tr><th>Department</th><th>প্রধান</th><th>সদস্য</th></tr><tr><td>Operations (Orders ও Delivery)</td><td>Arif Hossain</td><td>3 জন</td></tr><tr><td>Messages ও Support</td><td>Nabila Rahman</td><td>2 জন</td></tr><tr><td>Accounts</td><td>Riya Chowdhury</td><td>1 জন</td></tr></table>
+  <h4 style="font-size:16px;margin:18px 0 10px;">SOP ও Checklist</h4>
+  <table class="x-table"><tr><th>SOP</th><th>কীসের জন্য</th><th>ধাপ</th></tr><tr><td>নতুন order এলে যা যা করতে হবে</td><td>Operations</td><td>6টা ধাপ</td></tr><tr><td>Parcel pack করার নিয়ম</td><td>Operations</td><td>5টা ধাপ</td></tr><tr><td>Customer রাগ করলে কী বলতে হবে</td><td>Messages ও Support</td><td>4টা ধাপ</td></tr><tr><td>দিন শেষে cash মেলানোর নিয়ম</td><td>Accounts</td><td>5টা ধাপ</td></tr></table>
+</section>
+<section class="page-panel" id="hrm-userrole">
+  <div class="x-head"><h3 style="font-size:20px;">User & Role</h3><p>কারা login করতে পারবে আর কে কোন page দেখতে পাবে — পুরো সিস্টেমে এই এক জায়গা থেকেই ঠিক হয়।</p></div>
+  <table class="x-table"><tr><th>নাম</th><th>Role</th><th>যা যা দেখতে পারে</th><th>অবস্থা</th></tr><tr><td>Abu Sufian (মালিক)</td><td>Admin</td><td>সবকিছু</td><td><span class="chip chip-green">Active</span></td></tr><tr><td>Arif Hossain</td><td>Manager</td><td>Orders, Delivery, Work Inbox, HRM</td><td><span class="chip chip-green">Active</span></td></tr><tr><td>Sumon Mia</td><td>Staff — Orders</td><td>Orders, Delivery</td><td><span class="chip chip-green">Active</span></td></tr><tr><td>Nabila Rahman</td><td>Staff — Messages</td><td>Messages, Customers</td><td><span class="chip chip-green">Active</span></td></tr><tr><td>Riya Chowdhury</td><td>Accountant</td><td>Finance, Purchase, Reports</td><td><span class="chip chip-green">Active</span></td></tr><tr><td>Imran Khan</td><td>Staff — Messages</td><td>Messages</td><td><span class="chip chip-grey">ছুটিতে</span></td></tr></table>
+  <div style="margin-top:12px;"><button class="btn-p" onclick="demoToast('নতুন user যোগ করার form (prototype)')">+ নতুন User</button></div>
+</section>
+<section class="page-panel" id="hrm-settings">
+  <div class="x-head"><h3 style="font-size:20px;">HRM Settings</h3><p>উপস্থিতির নিয়মগুলো — বদলালে সবার জন্য বদলাবে।</p></div>
+  <div class="x-card">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #F1F5F9;"><div><b>দেরির ছাড় (Late grace)</b><div style="font-size:13px;color:#94A3B8;">এর ভিতরে এলে দেরি ধরা হবে না</div></div><span><input type="number" value="14" style="width:64px;height:36px;border:1px solid #E2E8F0;border-radius:8px;padding:0 8px;"> মিনিট</span></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #F1F5F9;"><div><b>সবচেয়ে বেশি break</b><div style="font-size:13px;color:#94A3B8;">একদিনে এর বেশি break নেওয়া যাবে না</div></div><span><input type="number" value="60" style="width:64px;height:36px;border:1px solid #E2E8F0;border-radius:8px;padding:0 8px;"> মিনিট</span></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #F1F5F9;"><div><b>কাজ শুরুর আগে check-in বাধ্যতামূলক</b><div style="font-size:13px;color:#94A3B8;">Check-in না করলে কাজের page খুলবে না</div></div><button class="switch on" onclick="this.classList.toggle('on')"></button></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;"><div><b>দিন শেষে নিজে থেকে check-out</b><div style="font-size:13px;color:#94A3B8;">Shift শেষের 10 মিনিট আগে সতর্ক করে নিজে থেকে check-out</div></div><button class="switch" onclick="this.classList.toggle('on')"></button></div>
+  </div>
+  <div class="x-note">সাপ্তাহিক ছুটি: <b>শুক্রবার</b> · সরকারি ছুটির তালিকা এখানেই যোগ করা যায়।</div>
+</section>
 
-      <section class="page-panel" id="hrm-att-report">
-        <h3 style="font-size:19px;margin-bottom:18px;">Attendance Report</h3>
-        <div class="card">
-          <table><tr><th>Employee</th><th>Present</th><th>Absent</th><th>Late</th><th>Leave</th></tr>
-          <tr><td>M. Fahim</td><td>24</td><td>1</td><td>2</td><td>1</td></tr>
-          <tr><td>Rokeya Begum</td><td>23</td><td>2</td><td>4</td><td>1</td></tr>
-          <tr><td>Arif Hossain</td><td>25</td><td>0</td><td>1</td><td>2</td></tr></table>
-          <p class="muted-sm" style="margin-top:12px;">This month · Late Report is available in HRM Settings.</p>
-        </div>
-      </section>
+      
 
-      <section class="page-panel" id="hrm-shift">
-        <h3 style="font-size:19px;margin-bottom:18px;">Shift Management</h3>
-        <div class="card">
-          <table><tr><th>Shift</th><th>Time</th><th>Employees</th><th></th></tr>
-          <tr><td>Morning Shift</td><td>9:00 am – 6:00 pm</td><td>5</td><td><button class="ctl-btn">Edit</button></td></tr>
-          <tr><td>Evening Shift</td><td>2:00 pm – 10:00 pm</td><td>3</td><td><button class="ctl-btn">Edit</button></td></tr></table>
-        </div>
-      </section>
-
-      <section class="page-panel" id="hrm-dept">
-        <h3 style="font-size:19px;margin-bottom:18px;">Departments &amp; SOP</h3>
-        <div class="card">
-          <table><tr><th>Department</th><th>Head</th><th>Members</th><th>SOP</th></tr>
-          <tr><td>Sales</td><td>M. Fahim</td><td>3</td><td><button class="ctl-btn">View SOP</button></td></tr>
-          <tr><td>Warehouse</td><td>Arif Hossain</td><td>2</td><td><button class="ctl-btn">View SOP</button></td></tr>
-          <tr><td>Support</td><td>Rokeya Begum</td><td>2</td><td><button class="ctl-btn">View SOP</button></td></tr></table>
-        </div>
-      </section>
-
-      <section class="page-panel" id="hrm-userrole">
-        <div style="display:flex;align-items:center;gap:12px;"><h3 style="font-size:19px;">User &amp; Role</h3><span style="margin-left:auto;"><button class="btn-primary" onclick="toast('Add User (UI prototype)')">Add User</button></span></div>
-        <div class="card" style="margin-top:18px;">
-          <table><tr><th>User</th><th>Role</th><th>Branch</th><th>Status</th></tr>
-          <tr><td><b>Jodu doe</b></td><td>Owner / Admin</td><td>All</td><td><span class="pill green">Active</span></td></tr>
-          <tr><td><b>M. Fahim</b></td><td>Manager</td><td>Main Branch</td><td><span class="pill green">Active</span></td></tr>
-          <tr><td><b>Rokeya Begum</b></td><td>Sales Agent</td><td>Main Branch</td><td><span class="pill green">Active</span></td></tr></table>
-        </div>
-      </section>
-
-      <section class="page-panel" id="hrm-settings">
-        <h3 style="font-size:19px;margin-bottom:18px;">HRM Settings</h3>
-        <div class="card">
-          <div class="sum-row"><span><b>Late Report</b><br><span class="muted-sm">Daily late-arrival summary for managers</span></span><button class="switch on" onclick="this.classList.toggle('on')"></button></div>
-          <div class="sum-row"><span><b>Leave Approvals</b><br><span class="muted-sm">Leave requests need manager approval</span></span><button class="switch on" onclick="this.classList.toggle('on')"></button></div>
-          <div class="sum-row"><span><b>Attendance Approvals</b><br><span class="muted-sm">Manual check-in edits need approval</span></span><button class="switch" onclick="this.classList.toggle('on')"></button></div>
-          <button class="btn-primary" style="margin-top:16px;" onclick="toast('HRM settings saved (UI prototype)')">Save Settings</button>
-        </div>
-      </section>
+      
 
     </div><!-- /content -->
   </div><!-- /main -->
@@ -801,7 +816,7 @@
     document.querySelectorAll('.sidebar .nav-item .ico').forEach(function(n){ n.style.display=''; });
   }
   // Dashboard view tabs
-  document.getElementById('viewTabs').addEventListener('click', function(e){
+  if(document.getElementById('viewTabs')) document.getElementById('viewTabs').addEventListener('click', function(e){
     if(e.target.tagName !== 'BUTTON') return;
     this.querySelectorAll('button').forEach(function(b){ b.classList.remove('active'); });
     e.target.classList.add('active');
@@ -822,7 +837,7 @@
     if(e.key === 'Escape'){ closeSearch(); }
   });
   // Quick Search (Ctrl+K)
-  var menuNames = ['Dashboard','Search Orders','New Order','Web Order List','Auto Pick Orders','Auto Call Center','Order Block List','Order List','Orders Dashboard','Preorders','Super Edit','Scan To Update','Courier Invoice Upload','Courier Management','Inventory Dashboard','Products','Stock Ledger','Branches','Warranty','Inbox','Comments','Auto Replies','AI Reply','Messages Report','Purchase Dashboard','Purchase List','New Purchase','Purchase Receive','Supplier Ledger','Suppliers','Ask for Quotation','Task Board','Agent Cockpit','Follow-up Management','My Follow-ups','Follow-up Performance','Call Center Dashboard','Call Center Reports','Contacts','My Work','Work Control','Ads Dashboard','Meta Ads','TikTok Ads','Automation','SMS Marketing','Templates','Customer List','Bulk Upload','HR Dashboard','Attendance','Attendance Report','Shift Management','Departments & SOP','User & Role','Finance Dashboard','Accounts & Bank','Income & Expense','Courier Settlement','Cash Flow','Asset Management','Profit & Loss','Order Report','Courier Report','Product Report','Employee Report','Call Center Report','Customer Report','Business Reports','My Limits','Business Profile','Merchant Profile','Device Approvals','Website Integration','Courier Integration','App Integration','Messaging Channels','VoiceDrive PBX','Order Sources','Deletion Logs','Advanced Settings','Help Center','Updates','My Bug Reports','My Feedback','System Status'];
+  var menuNames = ['Dashboard','Search Orders','New Order','Web Order List','Auto Pick Orders','Auto Call Center','Order Block List','Order List','Orders Dashboard','Preorders','Super Edit','Scan To Update','Courier Invoice Upload','Courier Management','Inventory Dashboard','Products','Stock Ledger','Branches','Warranty','Inbox','Comments','Auto Replies','AI Reply','Purchase Dashboard','Purchase List','New Purchase','Purchase Receive','Supplier Ledger','Suppliers','Ask for Quotation','Task Board','Agent Cockpit','Follow-up Management','My Follow-ups','Follow-up Performance','Call Center Dashboard','Call Center Reports','Contacts','My Work','Work Control','Ads Dashboard','Meta Ads','TikTok Ads','Automation','SMS Marketing','Templates','Customer List','Bulk Upload','HR Dashboard','Attendance','Departments & SOP','User & Role','Finance Dashboard','Accounts & Bank','Income & Expense','Cash Flow','Asset Management','Profit & Loss','Order Report','Courier Report','Product Report','Employee Report','Call Center Report','Customer Report','Business Profile','Merchant Profile','Device Approvals','Website Integration','Courier Integration','App Integration','Messaging Channels','VoiceDrive PBX','Order Sources','Deletion Logs','Advanced Settings','Help Center','Updates','My Bug Reports','My Feedback','System Status'];
   function openSearch(){
     document.getElementById('searchModal').style.display = 'block';
     filterSearch('');
@@ -1151,6 +1166,122 @@
     }catch(e){}
   }
   tickClock(); setInterval(tickClock, 1000);
+</script>
+
+
+<script>
+var BTN = 'background:#411550;color:#fff;border:none;padding:9px 16px;border-radius:8px;font-weight:600;cursor:pointer;font-size:13.5px;';
+var BTN2 = 'background:#fff;color:#411550;border:1px solid #d8cfe0;padding:9px 14px;border-radius:8px;font-weight:600;cursor:pointer;font-size:13.5px;';
+function inboxView(v){ var sec=document.getElementById('msg-inbox'); if(!sec) return; var rep=document.getElementById('inboxReport'); var on=(v==='report'); rep.style.display=on?'block':'none'; Array.prototype.forEach.call(sec.children,function(c){ if(c!==rep && !c.classList.contains('inbox-toggle')) c.style.display=on?'none':''; }); var b1=document.getElementById('inboxTabMain'), b2=document.getElementById('inboxTabReport'); b1.style.background=on?'#f3f4f6':'#411550'; b1.style.color=on?'#374151':'#fff'; b2.style.background=on?'#411550':'#f3f4f6'; b2.style.color=on?'#fff':'#374151'; }
+var cmtState = { channel: 'all', status: 'all' };
+function cmtStyleChips(cls, el){ document.querySelectorAll('.' + cls).forEach(function(c){ c.style.background = '#f3f4f6'; c.style.color = '#374151'; }); el.style.background = '#411550'; el.style.color = '#fff'; }
+function cmtFilter(kind, val, el){ cmtState[kind] = val; cmtStyleChips(kind === 'channel' ? 'cmt-chip' : 'cmt-schip', el); cmtApply(); }
+function cmtApply(){ var post = document.getElementById('cmtPost').value; var shown = 0; document.querySelectorAll('.cmt').forEach(function(c){ var ok = (cmtState.channel === 'all' || c.dataset.channel === cmtState.channel) && (cmtState.status === 'all' || c.dataset.status === cmtState.status) && (post === 'all' || c.dataset.post === post); c.style.display = ok ? '' : 'none'; if (ok) shown++; }); document.getElementById('cmtEmpty').style.display = shown ? 'none' : 'block'; }
+var CMT_PILLS = { awaiting: ['#FEF3C7', '#92400E', 'Reply বাকি'], replied: ['#DCFCE7', '#15803D', 'Replied'], private: ['#DBEAFE', '#1D4ED8', 'Private reply গেছে'], hidden: ['#E5E7EB', '#374151', 'Hidden'], done: ['#F3F4F6', '#64748B', 'Reply লাগবে না'] };
+function cmtSetStatus(card, st){ card.dataset.status = st; var p = card.querySelector('.cmt-pill'); var c = CMT_PILLS[st]; p.style.background = c[0]; p.style.color = c[1]; p.textContent = c[2]; }
+function cmtCard(el){ return el.closest('.cmt'); }
+function cmtReply(btn){ var box = cmtCard(btn).querySelector('.cmt-replybox'); box.style.display = box.style.display === 'none' ? 'block' : 'none'; }
+function cmtAddReply(card, text){ var d = document.createElement('div'); d.style.cssText = 'margin-top:10px;background:#F4EDF7;border-radius:10px;padding:9px 12px;font-size:13.5px;'; d.innerHTML = '<b>ONLINE BUSINESS</b> <span style="color:#64748B;font-size:12px;">(তোমার Page)</span><br>'; d.appendChild(document.createTextNode(text)); card.querySelector('.cmt-replybox').before(d); }
+function cmtSend(btn){ var card = cmtCard(btn); var ta = card.querySelector('.cmt-ta'); if (!ta.value.trim()){ demoToast('আগে reply-টা লেখো'); return; } cmtAddReply(card, ta.value.trim()); ta.value = ''; card.querySelector('.cmt-replybox').style.display = 'none'; cmtSetStatus(card, 'replied'); demoToast('Reply পাঠানো হয়েছে'); }
+function cmtPrivate(btn){ var card = cmtCard(btn); btn.disabled = true; btn.style.opacity = '.55'; btn.textContent = 'Private reply পাঠানো হয়েছে'; var note = document.createElement('div'); note.style.cssText = 'font-size:12px;color:#1d4ed8;margin-top:8px;'; note.textContent = 'Private reply পাঠানো হয়েছে — customer উত্তর দিলে chat-টা Inbox-এ আসবে। (এক comment-এ ৭ দিনের মধ্যে ১টাই পাঠানো যায়)'; btn.parentElement.before(note); cmtSetStatus(card, 'private'); demoToast('Private reply পাঠানো হয়েছে'); }
+function cmtHide(btn){ var card = cmtCard(btn); if (card.dataset.status === 'hidden'){ cmtSetStatus(card, card.dataset.prev || 'awaiting'); card.style.opacity = ''; btn.textContent = 'Hide'; demoToast('Comment আবার দেখানো হচ্ছে'); } else { card.dataset.prev = card.dataset.status; cmtSetStatus(card, 'hidden'); card.style.opacity = '.55'; btn.textContent = 'Unhide'; demoToast('Comment hide করা হয়েছে'); } }
+function cmtDelete(btn){ cmtCard(btn).remove(); cmtApply(); demoToast('Comment delete করা হয়েছে'); }
+function cmtDone(btn){ cmtSetStatus(cmtCard(btn), 'done'); demoToast('ঠিক আছে — এটায় reply লাগবে না'); }
+function cmtLike(btn){ if (btn.dataset.liked){ btn.dataset.liked = ''; btn.textContent = 'Like'; } else { btn.dataset.liked = '1'; btn.textContent = 'Liked'; } }
+function cmtApproveDraft(btn){ var card = cmtCard(btn); var box = btn.closest('.cmt-draft'); var text = box.querySelector('.cmt-draft-text').textContent.trim(); cmtAddReply(card, text); box.remove(); cmtSetStatus(card, 'replied'); demoToast('Draft approve হয়ে reply পাঠানো হয়েছে'); }
+function cmtEditDraft(btn){ var p = btn.closest('.cmt-draft').querySelector('.cmt-draft-text'); p.contentEditable = 'true'; p.style.outline = '2px solid #FDE68A'; p.focus(); demoToast('লেখাটা বদলে Approve & Send চাপো'); }
+function cmtRejectDraft(btn){ btn.closest('.cmt-draft').remove(); demoToast('Draft বাদ দেওয়া হয়েছে'); }
+function demoToast(t){ if(typeof toast==='function'){ toast(t); } else { var d=document.createElement('div'); d.textContent=t; d.style.cssText='position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:#411550;color:#fff;padding:11px 20px;border-radius:99px;font-size:13.5px;font-weight:600;z-index:999;box-shadow:0 8px 24px rgba(0,0,0,.25)'; document.body.appendChild(d); setTimeout(function(){ d.remove(); },2600); } }
+var BUB_C = 'align-self:flex-start;background:#F4EDF7;border-radius:14px;padding:10px 13px;max-width:75%;font-size:13.5px;';
+var BUB_B = 'align-self:flex-end;background:#411550;color:#fff;border-radius:14px;padding:10px 13px;max-width:75%;font-size:13.5px;';
+var CAP = 'align-self:flex-end;font-size:11.5px;color:#92400e;margin-top:-4px;';
+var THREADS = {
+  rahim: { name:'Rahim Uddin', ch:'Messenger', chBg:'#dbeafe', chTx:'#1d4ed8', win:'24h window: Open',
+    msgs: '<div style="' + BUB_C + '">আপু, এই শাড়িটার দাম কত?</div>'
+        + '<div style="' + BUB_B + '">আসসালামু আলাইকুম! Kumkum Ikkat শাড়িটার দাম ৳699। অর্ডার করতে চাইলে নাম, ঠিকানা আর ফোন নম্বরটা দিন।</div>'
+        + '<div style="' + CAP + '">Rule: Price answer · <a href="settings.html#brain" style="color:#92400e;font-weight:700;">Settings</a></div>'
+        + '<div style="' + BUB_C + '">দামটা একটু কমানো যাবে না?</div>',
+    draft: '<div style="background:#FFFBEB;border:1px solid #FDE68A;border-radius:12px;padding:13px;">'
+        + '<b style="font-size:13.5px;">AI Suggested Reply</b> <span style="background:#fef3c7;color:#92400e;font-size:11px;font-weight:700;border-radius:99px;padding:2px 9px;">তোমার অনুমোদন লাগবে</span>'
+        + '<p style="font-size:13.5px;margin:8px 0;">বুঝতে পারছি আপু। আপনার জন্য <b>৳665</b>-এ দিতে পারব। অর্ডার করবেন?</p>'
+        + '<div style="font-size:12px;color:#92400e;margin-bottom:9px;">Rule: Price negotiation — ladder ধাপ ১ (৳699 → ৳665) · <a href="settings.html#negotiation" style="color:#92400e;font-weight:700;">Settings-এ নিয়মটা বদলাও</a></div>'
+        + '<button onclick="approveDraft(this)" style="' + BTN + '">Approve &amp; Send</button> <button onclick="editDraft()" style="' + BTN2 + '">Edit</button> <button onclick="rejectDraft(this)" style="' + BTN2 + '">Reject</button></div>',
+    panel: '<div style="text-align:center;margin-bottom:10px;"><div style="width:52px;height:52px;border-radius:50%;background:#411550;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:19px;">R</div><div style="font-weight:700;margin-top:6px;">Rahim Uddin</div><div style="font-size:12px;color:#64748B;">01712-445566 · Mirpur 10, Dhaka</div></div>'
+        + '<div style="display:flex;justify-content:space-around;text-align:center;border-top:1px solid #eef2f7;border-bottom:1px solid #eef2f7;padding:10px 0;"><div><b>8</b><div style="font-size:11px;color:#64748B;">Orders</div></div><div><b style="color:#16a34a;">89%</b><div style="font-size:11px;color:#64748B;">Success rate</div></div><div><b>৳5,240</b><div style="font-size:11px;color:#64748B;">Lifetime value</div></div></div>'
+        + '<div style="margin-top:12px;"><b style="font-size:13px;">Negotiation — দামাদামি কোথায় আছে</b><div style="display:flex;align-items:center;gap:5px;margin-top:9px;flex-wrap:wrap;"><span style="background:#f3f4f6;border-radius:8px;padding:5px 9px;font-size:12.5px;">৳699 দাম</span>→<span style="background:#411550;color:#fff;border-radius:8px;padding:5px 9px;font-size:12.5px;font-weight:700;">৳665 এখন</span>→<span style="background:#f3f4f6;border-radius:8px;padding:5px 9px;font-size:12.5px;">৳640</span>→<span style="background:#fee2e2;color:#dc2626;border-radius:8px;padding:5px 9px;font-size:12.5px;font-weight:700;">৳620 floor</span></div><div style="font-size:12px;color:#64748B;margin-top:7px;">Floor-এর নিচে AI কখনো নামবে না — এটা code দিয়ে আটকানো।</div></div>'
+        + '<div style="margin-top:12px;"><b style="font-size:13px;">আগের order</b><div style="font-size:12.5px;color:#374151;margin-top:6px;">OB281 · 30L Bag · Delivered<br>OB265 · Mentara COMBO · Delivered</div></div>'
+        + '<button onclick="takeOver()" style="width:100%;margin-top:14px;' + BTN2 + '">Take over chat</button>' },
+  sharmin: { name:'Sharmin Akter', ch:'Instagram', chBg:'#fce7f3', chTx:'#be185d', win:'24h window: Open',
+    msgs: '<div style="' + BUB_C + '">Delivery charge koto?</div>'
+        + '<div style="' + BUB_B + '">ঢাকার ভিতরে ৳60, ঢাকার বাইরে ৳120 আপু। কোন এলাকায় ডেলিভারি চান?</div>'
+        + '<div style="' + CAP + '">Rule: Delivery charge answer · AI নিজে পাঠিয়েছে (Auto — safe replies) · <a href="settings.html#brain" style="color:#92400e;font-weight:700;">Settings</a></div>'
+        + '<div style="' + BUB_B + '">জি আপু, খুলনায় পাঠানো যাবে — delivery charge ৳120 পড়বে।</div>'
+        + '<div style="' + CAP + '">Rule: Delivery charge answer · AI নিজে পাঠিয়েছে (Auto — safe replies) · <a href="settings.html#brain" style="color:#92400e;font-weight:700;">Settings</a></div>'
+        + '<div style="' + BUB_C + '">Apu, saree tar kapor ta ki? Hate dhoa jabe?</div>',
+    draft: '<div style="background:#FFFBEB;border:1px solid #FDE68A;border-radius:12px;padding:13px;">'
+        + '<b style="font-size:13.5px;">AI Suggested Reply</b> <span style="background:#fef3c7;color:#92400e;font-size:11px;font-weight:700;border-radius:99px;padding:2px 9px;">তোমার অনুমোদন লাগবে</span>'
+        + '<p style="font-size:13.5px;margin:8px 0;">আপু, এটা <b>জর্জেট কাপড়ের</b> শাড়ি। হালকা হাতে ধোয়া যাবে, ছায়ায় শুকাবেন।</p>'
+        + '<div style="font-size:12px;color:#92400e;margin-bottom:9px;">কোনো নিয়ম মেলেনি — product-এর বিবরণ (description) পড়ে AI নিজে বানিয়েছে। পাঠানোর আগে দেখে নাও।</div>'
+        + '<button onclick="approveDraft(this)" style="' + BTN + '">Approve &amp; Send</button> <button onclick="editDraft()" style="' + BTN2 + '">Edit</button> <button onclick="rejectDraft(this)" style="' + BTN2 + '">Reject</button></div>',
+    panel: '<div style="text-align:center;margin-bottom:10px;"><div style="width:52px;height:52px;border-radius:50%;background:#be185d;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:19px;">S</div><div style="font-weight:700;margin-top:6px;">Sharmin Akter</div><div style="font-size:12px;color:#64748B;">Sonadanga, Khulna</div></div>'
+        + '<div style="display:flex;justify-content:space-around;text-align:center;border-top:1px solid #eef2f7;border-bottom:1px solid #eef2f7;padding:10px 0;"><div><b>2</b><div style="font-size:11px;color:#64748B;">Orders</div></div><div><b style="color:#16a34a;">100%</b><div style="font-size:11px;color:#64748B;">Success rate</div></div><div><b>৳1,180</b><div style="font-size:11px;color:#64748B;">Lifetime value</div></div></div>'
+        + '<div style="margin-top:12px;font-size:12.5px;color:#64748B;">কোনো দামাদামি চলছে না।</div>'
+        + '<button onclick="takeOver()" style="width:100%;margin-top:14px;' + BTN2 + '">Take over chat</button>' },
+  karim: { name:'+880 1712-345678', ch:'WhatsApp', chBg:'#dcfce7', chTx:'#065f46', win:'24h window: Open · 21h left',
+    msgs: '<div style="' + BUB_C + '">Order confirm korlam. Name: Karim Sheikh, Address: Uttara Sector 11, Dhaka. Product: Kumkum Ikkat 1</div>',
+    draft: '<div style="background:#FFFBEB;border:1px solid #FDE68A;border-radius:12px;padding:13px;">'
+        + '<b style="font-size:13.5px;">AI Order Summary</b> <span style="background:#fef3c7;color:#92400e;font-size:11px;font-weight:700;border-radius:99px;padding:2px 9px;">তোমার অনুমোদন লাগবে</span>'
+        + '<p style="font-size:13.5px;margin:8px 0;">Karim Sheikh · Uttara Sector 11, Dhaka<br>Kumkum Ikkat 1 ×1 — ৳699 + delivery ৳60 = <b>মোট ৳759</b> (Cash on Delivery)</p>'
+        + '<div style="font-size:12px;color:#92400e;margin-bottom:9px;">Rule: Order intake · <a href="settings.html#brain" style="color:#92400e;font-weight:700;">Settings</a></div>'
+        + '<button onclick="approveOrder(this)" style="' + BTN + '">Approve &amp; Create Order</button> <button onclick="rejectDraft(this)" style="' + BTN2 + '">Reject</button></div>',
+    panel: '<div style="text-align:center;margin-bottom:10px;"><div style="width:52px;height:52px;border-radius:50%;background:#065f46;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:19px;">K</div><div style="font-weight:700;margin-top:6px;">Karim Sheikh</div><div style="font-size:12px;color:#64748B;">+880 1712-345678 · Uttara, Dhaka</div></div>'
+        + '<div style="display:flex;justify-content:space-around;text-align:center;border-top:1px solid #eef2f7;border-bottom:1px solid #eef2f7;padding:10px 0;"><div><b>0</b><div style="font-size:11px;color:#64748B;">Orders</div></div><div><b>New</b><div style="font-size:11px;color:#64748B;">Customer</div></div><div><b>৳0</b><div style="font-size:11px;color:#64748B;">Lifetime value</div></div></div>'
+        + '<div style="margin-top:12px;font-size:12.5px;color:#64748B;">নতুন customer — এইটাই তার প্রথম order হবে।</div>' }
+};
+function filterChannel(ch, el){
+  document.querySelectorAll('#chFilters .ch-chip').forEach(function(c){ c.style.background = '#f3f4f6'; c.style.color = '#374151'; });
+  el.style.background = '#411550'; el.style.color = '#fff';
+  document.querySelectorAll('.conv-item').forEach(function(it){ it.style.display = (ch === 'all' || it.getAttribute('data-channel') === ch) ? '' : 'none'; });
+}
+var curThread = 'rahim', threadAiOn = true;
+function openThread(id){
+  curThread = id; var t = THREADS[id]; if(!t) return;
+  document.querySelectorAll('.conv-item').forEach(function(el){ el.style.background = el.getAttribute('data-thread') === id ? '#F4EDF7' : ''; });
+  document.getElementById('thName').textContent = t.name;
+  var ch = document.getElementById('thChannel'); ch.textContent = t.ch; ch.style.background = t.chBg; ch.style.color = t.chTx;
+  document.getElementById('thWindow').textContent = t.win;
+  document.getElementById('thMsgs').innerHTML = t.msgs;
+  document.getElementById('thDraft').innerHTML = t.draft;
+  document.getElementById('custPanel').innerHTML = t.panel;
+  threadAiOn = true; document.getElementById('aiPauseBtn').textContent = 'AI: On for this chat';
+}
+function editDraft(){ demoToast('Draft editable (demo)'); }
+function takeOver(){ demoToast('You took over this chat (demo) - AI paused'); }
+function approveDraft(btn){
+  var card = btn.closest('div'); var txt = card.querySelector('p').innerHTML;
+  document.getElementById('thMsgs').innerHTML += '<div style="' + BUB_B + '">' + txt + '</div><div style="' + CAP + '">AI reply পাঠানো হয়েছে · Rule: Price negotiation</div>';
+  card.remove(); demoToast('AI reply sent');
+}
+function approveOrder(btn){
+  document.getElementById('thMsgs').innerHTML += '<div style="' + BUB_B + '">ধন্যবাদ! আপনার order confirm হয়েছে। Invoice: OB287 — মোট ৳759, Cash on Delivery।</div><div style="' + CAP + '">Order OB287 তৈরি — Orders-এ Pending</div>';
+  btn.closest('div').remove(); demoToast('Order OB287 created — Orders-এ Pending');
+}
+function rejectDraft(btn){ btn.closest('div').remove(); demoToast('Draft rejected'); }
+function toggleThreadAi(){ threadAiOn = !threadAiOn; document.getElementById('aiPauseBtn').textContent = threadAiOn ? 'AI: On for this chat' : 'AI: Paused for this chat'; demoToast(threadAiOn ? 'AI resumed for this chat' : 'AI paused for this chat'); }
+var panic = false;
+function togglePanic(){ panic = !panic; document.getElementById('panicBtn').textContent = panic ? 'Resume all AI' : 'Pause all AI'; demoToast(panic ? 'All AI replies paused — drafts only' : 'AI replies resumed'); }
+function approveQueue(){ var q = document.getElementById('queueItem'); if(q) q.remove(); var c = document.getElementById('draftCount'); if(c) c.textContent = '1'; demoToast('Draft approved & sent'); }
+
+</script>
+
+
+
+<script>
+function leaveAct(btn, ok){
+  var row = btn.parentElement;
+  row.innerHTML = '<div style="flex:1;">' + row.querySelector('div').innerHTML + '</div><span class="chip ' + (ok ? 'chip-green' : 'chip-red') + '">' + (ok ? 'Approved' : 'Rejected') + '</span>';
+  demoToast(ok ? 'ছুটি approve হয়েছে' : 'ছুটি reject হয়েছে');
+}
 </script>
 <script>(function(){var m={dash:'hrm-dash',attendance:'hrm-attendance',attreport:'hrm-att-report',shift:'hrm-shift',dept:'hrm-dept',userrole:'hrm-userrole',settings:'hrm-settings'};var h=location.hash.replace('#','');if(m[h])showPage(m[h]);})();</script>
 </body>
