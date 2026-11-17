@@ -97,6 +97,7 @@ class SettingsController extends Controller
             'name' => ['required', 'string', 'max:120'],
             'mobile' => ['nullable', 'string', 'max:30'],
             'address' => ['nullable', 'string', 'max:300'],
+            'invoice_slug' => ['required', 'string', 'max:10'],
             'default_delivery_cost' => ['required', 'numeric', 'min:0'],
         ]);
         $this->setLogged($request, 'business.name', $data['name']);

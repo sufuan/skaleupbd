@@ -81,9 +81,14 @@ class OrderController extends Controller
             $query->where('status', $status);
         }
         if ($search !== '') {
-            $query->where(fn ($q) => $q->where('invoice_no', 'like', "%{$search}%")
-                ->orWhere('customer_phone', 'like', '%'.PhoneNormalizer::normalize($search).'%')
-                ->orWhere('customer_name', 'like', "%{$search}%"));
+            $digits = preg_replace('/\D+/', '', $search);
+            $query->where(function ($q) use ($search, $digits) {
+                $q->where('invoice_no', 'like', "%{$search}%")
+                    ->orWhere('customer_name', 'like', "%{$search}%");
+                if (strlen($digits) >= 3) {
+                    $q->orWhere('customer_phone', 'like', "%{$digits}%");
+                }
+            });
         }
         $page = $query->paginate($perPage)->withQueryString();
 

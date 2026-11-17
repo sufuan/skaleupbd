@@ -38,7 +38,8 @@ export default function Create({ sources, products, couriers, defaults, toggles 
 
     const submit = (e) => {
         e.preventDefault();
-        form.transform((d) => ({ ...d, mode, items: picked })).post('/orders', { forceFormData: true });
+        form.transform((d) => ({ ...d, mode, items: picked }));
+        form.post('/orders', { forceFormData: true });
     };
 
     const visible = products.filter((p) => !query || p.name.toLowerCase().includes(query.toLowerCase()) || p.sku.toLowerCase().includes(query.toLowerCase()));

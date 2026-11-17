@@ -267,6 +267,10 @@ label.fl{display:block;font-size:12.5px;font-weight:600;color:#55496e;margin:0 0
   .ask-btn{padding:6px 10px}
 }
 @media (max-width:640px){
+  .page-head{flex-direction:column;align-items:stretch}
+  .page-head .flex{flex-wrap:wrap}
+  .flex .flex{flex-wrap:wrap}
+
   .tb-hide-sm{display:none}
   .kpis{grid-template-columns:1fr 1fr}
   .page-h{font-size:20px}

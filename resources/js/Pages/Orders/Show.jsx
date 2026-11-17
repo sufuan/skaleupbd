@@ -22,7 +22,7 @@ export default function Show({ order, customer, couriers, processingStatuses, ca
     });
     const [tagInput, setTagInput] = useState('');
 
-    const save = (e) => { e.preventDefault(); form.patch(`/orders/${order.id}`, { preserveScroll: true }); };
+    const save = (e) => { e.preventDefault(); form.patch(`/orders/${order.id}`, { preserveScroll: true, onSuccess: () => form.reset('note', 'advance_payment') }); };
     const approve = (next) => router.post(`/orders/${order.id}/approve`, { next }, { preserveScroll: false });
     const sms = (type) => router.post(`/orders/${order.id}/sms`, { type }, { preserveScroll: true });
     const block = (type) => router.post(`/orders/${order.id}/block`, { type }, { preserveScroll: true });
