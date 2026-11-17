@@ -129,5 +129,6 @@ Route::post('/api/webhooks/steadfast/dm/{method}', [WebhookController::class, 's
 Route::post('/api/webhooks/pathao/dm/{method}', [WebhookController::class, 'pathao'])->name('api.webhooks.pathao');
 Route::post('/api/webhooks/carrybee/dm/{method}', [WebhookController::class, 'carrybee'])->name('api.webhooks.carrybee');
 Route::post('/api/webhooks/paperfly/dm/{method}', [WebhookController::class, 'paperfly'])->name('api.webhooks.paperfly');
+Route::post('/api/webhooks/redx/dm/{method}', [WebhookController::class, 'redx'])->name('api.webhooks.redx');
 
 require __DIR__.'/auth.php';

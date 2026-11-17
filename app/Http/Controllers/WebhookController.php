@@ -201,4 +201,39 @@ class WebhookController extends Controller
 
         return response()->json(['received' => true], 200);
     }
+
+    /**
+     * RedX: POST /api/webhooks/redx/dm/{method}?token=<secret>
+     * RedX has no webhook signature — its docs say credentials ride in the
+     * callback URL's query string, so the seller registers this URL with a
+     * ?token= they choose and keeps the same token in Settings. Payload:
+     * {tracking_number, timestamp, status, message_en, message_bn,
+     *  invoice_number, delivery_type}. Mapped statuses: delivered / returned
+     * drive transitions; agent-returning, paid etc. are recorded only.
+     */
+    public function redx(Request $request, CourierMethod $method)
+    {
+        abort_unless($method->courier_type === 'REDX' && $method->is_active, 404);
+        $token = (string) (($method->credentials ?? [])['webhook_token'] ?? '');
+        if ($token !== '' && ! hash_equals($token, (string) $request->query('token', ''))) {
+            return response()->json(['error' => 'bad token'], 401);
+        }
+
+        $tracking = (string) $request->input('tracking_number', '');
+        $invoice = (string) $request->input('invoice_number', '');
+        $order = Order::where('business_id', $method->business_id)
+            ->where(fn ($q) => $q->where('tracking_id', $tracking)->orWhere('consignment_id', $tracking)->orWhere('invoice_no', $invoice))
+            ->first();
+        if ($order) {
+            $status = (string) $request->input('status', '');
+            // A partial delivery must never read as a full delivery.
+            if (str_contains((string) $request->input('delivery_type', ''), 'partial')) {
+                $status = 'partial_' . $status;
+            }
+            $actor = User::where('business_id', $method->business_id)->where('is_admin', true)->first();
+            app(BookingService::class)->applyCourierStatus($order, $status, $actor);
+        }
+
+        return response()->json(['received' => true], 200);
+    }
 }

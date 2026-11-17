@@ -17,6 +17,9 @@ export const FIELD_DEFS = {
     REDX: [
         ['access_token', 'Access Token', 'secret'], ['pickup_store', 'Pickup Store ID'],
         ['default_area', 'Default Area'], ['default_area_id', 'Default Area ID'],
+        ['default_weight', 'Default Parcel Weight (kg)'],
+        ['webhook_token', 'Webhook Token (Optional)', 'secret'],
+        ['sandbox', 'Sandbox Mode (Test)', 'check'],
     ],
     CARRYBEE: [
         ['client_id', 'Client ID'], ['client_secret', 'Client Secret', 'secret'], ['client_context', 'Client Context', 'secret'],
@@ -44,7 +47,7 @@ export const FIELD_DEFS = {
 const GUIDE = {
     STEADFAST: 'How to get these: register free at steadfast.com.bd/register, then in the merchant panel open API → Your API keys and copy the Api-Key and Secret-Key. There is no fee for API access.',
     PATHAO: 'How to get these: register free at merchant.pathao.com/register, add your store and payment info, then open the Developer API section in the panel for the Client ID and Secret. The username is your merchant login email. A new store takes about an hour to be approved.',
-    REDX: 'How to get this: register at redx.com.bd, then in the merchant panel open Settings → developer section and generate the access token. If that section is missing, ask RedX support to enable Open API access. There is no fee for API access.',
+    REDX: 'How to get this: open redx.com.bd/developer-api — your access token is shown on that page (sign in to your merchant account if it is blank). The same page lists the sandbox address and its own separate token for testing. There is no fee for API access.',
     CARRYBEE: 'How to get these: register free at merchant.carrybee.com/register, then ask your Carrybee account manager (KAM) or support for the API credentials — they issue the Client ID, Secret and Context. There is no fee for API access. Sandbox access also comes from Carrybee technical support (ecomsupport@carrybee.com) — tick Sandbox Mode only with sandbox credentials they give you.',
     ECOURIER: 'How to get these: register at ecourier.com.bd and wait for eCourier to activate your account, then copy the API-KEY, API-SECRET and USER-ID from the panel\'s API credentials section — or ask eCourier support. The fraud check needs eCourier support to switch it on.',
     PAPERFLY: 'How to get these: sign in to the Paperfly merchant panel (go.paperfly.com.bd) and open Developer Guide — your API Key is printed inside the Order Creation code sample there. Tracking signs in with your panel username + password, so keep those here too. There is no sandbox: every booking is a real parcel.',
