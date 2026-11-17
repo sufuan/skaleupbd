@@ -7,4 +7,6 @@ use Illuminate\Database\Eloquent\Model;
 class IpPhoneBlock extends Model
 {
     protected $guarded = [];
+
+    protected $casts = ['expires_at' => 'datetime'];
 }
