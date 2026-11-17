@@ -127,5 +127,6 @@ Route::middleware('auth')->group(function () {
 Route::post('/api/external/v1/orders', [ExternalOrderController::class, 'store'])->name('api.external.orders');
 Route::post('/api/webhooks/steadfast/dm/{method}', [WebhookController::class, 'steadfast'])->name('api.webhooks.steadfast');
 Route::post('/api/webhooks/pathao/dm/{method}', [WebhookController::class, 'pathao'])->name('api.webhooks.pathao');
+Route::post('/api/webhooks/carrybee/dm/{method}', [WebhookController::class, 'carrybee'])->name('api.webhooks.carrybee');
 
 require __DIR__.'/auth.php';

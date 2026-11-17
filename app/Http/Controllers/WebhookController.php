@@ -119,4 +119,47 @@ class WebhookController extends Controller
 
         return response()->json(['status' => 'success'], 202);
     }
+
+    /**
+     * Carrybee: POST /api/webhooks/carrybee/dm/{method}
+     * The seller registers this URL + a secret in the panel's Webhook
+     * Integration form. The integration event {"event":"webhook.integration"}
+     * must be answered 202 with the X-CB-Webhook-Integration-Header echoing
+     * the secret; real events carry that same header for verification.
+     * Event names: order.delivered / order.partial-delivery / order.returned /
+     * order.returned-to-merchant / order.paid carry the money-relevant
+     * transitions; every other event is recorded as the courier status only.
+     */
+    public function carrybee(Request $request, CourierMethod $method)
+    {
+        abort_unless($method->courier_type === 'CARRYBEE' && $method->is_active, 404);
+        $secret = (string) (($method->credentials ?? [])['webhook_secret'] ?? '');
+        $event = (string) $request->input('event', '');
+
+        if ($event === 'webhook.integration') {
+            return response()->json(['received' => true], 202)
+                ->header('X-CB-Webhook-Integration-Header', $secret);
+        }
+        if ($secret !== '' && ! hash_equals($secret, (string) $request->header('X-CB-Webhook-Integration-Header', ''))) {
+            return response()->json(['error' => 'bad signature'], 401);
+        }
+
+        $consignment = (string) $request->input('consignment_id', '');
+        $invoice = (string) $request->input('merchant_order_id', '');
+        $order = Order::where('business_id', $method->business_id)
+            ->where(fn ($q) => $q->where('consignment_id', $consignment)->orWhere('invoice_no', $invoice))
+            ->first();
+        if ($order) {
+            $status = match ($event) {
+                'order.delivered' => 'delivered',
+                'order.partial-delivery' => 'partial_delivered',
+                'order.returned', 'order.returned-to-merchant', 'order.paid-return' => 'returned',
+                default => $event,
+            };
+            $actor = User::where('business_id', $method->business_id)->where('is_admin', true)->first();
+            app(BookingService::class)->applyCourierStatus($order, $status, $actor);
+        }
+
+        return response()->json(['received' => true], 202);
+    }
 }

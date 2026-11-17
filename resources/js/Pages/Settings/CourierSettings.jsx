@@ -23,6 +23,7 @@ export const FIELD_DEFS = {
         ['store_id', 'Store ID'], ['product_type', 'Product Type Code'], ['delivery_type', 'Delivery Type Code'],
         ['default_weight', 'Default Parcel Weight (kg)'],
         ['default_city_id', 'Default City ID'], ['default_zone_id', 'Default Zone ID'], ['default_area_id', 'Default Area ID'],
+        ['webhook_secret', 'Webhook Secret (Optional)', 'secret'],
         ['sandbox', 'Sandbox Mode (Test)', 'check'],
     ],
     ECOURIER: [

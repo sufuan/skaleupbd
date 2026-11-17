@@ -9,11 +9,11 @@ use Illuminate\Support\Facades\Http;
 class CarrybeeDriver implements CourierDriver
 {
     /**
-     * Production host is developers.carrybee.com; a sandbox host exists
-     * (sandbox.carrybee.com) but Carrybee's own FAQ says sandbox ACCESS is
-     * granted by their technical support (ecomsupport@carrybee.com) — the
-     * Sandbox Mode switch only changes the host; the credentials must be
-     * sandbox credentials issued by Carrybee.
+     * Production host is developers.carrybee.com; the sandbox host is
+     * sandbox.carrybee.com. Per the merchant panel's API Credentials page
+     * (read 2026-11-17), BOTH environments' credentials are pre-generated per
+     * business and shown in the panel — the Sandbox Mode switch changes the
+     * host; the credentials pasted must be that environment's own set.
      */
     private function base(CourierMethod $method): string
     {
@@ -38,16 +38,19 @@ class CarrybeeDriver implements CourierDriver
     private function orderPayload(Order $order, CourierMethod $method, array $opts = []): array
     {
         $c = $method->credentials ?? [];
+        $note = $order->delivery_note ?? $method->default_shipping_note;
         $payload = [
             'store_id' => $opts['store_id'] ?? ($order->pickupStore?->store_id ?? ($c['store_id'] ?? null)),
             'merchant_order_id' => $order->invoice,
             'recipient_name' => $order->customer_name,
             'recipient_phone' => $order->customer_phone,
-            'recipient_address' => trim(($order->address ?? '') . ' ' . ($order->area ?? '') . ' ' . ($order->district ?? '')),
-            'collectable_amount' => $order->codAmount(),
-            'item_weight' => (float) ($c['default_weight'] ?? 0.5),
+            // The API accepts 10–200 characters of recipient address.
+            'recipient_address' => mb_substr(trim(($order->address ?? '') . ' ' . ($order->area ?? '') . ' ' . ($order->district ?? '')), 0, 200),
+            'collectable_amount' => (int) round($order->codAmount()),
+            // The API wants item_weight in GRAMS (integer, 1–25,000); the Settings field is kg.
+            'item_weight' => max(1, (int) round(((float) ($c['default_weight'] ?? 0.5)) * 1000)),
             'item_quantity' => max(1, (int) ($order->relationLoaded('items') ? $order->items->sum('qty') : 1)),
-            'special_instruction' => $order->delivery_note ?? $method->default_shipping_note,
+            'special_instruction' => $note !== null ? mb_substr((string) $note, 0, 255) : null,
         ];
         if (! empty($order->alt_phone)) {
             // The create contract spells this 'recipient_secendary_phone' while the
@@ -235,32 +238,34 @@ class CarrybeeDriver implements CourierDriver
             $body = $res->json() ?? [];
             $ok = $res->successful() && ($body['error'] ?? true) === false;
 
-            return ['ok' => $ok, 'error' => $ok ? null : (string) ($body['message'] ?? 'Store creation failed (HTTP ' . $res->status() . ')'), 'raw' => $body];
+            // The docs example shows data: null, but the live API returns the
+            // created store object including its id — keep it when present.
+            return ['ok' => $ok, 'store_id' => isset($body['data']['id']) ? (string) $body['data']['id'] : null, 'error' => $ok ? null : (string) ($body['message'] ?? 'Store creation failed (HTTP ' . $res->status() . ')'), 'raw' => $body];
         } catch (\Throwable $e) {
             return ['ok' => false, 'error' => 'Could not reach Carrybee: ' . $e->getMessage()];
         }
     }
 
-    /** GET /cities — every city Carrybee serves. */
+    /** GET /cities — every city Carrybee serves (envelope: data.cities). */
     public function getCities(CourierMethod $method): array
     {
-        return $this->lookup($method, '/api/v2/cities', fn ($r) => [
+        return $this->lookup($method, '/api/v2/cities', 'cities', fn ($r) => [
             'city_id' => $r['id'] ?? null, 'city_name' => (string) ($r['name'] ?? ''),
         ]);
     }
 
-    /** GET /cities/{city_id}/zones — zones inside one city. */
+    /** GET /cities/{city_id}/zones — zones inside one city (envelope: data.zones). */
     public function getZones(CourierMethod $method, int $cityId): array
     {
-        return $this->lookup($method, '/api/v2/cities/' . $cityId . '/zones', fn ($r) => [
+        return $this->lookup($method, '/api/v2/cities/' . $cityId . '/zones', 'zones', fn ($r) => [
             'zone_id' => $r['id'] ?? null, 'zone_name' => (string) ($r['name'] ?? ''), 'city_id' => $r['city_id'] ?? null,
         ]);
     }
 
-    /** GET /cities/{city_id}/zones/{zone_id}/areas — areas inside one zone. */
+    /** GET /cities/{city_id}/zones/{zone_id}/areas — areas inside one zone (envelope: data.areas). */
     public function getAreas(CourierMethod $method, int $cityId, int $zoneId): array
     {
-        return $this->lookup($method, '/api/v2/cities/' . $cityId . '/zones/' . $zoneId . '/areas', fn ($r) => [
+        return $this->lookup($method, '/api/v2/cities/' . $cityId . '/zones/' . $zoneId . '/areas', 'areas', fn ($r) => [
             'area_id' => $r['id'] ?? null, 'area_name' => (string) ($r['name'] ?? ''), 'zone_id' => $r['zone_id'] ?? null,
         ]);
     }
@@ -291,11 +296,11 @@ class CarrybeeDriver implements CourierDriver
         }
     }
 
-    private function lookup(CourierMethod $method, string $path, callable $map): array
+    private function lookup(CourierMethod $method, string $path, string $key, callable $map): array
     {
         try {
             $res = $this->http($method)->get($this->base($method) . $path);
-            $rows = $res->json('data.data') ?? $res->json('data') ?? $res->json() ?? [];
+            $rows = $res->json('data.' . $key) ?? $res->json('data.data') ?? $res->json('data') ?? $res->json() ?? [];
 
             return collect(is_array($rows) ? $rows : [])->map($map)->values()->all();
         } catch (\Throwable) {
