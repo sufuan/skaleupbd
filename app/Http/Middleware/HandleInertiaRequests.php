@@ -2,7 +2,9 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\AppNotification;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
@@ -23,16 +25,48 @@ class HandleInertiaRequests extends Middleware
     }
 
     /**
-     * Define the props that are shared by default.
+     * Define the props that are shared by default. Translations are
+     * decoded server-side from lang/{locale}.json and shared with the
+     * md5 of the file, so the client caches them by version (TPDA pattern).
      *
      * @return array<string, mixed>
      */
     public function share(Request $request): array
     {
+        $locale = app()->getLocale();
+        $langPath = lang_path($locale.'.json');
+        $translations = file_exists($langPath)
+            ? (json_decode(file_get_contents($langPath), true) ?: [])
+            : [];
+
+        $notifications = ['items' => [], 'unread' => 0];
+        if ($request->user() && Schema::hasTable('app_notifications')) {
+            $items = AppNotification::latest()->limit(8)->get();
+            $notifications = [
+                'items' => $items->map(fn ($n) => [
+                    'id' => $n->id,
+                    'kind' => $n->kind,
+                    'title' => $n->title,
+                    'body' => $n->body,
+                    'link' => $n->link,
+                    'read' => $n->read_at !== null,
+                    'time' => $n->created_at?->diffForHumans(),
+                ])->all(),
+                'unread' => AppNotification::whereNull('read_at')->count(),
+            ];
+        }
+
         return [
             ...parent::share($request),
             'auth' => [
                 'user' => $request->user(),
+            ],
+            'locale' => $locale,
+            'translations' => $translations,
+            'translations_version' => file_exists($langPath) ? md5_file($langPath) : null,
+            'notifications' => $notifications,
+            'flash' => [
+                'success' => $request->session()->get('success'),
             ],
         ];
     }

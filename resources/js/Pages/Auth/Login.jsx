@@ -1,9 +1,5 @@
-import Checkbox from '@/Components/Checkbox';
-import InputError from '@/Components/InputError';
-import InputLabel from '@/Components/InputLabel';
-import PrimaryButton from '@/Components/PrimaryButton';
-import TextInput from '@/Components/TextInput';
 import GuestLayout from '@/Layouts/GuestLayout';
+import { t } from '@/lib/i18n';
 import { Head, Link, useForm } from '@inertiajs/react';
 
 export default function Login({ status, canResetPassword }) {
@@ -15,86 +11,43 @@ export default function Login({ status, canResetPassword }) {
 
     const submit = (e) => {
         e.preventDefault();
-
-        post(route('login'), {
-            onFinish: () => reset('password'),
-        });
+        post(route('login'), { onFinish: () => reset('password') });
     };
 
     return (
         <GuestLayout>
-            <Head title="Log in" />
+            <Head title={t('Log in')} />
+            <h1 className="auth-title">{t('Welcome back')}</h1>
+            <p className="auth-sub">{t('Log in to your shop dashboard')}</p>
 
-            {status && (
-                <div className="mb-4 text-sm font-medium text-green-600">
-                    {status}
-                </div>
-            )}
+            {status && <div className="auth-status">{status}</div>}
 
             <form onSubmit={submit}>
-                <div>
-                    <InputLabel htmlFor="email" value="Email" />
-
-                    <TextInput
-                        id="email"
-                        type="email"
-                        name="email"
-                        value={data.email}
-                        className="mt-1 block w-full"
-                        autoComplete="username"
-                        isFocused={true}
-                        onChange={(e) => setData('email', e.target.value)}
-                    />
-
-                    <InputError message={errors.email} className="mt-2" />
+                <div className="frow">
+                    <label className="fl" htmlFor="email">{t('Email')}</label>
+                    <input id="email" type="email" name="email" value={data.email} className="inp" autoComplete="username" autoFocus onChange={(e) => setData('email', e.target.value)} placeholder="you@shop.com" />
+                    {errors.email && <div className="auth-err">{errors.email}</div>}
                 </div>
-
-                <div className="mt-4">
-                    <InputLabel htmlFor="password" value="Password" />
-
-                    <TextInput
-                        id="password"
-                        type="password"
-                        name="password"
-                        value={data.password}
-                        className="mt-1 block w-full"
-                        autoComplete="current-password"
-                        onChange={(e) => setData('password', e.target.value)}
-                    />
-
-                    <InputError message={errors.password} className="mt-2" />
+                <div className="frow">
+                    <label className="fl" htmlFor="password">{t('Password')}</label>
+                    <input id="password" type="password" name="password" value={data.password} className="inp" autoComplete="current-password" onChange={(e) => setData('password', e.target.value)} placeholder="••••••••" />
+                    {errors.password && <div className="auth-err">{errors.password}</div>}
                 </div>
-
-                <div className="mt-4 block">
-                    <label className="flex items-center">
-                        <Checkbox
-                            name="remember"
-                            checked={data.remember}
-                            onChange={(e) =>
-                                setData('remember', e.target.checked)
-                            }
-                        />
-                        <span className="ms-2 text-sm text-gray-600">
-                            Remember me
-                        </span>
+                <div className="flex" style={{ margin: '4px 0 18px' }}>
+                    <label className="flex" style={{ gap: 8, cursor: 'pointer', fontSize: 13.5 }}>
+                        <input type="checkbox" name="remember" checked={data.remember} onChange={(e) => setData('remember', e.target.checked)} />
+                        {t('Remember me')}
                     </label>
+                    <span className="spacer" />
+                    {canResetPassword && <Link href={route('password.request')} className="auth-link">{t('Forgot your password?')}</Link>}
                 </div>
-
-                <div className="mt-4 flex items-center justify-end">
-                    {canResetPassword && (
-                        <Link
-                            href={route('password.request')}
-                            className="rounded-md text-sm text-gray-600 underline hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-                        >
-                            Forgot your password?
-                        </Link>
-                    )}
-
-                    <PrimaryButton className="ms-4" disabled={processing}>
-                        Log in
-                    </PrimaryButton>
-                </div>
+                <button type="submit" className="btn pri" style={{ width: '100%', justifyContent: 'center', padding: '11px 16px' }} disabled={processing}>
+                    {t('Log in')}
+                </button>
             </form>
+            <p className="sm mut" style={{ textAlign: 'center', marginTop: 18 }}>
+                {t('New to SkaleUp BD?')} <Link href={route('register')} className="auth-link">{t('Create an account')}</Link>
+            </p>
         </GuestLayout>
     );
 }

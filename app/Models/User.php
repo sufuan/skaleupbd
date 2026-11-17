@@ -10,8 +10,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['name', 'email', 'password'])]
-#[Hidden(['password', 'remember_token'])]
+#[Fillable(['name', 'email', 'password', 'locale', 'totp_secret', 'totp_confirmed_at', 'business_id', 'is_admin'])]
+#[Hidden(['password', 'remember_token', 'totp_secret'])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
@@ -27,6 +27,20 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'totp_secret' => 'encrypted',
+            'totp_confirmed_at' => 'datetime',
+            'is_admin' => 'boolean',
         ];
+    }
+
+    public function business(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Business::class);
+    }
+
+    /** True once the user has enrolled in TOTP and confirmed a code. */
+    public function hasTotpEnabled(): bool
+    {
+        return ! empty($this->totp_secret) && $this->totp_confirmed_at !== null;
     }
 }

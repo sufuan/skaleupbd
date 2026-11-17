@@ -1,8 +1,5 @@
-import InputError from '@/Components/InputError';
-import InputLabel from '@/Components/InputLabel';
-import PrimaryButton from '@/Components/PrimaryButton';
-import TextInput from '@/Components/TextInput';
 import GuestLayout from '@/Layouts/GuestLayout';
+import { t } from '@/lib/i18n';
 import { Head, Link, useForm } from '@inertiajs/react';
 
 export default function Register() {
@@ -15,106 +12,42 @@ export default function Register() {
 
     const submit = (e) => {
         e.preventDefault();
-
-        post(route('register'), {
-            onFinish: () => reset('password', 'password_confirmation'),
-        });
+        post(route('register'), { onFinish: () => reset('password', 'password_confirmation') });
     };
 
     return (
         <GuestLayout>
-            <Head title="Register" />
-
+            <Head title={t('Create an account')} />
+            <h1 className="auth-title">{t('Create an account')}</h1>
+            <p className="auth-sub">{t('Start running your shop from one dashboard')}</p>
             <form onSubmit={submit}>
-                <div>
-                    <InputLabel htmlFor="name" value="Name" />
-
-                    <TextInput
-                        id="name"
-                        name="name"
-                        value={data.name}
-                        className="mt-1 block w-full"
-                        autoComplete="name"
-                        isFocused={true}
-                        onChange={(e) => setData('name', e.target.value)}
-                        required
-                    />
-
-                    <InputError message={errors.name} className="mt-2" />
+                <div className="frow">
+                    <label className="fl" htmlFor="name">{t('Name')}</label>
+                    <input id="name" type="text" name="name" value={data.name} className="inp" autoComplete="name" autoFocus onChange={(e) => setData('name', e.target.value)} />
+                    {errors.name && <div className="auth-err">{errors.name}</div>}
                 </div>
-
-                <div className="mt-4">
-                    <InputLabel htmlFor="email" value="Email" />
-
-                    <TextInput
-                        id="email"
-                        type="email"
-                        name="email"
-                        value={data.email}
-                        className="mt-1 block w-full"
-                        autoComplete="username"
-                        onChange={(e) => setData('email', e.target.value)}
-                        required
-                    />
-
-                    <InputError message={errors.email} className="mt-2" />
+                <div className="frow">
+                    <label className="fl" htmlFor="email">{t('Email')}</label>
+                    <input id="email" type="email" name="email" value={data.email} className="inp" autoComplete="username" onChange={(e) => setData('email', e.target.value)} />
+                    {errors.email && <div className="auth-err">{errors.email}</div>}
                 </div>
-
-                <div className="mt-4">
-                    <InputLabel htmlFor="password" value="Password" />
-
-                    <TextInput
-                        id="password"
-                        type="password"
-                        name="password"
-                        value={data.password}
-                        className="mt-1 block w-full"
-                        autoComplete="new-password"
-                        onChange={(e) => setData('password', e.target.value)}
-                        required
-                    />
-
-                    <InputError message={errors.password} className="mt-2" />
+                <div className="frow">
+                    <label className="fl" htmlFor="password">{t('Password')}</label>
+                    <input id="password" type="password" name="password" value={data.password} className="inp" autoComplete="new-password" onChange={(e) => setData('password', e.target.value)} />
+                    {errors.password && <div className="auth-err">{errors.password}</div>}
                 </div>
-
-                <div className="mt-4">
-                    <InputLabel
-                        htmlFor="password_confirmation"
-                        value="Confirm Password"
-                    />
-
-                    <TextInput
-                        id="password_confirmation"
-                        type="password"
-                        name="password_confirmation"
-                        value={data.password_confirmation}
-                        className="mt-1 block w-full"
-                        autoComplete="new-password"
-                        onChange={(e) =>
-                            setData('password_confirmation', e.target.value)
-                        }
-                        required
-                    />
-
-                    <InputError
-                        message={errors.password_confirmation}
-                        className="mt-2"
-                    />
+                <div className="frow">
+                    <label className="fl" htmlFor="password_confirmation">{t('Confirm password')}</label>
+                    <input id="password_confirmation" type="password" name="password_confirmation" value={data.password_confirmation} className="inp" autoComplete="new-password" onChange={(e) => setData('password_confirmation', e.target.value)} />
+                    {errors.password_confirmation && <div className="auth-err">{errors.password_confirmation}</div>}
                 </div>
-
-                <div className="mt-4 flex items-center justify-end">
-                    <Link
-                        href={route('login')}
-                        className="rounded-md text-sm text-gray-600 underline hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-                    >
-                        Already registered?
-                    </Link>
-
-                    <PrimaryButton className="ms-4" disabled={processing}>
-                        Register
-                    </PrimaryButton>
-                </div>
+                <button type="submit" className="btn pri" style={{ width: '100%', justifyContent: 'center', padding: '11px 16px', marginTop: 6 }} disabled={processing}>
+                    {t('Create an account')}
+                </button>
             </form>
+            <p className="sm mut" style={{ textAlign: 'center', marginTop: 18 }}>
+                {t('Already have an account?')} <Link href={route('login')} className="auth-link">{t('Log in')}</Link>
+            </p>
         </GuestLayout>
     );
 }
