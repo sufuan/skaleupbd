@@ -879,5 +879,7 @@
  "Default Package Code (Optional)": "ডিফল্ট প্যাকেজ কোড (ঐচ্ছিক)",
  "Pickup Hub ID (Optional)": "পিকআপ হাব আইডি (ঐচ্ছিক)",
  "Username": "ব্যবহারকারীর নাম",
- "Shop ID": "দোকানের আইডি"
+ "Shop ID": "দোকানের আইডি",
+ "Webhook Secret (Optional)": "ওয়েবহুক সিক্রেট (ঐচ্ছিক)",
+ "Sandbox Mode (Test)": "স্যান্ডবক্স মোড (টেস্ট)"
 }

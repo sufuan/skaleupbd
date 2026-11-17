@@ -126,5 +126,6 @@ Route::middleware('auth')->group(function () {
 // External API intake for sellers' websites (API-key auth, no session).
 Route::post('/api/external/v1/orders', [ExternalOrderController::class, 'store'])->name('api.external.orders');
 Route::post('/api/webhooks/steadfast/dm/{method}', [WebhookController::class, 'steadfast'])->name('api.webhooks.steadfast');
+Route::post('/api/webhooks/pathao/dm/{method}', [WebhookController::class, 'pathao'])->name('api.webhooks.pathao');
 
 require __DIR__.'/auth.php';

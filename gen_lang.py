@@ -909,6 +909,8 @@ BN.update([
     ('Configure', 'সেট করো'),
     ('Webhook URL', 'ওয়েবহুক URL'),
     ('Name', 'নাম'),
+    ('Webhook Secret (Optional)', 'ওয়েবহুক সিক্রেট (ঐচ্ছিক)'),
+    ('Sandbox Mode (Test)', 'স্যান্ডবক্স মোড (টেস্ট)'),
 ])
 
 with open('lang/en.json', 'w', encoding='utf-8') as f:

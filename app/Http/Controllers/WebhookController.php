@@ -64,4 +64,59 @@ class WebhookController extends Controller
 
         return response()->json(['status' => 'success']);
     }
+
+    /**
+     * Pathao webhook receiver — the URL saved on each connection
+     * (/api/webhooks/pathao/dm/{id}). Pathao sends its events with the
+     * connection's webhook secret as the X-PATHAO-Signature header (the secret
+     * itself, not a signature). The integration test event must be answered
+     * 202 with that same secret echoed in the
+     * X-Pathao-Merchant-Webhook-Integration-Secret header.
+     */
+    public function pathao(Request $request, CourierMethod $method, BookingService $booking)
+    {
+        $secret = (string) (($method->credentials ?? [])['webhook_secret'] ?? '');
+        $payload = $request->json()->all();
+        $event = (string) ($payload['event'] ?? '');
+
+        if ($event === 'webhook_integration') {
+            return response()->json(['status' => 'success'], 202)
+                ->header('X-Pathao-Merchant-Webhook-Integration-Secret', $secret);
+        }
+        if ($secret !== '' && ! hash_equals($secret, (string) $request->header('X-PATHAO-Signature', ''))) {
+            return response()->json(['status' => 'unauthorized'], 401);
+        }
+
+        $consignmentId = (string) ($payload['consignment_id'] ?? $payload['data']['consignment_id'] ?? '');
+        $invoice = (string) ($payload['merchant_order_id'] ?? $payload['data']['merchant_order_id'] ?? '');
+        if ($consignmentId !== '' || $invoice !== '') {
+            $order = Order::where('business_id', $method->business_id)
+                ->where(function ($q) use ($consignmentId, $invoice) {
+                    if ($consignmentId !== '') {
+                        $q->where('consignment_id', $consignmentId);
+                    }
+                    if ($invoice !== '') {
+                        $q->orWhere('invoice_no', $invoice);
+                    }
+                })
+                ->first();
+            if ($order) {
+                $status = (string) ($payload['order_status_slug'] ?? $payload['order_status'] ?? $payload['data']['order_status_slug'] ?? '');
+                if ($status === '') {
+                    $status = match ($event) {
+                        'delivered' => 'delivered',
+                        'partial_delivery' => 'partial_delivered',
+                        'returned_to_merchant' => 'returned_to_merchant',
+                        default => '',
+                    };
+                }
+                if ($status !== '') {
+                    $actor = User::where('business_id', $method->business_id)->where('is_admin', true)->first();
+                    $booking->applyCourierStatus($order, $status, $actor);
+                }
+            }
+        }
+
+        return response()->json(['status' => 'success'], 202);
+    }
 }

@@ -8,6 +8,7 @@ export const FIELD_DEFS = {
         ['client_id', 'Client Id'], ['client_secret', 'Client Secret', 'secret'],
         ['client_email', 'Client Email'], ['password', 'Password', 'secret'], ['store_id', 'Store Id'],
         ['default_city_id', 'Default City ID'], ['default_zone_id', 'Default Zone ID'], ['default_area_id', 'Default Area ID'],
+        ['webhook_secret', 'Webhook Secret (Optional)', 'secret'], ['sandbox', 'Sandbox Mode (Test)', 'check'],
     ],
     STEADFAST: [
         ['api_key', 'ApiKey', 'secret'], ['api_secret', 'Api Secret', 'secret'],
