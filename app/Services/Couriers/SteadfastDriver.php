@@ -21,17 +21,39 @@ class SteadfastDriver implements CourierDriver
         ]);
     }
 
+    /** The order fields Steadfast accepts, shared by single and bulk booking. */
+    private function orderPayload(Order $order, CourierMethod $method): array
+    {
+        $payload = [
+            'invoice' => $order->invoice,
+            'recipient_name' => $order->customer_name,
+            'recipient_phone' => $order->customer_phone,
+            'recipient_address' => trim(($order->address ?? '') . ' ' . ($order->area ?? '') . ' ' . ($order->district ?? '')),
+            'cod_amount' => $order->codAmount(),
+            'note' => $order->delivery_note ?? $method->default_shipping_note,
+        ];
+        if (! empty($order->alt_phone)) {
+            $payload['alternative_phone'] = $order->alt_phone;
+        }
+        $email = $order->customer_email ?? $order->email ?? null;
+        if (! empty($email)) {
+            $payload['recipient_email'] = $email;
+        }
+        if ($order->relationLoaded('items') && $order->items->isNotEmpty()) {
+            $payload['total_lot'] = (int) $order->items->sum('qty');
+            $names = $order->items->map(fn ($i) => $i->product_name ?? $i->name ?? null)->filter()->implode(', ');
+            if ($names !== '') {
+                $payload['item_description'] = mb_substr($names, 0, 255);
+            }
+        }
+
+        return $payload;
+    }
+
     public function createBooking(Order $order, CourierMethod $method, array $opts = []): array
     {
         try {
-            $res = $this->http($method)->post($this->base . '/create_order', [
-                'invoice' => $order->invoice,
-                'recipient_name' => $order->customer_name,
-                'recipient_phone' => $order->customer_phone,
-                'recipient_address' => trim(($order->address ?? '') . ' ' . ($order->area ?? '') . ' ' . ($order->district ?? '')),
-                'cod_amount' => $order->codAmount(),
-                'note' => $order->delivery_note ?? $method->default_shipping_note,
-            ]);
+            $res = $this->http($method)->post($this->base . '/create_order', $this->orderPayload($order, $method));
             $body = $res->json() ?? [];
             $consignment = $body['consignment'] ?? $body;
             if ($res->successful() && ! empty($consignment['consignment_id'])) {
@@ -56,7 +78,9 @@ class SteadfastDriver implements CourierDriver
             // endpoint that says a returning parcel is actually back with the seller.
             $res = $order->consignment_id
                 ? $this->http($method)->get($this->base . '/status_with_return_status_by_cid/' . $order->consignment_id)
-                : $this->http($method)->get($this->base . '/status_by_trackingcode/' . $order->tracking_id);
+                : ($order->tracking_id
+                    ? $this->http($method)->get($this->base . '/status_by_trackingcode/' . $order->tracking_id)
+                    : $this->http($method)->get($this->base . '/status_by_invoice/' . $order->invoice));
             $body = $res->json() ?? [];
             if ($res->successful() && isset($body['delivery_status'])) {
                 return ['ok' => true, 'courier_status' => (string) $body['delivery_status'], 'raw' => $body];
@@ -117,6 +141,12 @@ class SteadfastDriver implements CourierDriver
 
     public function testConnection(CourierMethod $method): array
     {
+        // Ping first (no keys needed): if it fails, the problem is the connection,
+        // not the credentials — the two failures must not read the same.
+        $ping = $this->ping();
+        if (! $ping['ok']) {
+            return ['ok' => false, 'message' => 'Could not reach Steadfast at all — check the server connection'];
+        }
         try {
             $res = $this->http($method)->get($this->base . '/get_balance');
             $body = $res->json() ?? [];
@@ -197,5 +227,203 @@ class SteadfastDriver implements CourierDriver
     public function parcelCollection(Order $order, CourierMethod $method): ?array
     {
         return null;
+    }
+
+    // ---- The rest of Steadfast's published API surface (panel API guide, 21 endpoints) ----
+
+    /** GET /ping — the one call that needs no credentials; a pure connectivity check. */
+    public function ping(): array
+    {
+        try {
+            $res = Http::timeout(8)->connectTimeout(4)->get($this->base . '/ping');
+            $body = $res->json() ?? [];
+
+            return ['ok' => $res->successful() && ($body['message'] ?? null) === 'pong', 'raw' => $body];
+        } catch (\Throwable $e) {
+            return ['ok' => false, 'error' => $e->getMessage()];
+        }
+    }
+
+    /**
+     * POST /create_order/bulk-order (or /extended) — up to 500 parcels in one call.
+     * The whole request answers 200 even when some parcels fail; every input order
+     * gets one result row back, matched by invoice. Extended returns human-readable
+     * error sentences instead of codes and is the default for new integrations.
+     */
+    public function createBulkBookings(array $orders, CourierMethod $method, bool $extended = true): array
+    {
+        try {
+            $data = collect($orders)->map(fn (Order $o) => $this->orderPayload($o, $method))->all();
+            $res = $this->http($method)->post($this->base . '/create_order/bulk-order' . ($extended ? '/extended' : ''), ['data' => $data]);
+            $body = $res->json() ?? [];
+            $rows = $body['data'] ?? [];
+
+            return collect(is_array($rows) ? $rows : [])->map(function ($r) {
+                $ok = ($r['status'] ?? null) === 'success' && ! empty($r['consignment_id']);
+                $error = $r['error'] ?? null;
+
+                return [
+                    'invoice' => (string) ($r['invoice'] ?? ''),
+                    'ok' => $ok,
+                    'tracking_id' => $ok ? (string) ($r['tracking_code'] ?? $r['consignment_id']) : null,
+                    'consignment_id' => $ok ? (string) $r['consignment_id'] : null,
+                    'error' => $ok ? null : (is_array($error) ? implode(' ', $error) : (string) ($error ?? 'Booking failed')),
+                ];
+            })->values()->all();
+        } catch (\Throwable $e) {
+            return collect($orders)->map(fn (Order $o) => [
+                'invoice' => $o->invoice, 'ok' => false, 'tracking_id' => null, 'consignment_id' => null,
+                'error' => 'Could not reach Steadfast: ' . $e->getMessage(),
+            ])->values()->all();
+        }
+    }
+
+    /** GET /status_by_cid/{id} — plain delivery status by consignment id. */
+    public function getStatusByCid(string $consignmentId, CourierMethod $method): ?string
+    {
+        return $this->statusFrom('/status_by_cid/' . $consignmentId, $method);
+    }
+
+    /** GET /status_by_invoice/{invoice} — plain delivery status by our own order number. */
+    public function getStatusByInvoice(string $invoice, CourierMethod $method): ?string
+    {
+        return $this->statusFrom('/status_by_invoice/' . $invoice, $method);
+    }
+
+    private function statusFrom(string $path, CourierMethod $method): ?string
+    {
+        try {
+            $res = $this->http($method)->get($this->base . $path);
+            $body = $res->json() ?? [];
+
+            return $res->successful() && isset($body['delivery_status']) ? (string) $body['delivery_status'] : null;
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    /** GET /trackings_by_invoice/{invoice} — every step the parcel has been through. */
+    public function getTrackingHistory(string $invoice, CourierMethod $method): array
+    {
+        try {
+            $res = $this->http($method)->get($this->base . '/trackings_by_invoice/' . $invoice);
+            $body = $res->json() ?? [];
+            $rows = $body['tracking'] ?? [];
+
+            return collect(is_array($rows) ? $rows : [])->map(fn ($t) => [
+                'text' => (string) ($t['text'] ?? ''),
+                'created_at' => $t['created_at'] ?? null,
+                'tracking_type' => isset($t['tracking_type']) ? (int) $t['tracking_type'] : null,
+            ])->values()->all();
+        } catch (\Throwable) {
+            return [];
+        }
+    }
+
+    /** GET /parcel_states — parcels + COD riding on each dashboard state. */
+    public function getParcelStates(CourierMethod $method): array
+    {
+        try {
+            $res = $this->http($method)->get($this->base . '/parcel_states');
+            $body = $res->json() ?? [];
+
+            return is_array($body['states'] ?? null) ? $body['states'] : [];
+        } catch (\Throwable) {
+            return [];
+        }
+    }
+
+    /** GET /parcel_states/{state} — the parcels in one state, a page at a time. */
+    public function getParcelsByState(string $state, CourierMethod $method, int $page = 1, int $perPage = 20): array
+    {
+        try {
+            $res = $this->http($method)->get($this->base . '/parcel_states/' . $state, ['page' => $page, 'per_page' => $perPage, 'sort' => 'desc']);
+            $body = $res->json() ?? [];
+
+            return ['data' => is_array($body['data'] ?? null) ? $body['data'] : [], 'meta' => $body['meta'] ?? []];
+        } catch (\Throwable) {
+            return ['data' => [], 'meta' => []];
+        }
+    }
+
+    /** GET /stats — counts + COD per outcome for parcels booked between two dates. */
+    public function getStats(CourierMethod $method, ?string $from = null, ?string $to = null): array
+    {
+        try {
+            $query = array_filter(['from' => $from, 'to' => $to]);
+            $res = $this->http($method)->get($this->base . '/stats', $query);
+
+            return $res->json() ?? [];
+        } catch (\Throwable) {
+            return [];
+        }
+    }
+
+    /** POST /create_pickup_request — ask a rider to collect from a saved pickup address. */
+    public function createPickupRequest(CourierMethod $method, array $data): array
+    {
+        try {
+            $res = $this->http($method)->post($this->base . '/create_pickup_request', [
+                'address_id' => $data['address_id'] ?? null,
+                'police_station_id' => $data['police_station_id'] ?? null,
+                'address' => $data['address'] ?? null,
+                'contact_number' => $data['contact_number'] ?? null,
+                'note' => $data['note'] ?? null,
+                'estim_qty' => $data['estim_qty'] ?? null,
+            ]);
+            $body = $res->json() ?? [];
+            if ($res->successful()) {
+                return ['ok' => true, 'id' => $body['data']['id'] ?? null, 'raw' => $body];
+            }
+
+            return ['ok' => false, 'error' => (string) ($body['message'] ?? 'Pickup request failed (HTTP ' . $res->status() . ')'), 'raw' => $body];
+        } catch (\Throwable $e) {
+            return ['ok' => false, 'error' => 'Could not reach Steadfast: ' . $e->getMessage()];
+        }
+    }
+
+    /** GET /get_return_requests — our return requests, newest first, ten to a page. */
+    public function getReturnRequests(CourierMethod $method, int $page = 1): array
+    {
+        try {
+            $res = $this->http($method)->get($this->base . '/get_return_requests', ['page' => $page]);
+            $body = $res->json() ?? [];
+            $rows = $body['data'] ?? $body['return_requests'] ?? [];
+
+            return is_array($rows) ? $rows : [];
+        } catch (\Throwable) {
+            return [];
+        }
+    }
+
+    /** GET /get_return_request/{id} — one return request with the parcel it is about. */
+    public function getReturnRequest(string $id, CourierMethod $method): ?array
+    {
+        try {
+            $res = $this->http($method)->get($this->base . '/get_return_request/' . $id);
+            $body = $res->json() ?? [];
+
+            return $res->successful() && $body !== [] ? $body : null;
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    /** GET /police_stations — every thana Steadfast delivers to, with its district. Changes rarely; callers may cache. */
+    public function getPoliceStations(CourierMethod $method): array
+    {
+        try {
+            $res = $this->http($method)->get($this->base . '/police_stations');
+            $body = $res->json() ?? [];
+            $rows = $body['data'] ?? $body['police_stations'] ?? (array_is_list($body) ? $body : []);
+
+            return collect(is_array($rows) ? $rows : [])->map(fn ($s) => [
+                'id' => $s['id'] ?? null,
+                'name' => (string) ($s['name'] ?? $s['police_station'] ?? $s['thana'] ?? ''),
+                'district' => (string) ($s['district'] ?? $s['police_station_address'] ?? ''),
+            ])->values()->all();
+        } catch (\Throwable) {
+            return [];
+        }
     }
 }
