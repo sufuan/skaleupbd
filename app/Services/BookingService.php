@@ -168,9 +168,10 @@ class BookingService
 
             return;
         }
-        $returnArrived = str_contains($lower, 'return_received') || str_contains($lower, 'returned')
-            || ((str_contains($lower, 'return') || str_contains($lower, 'rts'))
-                && ! str_contains($lower, 'rider_assigned') && ! str_contains($lower, 'proccess') && ! str_contains($lower, 'processing'));
+        // Only explicit arrival words close a return: return_initiated / return_pending /
+        // return_cancelled / *_rider_assigned mean the parcel is still travelling (or not coming).
+        $returnArrived = str_contains($lower, 'return_received') || str_contains($lower, 'return_delivered')
+            || str_contains($lower, 'return_accepted') || str_contains($lower, 'returned');
         if ($returnArrived && in_array($order->status, ['Shipped', 'Delivered'], true)) {
             $order->returned_at = now();
             $order->save();
