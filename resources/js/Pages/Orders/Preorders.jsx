@@ -1,11 +1,15 @@
 import AppLayout from '@/Layouts/AppLayout';
 import { t } from '@/lib/i18n';
 import { Head, Link, router } from '@inertiajs/react';
+import { useState } from 'react';
 import { StatusPill, fmt } from './ui';
 
 const TABS = [['all', 'All'], ['notified', 'Notified'], ['pending', 'Pending Notification']];
 
-export default function Preorders({ orders, counts, tab }) {
+export default function Preorders({ orders, counts, tab, reasons, filters }) {
+    const [reason, setReason] = useState(filters?.reason || '');
+    const [code, setCode] = useState(filters?.code || '');
+    const goTab = (k) => router.get('/orders/preorders', { tab: k, reason, code }, { preserveState: true, replace: true });
     return (
         <AppLayout>
             <Head title={t('Preorders')} />
@@ -14,12 +18,25 @@ export default function Preorders({ orders, counts, tab }) {
 
             <div className="ptabs">
                 {TABS.map(([k, label]) => (
-                    <span key={k} className={`ptab ${tab === k ? 'act' : ''}`} onClick={() => router.get('/orders/preorders', { tab: k }, { preserveState: true, replace: true })}>
+                    <span key={k} className={`ptab ${tab === k ? 'act' : ''}`} onClick={() => goTab(k)}>
                         {t(label)} <span className="pill" style={{ marginLeft: 4 }}>{counts[k]}</span>
                     </span>
                 ))}
                 <span className="spacer" />
                 <button className="btn" style={{ alignSelf: 'center' }} onClick={() => router.reload()}>{t('Refresh Stock')}</button>
+            </div>
+
+            <div className="card mb12">
+                <div className="flex" style={{ flexWrap: 'wrap' }}>
+                    <div className="frow" style={{ margin: 0 }}><label className="fl">{t('Reason')}</label>
+                        <select className="inp" style={{ width: 190 }} value={reason} onChange={(e) => setReason(e.target.value)}>
+                            <option value="">—</option>
+                            {(reasons || []).map((r) => <option key={r} value={r}>{r}</option>)}
+                        </select></div>
+                    <div className="frow" style={{ margin: 0 }}><label className="fl">{t('Product Code')}</label>
+                        <input className="inp" style={{ width: 190 }} value={code} onChange={(e) => setCode(e.target.value)} placeholder="SKU…" /></div>
+                    <button className="btn pri" onClick={() => router.get('/orders/preorders', { tab, reason, code }, { preserveState: true, replace: true })}>{t('Apply Filter')}</button>
+                </div>
             </div>
 
             <div className="card" style={{ padding: 0, overflow: 'hidden' }}>

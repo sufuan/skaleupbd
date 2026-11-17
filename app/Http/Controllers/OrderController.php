@@ -3,11 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\AppNotification;
+use App\Models\CallLog;
 use App\Models\DeletionLog;
 use App\Models\MessageTemplate;
 use App\Models\Order;
 use App\Models\OrderSource;
 use App\Models\Product;
+use App\Models\User;
 use App\Services\OrderService;
 use App\Services\PhoneNormalizer;
 use App\Services\SettingsService;
@@ -58,6 +60,7 @@ class OrderController extends Controller
             'source' => $o->source,
             'status' => $o->status,
             'auto_call' => $o->auto_call_status,
+            'pbx_calls' => (int) ($o->pbx_calls_count ?? 0),
             'processed_by' => $o->processor?->name,
             'is_preorder' => (bool) $o->is_preorder,
         ];
@@ -77,6 +80,37 @@ class OrderController extends Controller
         }
 
         $query = (clone $base)->with(['items', 'processor'])->latest();
+        $this->applyListFilters($query, $request, $status, $search);
+        $page = $query->paginate($perPage)->withQueryString();
+
+        $fraudByPhone = collect($page->items())->pluck('customer_phone')->unique()
+            ->mapWithKeys(fn ($phone) => [$phone => $this->fraud->forPhone($biz, $phone)]);
+        $callCounts = CallLog::where('business_id', $biz)
+            ->whereIn('order_id', collect($page->items())->pluck('id'))
+            ->selectRaw('order_id, count(*) as c')->groupBy('order_id')->pluck('c', 'order_id');
+        foreach ($page->items() as $o) {
+            $o->pbx_calls_count = (int) ($callCounts[$o->id] ?? 0);
+        }
+
+        return Inertia::render('Orders/Index', [
+            'orders' => $page->items(),
+            'rows' => collect($page->items())->map(fn ($o) => $this->row($o, $fraudByPhone[$o->customer_phone] ?? null)),
+            'counts' => $counts,
+            'filters' => ['status' => $status, 'search' => $search, 'per_page' => $perPage,
+                'from' => $request->query('from', ''), 'to' => $request->query('to', ''),
+                'source' => $request->query('source', ''), 'processed_by' => $request->query('processed_by', ''),
+                'product_code' => $request->query('product_code', ''), 'tag' => $request->query('tag', '')],
+            'filterOptions' => [
+                'sources' => OrderSource::where('business_id', $biz)->where('is_visible', true)->orderBy('sort')->get(['code', 'label']),
+                'staff' => User::where('business_id', $biz)->orderBy('name')->get(['id', 'name']),
+            ],
+            'pagination' => ['current' => $page->currentPage(), 'last' => $page->lastPage(), 'total' => $page->total()],
+            'pendingCount' => $counts['Pending'] ?? 0,
+        ]);
+    }
+
+    private function applyListFilters($query, Request $request, string $status, string $search): void
+    {
         if ($status !== 'All') {
             $query->where('status', $status);
         }
@@ -90,19 +124,46 @@ class OrderController extends Controller
                 }
             });
         }
-        $page = $query->paginate($perPage)->withQueryString();
+        if ($from = $request->query('from')) {
+            $query->whereDate('created_at', '>=', $from);
+        }
+        if ($to = $request->query('to')) {
+            $query->whereDate('created_at', '<=', $to);
+        }
+        if ($source = $request->query('source')) {
+            $query->where('source', $source);
+        }
+        if ($by = $request->query('processed_by')) {
+            $query->where('processed_by', (int) $by);
+        }
+        if ($code = trim((string) $request->query('product_code', ''))) {
+            $query->whereHas('items', fn ($q) => $q->where('sku', 'like', "%{$code}%")->orWhere('name', 'like', "%{$code}%"));
+        }
+        if ($tag = trim((string) $request->query('tag', ''))) {
+            $query->where('tags', 'like', '%"'.$tag.'"%');
+        }
+    }
 
-        $fraudByPhone = collect($page->items())->pluck('customer_phone')->unique()
-            ->mapWithKeys(fn ($phone) => [$phone => $this->fraud->forPhone($biz, $phone)]);
+    public function export(Request $request)
+    {
+        $biz = $this->businessId($request);
+        $status = $request->query('status', 'All');
+        $search = trim((string) $request->query('search', ''));
+        $query = Order::where('business_id', $biz)->with(['items', 'processor'])->latest();
+        $this->applyListFilters($query, $request, is_string($status) ? $status : 'All', $search);
+        $orders = $query->limit(5000)->get();
 
-        return Inertia::render('Orders/Index', [
-            'orders' => $page->items(),
-            'rows' => collect($page->items())->map(fn ($o) => $this->row($o, $fraudByPhone[$o->customer_phone] ?? null)),
-            'counts' => $counts,
-            'filters' => ['status' => $status, 'search' => $search, 'per_page' => $perPage],
-            'pagination' => ['current' => $page->currentPage(), 'last' => $page->lastPage(), 'total' => $page->total()],
-            'pendingCount' => $counts['Pending'] ?? 0,
-        ]);
+        return response()->streamDownload(function () use ($orders) {
+            $out = fopen('php://output', 'w');
+            fputcsv($out, ['Invoice', 'Date', 'Customer', 'Phone', 'Address', 'District', 'Source', 'Status', 'Items', 'Subtotal', 'Discount', 'Delivery Charge', 'Advance', 'Due', 'Grand Total', 'Processed By']);
+            foreach ($orders as $o) {
+                fputcsv($out, [$o->invoice_no, $o->created_at?->format('d M Y h:i A'), $o->customer_name, $o->customer_phone,
+                    $o->customer_address, $o->district, $o->source, $o->status,
+                    $o->items->map(fn ($i) => $i->name.($i->qty > 1 ? " x{$i->qty}" : ''))->implode(', '),
+                    $o->subtotal, $o->discount, $o->delivery_charge, $o->advance, $o->due, $o->grand_total, $o->processor?->name]);
+            }
+            fclose($out);
+        }, 'orders-export.csv', ['Content-Type' => 'text/csv']);
     }
 
     public function next(Request $request): RedirectResponse
@@ -276,6 +337,10 @@ class OrderController extends Controller
                 'is_returning' => $rate['orders'] > 1,
             ],
             'couriers' => $this->settings->get('couriers.methods', []),
+            'sources' => OrderSource::where('business_id', $biz)->where('is_visible', true)->orderBy('sort')->get(['code', 'label']),
+            'products' => Product::where('business_id', $biz)->where('is_active', true)->orderBy('name')
+                ->get()->map(fn ($p) => ['id' => $p->id, 'name' => $p->name, 'sku' => $p->sku,
+                    'price' => (float) $p->price, 'stock' => $p->stock_qty - $p->reserved_qty]),
             'processingStatuses' => Order::PROCESSING_STATUSES,
             'cancelReasons' => Order::CANCEL_REASONS,
             'pendingCount' => Order::where('business_id', $biz)->where('status', 'Pending')->count(),
@@ -286,6 +351,7 @@ class OrderController extends Controller
     {
         $this->own($request, $order);
         $data = $request->validate([
+            'source' => ['nullable', 'string', 'max:40'],
             'processing_status' => ['nullable', 'in:'.implode(',', Order::PROCESSING_STATUSES)],
             'cancellation_reason' => ['nullable', 'in:'.implode(',', Order::CANCEL_REASONS)],
             'delivery_method' => ['nullable', 'string', 'max:120'],
@@ -302,7 +368,9 @@ class OrderController extends Controller
             return back()->with('success', "Order {$order->invoice_no} cancelled");
         }
 
+        $oldSource = $order->source;
         $order->fill(array_filter([
+            'source' => $data['source'] ?? null,
             'processing_status' => $data['processing_status'] ?? null,
             'delivery_method' => $data['delivery_method'] ?? null,
             'delivery_note' => $data['delivery_note'] ?? null,
@@ -319,11 +387,47 @@ class OrderController extends Controller
         if (! empty($data['processing_status'])) {
             $order->logActivity('action', "Processing status set to {$data['processing_status']} by {$request->user()->name}", $request->user());
         }
+        if (! empty($data['source']) && $data['source'] !== $oldSource) {
+            $order->logActivity('action', "Source changed from {$oldSource} to {$data['source']} by {$request->user()->name}", $request->user());
+        }
         if (! empty($data['note'])) {
             $order->logActivity('note', $data['note'], $request->user());
         }
 
         return back()->with('success', 'Changes saved');
+    }
+
+    public function addItem(Request $request, Order $order): RedirectResponse
+    {
+        $this->own($request, $order);
+        if (! in_array($order->status, ['Pending', 'Processing'], true)) {
+            return back()->withErrors(['items' => 'Products can only be added while the order is Pending or Processing']);
+        }
+        $data = $request->validate([
+            'product_id' => ['required', 'integer'],
+            'qty' => ['required', 'integer', 'min:1', 'max:999'],
+        ]);
+        $product = Product::where('business_id', $order->business_id)->where('is_active', true)->find($data['product_id']);
+        if (! $product) {
+            return back()->withErrors(['items' => 'Product not found']);
+        }
+
+        $order->items()->create([
+            'product_id' => $product->id, 'name' => $product->name, 'sku' => $product->sku,
+            'qty' => $data['qty'], 'price' => $product->price, 'cost' => $product->cost,
+        ]);
+        if ($order->status === 'Processing') {
+            $product->increment('reserved_qty', $data['qty']);
+            \App\Models\StockLedger::create(['business_id' => $order->business_id, 'product_id' => $product->id,
+                'order_id' => $order->id, 'type' => 'reserve', 'qty' => $data['qty'],
+                'note' => "Reserved for product added to {$order->invoice_no}"]);
+        }
+        $order->subtotal = $order->items()->get()->sum(fn ($i) => (float) $i->price * $i->qty);
+        $order->grand_total = (float) $order->subtotal - (float) $order->discount + (float) $order->delivery_charge;
+        $order->save();
+        $order->logActivity('action', "Product added: {$product->name} ×{$data['qty']} by {$request->user()->name}", $request->user());
+
+        return back()->with('success', 'Product added to the order');
     }
 
     public function approve(Request $request, Order $order): RedirectResponse

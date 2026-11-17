@@ -31,6 +31,12 @@ export default function BlockList({ blocks }) {
                 {TABS.map(([k, label]) => <span key={k} className={`ptab ${tab === k ? 'act' : ''}`} onClick={() => setTab(k)}>{t(label)}</span>)}
             </div>
 
+            <div className="flex mb12" style={{ flexWrap: 'wrap' }}>
+                <span className="pill">{t('Blocked IPs')} {blocks.filter((b) => b.type === 'ip').length}/2500</span>
+                <span className="pill">{t('Blocked Mobile Numbers')} {blocks.filter((b) => b.type === 'phone').length}/2500</span>
+                <span className="pill">{t('Blocked Devices')} {blocks.filter((b) => b.type === 'device').length}/2500</span>
+            </div>
+
             <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
                 <div className="tbl-wrap">
                     <table className="tbl">

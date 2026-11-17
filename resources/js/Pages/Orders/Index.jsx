@@ -6,9 +6,14 @@ import { StatusPill, SuccessRing, fmt } from './ui';
 
 const TABS = ['All', 'Pending', 'Processing', 'Shipped', 'Delivered', 'Returned', 'Cancelled'];
 
-export default function Index({ rows, counts, filters, pagination, pendingCount }) {
+export default function Index({ rows, counts, filters, pagination, pendingCount, filterOptions }) {
     const [search, setSearch] = useState(filters.search || '');
-    const go = (patch) => router.get('/orders', { status: filters.status, search: filters.search, per_page: filters.per_page, ...patch }, { preserveState: true, replace: true });
+    const [showFilter, setShowFilter] = useState(false);
+    const [adv, setAdv] = useState({ from: filters.from || '', to: filters.to || '', source: filters.source || '', processed_by: filters.processed_by || '', product_code: filters.product_code || '', tag: filters.tag || '' });
+    const advCount = Object.values(adv).filter((v) => v !== '').length;
+    const base = { status: filters.status, search: filters.search, per_page: filters.per_page, from: filters.from || '', to: filters.to || '', source: filters.source || '', processed_by: filters.processed_by || '', product_code: filters.product_code || '', tag: filters.tag || '' };
+    const go = (patch) => router.get('/orders', { ...base, ...patch }, { preserveState: true, replace: true });
+    const exportHref = '/orders/export?' + new URLSearchParams(Object.fromEntries(Object.entries({ ...base, search }).filter(([, v]) => v !== '' && v !== undefined))).toString();
 
     return (
         <AppLayout>
@@ -23,6 +28,8 @@ export default function Index({ rows, counts, filters, pagination, pendingCount 
                     <input className="inp" style={{ width: 240 }} placeholder={t('Search invoice, phone or name')} value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && go({ search, page: 1 })} />
+                    <button className="btn" onClick={() => setShowFilter(true)}>{t('Filter Orders')}{advCount > 0 ? ` (${advCount})` : ''}</button>
+                    <a className="btn" href={exportHref}>{t('Export CSV')}</a>
                     <Link href="/orders/create" className="btn pri">{t('New Order')}</Link>
                     <button className="btn" disabled={pendingCount === 0} onClick={() => router.get('/orders/next')}>
                         {t('Open Next Order')} ({pendingCount})
@@ -42,7 +49,7 @@ export default function Index({ rows, counts, filters, pagination, pendingCount 
                 <div className="tbl-wrap">
                     <table className="tbl ord-tbl">
                         <thead><tr>
-                            <th>{t('Invoice')}</th><th>{t('Auto Call')}</th><th>{t('Customer')}</th><th>{t('Order Items')}</th>
+                            <th>{t('Invoice')}</th><th>{t('Auto Call')}</th><th>{t('PBX Calls')}</th><th>{t('Customer')}</th><th>{t('Order Items')}</th>
                             <th>{t('Success Rate')}</th><th>{t('Tags')}</th><th>{t('Site')}</th><th>{t('Status')}</th>
                             <th>{t('Processed By')}</th><th style={{ textAlign: 'right' }}>{t('Actions')}</th>
                         </tr></thead>
@@ -51,6 +58,7 @@ export default function Index({ rows, counts, filters, pagination, pendingCount 
                                 <tr key={o.id}>
                                     <td><div className="b">{o.invoice}</div><div className="sm mut">{o.created} · {o.created_time}</div></td>
                                     <td><span className="pill">{t(o.auto_call === 'off' ? 'Off' : o.auto_call)}</span></td>
+                                    <td>{o.pbx_calls > 0 ? o.pbx_calls : <span className="mut">—</span>}</td>
                                     <td>
                                         <div className="b">{o.name}</div>
                                         <div className="sm">{o.phone}</div>
@@ -74,7 +82,7 @@ export default function Index({ rows, counts, filters, pagination, pendingCount 
                                 </tr>
                             ))}
                             {rows.length === 0 && (
-                                <tr><td colSpan="10" style={{ textAlign: 'center', padding: 34 }}>
+                                <tr><td colSpan="11" style={{ textAlign: 'center', padding: 34 }}>
                                     <div className="b">{t('No orders here')}</div>
                                     <div className="sm mut mt8">{t('There are no orders with this status yet. New orders land in Pending.')}</div>
                                 </td></tr>
@@ -93,6 +101,37 @@ export default function Index({ rows, counts, filters, pagination, pendingCount 
                 <button className="btn" disabled={pagination.current <= 1} onClick={() => go({ page: pagination.current - 1 })}>{t('Previous')}</button>
                 <button className="btn" disabled={pagination.current >= pagination.last} onClick={() => go({ page: pagination.current + 1 })}>{t('Next')}</button>
             </div>
+
+            {showFilter && (
+                <div className="overlay" onClick={() => setShowFilter(false)}>
+                    <div className="modal" onClick={(e) => e.stopPropagation()}>
+                        <h3>{t('Filter Orders')}</h3>
+                        <div className="frow mt16"><label className="fl">{t('Date From')}</label>
+                            <input className="inp" type="date" value={adv.from} onChange={(e) => setAdv({ ...adv, from: e.target.value })} /></div>
+                        <div className="frow"><label className="fl">{t('Date To')}</label>
+                            <input className="inp" type="date" value={adv.to} onChange={(e) => setAdv({ ...adv, to: e.target.value })} /></div>
+                        <div className="frow"><label className="fl">{t('Source')}</label>
+                            <select className="inp" value={adv.source} onChange={(e) => setAdv({ ...adv, source: e.target.value })}>
+                                <option value="">—</option>
+                                {(filterOptions?.sources || []).map((s) => <option key={s.code} value={s.code}>{s.label}</option>)}
+                            </select></div>
+                        <div className="frow"><label className="fl">{t('Processed By')}</label>
+                            <select className="inp" value={adv.processed_by} onChange={(e) => setAdv({ ...adv, processed_by: e.target.value })}>
+                                <option value="">—</option>
+                                {(filterOptions?.staff || []).map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
+                            </select></div>
+                        <div className="frow"><label className="fl">{t('Product Code')}</label>
+                            <input className="inp" value={adv.product_code} onChange={(e) => setAdv({ ...adv, product_code: e.target.value })} placeholder="SKU…" /></div>
+                        <div className="frow"><label className="fl">{t('Tag')}</label>
+                            <input className="inp" value={adv.tag} onChange={(e) => setAdv({ ...adv, tag: e.target.value })} /></div>
+                        <div className="flex mt16" style={{ justifyContent: 'flex-end' }}>
+                            <button className="btn" onClick={() => { const cleared = { from: '', to: '', source: '', processed_by: '', product_code: '', tag: '' }; setAdv(cleared); setShowFilter(false); go({ ...cleared, page: 1 }); }}>{t('Clear Filters')}</button>
+                            <button className="btn" onClick={() => setShowFilter(false)}>{t('Cancel')}</button>
+                            <button className="btn pri" onClick={() => { setShowFilter(false); go({ ...adv, page: 1 }); }}>{t('Apply Filter')}</button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </AppLayout>
     );
 }

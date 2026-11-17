@@ -65,8 +65,8 @@ class SettingsController extends Controller
     {
         DB::table('settings_changes')->insert([
             'key' => $key,
-            'old_value' => is_bool($old) ? ($old ? 'On' : 'Off') : (string) ($old ?? ''),
-            'new_value' => is_bool($new) ? ($new ? 'On' : 'Off') : (string) ($new ?? ''),
+            'old_value' => is_bool($old) ? ($old ? 'On' : 'Off') : (is_array($old) ? json_encode($old) : (string) ($old ?? '')),
+            'new_value' => is_bool($new) ? ($new ? 'On' : 'Off') : (is_array($new) ? json_encode($new) : (string) ($new ?? '')),
             'changed_by' => $request->user()?->name,
             'created_at' => now(),
         ]);
@@ -76,7 +76,7 @@ class SettingsController extends Controller
     {
         $old = $this->settings->get($key);
         $this->settings->set($key, $value, $request->user()?->id);
-        if ((string) $old !== (string) $value) {
+        if (json_encode($old) !== json_encode($value)) {
             $this->logChange($request, $key, $old, $value);
         }
     }
@@ -179,5 +179,18 @@ class SettingsController extends Controller
         }
 
         return back()->with('success', 'Order settings saved');
+    }
+
+    public function addCourierMethod(Request $request): RedirectResponse
+    {
+        $data = $request->validate(['name' => ['required', 'string', 'max:120']]);
+        $methods = $this->settings->get('couriers.methods', []);
+        $exists = collect($methods)->contains(fn ($m) => strtolower((string) $m) === strtolower($data['name']));
+        if (! $exists) {
+            $methods[] = $data['name'];
+            $this->setLogged($request, 'couriers.methods', array_values($methods));
+        }
+
+        return back()->with('success', 'Delivery method added');
     }
 }

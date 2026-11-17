@@ -1,11 +1,33 @@
 import AppLayout from '@/Layouts/AppLayout';
 import { t } from '@/lib/i18n';
 import { Head, useForm } from '@inertiajs/react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { fmt } from './ui';
+
+const LAYOUTS = [
+    ['v2', 'V2 Default', 'Two columns with the calculation details pinned in a sticky rail on the right, so the total and the submit button stay on screen.'],
+    ['full', 'V2 Full Width', 'Stacked like V2 Default, but the product picker gets a full-width row with the ordered products below it, the way a phone shows them.'],
+    ['classic', 'V1 Classic', 'The legacy arrangement: full width, ordered products beside the picker, and the money fields in a band across the bottom. Scroll down to submit.'],
+];
+const TEMPLATES = [['default', 'Default Template'], ['compact', 'Compact Template'], ['wholesale', 'Wholesale Template'], ['preorder', 'Pre-Order Template'], ['fast', 'Call Center Fast Entry Template']];
+const DEFAULT_OPTS = { layout: 'v2', template: 'default', courier_order: ['Overall', 'Pathao', 'Steadfast', 'RedX', 'CarryBee'] };
 
 export default function Create({ sources, products, couriers, defaults, toggles }) {
     const [mode, setMode] = useState('approved');
+    const [layoutOpen, setLayoutOpen] = useState(false);
+    const [opts, setOpts] = useState(() => {
+        try { return { ...DEFAULT_OPTS, ...JSON.parse(localStorage.getItem('skaleup_order_form_options') || '{}') }; } catch (e) { return DEFAULT_OPTS; }
+    });
+    useEffect(() => { localStorage.setItem('skaleup_order_form_options', JSON.stringify(opts)); }, [opts]);
+    const tpl = opts.template;
+    const hide = (name) => (tpl === 'compact' && ['email', 'alt', 'area', 'shipnote', 'attachment'].includes(name))
+        || (tpl === 'fast' && ['email', 'alt', 'district', 'area', 'shipnote', 'attachment', 'cross'].includes(name));
+    const moveCourier = (ix, dir) => {
+        const arr = [...opts.courier_order]; const j = ix + dir;
+        if (j < 0 || j >= arr.length) return;
+        [arr[ix], arr[j]] = [arr[j], arr[ix]];
+        setOpts({ ...opts, courier_order: arr });
+    };
     const [picked, setPicked] = useState([]); // {product_id, name, sku, qty, price}
     const [custom, setCustom] = useState({ name: '', price: '' });
     const [query, setQuery] = useState('');
@@ -47,8 +69,14 @@ export default function Create({ sources, products, couriers, defaults, toggles 
     return (
         <AppLayout>
             <Head title={t('New Order')} />
-            <h1 className="page-h">{t('New Order')}</h1>
-            <div className="page-sub">{t('Create an order by hand — it lands in the same Order List as every other order.')}</div>
+            <div className="flex" style={{ flexWrap: 'wrap' }}>
+                <div>
+                    <h1 className="page-h">{t('New Order')}</h1>
+                    <div className="page-sub">{t('Create an order by hand — it lands in the same Order List as every other order.')}</div>
+                </div>
+                <span className="spacer" />
+                <button type="button" className="btn" onClick={() => setLayoutOpen(true)}>{t('Layouts & Fields')}</button>
+            </div>
 
             <div className="ptabs">
                 {[['manual', 'Manual'], ['approved', 'Approved'], ['preorder', 'Pre-Order']].map(([m, label]) => (
@@ -57,7 +85,7 @@ export default function Create({ sources, products, couriers, defaults, toggles 
             </div>
 
             <form onSubmit={submit}>
-                <div className="ord-grid">
+                <div className={`ord-grid layout-${opts.layout}`}>
                     <div>
                         <div className="card mb12">
                             <h3>{t('Customer & Shipping')}</h3>
@@ -67,23 +95,25 @@ export default function Create({ sources, products, couriers, defaults, toggles 
                                     {form.errors.customer_phone && <div className="sm" style={{ color: 'var(--bad)' }}>{form.errors.customer_phone}</div>}</div>
                                 <div className="frow"><label className="fl">{t('Customer Name')} *</label>
                                     <input className="inp" value={form.data.customer_name} onChange={(e) => form.setData('customer_name', e.target.value)} /></div>
-                                {toggles.show_email && <div className="frow"><label className="fl">{t('Email')} ({t('Optional')})</label>
+                                {toggles.show_email && !hide('email') && <div className="frow"><label className="fl">{t('Email')} ({t('Optional')})</label>
                                     <input className="inp" value={form.data.customer_email} onChange={(e) => form.setData('customer_email', e.target.value)} /></div>}
-                                {toggles.show_alt_number && <div className="frow"><label className="fl">{t('Alternative Number')}</label>
+                                {toggles.show_alt_number && !hide('alt') && <div className="frow"><label className="fl">{t('Alternative Number')}</label>
                                     <input className="inp" value={form.data.alt_phone} onChange={(e) => form.setData('alt_phone', e.target.value)} /></div>}
                             </div>
                             <div className="frow"><label className="fl">{t('Address')} *</label>
                                 <textarea className="inp" rows="2" value={form.data.customer_address} onChange={(e) => form.setData('customer_address', e.target.value)} /></div>
-                            <div className="grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
-                                <div className="frow"><label className="fl">{t('District')}</label>
-                                    <input className="inp" value={form.data.district} onChange={(e) => form.setData('district', e.target.value)} /></div>
-                                <div className="frow"><label className="fl">{t('Area')}</label>
-                                    <input className="inp" value={form.data.area} onChange={(e) => form.setData('area', e.target.value)} /></div>
-                            </div>
-                            <div className="frow"><label className="fl">{t('Shipping Note')} ({t('Optional')})</label>
+                            {(!hide('district') || !hide('area')) && <div className="grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
+                                {!hide('district') && <div className="frow"><label className="fl">{t('District')}</label>
+                                    <input className="inp" value={form.data.district} onChange={(e) => form.setData('district', e.target.value)} /></div>}
+                                {!hide('area') && <div className="frow"><label className="fl">{t('Area')}</label>
+                                    <input className="inp" value={form.data.area} onChange={(e) => form.setData('area', e.target.value)} /></div>}
+                            </div>}
+                            {!hide('shipnote') && <div className="frow"><label className="fl">{t('Shipping Note')} ({t('Optional')})</label>
                                 <textarea className="inp" rows="2" maxLength="350" value={form.data.shipping_note} onChange={(e) => form.setData('shipping_note', e.target.value)} />
                                 <div className="sm mut" style={{ textAlign: 'right' }}>{form.data.shipping_note.length}/350</div>
-                                {form.errors.shipping_note && <div className="sm" style={{ color: 'var(--bad)' }}>{form.errors.shipping_note}</div>}</div>
+                                {form.errors.shipping_note && <div className="sm" style={{ color: 'var(--bad)' }}>{form.errors.shipping_note}</div>}</div>}
+                            {tpl === 'wholesale' && <div className="frow"><label className="fl">{t('Delivery Note')}</label>
+                                <textarea className="inp" rows="2" value={form.data.delivery_note} onChange={(e) => form.setData('delivery_note', e.target.value)} /></div>}
                             {mode === 'manual' ? (
                                 <div className="note-box sm">{t('Courier will be assigned during Online Order approval.')}</div>
                             ) : (
@@ -92,7 +122,7 @@ export default function Create({ sources, products, couriers, defaults, toggles 
                                         {couriers.map((c) => <option key={c} value={c}>{c}</option>)}
                                     </select></div>
                             )}
-                            {mode === 'preorder' && (
+                            {(mode === 'preorder' || tpl === 'preorder') && (
                                 <div className="grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
                                     <div className="frow"><label className="fl">{t('Preorder Reason')}</label>
                                         <select className="inp" value={form.data.preorder_reason} onChange={(e) => form.setData('preorder_reason', e.target.value)}>
@@ -108,9 +138,9 @@ export default function Create({ sources, products, couriers, defaults, toggles 
                                     {sources.map((s) => <option key={s.code} value={s.code}>{s.label}</option>)}
                                 </select>
                                 {form.errors.source && <div className="sm" style={{ color: 'var(--bad)' }}>{form.errors.source}</div>}</div>
-                            <div className="frow"><label className="fl">{t('Attachment')} (JPG, PNG, PDF · max 5MB)</label>
-                                <input className="inp" type="file" accept=".jpg,.jpeg,.png,.gif,.webp,.avif,.svg,.pdf" onChange={(e) => form.setData('attachment', e.target.files[0] || null)} /></div>
-                            {toggles.cross_sale && <div className="note-box sm">{t('Cross Sale is on — related products can be offered with this order.')}</div>}
+                            {!hide('attachment') && <div className="frow"><label className="fl">{t('Attachment')} (JPG, PNG, PDF · max 5MB)</label>
+                                <input className="inp" type="file" accept=".jpg,.jpeg,.png,.gif,.webp,.avif,.svg,.pdf" onChange={(e) => form.setData('attachment', e.target.files[0] || null)} /></div>}
+                            {toggles.cross_sale && !hide('cross') && <div className="note-box sm">{t('Cross Sale is on — related products can be offered with this order.')}</div>}
                         </div>
 
                         <div className="card mb12">
@@ -151,7 +181,7 @@ export default function Create({ sources, products, couriers, defaults, toggles 
                     </div>
 
                     <div>
-                        <div className="card mb12" style={{ position: 'sticky', top: 78 }}>
+                        <div className="card mb12 calc-card" style={opts.layout === 'v2' ? { position: 'sticky', top: 78 } : {}}>
                             <h3>{t('Calculation Details')}</h3>
                             <div className="frow"><label className="fl">{t('Discount (৳)')}</label>
                                 <input className="inp" type="number" min="0" value={form.data.discount} onChange={(e) => form.setData('discount', e.target.value)} /></div>
@@ -163,12 +193,14 @@ export default function Create({ sources, products, couriers, defaults, toggles 
                                 <input className="inp" disabled={Number(form.data.advance || 0) <= 0} value={form.data.txn_id} onChange={(e) => form.setData('txn_id', e.target.value)} placeholder={Number(form.data.advance || 0) <= 0 ? t('Enter an advance first') : 'bKash TrxID'} />
                                 {form.errors.txn_id && <div className="sm" style={{ color: 'var(--bad)' }}>{form.errors.txn_id}</div>}</div>
                             <h3 className="mt16">{t('Order Summary')}</h3>
+                            <div className="band-grid">
                             <div className="kv"><span>{t('Items Total')}</span><b>{fmt(itemsTotal)}</b></div>
                             <div className="kv"><span>{t('Discount')}</span><b>− {fmt(form.data.discount)}</b></div>
                             <div className="kv"><span>{t('Delivery Charge')}</span><b>{fmt(form.data.delivery_charge)}</b></div>
                             <div className="kv big"><span>{t('Grand Total')}</span><b>{fmt(grand)}</b></div>
                             <div className="kv"><span>{t('Advance')}</span><b>{fmt(form.data.advance)}</b></div>
                             <div className="kv"><span>{t('Due Amount')}</span><b>{fmt(due)}</b></div>
+                            </div>
                             <button type="submit" className="btn pri" style={{ width: '100%', justifyContent: 'center', marginTop: 14 }} disabled={form.processing || picked.length === 0}>
                                 {mode === 'approved' ? t('Create Approved Order') : mode === 'preorder' ? t('Create Preorder') : t('Create Order')}
                             </button>
@@ -177,6 +209,41 @@ export default function Create({ sources, products, couriers, defaults, toggles 
                     </div>
                 </div>
             </form>
+
+            {layoutOpen && (
+                <div className="overlay" onClick={() => setLayoutOpen(false)}>
+                    <div className="modal" style={{ maxWidth: 560 }} onClick={(e) => e.stopPropagation()}>
+                        <h3>{t('Order Form Options')}</h3>
+                        <div className="sm mut mt8">{t('Layouts apply on wider screens. On a phone every layout stacks into one column.')}</div>
+                        <h3 className="mt16" style={{ fontSize: 14 }}>{t('Layouts')}</h3>
+                        {LAYOUTS.map(([key, name, desc]) => (
+                            <label key={key} className="conn-row" style={{ cursor: 'pointer' }}>
+                                <input type="radio" name="layout" checked={opts.layout === key} onChange={() => setOpts({ ...opts, layout: key })} />
+                                <div style={{ flex: 1 }}><div className="b sm">{name} {opts.layout === key && <span className="pill green">{t('ACTIVE')}</span>}</div><div className="sm mut">{t(desc)}</div></div>
+                            </label>
+                        ))}
+                        <h3 className="mt16" style={{ fontSize: 14 }}>{t('Fields Template')}</h3>
+                        {TEMPLATES.map(([key, name]) => (
+                            <label key={key} className="conn-row" style={{ cursor: 'pointer' }}>
+                                <input type="radio" name="tpl" checked={tpl === key} onChange={() => setOpts({ ...opts, template: key })} />
+                                <div style={{ flex: 1 }}><span className="b sm">{t(name)}</span> {tpl === key && <span className="pill green">{t('ACTIVE')}</span>}</div>
+                            </label>
+                        ))}
+                        <h3 className="mt16" style={{ fontSize: 14 }}>{t('Courier Cards Order')}</h3>
+                        <div className="sm mut">{t('The order of the courier cards on the order detail page.')}</div>
+                        {opts.courier_order.map((c, ix) => (
+                            <div key={c} className="conn-row">
+                                <div style={{ flex: 1 }} className="b sm">{c}</div>
+                                <button type="button" className="mini-link" onClick={() => moveCourier(ix, -1)}>↑</button>
+                                <button type="button" className="mini-link" onClick={() => moveCourier(ix, 1)}>↓</button>
+                            </div>
+                        ))}
+                        <div className="flex mt16" style={{ justifyContent: 'flex-end' }}>
+                            <button type="button" className="btn pri" onClick={() => setLayoutOpen(false)}>{t('Close')}</button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </AppLayout>
     );
 }

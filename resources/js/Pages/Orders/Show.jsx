@@ -4,13 +4,29 @@ import { Head, Link, router, useForm } from '@inertiajs/react';
 import { useState } from 'react';
 import { StatusPill, SuccessRing, fmt } from './ui';
 
-export default function Show({ order, customer, couriers, processingStatuses, cancelReasons, pendingCount }) {
+export default function Show({ order, customer, couriers, sources, products, processingStatuses, cancelReasons, pendingCount }) {
     const [approveOpen, setApproveOpen] = useState(false);
     const [deleteOpen, setDeleteOpen] = useState(false);
+    const [addPid, setAddPid] = useState('');
+    const [addQty, setAddQty] = useState(1);
+    const [addingMethod, setAddingMethod] = useState(false);
+    const [newMethod, setNewMethod] = useState('');
+    let formOpts = {};
+    try { formOpts = JSON.parse(localStorage.getItem('skaleup_order_form_options') || '{}'); } catch (e) { formOpts = {}; }
+    const courierOrder = formOpts.courier_order || ['Overall', 'Pathao', 'Steadfast', 'RedX', 'CarryBee'];
+    const perCourierSorted = Object.entries(customer.per_courier || {}).sort((a, b) => {
+        const ia = courierOrder.findIndex((c) => c.toLowerCase() === a[0].toLowerCase());
+        const ib = courierOrder.findIndex((c) => c.toLowerCase() === b[0].toLowerCase());
+        return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
+    });
+    const canAddItem = ['Pending', 'Processing'].includes(order.status);
+    const addItem = () => { if (addPid) router.post(`/orders/${order.id}/items`, { product_id: addPid, qty: addQty }, { preserveScroll: true, onSuccess: () => { setAddPid(''); setAddQty(1); } }); };
+    const saveMethod = () => { if (newMethod.trim()) router.post('/settings/courier-methods', { name: newMethod.trim() }, { preserveScroll: true, preserveState: true, onSuccess: () => { form.setData('delivery_method', newMethod.trim()); setAddingMethod(false); setNewMethod(''); } }); };
     const risky = order.fraud.verdict === 'risky';
     const canApprove = ['Pending', 'Incomplete'].includes(order.status);
 
     const form = useForm({
+        source: order.source || '',
         processing_status: order.processing_status || 'Processing',
         cancellation_reason: cancelReasons[0],
         delivery_method: order.delivery_method || '',
@@ -70,7 +86,7 @@ export default function Show({ order, customer, couriers, processingStatuses, ca
                         <h3>{t('Success Rate')}</h3>
                         <SuccessRing fraud={order.fraud} size={56} />
                         <div className="mt16">
-                            {Object.entries(customer.per_courier || {}).map(([c, v]) => (
+                            {perCourierSorted.map(([c, v]) => (
                                 <div className="kv" key={c}><span>{c}</span><b>{v === null ? t('Not checked') : `${v}%`}</b></div>
                             ))}
                         </div>
@@ -110,6 +126,16 @@ export default function Show({ order, customer, couriers, processingStatuses, ca
                                 ))}
                             </tbody>
                         </table>
+                        {canAddItem && (
+                            <div className="flex mt16" style={{ flexWrap: 'wrap' }}>
+                                <select className="inp" style={{ flex: 2 }} value={addPid} onChange={(e) => setAddPid(e.target.value)}>
+                                    <option value="">{t('Add Product')}…</option>
+                                    {(products || []).map((p) => <option key={p.id} value={p.id}>{p.name} ({p.sku}) · {fmt(p.price)} · {t('Stock')}: {p.stock}</option>)}
+                                </select>
+                                <input className="inp" style={{ width: 70 }} type="number" min="1" value={addQty} onChange={(e) => setAddQty(Math.max(1, Number(e.target.value) || 1))} />
+                                <button type="button" className="btn" disabled={!addPid} onClick={addItem}>{t('Add Product')}</button>
+                            </div>
+                        )}
                         <div className="totals">
                             <div className="kv"><span>{t('Subtotal')}</span><b>{fmt(order.subtotal)}</b></div>
                             <div className="kv"><span>{t('Delivery Charge')}</span><b>{fmt(order.delivery_charge)}</b></div>
@@ -138,9 +164,24 @@ export default function Show({ order, customer, couriers, processingStatuses, ca
                         )}
                         <div className="frow">
                             <label className="fl">{t('Delivery Method')}</label>
-                            <select className="inp" value={form.data.delivery_method} onChange={(e) => form.setData('delivery_method', e.target.value)}>
-                                <option value="">—</option>
-                                {couriers.map((c) => <option key={c} value={c}>{c}</option>)}
+                            <div className="flex">
+                                <select className="inp" style={{ flex: 1 }} value={form.data.delivery_method} onChange={(e) => form.setData('delivery_method', e.target.value)}>
+                                    <option value="">—</option>
+                                    {couriers.map((c) => <option key={c} value={c}>{c}</option>)}
+                                </select>
+                                <button type="button" className="btn" onClick={() => setAddingMethod(!addingMethod)}>{t('Add Delivery Method')}</button>
+                            </div>
+                            {addingMethod && (
+                                <div className="flex mt8">
+                                    <input className="inp" style={{ flex: 1 }} value={newMethod} onChange={(e) => setNewMethod(e.target.value)} placeholder={t('New delivery method name')} />
+                                    <button type="button" className="btn pri" disabled={!newMethod.trim()} onClick={saveMethod}>{t('Save')}</button>
+                                </div>
+                            )}
+                        </div>
+                        <div className="frow">
+                            <label className="fl">{t('Source')}</label>
+                            <select className="inp" value={form.data.source} onChange={(e) => form.setData('source', e.target.value)}>
+                                {(sources || []).map((s) => <option key={s.code} value={s.code}>{s.label}</option>)}
                             </select>
                         </div>
                         <div className="frow">

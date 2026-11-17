@@ -39,11 +39,13 @@ Route::middleware(['auth', 'verified', 'totp'])->group(function () {
     Route::post('/settings/sources/reset', [SettingsController::class, 'resetSources'])->name('settings.sources.reset');
     Route::post('/settings/templates', [SettingsController::class, 'updateTemplates'])->name('settings.templates');
     Route::post('/settings/order-toggles', [SettingsController::class, 'updateOrderToggles'])->name('settings.orderToggles');
+    Route::post('/settings/courier-methods', [SettingsController::class, 'addCourierMethod'])->name('settings.courierMethods');
 
     // M2 Orders
     Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
     Route::get('/orders/create', [OrderController::class, 'create'])->name('orders.create');
     Route::post('/orders', [OrderController::class, 'store'])->name('orders.store');
+    Route::get('/orders/export', [OrderController::class, 'export'])->name('orders.export');
     Route::get('/orders/next', [OrderController::class, 'next'])->name('orders.next');
     Route::get('/orders/autopick', [OrderToolsController::class, 'autopick'])->name('orders.autopick');
     Route::get('/orders/autopick/{status}/next', [OrderToolsController::class, 'autopickNext'])->name('orders.autopick.next');
@@ -57,10 +59,12 @@ Route::middleware(['auth', 'verified', 'totp'])->group(function () {
     Route::get('/orders/preorders', [OrderToolsController::class, 'preorders'])->name('orders.preorders');
     Route::post('/orders/preorders/{order}/notify', [OrderToolsController::class, 'preorderNotify'])->name('orders.preorders.notify');
     Route::get('/orders/dashboard', [OrderToolsController::class, 'dashboard'])->name('orders.dashboard');
+    Route::get('/orders/dashboard/export', [OrderToolsController::class, 'dashboardExport'])->name('orders.dashboard.export');
     Route::get('/orders/super-edit', [OrderToolsController::class, 'superEdit'])->name('orders.superedit');
     Route::post('/orders/super-edit/{order}', [OrderToolsController::class, 'superEditSave'])->name('orders.superedit.save');
     Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
     Route::patch('/orders/{order}', [OrderController::class, 'update'])->name('orders.update');
+    Route::post('/orders/{order}/items', [OrderController::class, 'addItem'])->name('orders.items.add');
     Route::post('/orders/{order}/approve', [OrderController::class, 'approve'])->name('orders.approve');
     Route::post('/orders/{order}/sms', [OrderController::class, 'sendSms'])->name('orders.sms');
     Route::post('/orders/{order}/block', [OrderController::class, 'block'])->name('orders.block');

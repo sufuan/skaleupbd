@@ -4,8 +4,9 @@ import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
 import { fmt } from './ui';
 
-export default function Dashboard({ filters, hasFilter, result, sources, statuses }) {
-    const [f, setF] = useState({ source: '', status: '', from: '', to: '', search: '', district: '', taken_by: '', ...filters });
+export default function Dashboard({ filters, hasFilter, result, sources, statuses, couriers, processingStatuses }) {
+    const [f, setF] = useState({ source: '', status: '', from: '', to: '', search: '', district: '', taken_by: '', product: '', courier: '', payment_status: '', processing_status: '', tag: '', ...filters });
+    const exportHref = '/orders/dashboard/export?' + new URLSearchParams(Object.fromEntries(Object.entries(f).filter(([, v]) => v !== '' && v !== null && v !== undefined))).toString();
     const apply = () => router.get('/orders/dashboard', f, { preserveState: true });
     const field = (label, el) => <div className="frow"><label className="fl">{t(label)}</label>{el}</div>;
 
@@ -24,10 +25,16 @@ export default function Dashboard({ filters, hasFilter, result, sources, statuse
                     {field('Invoice Search', <input className="inp" value={f.search || ''} onChange={(e) => setF({ ...f, search: e.target.value })} placeholder="OB…" />)}
                     {field('District', <input className="inp" value={f.district || ''} onChange={(e) => setF({ ...f, district: e.target.value })} />)}
                     {field('Taken By', <input className="inp" value={f.taken_by || ''} onChange={(e) => setF({ ...f, taken_by: e.target.value })} />)}
+                    {field('Product / SKU Search', <input className="inp" value={f.product || ''} onChange={(e) => setF({ ...f, product: e.target.value })} />)}
+                    {field('Courier', <select className="inp" value={f.courier || ''} onChange={(e) => setF({ ...f, courier: e.target.value })}><option value="">—</option>{(couriers || []).map((c) => <option key={c} value={c}>{c}</option>)}</select>)}
+                    {field('Courier Payment Status', <select className="inp" value={f.payment_status || ''} onChange={(e) => setF({ ...f, payment_status: e.target.value })}><option value="">—</option><option value="full">{t('Paid in Full')}</option><option value="partial">{t('Partial Advance')}</option><option value="none">{t('No Advance')}</option></select>)}
+                    {field('Processing Status', <select className="inp" value={f.processing_status || ''} onChange={(e) => setF({ ...f, processing_status: e.target.value })}><option value="">—</option>{(processingStatuses || []).map((s) => <option key={s} value={s}>{t(s)}</option>)}</select>)}
+                    {field('Order Tag', <input className="inp" value={f.tag || ''} onChange={(e) => setF({ ...f, tag: e.target.value })} />)}
                 </div>
                 <div className="flex">
                     <button className="btn pri" onClick={apply}>{t('Show Results')}</button>
                     <button className="btn" onClick={() => router.get('/orders/dashboard')}>{t('Reset')}</button>
+                    <a className="btn" href={exportHref}>{t('Export CSV')}</a>
                     <span className="spacer" />
                     <Link href="/orders" className="btn">{t('Open New All Orders List')}</Link>
                 </div>

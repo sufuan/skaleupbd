@@ -176,11 +176,19 @@ class OrderToolsController extends Controller
     {
         $biz = $this->biz($request);
         $tab = $request->query('tab', 'all');
+        $reason = (string) $request->query('reason', '');
+        $code = trim((string) $request->query('code', ''));
         $q = Order::where('business_id', $biz)->where('is_preorder', true)->with('items')->latest();
         if ($tab === 'notified') {
             $q->where('preorder_notified', true);
         } elseif ($tab === 'pending') {
             $q->where('preorder_notified', false);
+        }
+        if ($reason !== '') {
+            $q->where('preorder_reason', $reason);
+        }
+        if ($code !== '') {
+            $q->whereHas('items', fn ($x) => $x->where('sku', 'like', "%{$code}%")->orWhere('name', 'like', "%{$code}%"));
         }
         $counts = [
             'all' => Order::where('business_id', $biz)->where('is_preorder', true)->count(),
@@ -194,6 +202,9 @@ class OrderToolsController extends Controller
                 'reason' => $o->preorder_reason, 'notify_date' => $o->notify_date?->format('d M Y'),
                 'notified' => (bool) $o->preorder_notified, 'status' => $o->status, 'total' => (float) $o->grand_total]),
             'counts' => $counts, 'tab' => $tab,
+            'reasons' => Order::where('business_id', $biz)->where('is_preorder', true)
+                ->whereNotNull('preorder_reason')->distinct()->pluck('preorder_reason')->filter()->values(),
+            'filters' => ['reason' => $reason, 'code' => $code],
         ]);
     }
 
@@ -211,18 +222,13 @@ class OrderToolsController extends Controller
     public function dashboard(Request $request): Response
     {
         $biz = $this->biz($request);
-        $f = $request->only(['source', 'status', 'from', 'to', 'search', 'district', 'taken_by']);
+        $f = $request->only(['source', 'status', 'from', 'to', 'search', 'district', 'taken_by',
+            'product', 'courier', 'payment_status', 'processing_status', 'tag']);
         $hasFilter = collect($f)->filter(fn ($v) => $v !== null && $v !== '')->isNotEmpty();
         $result = null;
         if ($hasFilter) {
             $q = Order::where('business_id', $biz);
-            if (! empty($f['source'])) $q->where('source', $f['source']);
-            if (! empty($f['status'])) $q->where('status', $f['status']);
-            if (! empty($f['from'])) $q->whereDate('created_at', '>=', $f['from']);
-            if (! empty($f['to'])) $q->whereDate('created_at', '<=', $f['to']);
-            if (! empty($f['search'])) $q->where('invoice_no', 'like', '%'.$f['search'].'%');
-            if (! empty($f['district'])) $q->where('district', $f['district']);
-            if (! empty($f['taken_by'])) $q->where('taken_by', $f['taken_by']);
+            $this->applyDashboardFilters($q, $f);
             $orders = $q->get();
             $result = [
                 'total' => $orders->count(),
@@ -235,7 +241,49 @@ class OrderToolsController extends Controller
             'filters' => $f, 'hasFilter' => $hasFilter, 'result' => $result,
             'sources' => \App\Models\OrderSource::where('business_id', $biz)->orderBy('sort')->get(['code', 'label']),
             'statuses' => array_merge(Order::STATUSES, Order::EXTRA_STATUSES),
+            'couriers' => $this->settings->get('couriers.methods', []),
+            'processingStatuses' => Order::PROCESSING_STATUSES,
         ]);
+    }
+
+    private function applyDashboardFilters($q, array $f): void
+    {
+        if (! empty($f['source'])) $q->where('source', $f['source']);
+        if (! empty($f['status'])) $q->where('status', $f['status']);
+        if (! empty($f['from'])) $q->whereDate('created_at', '>=', $f['from']);
+        if (! empty($f['to'])) $q->whereDate('created_at', '<=', $f['to']);
+        if (! empty($f['search'])) $q->where('invoice_no', 'like', '%'.$f['search'].'%');
+        if (! empty($f['district'])) $q->where('district', $f['district']);
+        if (! empty($f['taken_by'])) $q->where('taken_by', $f['taken_by']);
+        if (! empty($f['product'])) $q->whereHas('items', fn ($x) => $x->where('name', 'like', '%'.$f['product'].'%')->orWhere('sku', 'like', '%'.$f['product'].'%'));
+        if (! empty($f['courier'])) $q->where('delivery_method', 'like', $f['courier'].'%');
+        if (! empty($f['processing_status'])) $q->where('processing_status', $f['processing_status']);
+        if (! empty($f['tag'])) $q->where('tags', 'like', '%"'.$f['tag'].'"%');
+        if (($f['payment_status'] ?? '') === 'full') $q->whereRaw('advance >= grand_total')->where('grand_total', '>', 0);
+        if (($f['payment_status'] ?? '') === 'partial') $q->whereRaw('advance > 0')->whereRaw('advance < grand_total');
+        if (($f['payment_status'] ?? '') === 'none') $q->whereRaw('advance <= 0');
+    }
+
+    public function dashboardExport(Request $request)
+    {
+        $biz = $this->biz($request);
+        $f = $request->only(['source', 'status', 'from', 'to', 'search', 'district', 'taken_by',
+            'product', 'courier', 'payment_status', 'processing_status', 'tag']);
+        $q = Order::where('business_id', $biz)->with(['items', 'processor'])->latest();
+        $this->applyDashboardFilters($q, $f);
+        $orders = $q->limit(5000)->get();
+
+        return response()->streamDownload(function () use ($orders) {
+            $out = fopen('php://output', 'w');
+            fputcsv($out, ['Invoice', 'Date', 'Customer', 'Phone', 'District', 'Source', 'Status', 'Delivery Method', 'Items', 'Advance', 'Due', 'Grand Total', 'Taken By', 'Processed By']);
+            foreach ($orders as $o) {
+                fputcsv($out, [$o->invoice_no, $o->created_at?->format('d M Y h:i A'), $o->customer_name, $o->customer_phone,
+                    $o->district, $o->source, $o->status, $o->delivery_method,
+                    $o->items->map(fn ($i) => $i->name.($i->qty > 1 ? " x{$i->qty}" : ''))->implode(', '),
+                    $o->advance, $o->due, $o->grand_total, $o->taken_by, $o->processor?->name]);
+            }
+            fclose($out);
+        }, 'orders-report.csv', ['Content-Type' => 'text/csv']);
     }
 
     // ---------- Super Edit ----------
