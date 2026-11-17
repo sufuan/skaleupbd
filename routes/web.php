@@ -63,6 +63,41 @@ Route::middleware(['auth', 'verified', 'totp'])->group(function () {
     Route::get('/orders/super-edit', [OrderToolsController::class, 'superEdit'])->name('orders.superedit');
     Route::post('/orders/super-edit/{order}', [OrderToolsController::class, 'superEditSave'])->name('orders.superedit.save');
     Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
+    Route::get('/orders/{order}/packing-slip', [\App\Http\Controllers\DeliveryController::class, 'packingSlip'])->name('orders.packingSlip');
+
+    // M3 Delivery
+    Route::get('/delivery/ready', [\App\Http\Controllers\DeliveryController::class, 'ready'])->name('delivery.ready');
+    Route::post('/delivery/send', [\App\Http\Controllers\DeliveryController::class, 'send'])->name('delivery.send');
+    Route::post('/delivery/send-bulk', [\App\Http\Controllers\DeliveryController::class, 'sendBulk'])->name('delivery.sendBulk');
+    Route::post('/delivery/{order}/retry', [\App\Http\Controllers\DeliveryController::class, 'retry'])->name('delivery.retry');
+    Route::post('/delivery/{order}/change-courier', [\App\Http\Controllers\DeliveryController::class, 'changeCourier'])->name('delivery.changeCourier');
+    Route::post('/delivery/{order}/cancel-booking', [\App\Http\Controllers\DeliveryController::class, 'cancelBooking'])->name('delivery.cancelBooking');
+    Route::post('/delivery/{order}/force-check', [\App\Http\Controllers\DeliveryController::class, 'forceCheck'])->name('delivery.forceCheck');
+    Route::patch('/delivery/parcels/{order}', [\App\Http\Controllers\DeliveryController::class, 'updateParcel'])->name('delivery.parcel.update');
+    Route::get('/delivery/parcels', [\App\Http\Controllers\DeliveryController::class, 'parcels'])->name('delivery.parcels');
+    Route::get('/delivery/entries/export', [\App\Http\Controllers\DeliveryController::class, 'entriesExport'])->name('delivery.entries.export');
+    Route::get('/delivery/scan', [\App\Http\Controllers\DeliveryController::class, 'scanPage'])->name('delivery.scan');
+    Route::post('/delivery/scan', [\App\Http\Controllers\DeliveryController::class, 'scan'])->name('delivery.scan.apply');
+    Route::get('/delivery/ledger', [\App\Http\Controllers\CourierLedgerController::class, 'ledger'])->name('delivery.ledger');
+    Route::get('/delivery/invoice', [\App\Http\Controllers\CourierLedgerController::class, 'workbench'])->name('delivery.invoice');
+    Route::post('/delivery/invoice/preview', [\App\Http\Controllers\CourierLedgerController::class, 'uploadPreview'])->name('delivery.invoice.preview');
+    Route::post('/delivery/invoice/confirm', [\App\Http\Controllers\CourierLedgerController::class, 'uploadConfirm'])->name('delivery.invoice.confirm');
+    Route::post('/delivery/payments/propose', [\App\Http\Controllers\CourierLedgerController::class, 'proposePayment'])->name('delivery.payments.propose');
+    Route::post('/delivery/payments', [\App\Http\Controllers\CourierLedgerController::class, 'storePayment'])->name('delivery.payments.store');
+    Route::post('/delivery/pull', [\App\Http\Controllers\CourierLedgerController::class, 'pull'])->name('delivery.pull');
+    Route::post('/delivery/allocations/{allocation}/dispute', [\App\Http\Controllers\CourierLedgerController::class, 'markDisputed'])->name('delivery.allocations.dispute');
+
+    // Settings → Courier (M3 wiring)
+    Route::post('/settings/couriers', [\App\Http\Controllers\CourierSettingsController::class, 'store'])->name('settings.couriers.store');
+    Route::patch('/settings/couriers/{courier}', [\App\Http\Controllers\CourierSettingsController::class, 'update'])->name('settings.couriers.update');
+    Route::post('/settings/couriers/{courier}/toggle', [\App\Http\Controllers\CourierSettingsController::class, 'toggle'])->name('settings.couriers.toggle');
+    Route::post('/settings/couriers/{courier}/default', [\App\Http\Controllers\CourierSettingsController::class, 'setDefault'])->name('settings.couriers.default');
+    Route::post('/settings/couriers/{courier}/preferred', [\App\Http\Controllers\CourierSettingsController::class, 'setPreferred'])->name('settings.couriers.preferred');
+    Route::post('/settings/couriers/{courier}/test', [\App\Http\Controllers\CourierSettingsController::class, 'testConnection'])->name('settings.couriers.test');
+    Route::post('/settings/couriers/{courier}/sync-stores', [\App\Http\Controllers\CourierSettingsController::class, 'syncStores'])->name('settings.couriers.syncStores');
+    Route::delete('/settings/couriers/{courier}', [\App\Http\Controllers\CourierSettingsController::class, 'destroy'])->name('settings.couriers.destroy');
+    Route::post('/settings/courier-rules', [\App\Http\Controllers\CourierSettingsController::class, 'storeRule'])->name('settings.courierRules.store');
+    Route::delete('/settings/courier-rules/{rule}', [\App\Http\Controllers\CourierSettingsController::class, 'destroyRule'])->name('settings.courierRules.destroy');
     Route::patch('/orders/{order}', [OrderController::class, 'update'])->name('orders.update');
     Route::post('/orders/{order}/items', [OrderController::class, 'addItem'])->name('orders.items.add');
     Route::post('/orders/{order}/approve', [OrderController::class, 'approve'])->name('orders.approve');

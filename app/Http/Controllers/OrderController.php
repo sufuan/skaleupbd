@@ -283,9 +283,11 @@ class OrderController extends Controller
     public function show(Request $request, Order $order): Response
     {
         $this->own($request, $order);
-        $order->load(['items', 'processor', 'history', 'activities']);
+        $order->load(['items', 'processor', 'history', 'activities', 'courierMethod', 'pickupStore']);
         $biz = $this->businessId($request);
         $rate = $this->fraud->forPhone($biz, $order->customer_phone);
+
+        $suggestion = app(\App\Services\SuggestCourierService::class)->suggest($order);
 
         $perCourier = [];
         foreach (['Steadfast', 'Pathao', 'RedX', 'Carrybee'] as $c) {
@@ -318,6 +320,14 @@ class OrderController extends Controller
                 'ip' => $order->ip,
                 'attachments' => $order->attachments ?? [],
                 'approved_at' => $order->approved_at?->format('d M Y, h:i A'),
+                'courier_method_id' => $order->courier_method_id,
+                'courier_label' => $order->courierMethod?->label(),
+                'courier_status' => $order->courier_status,
+                'tracking_id' => $order->tracking_id,
+                'consignment_id' => $order->consignment_id,
+                'booking_status' => $order->booking_status,
+                'pickup_store_name' => $order->pickupStore?->name,
+                'shipped_at' => $order->shipped_at?->format('d M Y, h:i A'),
                 'history' => $order->history->map(fn ($h) => [
                     'text' => $h->note === 'Approved'
                         ? "Approved by {$h->actor_name} — {$h->from_status} → {$h->to_status}"
@@ -334,9 +344,20 @@ class OrderController extends Controller
                 'orders' => $rate['orders'], 'delivered' => $rate['delivered'], 'returned' => $rate['returned'],
                 'rate' => $rate['rate'], 'verdict' => $rate['verdict'], 'note' => $rate['note'],
                 'per_courier' => $perCourier,
+                'network' => $rate['network'] ?? [],
+                'headline' => $rate['headline'] ?? 'history',
                 'is_returning' => $rate['orders'] > 1,
             ],
             'couriers' => $this->settings->get('couriers.methods', []),
+            'courierMethods' => \App\Models\CourierMethod::where('business_id', $biz)->where('is_active', true)->with('pickupStores')->orderBy('name')->get()->map(function ($m) use ($order, $suggestion) {
+                return ['id' => $m->id, 'name' => $m->name, 'label' => $m->label(), 'type' => $m->courier_type,
+                    'class' => $m->courierClass(), 'booking_mode' => $m->bookingMode(),
+                    'charge' => $m->chargeFor($order->district),
+                    'is_default' => $m->is_default, 'is_preferred' => $m->is_preferred,
+                    'suggested' => $suggestion && $suggestion['method']->id === $m->id,
+                    'suggested_reason' => $suggestion && $suggestion['method']->id === $m->id ? $suggestion['reason'] : null,
+                    'stores' => $m->pickupStores->map(fn ($st) => ['id' => $st->id, 'store_id' => $st->store_id, 'name' => $st->name, 'is_default' => $st->is_default])->all()];
+            })->all(),
             'sources' => OrderSource::where('business_id', $biz)->where('is_visible', true)->orderBy('sort')->get(['code', 'label']),
             'products' => Product::where('business_id', $biz)->where('is_active', true)->orderBy('name')
                 ->get()->map(fn ($p) => ['id' => $p->id, 'name' => $p->name, 'sku' => $p->sku,

@@ -26,6 +26,13 @@ class SettingsController extends Controller
 
         return Inertia::render('Settings/Index', [
             'group' => $request->query('group', 'home'),
+            'couriers' => [
+                'methods' => \App\Models\CourierMethod::where('business_id', $biz)->with('pickupStores')->orderBy('name')->get()
+                    ->map(fn ($m) => \App\Http\Controllers\CourierSettingsController::methodView($m))->all(),
+                'rules' => \App\Models\CourierAssignmentRule::where('business_id', $biz)->with('method')->orderBy('priority')->get()
+                    ->map(fn ($r) => ['id' => $r->id, 'scope' => $r->scope, 'product_id' => $r->product_id, 'category' => $r->category, 'district' => $r->district, 'area' => $r->area, 'method_id' => $r->courier_method_id, 'method_label' => $r->method?->label(), 'priority' => $r->priority])->all(),
+                'products' => \App\Models\Product::where('business_id', $biz)->orderBy('name')->get(['id', 'name', 'sku'])->all(),
+            ],
             'totpEnabled' => $this->totp->enabled(),
             'totpEnrolled' => (bool) $request->user()?->hasTotpEnabled(),
             'm2' => [

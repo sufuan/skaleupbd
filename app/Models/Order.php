@@ -16,6 +16,9 @@ class Order extends Model
         'is_preorder' => 'boolean',
         'preorder_notified' => 'boolean',
         'approved_at' => 'datetime',
+        'shipped_at' => 'datetime',
+        'delivered_at' => 'datetime',
+        'returned_at' => 'datetime',
         'notify_date' => 'date',
         'subtotal' => 'decimal:2',
         'discount' => 'decimal:2',
@@ -54,6 +57,11 @@ class Order extends Model
         return $this->belongsTo(User::class, 'processed_by');
     }
 
+    public function getInvoiceAttribute(): ?string
+    {
+        return $this->invoice_no;
+    }
+
     public function getDueAttribute(): float
     {
         return max(0, (float) $this->grand_total - (float) $this->advance);
@@ -78,5 +86,25 @@ class Order extends Model
             'actor_name' => $actor?->name,
             'meta' => $meta,
         ]);
+    }
+    public function courierMethod(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(CourierMethod::class);
+    }
+
+    public function pickupStore(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(CourierPickupStore::class);
+    }
+
+    public function bookingLogs(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(CourierBookingLog::class);
+    }
+
+    /** COD the courier must collect for this order. */
+    public function codAmount(): float
+    {
+        return max(0, (float) $this->grand_total - (float) $this->advance);
     }
 }

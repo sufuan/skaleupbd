@@ -65,8 +65,12 @@ class HandleInertiaRequests extends Middleware
             'translations' => $translations,
             'translations_version' => file_exists($langPath) ? md5_file($langPath) : null,
             'notifications' => $notifications,
+            'delivery_waiting' => ($request->user() && $request->user()->business_id && Schema::hasTable('orders'))
+                ? \App\Models\Order::where('business_id', $request->user()->business_id)->where('status', 'Processing')->count()
+                : 0,
             'flash' => [
                 'success' => $request->session()->get('success'),
+                'error' => $request->session()->get('error'),
             ],
         ];
     }

@@ -1,3 +1,4 @@
+import CourierSettings from './CourierSettings';
 import AppLayout from '@/Layouts/AppLayout';
 import { t } from '@/lib/i18n';
 import { Head, Link, router, useForm } from '@inertiajs/react';
@@ -93,7 +94,7 @@ function BusinessProfileForm({ m2 }) {
     );
 }
 
-function Api({ tab }) {
+function Api({ tab, couriers }) {
     if (tab === 'channels') return (
         <div className="card"><h3>{t('Messaging Channels')}</h3><div className="card-sub">{t('One account per channel per shop (v1 rule)')}</div>
             <ConnRow name="Facebook Page" desc="Demo Shop BD — Page ID 1473954169130280" status="Connected" pillCls="green" />
@@ -111,19 +112,7 @@ function Api({ tab }) {
             <Field label="Website URL" value="https://demoshop.com.bd" /><Field label="Platform" value="WooCommerce" />
             <ConnRow name="WooCommerce" desc="Plugin connected — order sync is on" status="Connected" pillCls="green" /><SaveBar /></div>
     );
-    return (
-        <div className="card"><h3>{t('Courier Integration')}</h3><div className="card-sub">{t('Your own account with each courier — delivery charges live here, per courier')}</div>
-            <ConnRow name="Pathao" desc="Merchant account connected — Inside Dhaka ৳60 · Outside ৳120" status="Connected" pillCls="green" />
-            <ConnRow name="Steadfast" desc="API key connected — Inside Dhaka ৳60 · Outside ৳110" status="Connected" pillCls="green" />
-            <ConnRow name="RedX" desc="Not connected yet" status="Not Connected" pillCls="" />
-            <ConnRow name="eCourier" desc="Not connected yet" status="Not Connected" pillCls="" />
-            <ConnRow name="Paperfly" desc="Not connected yet" status="Not Connected" pillCls="" />
-            <ConnRow name="Carrybee" desc="Not connected yet" status="Not Connected" pillCls="" />
-            <ConnRow name="Sundarban" desc="Manual courier — no credentials needed, write the CN number by hand" status="Manual" pillCls="blue" />
-            <div className="frow mt16"><label className="fl">{t('Default Courier')}</label>
-                <select className="inp" defaultValue="steadfast"><option value="steadfast">Steadfast</option><option value="pathao">Pathao</option></select></div>
-            <SaveBar /></div>
-    );
+    return <CourierSettings couriers={couriers} />;
 }
 
 function Calls({ tab, m2 }) {
@@ -294,7 +283,7 @@ function OrderTogglesForm({ m2 }) {
     );
 }
 
-export default function SettingsIndex({ group: initial = 'home', totpEnabled = false, totpEnrolled = false, m2 }) {
+export default function SettingsIndex({ group: initial = 'home', totpEnabled = false, totpEnrolled = false, m2, couriers }) {
     const [group, setGroup] = useState(initial);
     const g = GROUPS.find((x) => x.id === group) || GROUPS[0];
     const [tab, setTab] = useState(g.tabs[0]?.[0]);
@@ -319,7 +308,7 @@ export default function SettingsIndex({ group: initial = 'home', totpEnabled = f
                     )}
                     {group === 'home' && <Home />}
                     {group === 'business' && <Business tab={tab} m2={m2} />}
-                    {group === 'api' && <Api tab={tab} />}
+                    {group === 'api' && <Api tab={tab} couriers={couriers} />}
                     {group === 'calls' && <Calls tab={tab} m2={m2} />}
                     {group === 'ai' && <Ai tab={tab} />}
                     {group === 'security' && <Security tab={tab} totpEnabled={totpEnabled} totpEnrolled={totpEnrolled} m2={m2} />}

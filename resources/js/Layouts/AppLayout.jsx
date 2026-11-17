@@ -44,7 +44,7 @@ const NAV = [
     ]},
     { sec: 'Operations', items: [
         { label: 'Orders', icon: 'box', children: [{ label: 'New Order', href: '/orders/create' }, { label: 'Order List', href: '/orders' }, { label: 'Auto Pick Orders', href: '/orders/autopick' }, { label: 'Auto Call Center', href: '/orders/autocall' }, { label: 'Order Block List', href: '/orders/block-list' }, { label: 'Preorders', href: '/orders/preorders' }, { label: 'Orders Dashboard', href: '/orders/dashboard' }], href: '/orders' },
-        { label: 'Delivery', icon: 'truck', badge: '2', children: ['Ready to Ship', 'Courier Management', 'Scan To Update', 'Courier Invoice Upload', 'Courier Ledger'], href: mod('delivery') },
+        { label: 'Delivery', icon: 'truck', badgeKey: 'delivery_waiting', children: [{ label: 'Ready to Ship', href: '/delivery/ready' }, { label: 'Courier Management', href: '/delivery/parcels' }, { label: 'Scan To Update', href: '/delivery/scan' }, { label: 'Courier Invoice Upload', href: '/delivery/invoice' }, { label: 'Courier Ledger', href: '/delivery/ledger' }], href: '/delivery/ready' },
         { label: 'Inventory', icon: 'layers', children: ['Inventory Dashboard', 'Products', 'Stock Ledger', 'Branches', 'Warranty'], href: mod('inventory') },
         { label: 'Messages', icon: 'chat', children: ['Inbox', 'Comments', 'AI Activity'], href: mod('messages') },
         { label: 'Purchase', icon: 'cart', children: ['Purchase Dashboard', 'Purchase List', 'New Purchase', 'Receive Purchase', 'Supplier Ledger', 'Suppliers', 'Ask for Quotation'], href: mod('purchase') },
@@ -94,6 +94,7 @@ const ASK_TOPICS = [
 const KIND_ICON = { order: 'box', delivery: 'truck', stock: 'layers', task: 'check', info: 'bell' };
 
 function NavGroup({ item, current }) {
+    const pageProps = usePage().props;
     const active = current.startsWith(item.href);
     const [open, setOpen] = useState(active);
     if (!item.children) {
@@ -104,6 +105,7 @@ function NavGroup({ item, current }) {
             <div className={`nav-item ${open ? 'open' : ''} ${active ? 'act' : ''}`} onClick={() => setOpen(!open)}>
                 <I d={P[item.icon]} />{t(item.label)}
                 {item.badge && <span className="badge">{item.badge}</span>}
+                {item.badgeKey && Number(pageProps[item.badgeKey] ?? 0) > 0 && <span className="badge">{pageProps[item.badgeKey]}</span>}
                 <span className="chev">›</span>
             </div>
             {open && (

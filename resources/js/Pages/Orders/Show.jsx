@@ -3,9 +3,12 @@ import { t } from '@/lib/i18n';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { useState } from 'react';
 import { StatusPill, SuccessRing, fmt } from './ui';
+import SendCourierModal from '@/Components/SendCourierModal';
 
-export default function Show({ order, customer, couriers, sources, products, processingStatuses, cancelReasons, pendingCount }) {
+export default function Show({ order, customer, couriers, courierMethods = [], sources, products, processingStatuses, cancelReasons, pendingCount }) {
     const [approveOpen, setApproveOpen] = useState(false);
+    const [sendOpen, setSendOpen] = useState(false);
+    const [changeMethodId, setChangeMethodId] = useState('');
     const [deleteOpen, setDeleteOpen] = useState(false);
     const [addPid, setAddPid] = useState('');
     const [addQty, setAddQty] = useState(1);
@@ -90,6 +93,15 @@ export default function Show({ order, customer, couriers, sources, products, pro
                                 <div className="kv" key={c}><span>{c}</span><b>{v === null ? t('Not checked') : `${v}%`}</b></div>
                             ))}
                         </div>
+                        {customer.network?.length > 0 && (
+                            <div className="mt16">
+                                <div className="sm b" style={{ marginBottom: 6 }}>{t('Courier network check')}</div>
+                                {customer.network.map((n, i) => (
+                                    <div className="kv" key={i}><span>{n.courier}</span><b>{n.rate !== null && n.rate !== undefined ? `${Math.round(n.rate)}%` : (n.label || t('Not checked'))}</b></div>
+                                ))}
+                                <div className="sm mut">{t("The network figure is the headline — it comes from the couriers' own records for this phone.")}</div>
+                            </div>
+                        )}
                     </div>
 
                     <div className="card mb12">
@@ -105,6 +117,46 @@ export default function Show({ order, customer, couriers, sources, products, pro
                             <button className="btn" onClick={() => block('ip')}>{t('Block IP')}</button>
                             <button className="btn" style={{ color: 'var(--bad)', borderColor: '#f0caca' }} onClick={() => setDeleteOpen(true)}>{t('Delete Order')}</button>
                         </div>
+                    </div>
+
+                    <div className="card mb12">
+                        <h3>{t('Delivery')}</h3>
+                        {order.status === 'Processing' && (
+                            <>
+                                {order.booking_status === 'failed' && <p className="sm" style={{ color: 'var(--bad)' }}>{t('The last booking failed — see the reason in Ready to Ship, or try again.')}</p>}
+                                <div className="flex" style={{ gap: 8, flexWrap: 'wrap' }}>
+                                    <button className="btn pri" onClick={() => setSendOpen(true)}>{t('Send to Courier')}</button>
+                                    {order.booking_status === 'failed' && <button className="btn" onClick={() => router.post(`/delivery/${order.id}/retry`)}>{t('Retry')}</button>}
+                                </div>
+                                {order.courier_method_id && (
+                                    <div className="frow mt16">
+                                        <select className="inp" value={changeMethodId} onChange={(e) => setChangeMethodId(e.target.value)}>
+                                            <option value="">{t('Change courier to…')}</option>
+                                            {courierMethods.filter((m) => m.id !== order.courier_method_id).map((m) => <option key={m.id} value={m.id}>{m.label}</option>)}
+                                        </select>
+                                        <button className="btn" disabled={!changeMethodId} onClick={() => router.post(`/delivery/${order.id}/change-courier`, { method_id: Number(changeMethodId) })}>{t('Change')}</button>
+                                    </div>
+                                )}
+                                <p className="sm mut" style={{ marginTop: 8 }}>{t('Changing the courier clears the pickup store and any tracking number.')}</p>
+                            </>
+                        )}
+                        {(order.tracking_id || order.consignment_id) && (
+                            <>
+                                <div className="kv"><span>{t('Courier')}</span><b>{order.courier_label || order.delivery_method}</b></div>
+                                <div className="kv"><span>{t('CN / Tracking')}</span><b>{order.consignment_id || order.tracking_id}</b></div>
+                                {order.courier_status && <div className="kv"><span>{t('Courier Status')}</span><b>{order.courier_status}</b></div>}
+                                {order.pickup_store_name && <div className="kv"><span>{t('Pickup Store')}</span><b>{order.pickup_store_name}</b></div>}
+                                {order.shipped_at && <div className="kv"><span>{t('Shipped')}</span><b>{order.shipped_at}</b></div>}
+                                <div className="flex mt16" style={{ gap: 8, flexWrap: 'wrap' }}>
+                                    <Link href={`/orders/${order.id}/packing-slip`} className="btn pri">{t('Print Packing Slip')}</Link>
+                                    <button className="btn" onClick={() => router.post(`/delivery/${order.id}/force-check`)}>{t('Check Status')}</button>
+                                </div>
+                            </>
+                        )}
+                        {order.status === 'Pending' && <p className="sm mut">{t('Approve the order first — then it waits in Ready to Ship for the courier.')}</p>}
+                        {['Shipped', 'Delivered', 'Returned'].includes(order.status) && !order.tracking_id && !order.consignment_id && (
+                            <p className="sm mut">{t('This order was shipped before courier booking was tracked here.')}</p>
+                        )}
                     </div>
 
                     {order.attachments?.length > 0 && (
@@ -235,6 +287,10 @@ export default function Show({ order, customer, couriers, sources, products, pro
                 </div>
             </div>
 
+            {sendOpen && (
+                <SendCourierModal order={{ id: order.id, invoice: order.invoice, customer_name: order.customer_name, cod: order.due }}
+                    methods={courierMethods} onClose={() => setSendOpen(false)} />
+            )}
             {approveOpen && (
                 <div className="overlay" onClick={() => setApproveOpen(false)}>
                     <div className="modal" onClick={(e) => e.stopPropagation()}>

@@ -23,6 +23,7 @@ class DatabaseSeeder extends Seeder
 
         $this->call(SettingsSeeder::class);
         $this->call(OrdersSeeder::class);
+        $this->call(DeliverySeeder::class);
 
         $samples = [
             ['kind' => 'order', 'title' => '5 new orders are waiting', 'body' => 'Orders OB287–OB291 are Pending. Open the next order to start processing.', 'link' => '/module/orders'],

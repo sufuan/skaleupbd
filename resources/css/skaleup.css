@@ -285,3 +285,25 @@ label.fl{display:block;font-size:12.5px;font-weight:600;color:#55496e;margin:0 0
   .auth-brand{width:100%;max-width:none;padding:26px 24px}
   .auth-brand h1{font-size:24px;margin:22px 0 10px}
 }
+
+/* ---- M3 Delivery ---- */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.cc-grid{display:grid;gap:10px;margin-top:6px}
+.cc-card{display:flex;flex-direction:column;align-items:flex-start;gap:3px;text-align:left;border:1.5px solid var(--line);border-radius:12px;padding:13px 15px;background:#fff;cursor:pointer;width:100%}
+.cc-card:hover{border-color:var(--acc)}
+.cc-card.sel{border-color:var(--acc);background:#f6f1fb;box-shadow:0 0 0 1px var(--acc)}
+.cc-name{font-weight:700;font-size:15px;display:flex;align-items:center}
+.slip-page{max-width:640px;margin:0 auto;padding:26px 18px 50px}
+.slip-sheet{background:#fff;border:1.5px solid var(--line);border-radius:14px;padding:26px}
+.slip-cn{font-size:30px;font-weight:800;letter-spacing:.06em}
+.slip-cod{font-size:24px;font-weight:800;color:var(--acc)}
+.slip-bars{display:flex;gap:2px;align-items:flex-end;height:44px;margin:10px 0}
+.slip-bars i{display:block;background:var(--ink);width:3px}
+@media print{
+  .slip-page{padding:0}
+  .slip-sheet{border:none}
+}
+@media (max-width:1024px){
+  .grid2,.grid3{grid-template-columns:1fr}
+}
