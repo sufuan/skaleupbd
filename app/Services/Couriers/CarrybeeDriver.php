@@ -8,7 +8,19 @@ use Illuminate\Support\Facades\Http;
 
 class CarrybeeDriver implements CourierDriver
 {
-    private string $base = 'https://developers.carrybee.com';
+    /**
+     * Production host is developers.carrybee.com; a sandbox host exists
+     * (sandbox.carrybee.com) but Carrybee's own FAQ says sandbox ACCESS is
+     * granted by their technical support (ecomsupport@carrybee.com) — the
+     * Sandbox Mode switch only changes the host; the credentials must be
+     * sandbox credentials issued by Carrybee.
+     */
+    private function base(CourierMethod $method): string
+    {
+        return ! empty(($method->credentials ?? [])['sandbox'])
+            ? 'https://sandbox.carrybee.com'
+            : 'https://developers.carrybee.com';
+    }
 
     private function http(CourierMethod $method)
     {
@@ -22,28 +34,53 @@ class CarrybeeDriver implements CourierDriver
         ]);
     }
 
-    public function createBooking(Order $order, CourierMethod $method, array $opts = []): array
+    /** The v2 create-order payload, shared by single + bulk booking. */
+    private function orderPayload(Order $order, CourierMethod $method, array $opts = []): array
     {
         $c = $method->credentials ?? [];
-        try {
-            // Field names per the real v2 create-order contract (merchant_order_id / recipient_*).
-            $payload = [
-                'store_id' => $opts['store_id'] ?? ($order->pickupStore?->store_id ?? ($c['store_id'] ?? null)),
-                'merchant_order_id' => $order->invoice,
-                'recipient_name' => $order->customer_name,
-                'recipient_phone' => $order->customer_phone,
-                'recipient_address' => trim(($order->address ?? '') . ' ' . ($order->area ?? '') . ' ' . ($order->district ?? '')),
-                'collectable_amount' => $order->codAmount(),
-                'item_weight' => (float) ($c['default_weight'] ?? 0.5),
-                'special_instruction' => $order->delivery_note ?? $method->default_shipping_note,
-            ];
-            // product_type / delivery_type are NUMERIC codes in the API — forward only numeric values.
-            foreach (['product_type', 'delivery_type'] as $k) {
-                if (isset($c[$k]) && is_numeric($c[$k])) {
-                    $payload[$k] = (int) $c[$k];
-                }
+        $payload = [
+            'store_id' => $opts['store_id'] ?? ($order->pickupStore?->store_id ?? ($c['store_id'] ?? null)),
+            'merchant_order_id' => $order->invoice,
+            'recipient_name' => $order->customer_name,
+            'recipient_phone' => $order->customer_phone,
+            'recipient_address' => trim(($order->address ?? '') . ' ' . ($order->area ?? '') . ' ' . ($order->district ?? '')),
+            'collectable_amount' => $order->codAmount(),
+            'item_weight' => (float) ($c['default_weight'] ?? 0.5),
+            'item_quantity' => max(1, (int) ($order->relationLoaded('items') ? $order->items->sum('qty') : 1)),
+            'special_instruction' => $order->delivery_note ?? $method->default_shipping_note,
+        ];
+        if (! empty($order->alt_phone)) {
+            // The create contract spells this 'recipient_secendary_phone' while the
+            // details response uses 'recipient_secondary_phone' — send both.
+            $payload['recipient_secendary_phone'] = $order->alt_phone;
+            $payload['recipient_secondary_phone'] = $order->alt_phone;
+        }
+        $description = $order->relationLoaded('items')
+            ? $order->items->map(fn ($i) => $i->product_name)->filter()->implode(', ')
+            : '';
+        if ($description !== '') {
+            $payload['product_description'] = mb_substr($description, 0, 255);
+        }
+        // product_type / delivery_type are NUMERIC codes in the API — forward only numeric values.
+        foreach (['product_type', 'delivery_type'] as $k) {
+            if (isset($c[$k]) && is_numeric($c[$k])) {
+                $payload[$k] = (int) $c[$k];
             }
-            $res = $this->http($method)->post($this->base . '/api/v2/orders', $payload);
+        }
+        // Optional geography — only when the seller configured default IDs.
+        foreach (['city_id' => 'default_city_id', 'zone_id' => 'default_zone_id', 'area_id' => 'default_area_id'] as $field => $cred) {
+            if (! empty($c[$cred]) && is_numeric($c[$cred])) {
+                $payload[$field] = (int) $c[$cred];
+            }
+        }
+
+        return $payload;
+    }
+
+    public function createBooking(Order $order, CourierMethod $method, array $opts = []): array
+    {
+        try {
+            $res = $this->http($method)->post($this->base($method) . '/api/v2/orders', $this->orderPayload($order, $method, $opts));
             $body = $res->json() ?? [];
             $data = $body['data'] ?? $body;
             $id = $data['order']['consignment_id'] ?? $data['consignment_id'] ?? $data['id'] ?? $data['order_id'] ?? null;
@@ -60,7 +97,7 @@ class CarrybeeDriver implements CourierDriver
     private function details(Order $order, CourierMethod $method): ?array
     {
         try {
-            $res = $this->http($method)->get($this->base . '/api/v2/orders/' . ($order->consignment_id ?: $order->tracking_id) . '/details');
+            $res = $this->http($method)->get($this->base($method) . '/api/v2/orders/' . ($order->consignment_id ?: $order->tracking_id) . '/details');
             $body = $res->json() ?? [];
 
             return $res->successful() ? ($body['data'] ?? $body) : null;
@@ -83,7 +120,7 @@ class CarrybeeDriver implements CourierDriver
     public function cancelBooking(Order $order, CourierMethod $method): array
     {
         try {
-            $res = $this->http($method)->post($this->base . '/api/v2/orders/' . ($order->consignment_id ?: $order->tracking_id) . '/cancel', [
+            $res = $this->http($method)->post($this->base($method) . '/api/v2/orders/' . ($order->consignment_id ?: $order->tracking_id) . '/cancel', [
                 'cancellation_reason' => 'Cancelled by the seller',
             ]);
 
@@ -101,7 +138,7 @@ class CarrybeeDriver implements CourierDriver
     public function testConnection(CourierMethod $method): array
     {
         try {
-            $res = $this->http($method)->get($this->base . '/api/v2/stores');
+            $res = $this->http($method)->get($this->base($method) . '/api/v2/stores');
             return $res->successful()
                 ? ['ok' => true, 'message' => 'Connected — Carrybee accepted the credentials']
                 : ['ok' => false, 'message' => 'Carrybee did not accept these credentials (HTTP ' . $res->status() . ')'];
@@ -113,7 +150,7 @@ class CarrybeeDriver implements CourierDriver
     public function syncStores(CourierMethod $method): array
     {
         try {
-            $res = $this->http($method)->get($this->base . '/api/v2/stores');
+            $res = $this->http($method)->get($this->base($method) . '/api/v2/stores');
             $rows = $res->json('data.stores') ?? $res->json('data') ?? [];
 
             return collect(is_array($rows) ? $rows : [])->map(fn ($s) => [
@@ -148,5 +185,186 @@ class CarrybeeDriver implements CourierDriver
             'delivery_fee' => isset($d['delivery_fee']) ? (float) $d['delivery_fee'] : null,
             'payment_status' => $d['payment_status'] ?? null,
         ];
+    }
+
+    // ---- The rest of Carrybee's v2 API surface ----
+    // Shapes follow the real API's contracts. Carrybee publishes NO public API
+    // documentation (docs + credentials live inside the merchant panel, via
+    // KAM/support), so these stay fixture-verified until a real account proves
+    // them live — see Real-Account-Pending-Checks.md.
+
+    /**
+     * POST /orders-bulk — the API takes a BARE array of order payloads and
+     * answers {error, message, data: null}: no per-order breakdown exists, so
+     * every order is reported accepted/not-accepted as one batch result.
+     */
+    public function createBulkBookings(array $orders, CourierMethod $method, array $opts = []): array
+    {
+        $payloads = collect($orders)->map(fn (Order $o) => $this->orderPayload($o, $method, $opts))->all();
+        try {
+            $res = $this->http($method)->post($this->base($method) . '/api/v2/orders-bulk', $payloads);
+            $body = $res->json() ?? [];
+            $ok = $res->successful() && ($body['error'] ?? true) === false;
+
+            return collect($orders)->map(fn (Order $o) => [
+                'invoice' => $o->invoice, 'ok' => $ok, 'tracking_id' => null, 'consignment_id' => null,
+                'error' => $ok ? null : (string) ($body['message'] ?? 'Carrybee did not accept the bulk request (HTTP ' . $res->status() . ')'),
+            ])->values()->all();
+        } catch (\Throwable $e) {
+            return collect($orders)->map(fn (Order $o) => [
+                'invoice' => $o->invoice, 'ok' => false, 'tracking_id' => null, 'consignment_id' => null,
+                'error' => 'Could not reach Carrybee: ' . $e->getMessage(),
+            ])->values()->all();
+        }
+    }
+
+    /** POST /stores — create a pickup store. The API returns no store id (data: null). */
+    public function createStore(CourierMethod $method, array $data): array
+    {
+        try {
+            $res = $this->http($method)->post($this->base($method) . '/api/v2/stores', [
+                'name' => $data['name'] ?? null,
+                'contact_person_name' => $data['contact_person_name'] ?? null,
+                'contact_person_number' => $data['contact_person_number'] ?? null,
+                'contact_person_secondary_number' => $data['contact_person_secondary_number'] ?? null,
+                'address' => $data['address'] ?? null,
+                'city_id' => isset($data['city_id']) ? (int) $data['city_id'] : null,
+                'zone_id' => isset($data['zone_id']) ? (int) $data['zone_id'] : null,
+                'area_id' => isset($data['area_id']) ? (int) $data['area_id'] : null,
+            ]);
+            $body = $res->json() ?? [];
+            $ok = $res->successful() && ($body['error'] ?? true) === false;
+
+            return ['ok' => $ok, 'error' => $ok ? null : (string) ($body['message'] ?? 'Store creation failed (HTTP ' . $res->status() . ')'), 'raw' => $body];
+        } catch (\Throwable $e) {
+            return ['ok' => false, 'error' => 'Could not reach Carrybee: ' . $e->getMessage()];
+        }
+    }
+
+    /** GET /cities — every city Carrybee serves. */
+    public function getCities(CourierMethod $method): array
+    {
+        return $this->lookup($method, '/api/v2/cities', fn ($r) => [
+            'city_id' => $r['id'] ?? null, 'city_name' => (string) ($r['name'] ?? ''),
+        ]);
+    }
+
+    /** GET /cities/{city_id}/zones — zones inside one city. */
+    public function getZones(CourierMethod $method, int $cityId): array
+    {
+        return $this->lookup($method, '/api/v2/cities/' . $cityId . '/zones', fn ($r) => [
+            'zone_id' => $r['id'] ?? null, 'zone_name' => (string) ($r['name'] ?? ''), 'city_id' => $r['city_id'] ?? null,
+        ]);
+    }
+
+    /** GET /cities/{city_id}/zones/{zone_id}/areas — areas inside one zone. */
+    public function getAreas(CourierMethod $method, int $cityId, int $zoneId): array
+    {
+        return $this->lookup($method, '/api/v2/cities/' . $cityId . '/zones/' . $zoneId . '/areas', fn ($r) => [
+            'area_id' => $r['id'] ?? null, 'area_name' => (string) ($r['name'] ?? ''), 'zone_id' => $r['zone_id'] ?? null,
+        ]);
+    }
+
+    /** GET /area-suggestion?search= — resolve a place name to city/zone/area ids. */
+    public function searchAreas(CourierMethod $method, string $search): array
+    {
+        try {
+            $res = $this->http($method)->get($this->base($method) . '/api/v2/area-suggestion', ['search' => $search]);
+            $rows = $res->json('data.items') ?? $res->json('data') ?? [];
+
+            return is_array($rows) ? $rows : [];
+        } catch (\Throwable) {
+            return [];
+        }
+    }
+
+    /** POST /address-details {query} — parse a free-text address into city_id + zone_id. */
+    public function getAddressDetails(CourierMethod $method, string $address): ?array
+    {
+        try {
+            $res = $this->http($method)->post($this->base($method) . '/api/v2/address-details', ['query' => $address]);
+            $data = $res->json('data');
+
+            return $res->successful() && is_array($data) ? $data : null;
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    private function lookup(CourierMethod $method, string $path, callable $map): array
+    {
+        try {
+            $res = $this->http($method)->get($this->base($method) . $path);
+            $rows = $res->json('data.data') ?? $res->json('data') ?? $res->json() ?? [];
+
+            return collect(is_array($rows) ? $rows : [])->map($map)->values()->all();
+        } catch (\Throwable) {
+            return [];
+        }
+    }
+
+    /**
+     * POST /orders/reverse-pickup — book a pickup FROM a customer back to the
+     * seller (return pickup). Uses the customer_* field family.
+     */
+    public function createReversePickup(CourierMethod $method, array $data): array
+    {
+        try {
+            $payload = [
+                'store_id' => $data['store_id'] ?? (($method->credentials ?? [])['store_id'] ?? null),
+                'merchant_order_id' => $data['merchant_order_id'] ?? null,
+                'customer_name' => $data['customer_name'] ?? null,
+                'customer_phone' => $data['customer_phone'] ?? null,
+                'customer_secondary_phone' => $data['customer_secondary_phone'] ?? null,
+                'customer_address' => $data['customer_address'] ?? null,
+                'city_id' => isset($data['city_id']) ? (int) $data['city_id'] : null,
+                'zone_id' => isset($data['zone_id']) ? (int) $data['zone_id'] : null,
+                'area_id' => isset($data['area_id']) ? (int) $data['area_id'] : null,
+                'item_weight' => isset($data['item_weight']) ? (float) $data['item_weight'] : null,
+                'item_quantity' => isset($data['item_quantity']) ? (int) $data['item_quantity'] : null,
+                'product_value' => $data['product_value'] ?? null,
+                'product_description' => $data['product_description'] ?? null,
+                'special_instruction' => $data['special_instruction'] ?? null,
+            ];
+            if (isset($data['product_type']) && is_numeric($data['product_type'])) {
+                $payload['product_type'] = (int) $data['product_type'];
+            }
+            $res = $this->http($method)->post($this->base($method) . '/api/v2/orders/reverse-pickup', $payload);
+            $body = $res->json() ?? [];
+            $d = $body['data'] ?? [];
+            $id = $d['consignment_id'] ?? null;
+            if ($res->successful() && $id) {
+                return ['ok' => true, 'consignment_id' => (string) $id, 'delivery_fee' => $d['delivery_fee'] ?? null, 'raw' => $body];
+            }
+
+            return ['ok' => false, 'error' => (string) ($body['message'] ?? 'Reverse pickup failed (HTTP ' . $res->status() . ')'), 'raw' => $body];
+        } catch (\Throwable $e) {
+            return ['ok' => false, 'error' => 'Could not reach Carrybee: ' . $e->getMessage()];
+        }
+    }
+
+    /** POST /orders/{consignment}/exchange — book an exchange delivery against an existing order. */
+    public function createExchange(Order $order, CourierMethod $method, array $data = []): array
+    {
+        try {
+            $body = array_filter([
+                'merchant_order_id' => $data['merchant_order_id'] ?? null,
+                'collectable_amount' => $data['collectable_amount'] ?? null,
+                'item_quantity' => isset($data['item_quantity']) ? (int) $data['item_quantity'] : null,
+                'item_weight' => isset($data['item_weight']) ? (float) $data['item_weight'] : null,
+                'product_description' => $data['product_description'] ?? null,
+                'special_instruction' => $data['special_instruction'] ?? null,
+            ], fn ($v) => $v !== null);
+            $res = $this->http($method)->post($this->base($method) . '/api/v2/orders/' . ($order->consignment_id ?: $order->tracking_id) . '/exchange', $body);
+            $resp = $res->json() ?? [];
+            $new = $resp['data']['order'] ?? [];
+            if ($res->successful() && ! empty($new['consignment_id'])) {
+                return ['ok' => true, 'consignment_id' => (string) $new['consignment_id'], 'raw' => $resp];
+            }
+
+            return ['ok' => false, 'error' => (string) ($resp['message'] ?? 'Exchange booking failed (HTTP ' . $res->status() . ')'), 'raw' => $resp];
+        } catch (\Throwable $e) {
+            return ['ok' => false, 'error' => 'Could not reach Carrybee: ' . $e->getMessage()];
+        }
     }
 }
