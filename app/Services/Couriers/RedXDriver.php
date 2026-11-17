@@ -27,17 +27,23 @@ class RedXDriver implements CourierDriver
             return ['ok' => false, 'error' => 'RedX needs a delivery area — set the default Area ID in Settings → Courier → RedX'];
         }
         try {
-            $res = $this->http($method)->post($this->base . '/parcel', [
+            $payload = [
                 'customer_name' => $order->customer_name,
-                'customer_phone_number' => $order->customer_phone,
+                'customer_phone' => $order->customer_phone,
                 'customer_address' => trim(($order->address ?? '') . ' ' . ($order->area ?? '') . ' ' . ($order->district ?? '')),
                 'delivery_area' => (string) ($c['default_area'] ?? ''),
                 'delivery_area_id' => (int) ($c['default_area_id'] ?? 0),
                 'merchant_invoice_id' => $order->invoice,
                 'parcel_weight' => 500,
                 'cash_collection_amount' => $order->codAmount(),
+                'value' => $order->codAmount(),
                 'parcel_details_json' => $order->items->map(fn ($i) => ['name' => $i->name, 'quantity' => $i->qty])->values()->all(),
-            ]);
+            ];
+            // The Settings "Pickup Store" field holds the RedX pickup store ID.
+            if (! empty($c['pickup_store']) && is_numeric($c['pickup_store'])) {
+                $payload['pickup_store_id'] = (int) $c['pickup_store'];
+            }
+            $res = $this->http($method)->post($this->base . '/parcel', $payload);
             $body = $res->json() ?? [];
             $tracking = $body['tracking_id'] ?? $body['data']['tracking_id'] ?? null;
             if ($res->successful() && $tracking) {

@@ -50,29 +50,35 @@ class PathaoDriver implements CourierDriver
         if (! $storeId) {
             return ['ok' => false, 'error' => 'Pathao needs a pickup store — sync stores in Settings and pick one'];
         }
-        if (empty($c['default_city_id']) || empty($c['default_zone_id'])) {
-            return ['ok' => false, 'error' => 'Pathao needs the delivery area — set the default City ID and Zone ID in Settings → Courier → Pathao'];
-        }
         if (! $this->token($method)) {
             return ['ok' => false, 'error' => 'Pathao login failed — check the credentials in Settings'];
         }
         try {
-            $res = $this->http($method)->post($this->base . '/aladdin/api/v1/orders', [
+            // City/zone/area are OPTIONAL in Pathao's API — when not configured, Pathao
+            // populates them from the recipient address. Send them only when set; never send 0.
+            $payload = [
                 'store_id' => (int) $storeId,
                 'merchant_order_id' => $order->invoice,
                 'recipient_name' => $order->customer_name,
                 'recipient_phone' => $order->customer_phone,
                 'recipient_address' => trim(($order->address ?? '') . ' ' . ($order->area ?? '') . ' ' . ($order->district ?? '')),
-                'recipient_city' => (int) $c['default_city_id'],
-                'recipient_zone' => (int) $c['default_zone_id'],
-                'recipient_area' => (int) ($c['default_area_id'] ?? 0),
                 'delivery_type' => 48,
                 'item_type' => 2,
                 'special_instruction' => $order->delivery_note ?? $method->default_shipping_note,
                 'item_quantity' => max(1, (int) $order->items->sum('qty')),
                 'item_weight' => 0.5,
                 'amount_to_collect' => $order->codAmount(),
-            ]);
+            ];
+            if (! empty($c['default_city_id'])) {
+                $payload['recipient_city'] = (int) $c['default_city_id'];
+            }
+            if (! empty($c['default_zone_id'])) {
+                $payload['recipient_zone'] = (int) $c['default_zone_id'];
+            }
+            if (! empty($c['default_area_id'])) {
+                $payload['recipient_area'] = (int) $c['default_area_id'];
+            }
+            $res = $this->http($method)->post($this->base . '/aladdin/api/v1/orders', $payload);
             $body = $res->json() ?? [];
             $data = $body['data'] ?? [];
             if ($res->successful() && ! empty($data['consignment_id'])) {
@@ -88,7 +94,7 @@ class PathaoDriver implements CourierDriver
     public function getStatus(Order $order, CourierMethod $method): array
     {
         try {
-            $res = $this->http($method)->get($this->base . '/aladdin/api/v1/orders/' . ($order->consignment_id ?: $order->tracking_id));
+            $res = $this->http($method)->get($this->base . '/aladdin/api/v1/orders/' . ($order->consignment_id ?: $order->tracking_id) . '/info');
             $body = $res->json() ?? [];
             $status = $body['data']['order_status'] ?? null;
             if ($res->successful() && $status) {

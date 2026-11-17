@@ -650,6 +650,19 @@ BN = collections.OrderedDict([
     ("How much of today's rules are working properly (orders, stock and courier together).", "আজকের নিয়মগুলো কতটা ঠিকমতো কাজ করছে (অর্ডার, স্টক আর কুরিয়ার একসাথে)।"),
 ])
 
+BN.update([
+    ('Pickup Store ID', 'পিকআপ স্টোর আইডি'),
+    ('Product Type Code', 'প্রোডাক্ট টাইপ কোড'),
+    ('Delivery Type Code', 'ডেলিভারি টাইপ কোড'),
+    ('Default Parcel Weight (kg)', 'ডিফল্ট পার্সেল ওজন (কেজি)'),
+    ('How to get these: register free at steadfast.com.bd/register, then in the merchant panel open API → Your API keys and copy the Api-Key and Secret-Key. There is no fee for API access.', 'এগুলো পাবেন যেভাবে: steadfast.com.bd/register-এ ফ্রি রেজিস্টার করুন, তারপর মার্চেন্ট প্যানেলে API → Your API keys খুলে Api-Key আর Secret-Key কপি করুন। API ব্যবহারে কোনো ফি নেই।'),
+    ('How to get these: register free at merchant.pathao.com/register, add your store and payment info, then open the Developer API section in the panel for the Client ID and Secret. The username is your merchant login email. A new store takes about an hour to be approved.', 'এগুলো পাবেন যেভাবে: merchant.pathao.com/register-এ ফ্রি রেজিস্টার করুন, স্টোর আর পেমেন্টের তথ্য দিন, তারপর প্যানেলের Developer API অংশ থেকে Client ID আর Secret নিন। Username হলো আপনার মার্চেন্ট লগইন ইমেইল। নতুন স্টোর approve হতে প্রায় এক ঘণ্টা লাগে।'),
+    ('How to get this: register at redx.com.bd, then in the merchant panel open Settings → developer section and generate the access token. If that section is missing, ask RedX support to enable Open API access. There is no fee for API access.', 'এটি পাবেন যেভাবে: redx.com.bd-তে রেজিস্টার করুন, তারপর মার্চেন্ট প্যানেলে Settings → developer অংশ থেকে access token তৈরি করুন। ওই অংশটা না থাকলে RedX support-কে Open API চালু করে দিতে বলুন। API ব্যবহারে কোনো ফি নেই।'),
+    ('How to get these: register free at merchant.carrybee.com/register, then ask your Carrybee account manager (KAM) or support for the API credentials — they issue the Client ID, Secret and Context. There is no fee for API access.', 'এগুলো পাবেন যেভাবে: merchant.carrybee.com/register-এ ফ্রি রেজিস্টার করুন, তারপর আপনার Carrybee account manager (KAM) বা support-এর কাছে API credential চান — Client ID, Secret আর Context তারাই দেয়। API ব্যবহারে কোনো ফি নেই।'),
+    ("How to get these: register at ecourier.com.bd and wait for eCourier to activate your account, then copy the API-KEY, API-SECRET and USER-ID from the panel's API credentials section — or ask eCourier support. The fraud check needs eCourier support to switch it on.", 'এগুলো পাবেন যেভাবে: ecourier.com.bd-তে রেজিস্টার করুন, eCourier আপনার account চালু করলে প্যানেলের API credentials অংশ থেকে API-KEY, API-SECRET আর USER-ID কপি করুন — অথবা eCourier support-এর কাছে চান। Fraud check চালু করতে eCourier support-কে বলতে হয়।'),
+    ("Paperfly's booking API is not verified yet — parcels are booked in Paperfly and the CN number is recorded at send time. Paperfly has no API secret — if Paperfly gives you an API key later, it goes here with your merchant username and password.", 'Paperfly-র booking API এখনো যাচাই করা যায়নি — পার্সেল Paperfly-তেই book হয় আর পাঠানোর সময় CN নম্বর লিখে রাখা হয়। Paperfly-র কোনো API Secret নেই — পরে API key দিলে তা merchant username আর password-এর সঙ্গে এখানে বসবে।'),
+    ('Bahok has no public API — book in the Bahok app and record the CN number when sending, like a manual courier.', 'Bahok-এর কোনো public API নেই — Bahok app-এ book করুন আর পাঠানোর সময় CN নম্বর লিখে রাখুন, manual courier-এর মতোই।'),
+])
 EN = {k: k for k in BN}
 BN.update([
     ('A manual courier needs a CN number for every parcel — send those one by one from the row.', 'ম্যানুয়াল কুরিয়ারের জন্য প্রতিটি পার্সেলে CN নম্বর লাগে — সেগুলো সারি থেকে একটা একটা করে পাঠাও।'),

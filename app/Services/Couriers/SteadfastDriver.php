@@ -52,8 +52,10 @@ class SteadfastDriver implements CourierDriver
     public function getStatus(Order $order, CourierMethod $method): array
     {
         try {
-            $id = $order->consignment_id ?: $order->tracking_id;
-            $res = $this->http($method)->get($this->base . '/status_by_cid/' . $id);
+            // Consignment ids go to status_by_cid; tracking codes have their own endpoint.
+            $res = $order->consignment_id
+                ? $this->http($method)->get($this->base . '/status_by_cid/' . $order->consignment_id)
+                : $this->http($method)->get($this->base . '/status_by_trackingcode/' . $order->tracking_id);
             $body = $res->json() ?? [];
             if ($res->successful() && isset($body['delivery_status'])) {
                 return ['ok' => true, 'courier_status' => (string) $body['delivery_status'], 'raw' => $body];
@@ -73,19 +75,23 @@ class SteadfastDriver implements CourierDriver
     public function fraudCheck(string $phone, CourierMethod $method): ?array
     {
         try {
-            $res = $this->http($method)->get($this->base . '/fraud_check/' . $phone);
+            // Current endpoint: /fraud_check/score/{phone} (the legacy count endpoint is retired).
+            // delivery_ratio is the % of FINISHED parcels delivered; null = nothing finished yet,
+            // which must read as "no signal", never as a clean record.
+            $res = $this->http($method)->get($this->base . '/fraud_check/score/' . $phone);
             $body = $res->json() ?? [];
-            if (! $res->successful() || ! isset($body['total_parcels'])) {
+            if (! $res->successful() || ! array_key_exists('delivery_ratio', $body) || $body['delivery_ratio'] === null) {
                 return null;
             }
-            $total = (int) $body['total_parcels'];
-            $delivered = (int) ($body['total_delivered'] ?? 0);
-            $cancelled = (int) ($body['total_cancelled'] ?? 0);
-            if ($total <= 0) {
-                return null;
-            }
+            $band = (string) ($body['volume_band'] ?? '');
+            $reports = (int) ($body['total_reports'] ?? 0);
 
-            return ['rate' => round($delivered / $total * 100, 1), 'delivered' => $delivered, 'returned' => $cancelled, 'label' => null];
+            return [
+                'rate' => (float) $body['delivery_ratio'],
+                'delivered' => null,
+                'returned' => null,
+                'label' => trim(($band !== '' ? ucfirst($band) . ' volume' : '') . ($reports > 0 ? ' · ' . $reports . ' fraud report(s)' : '')) ?: null,
+            ];
         } catch (\Throwable) {
             return null;
         }
@@ -116,7 +122,7 @@ class SteadfastDriver implements CourierDriver
         try {
             $res = $this->http($method)->get($this->base . '/payments');
             $body = $res->json() ?? [];
-            $rows = $body['data'] ?? $body['payments'] ?? [];
+            $rows = $body['data'] ?? $body['payments'] ?? $body['items'] ?? [];
 
             return collect(is_array($rows) ? $rows : [])->map(fn ($p) => [
                 'payment_id' => (string) ($p['payment_id'] ?? ''),

@@ -5,37 +5,44 @@ import { t } from '@/lib/i18n';
 /** Credential fields per courier (§10.7a). secret fields are never shown back. */
 export const FIELD_DEFS = {
     PATHAO: [
-        ['account_mobile', 'Account Mobile Number'], ['client_id', 'Client Id'], ['client_secret', 'Client Secret', 'secret'],
-        ['client_email', 'Client Email'], ['password', 'Password', 'secret'], ['store_id', 'Store Id'], ['item_type', 'Item Type'],
+        ['client_id', 'Client Id'], ['client_secret', 'Client Secret', 'secret'],
+        ['client_email', 'Client Email'], ['password', 'Password', 'secret'], ['store_id', 'Store Id'],
         ['default_city_id', 'Default City ID'], ['default_zone_id', 'Default Zone ID'], ['default_area_id', 'Default Area ID'],
-        ['allow_without_area', 'Allow order creation without zone/city/area', 'check'],
-        ['send_weight', 'Send parcel weight', 'check'], ['send_product_names', 'Send Product Names', 'check'],
     ],
     STEADFAST: [
-        ['api_key', 'ApiKey', 'secret'], ['api_secret', 'Api Secret', 'secret'], ['webhook_token', 'Webhook Token (Optional)', 'secret'],
-        ['account_email', 'Account Email (Optional)'], ['account_password', 'Account Password (Optional)', 'secret'],
+        ['api_key', 'ApiKey', 'secret'], ['api_secret', 'Api Secret', 'secret'],
     ],
     REDX: [
-        ['access_token', 'Access Token', 'secret'], ['pickup_store', 'Pickup Store'],
+        ['access_token', 'Access Token', 'secret'], ['pickup_store', 'Pickup Store ID'],
         ['default_area', 'Default Area'], ['default_area_id', 'Default Area ID'],
-        ['allow_without_area', 'Allow parcel creation without area', 'check'],
     ],
     CARRYBEE: [
         ['client_id', 'Client ID'], ['client_secret', 'Client Secret', 'secret'], ['client_context', 'Client Context', 'secret'],
-        ['store_id', 'Store ID'], ['product_type', 'Product Type'], ['delivery_type', 'Delivery Type'],
+        ['store_id', 'Store ID'], ['product_type', 'Product Type Code'], ['delivery_type', 'Delivery Type Code'],
+        ['default_weight', 'Default Parcel Weight (kg)'],
     ],
     ECOURIER: [
         ['api_key', 'API Key', 'secret'], ['api_secret', 'API Secret', 'secret'], ['user_id', 'User ID'],
         ['package_code', 'Default Package Code (Optional)'], ['pickup_hub_id', 'Pickup Hub ID (Optional)'],
     ],
     PAPERFLY: [
-        ['api_key', 'API Key', 'secret'], ['api_secret', 'API Secret', 'secret'],
+        ['api_key', 'API Key', 'secret'],
         ['username', 'Username'], ['password', 'Password', 'secret'],
     ],
-    BAHOK: [
-        ['api_key', 'API Key', 'secret'], ['api_secret', 'API Secret', 'secret'], ['shop_id', 'Shop ID'],
-    ],
+    BAHOK: [],
     OTHERS: [],
+};
+
+/** Plain "how to get the API" guidance per courier (acquisition research 2026-11-17). */
+const GUIDE = {
+    STEADFAST: 'How to get these: register free at steadfast.com.bd/register, then in the merchant panel open API → Your API keys and copy the Api-Key and Secret-Key. There is no fee for API access.',
+    PATHAO: 'How to get these: register free at merchant.pathao.com/register, add your store and payment info, then open the Developer API section in the panel for the Client ID and Secret. The username is your merchant login email. A new store takes about an hour to be approved.',
+    REDX: 'How to get this: register at redx.com.bd, then in the merchant panel open Settings → developer section and generate the access token. If that section is missing, ask RedX support to enable Open API access. There is no fee for API access.',
+    CARRYBEE: 'How to get these: register free at merchant.carrybee.com/register, then ask your Carrybee account manager (KAM) or support for the API credentials — they issue the Client ID, Secret and Context. There is no fee for API access.',
+    ECOURIER: 'How to get these: register at ecourier.com.bd and wait for eCourier to activate your account, then copy the API-KEY, API-SECRET and USER-ID from the panel\'s API credentials section — or ask eCourier support. The fraud check needs eCourier support to switch it on.',
+    PAPERFLY: 'Paperfly\'s booking API is not verified yet — parcels are booked in Paperfly and the CN number is recorded at send time. Paperfly has no API secret — if Paperfly gives you an API key later, it goes here with your merchant username and password.',
+    BAHOK: 'Bahok has no public API — book in the Bahok app and record the CN number when sending, like a manual courier.',
+    OTHERS: 'A manual courier needs no credentials — staff book in the courier\'s own app or branch and write the CN number when sending.',
 };
 
 const TYPE_LABELS = { PATHAO: 'Pathao', STEADFAST: 'Steadfast', REDX: 'RedX', CARRYBEE: 'Carrybee', PAPERFLY: 'Paperfly', ECOURIER: 'eCourier', BAHOK: 'Bahok', OTHERS: 'Manual (Other)' };
@@ -104,9 +111,7 @@ function MethodModal({ method, onClose }) {
                         )}
                     </div>
                 ))}
-                {type === 'STEADFAST' && <p className="sm mut" style={{ marginTop: 10 }}>{t('Email + password are needed to enable the Steadfast rating (fraud check).')}</p>}
-                {type === 'PAPERFLY' && <p className="sm mut" style={{ marginTop: 10 }}>{t('Paperfly\'s booking API is not verified yet — parcels are booked in Paperfly and the CN number is recorded at send time.')}</p>}
-                {type === 'OTHERS' && <p className="sm mut" style={{ marginTop: 10 }}>{t('A manual courier needs no credentials — staff book in the courier\'s own app or branch and write the CN number when sending.')}</p>}
+                {GUIDE[type] && <p className="sm mut" style={{ marginTop: 10 }}>{t(GUIDE[type])}</p>}
                 <div className="frow mt16"><label className="fl">{t('Inside Dhaka Charge')}</label>
                     <input className="inp" type="number" value={inside} onChange={(e) => setInside(e.target.value)} /></div>
                 <div className="frow mt16"><label className="fl">{t('Outside Dhaka Charge')}</label>
