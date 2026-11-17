@@ -39,7 +39,7 @@ class CourierMethod extends Model
     /** Paperfly's booking API is unverified (brief §7) — it books by recorded CN, like a manual courier. */
     public function bookingMode(): string
     {
-        return in_array($this->courier_type, ['OTHERS', 'PAPERFLY'], true) ? 'manual' : 'api';
+        return in_array($this->courier_type, ['OTHERS'], true) ? 'manual' : 'api';
     }
 
     public function label(): string

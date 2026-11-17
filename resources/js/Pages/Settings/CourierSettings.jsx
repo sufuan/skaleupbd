@@ -32,7 +32,9 @@ export const FIELD_DEFS = {
     ],
     PAPERFLY: [
         ['api_key', 'API Key', 'secret'],
-        ['username', 'Username'], ['password', 'Password', 'secret'],
+        ['username', 'Panel Username'], ['password', 'Panel Password', 'secret'],
+        ['pickup_store', 'Pickup Store Name'],
+        ['webhook_secret', 'Webhook Secret (Optional)', 'secret'],
     ],
     BAHOK: [],
     OTHERS: [],
@@ -45,7 +47,7 @@ const GUIDE = {
     REDX: 'How to get this: register at redx.com.bd, then in the merchant panel open Settings → developer section and generate the access token. If that section is missing, ask RedX support to enable Open API access. There is no fee for API access.',
     CARRYBEE: 'How to get these: register free at merchant.carrybee.com/register, then ask your Carrybee account manager (KAM) or support for the API credentials — they issue the Client ID, Secret and Context. There is no fee for API access. Sandbox access also comes from Carrybee technical support (ecomsupport@carrybee.com) — tick Sandbox Mode only with sandbox credentials they give you.',
     ECOURIER: 'How to get these: register at ecourier.com.bd and wait for eCourier to activate your account, then copy the API-KEY, API-SECRET and USER-ID from the panel\'s API credentials section — or ask eCourier support. The fraud check needs eCourier support to switch it on.',
-    PAPERFLY: 'Paperfly\'s booking API is not verified yet — parcels are booked in Paperfly and the CN number is recorded at send time. Paperfly has no API secret — if Paperfly gives you an API key later, it goes here with your merchant username and password.',
+    PAPERFLY: 'How to get these: sign in to the Paperfly merchant panel (go.paperfly.com.bd) and open Developer Guide — your API Key is printed inside the Order Creation code sample there. Tracking signs in with your panel username + password, so keep those here too. There is no sandbox: every booking is a real parcel.',
     BAHOK: 'Bahok has no public API — book in the Bahok app and record the CN number when sending, like a manual courier.',
     OTHERS: 'A manual courier needs no credentials — staff book in the courier\'s own app or branch and write the CN number when sending.',
 };

@@ -162,4 +162,43 @@ class WebhookController extends Controller
 
         return response()->json(['received' => true], 202);
     }
+
+    /**
+     * Paperfly: POST /api/webhooks/paperfly/dm/{method}
+     * The seller registers this URL + a Secret Key in the panel's Developer
+     * Guide → Webhooks form. Events arrive as JSON with an X-Webhook-Signature
+     * header (HMAC-SHA256 of the raw body with that secret). Payload carries
+     * tracking_id + merchant_reference + status; order.delivered and
+     * order.returned drive the money-relevant transitions, everything else
+     * (incl. payment.received / payment.failed) is recorded.
+     */
+    public function paperfly(Request $request, CourierMethod $method)
+    {
+        abort_unless($method->courier_type === 'PAPERFLY' && $method->is_active, 404);
+        $secret = (string) (($method->credentials ?? [])['webhook_secret'] ?? '');
+        if ($secret !== '') {
+            $expected = hash_hmac('sha256', $request->getContent(), $secret);
+            if (! hash_equals($expected, (string) $request->header('X-Webhook-Signature', ''))) {
+                return response()->json(['error' => 'bad signature'], 401);
+            }
+        }
+
+        $tracking = (string) $request->input('tracking_id', '');
+        $reference = (string) $request->input('merchant_reference', '');
+        $order = Order::where('business_id', $method->business_id)
+            ->where(fn ($q) => $q->where('tracking_id', $tracking)->orWhere('consignment_id', $tracking)->orWhere('invoice_no', $reference))
+            ->first();
+        if ($order) {
+            $event = (string) $request->input('event', '');
+            $status = match ($event) {
+                'order.delivered' => 'delivered',
+                'order.returned' => 'returned',
+                default => (string) ($request->input('status') ?: $event),
+            };
+            $actor = User::where('business_id', $method->business_id)->where('is_admin', true)->first();
+            app(BookingService::class)->applyCourierStatus($order, $status, $actor);
+        }
+
+        return response()->json(['received' => true], 200);
+    }
 }
