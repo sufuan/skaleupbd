@@ -52,9 +52,10 @@ class SteadfastDriver implements CourierDriver
     public function getStatus(Order $order, CourierMethod $method): array
     {
         try {
-            // Consignment ids go to status_by_cid; tracking codes have their own endpoint.
+            // The return-status variant answers the same delivery status, and is the only
+            // endpoint that says a returning parcel is actually back with the seller.
             $res = $order->consignment_id
-                ? $this->http($method)->get($this->base . '/status_by_cid/' . $order->consignment_id)
+                ? $this->http($method)->get($this->base . '/status_with_return_status_by_cid/' . $order->consignment_id)
                 : $this->http($method)->get($this->base . '/status_by_trackingcode/' . $order->tracking_id);
             $body = $res->json() ?? [];
             if ($res->successful() && isset($body['delivery_status'])) {
@@ -69,7 +70,23 @@ class SteadfastDriver implements CourierDriver
 
     public function cancelBooking(Order $order, CourierMethod $method): array
     {
-        return ['ok' => true]; // Steadfast has no public cancel endpoint in the documented set.
+        // No plain cancel endpoint exists; the documented way to undo a booking is a
+        // return request — Steadfast brings the parcel back before delivery (answers 201).
+        try {
+            $res = $this->http($method)->post($this->base . '/create_return_request', [
+                'consignment_id' => $order->consignment_id ? (int) $order->consignment_id : null,
+                'invoice' => $order->invoice,
+                'reason' => 'Cancelled by the seller',
+            ]);
+            $body = $res->json() ?? [];
+            if ($res->successful()) {
+                return ['ok' => true, 'raw' => $body];
+            }
+
+            return ['ok' => false, 'error' => (string) ($body['message'] ?? 'Steadfast refused the return request (HTTP ' . $res->status() . ')'), 'raw' => $body];
+        } catch (\Throwable $e) {
+            return ['ok' => false, 'error' => 'Could not reach Steadfast: ' . $e->getMessage()];
+        }
     }
 
     public function fraudCheck(string $phone, CourierMethod $method): ?array
@@ -88,8 +105,9 @@ class SteadfastDriver implements CourierDriver
 
             return [
                 'rate' => (float) $body['delivery_ratio'],
-                'delivered' => null,
-                'returned' => null,
+                // Exact counts ride along only for regularly-booking merchants; null = not shown.
+                'delivered' => isset($body['delivered_count']) ? (int) $body['delivered_count'] : null,
+                'returned' => isset($body['cancelled_count']) ? (int) $body['cancelled_count'] : null,
                 'label' => trim(($band !== '' ? ucfirst($band) . ' volume' : '') . ($reports > 0 ? ' · ' . $reports . ' fraud report(s)' : '')) ?: null,
             ];
         } catch (\Throwable) {
@@ -120,9 +138,21 @@ class SteadfastDriver implements CourierDriver
     public function getPayments(CourierMethod $method): array
     {
         try {
-            $res = $this->http($method)->get($this->base . '/payments');
-            $body = $res->json() ?? [];
-            $rows = $body['data'] ?? $body['payments'] ?? $body['items'] ?? [];
+            // Payouts come ten to a page, newest first — walk the pages (capped) so older
+            // payouts are not silently missed.
+            $rows = [];
+            for ($page = 1; $page <= 20; $page++) {
+                $res = $this->http($method)->get($this->base . '/payments', ['sort' => 'desc', 'page' => $page]);
+                $body = $res->json() ?? [];
+                $batch = $body['data'] ?? $body['payments'] ?? $body['items'] ?? [];
+                if (! is_array($batch) || $batch === []) {
+                    break;
+                }
+                $rows = array_merge($rows, $batch);
+                if (count($batch) < 10) {
+                    break;
+                }
+            }
 
             return collect(is_array($rows) ? $rows : [])->map(fn ($p) => [
                 'payment_id' => (string) ($p['payment_id'] ?? ''),

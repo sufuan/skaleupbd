@@ -11,6 +11,7 @@ export const FIELD_DEFS = {
     ],
     STEADFAST: [
         ['api_key', 'ApiKey', 'secret'], ['api_secret', 'Api Secret', 'secret'],
+        ['webhook_token', 'Webhook Token (Optional)', 'secret'],
     ],
     REDX: [
         ['access_token', 'Access Token', 'secret'], ['pickup_store', 'Pickup Store ID'],

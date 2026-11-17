@@ -139,21 +139,46 @@ class BookingService
             return ['ok' => false, 'error' => $result['error'] ?? 'Status check failed'];
         }
         $courierStatus = (string) $result['courier_status'];
+        $this->applyCourierStatus($order, $courierStatus, $actor);
+
+        return ['ok' => true, 'courier_status' => $courierStatus];
+    }
+
+    /**
+     * Record a courier-reported status and follow it into the order lifecycle.
+     * Money-critical guards (from Steadfast's real status vocabulary, applied to all couriers):
+     *  - anything ending in _approval_pending is the rider's word, NOT confirmed — never final;
+     *  - a partial delivery is never the whole order delivered (its full COD must not count as collected);
+     *  - a return still travelling back (rider assigned / processing) is not yet back with the seller.
+     */
+    public function applyCourierStatus(Order $order, string $courierStatus, ?User $actor): void
+    {
         $order->courier_status = $courierStatus;
         $lower = strtolower($courierStatus);
+
+        if (! $actor || str_contains($lower, 'approval_pending') || str_contains($lower, 'partial')) {
+            $order->save();
+
+            return;
+        }
         if (str_contains($lower, 'delivered') && ! str_contains($lower, 'return') && $order->status === 'Shipped') {
             $order->delivered_at = now();
             $order->save();
             $this->orders->changeStatus($order, 'Delivered', $actor, 'Courier confirmed delivery');
-        } elseif ((str_contains($lower, 'return') || str_contains($lower, 'rts')) && in_array($order->status, ['Shipped', 'Delivered'], true)) {
+
+            return;
+        }
+        $returnArrived = str_contains($lower, 'return_received') || str_contains($lower, 'returned')
+            || ((str_contains($lower, 'return') || str_contains($lower, 'rts'))
+                && ! str_contains($lower, 'rider_assigned') && ! str_contains($lower, 'proccess') && ! str_contains($lower, 'processing'));
+        if ($returnArrived && in_array($order->status, ['Shipped', 'Delivered'], true)) {
             $order->returned_at = now();
             $order->save();
             $this->orders->changeStatus($order, 'Returned', $actor, 'Courier returned the parcel');
-        } else {
-            $order->save();
-        }
 
-        return ['ok' => true, 'courier_status' => $courierStatus];
+            return;
+        }
+        $order->save();
     }
 
     private function maybeRaiseFailureEvent(Order $order, CourierMethod $method): void

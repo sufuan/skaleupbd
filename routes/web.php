@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Auth\TotpController;
 use App\Http\Controllers\ExternalOrderController;
+use App\Http\Controllers\WebhookController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\OrderToolsController;
 use App\Http\Controllers\LocaleController;
@@ -124,5 +125,6 @@ Route::middleware('auth')->group(function () {
 
 // External API intake for sellers' websites (API-key auth, no session).
 Route::post('/api/external/v1/orders', [ExternalOrderController::class, 'store'])->name('api.external.orders');
+Route::post('/api/webhooks/steadfast/dm/{method}', [WebhookController::class, 'steadfast'])->name('api.webhooks.steadfast');
 
 require __DIR__.'/auth.php';
