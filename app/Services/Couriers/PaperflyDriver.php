@@ -52,7 +52,7 @@ class PaperflyDriver implements CourierDriver
             'amountToCollect' => $cod,
             // Our committed charge for this connection; Paperfly answers with
             // its own codCharge/totalCharge in the response.
-            'deliveryCharge' => (int) round($method->chargeFor((string) $order->district)),
+            'deliveryCharge' => (int) round($method->chargeFor($order->effectiveDistrict())),
             'codCharge' => 0,
             'merchantDeliveryInstruction' => $order->delivery_note ?? $method->default_shipping_note,
             'isPartialDelivery' => 0,

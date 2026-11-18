@@ -54,7 +54,7 @@ class OrdersSeeder extends Seeder
             }
         }
         if ($settings->get('couriers.methods') === null) {
-            $settings->set('couriers.methods', ['Steadfast — Inside Dhaka', 'Pathao — Inside Dhaka', 'RedX — Dhaka', 'Carrybee', 'Manual']);
+            $settings->set('couriers.methods', ['Steadfast — Inside Dhaka', 'Pathao — Inside Dhaka', 'RedX — Dhaka', 'Carrybee', 'Manual', 'Steadfast — Outside Dhaka', 'Pathao — Outside Dhaka', 'Sundarban']);
         }
 
         $sources = [
@@ -96,6 +96,8 @@ class OrdersSeeder extends Seeder
             ['reason' => 'Fraud orders', 'added_by' => $admin?->name]);
         IpPhoneBlock::firstOrCreate(['business_id' => $biz->id, 'type' => 'device', 'value' => 'dev-9f2ac1'],
             ['reason' => 'Fake orders', 'added_by' => $admin?->name]);
+        IpPhoneBlock::firstOrCreate(['business_id' => $biz->id, 'type' => 'phone', 'value' => '01444444444'],
+            ['reason' => 'Expired block (test fixture)', 'added_by' => $admin?->name, 'expires_at' => now()->subDay()]);
 
         Customer::firstOrCreate(['business_id' => $biz->id, 'phone' => '01911112222'],
             ['name' => 'Rony Ahmed', 'is_blacklisted' => true, 'address' => 'Unknown, Dhaka']);

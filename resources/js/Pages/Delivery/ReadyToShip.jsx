@@ -30,22 +30,11 @@ export default function ReadyToShip({ orders, methods, search }) {
         <AppLayout title={t('Ready to Ship')}>
             <div className="page-head">
                 <div>
-                    <h1>{t('Ready to Ship')}</h1>
-                    <div className="mut sm">{t('Approved orders wait here until they are handed to a courier')}</div>
+                    <h1 style={{ fontSize: 24, fontWeight: 700 }}>{t('Ready to Ship')}</h1>
+                    <div className="mut sm" style={{ marginTop: 3 }}>{t('Approved orders being packed — print the invoice, pack the parcel, then send it to a courier.')}</div>
                 </div>
-                <form onSubmit={doSearch} className="flex" style={{ gap: 8 }}>
-                    <input className="inp" style={{ minWidth: 220 }} placeholder={t('Search invoice or phone')} value={q} onChange={(e) => setQ(e.target.value)} />
-                    <button className="btn" type="submit">{t('Search')}</button>
-                </form>
+                <button className="btn pri" disabled={picked.length === 0} onClick={() => setBulkOpen(true)}>{t('Send Selected')} ({picked.length})</button>
             </div>
-
-            {picked.length > 0 && (
-                <div className="card" style={{ marginBottom: 14, display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <span className="b">{picked.length} {t('selected')}</span>
-                    <button className="btn pri" onClick={() => setBulkOpen(true)}>{t('Send Selected')} ({picked.length})</button>
-                    <button className="btn" onClick={() => setPicked([])}>{t('Clear')}</button>
-                </div>
-            )}
 
             <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
                 {orders.length === 0 ? (
@@ -64,20 +53,21 @@ export default function ReadyToShip({ orders, methods, search }) {
                                         <td><input type="checkbox" checked={picked.includes(o.id)} onChange={() => toggle(o.id)} /></td>
                                         <td>
                                             <Link href={`/orders/${o.id}`} className="b" style={{ color: 'var(--acc)' }}>{o.invoice}</Link>
-                                            {o.booking_status === 'failed' && <div className="sm" style={{ color: 'var(--bad)' }}>{o.last_error}</div>}
-                                            {o.suggested_label && <div className="sm mut">{t('Suggested')}: {o.suggested_label} — {t(o.suggested_reason || '')}</div>}
+                                            <div className="sm mut">{o.date}</div>
                                         </td>
                                         <td><div className="b">{o.customer_name}</div><div className="sm mut">{o.customer_phone}</div></td>
-                                        <td>{o.district || '—'}<div className="sm"><span className="pill blue">{t(o.zone)}</span></div></td>
+                                        <td>{t(o.zone)}<div className="sm mut">{o.district || '—'}</div></td>
                                         <td><span className="b">{o.items_count}</span><div className="sm mut">{o.items_label}</div></td>
                                         <td className="b">{fmt(o.cod)}</td>
-                                        <td><StatusPill status={o.status} /></td>
+                                        <td>{o.booking_status === 'failed'
+                                            ? <><span className="pill" style={{ background: '#FCE7F3', color: '#BE123C' }}>{t('Booking Failed')}</span>{o.last_error && <div className="sm" style={{ color: 'var(--bad)', marginTop: 4 }}>{o.last_error}</div>}</>
+                                            : <StatusPill status={o.status} />}</td>
                                         <td>{o.waiting}</td>
                                         <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
-                                            <Link href={`/orders/${o.id}/invoice`} className="btn" style={{ marginRight: 6 }}>{t('Print Invoice')}</Link>
+                                            <a href={`/orders/${o.id}/invoice`} className="btn" title={t('Print Invoice')} style={{ marginRight: 6, padding: '6px 9px' }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ verticalAlign: -2 }}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><path d="M7 10l5 5 5-5" /><path d="M12 15V3" /></svg></a>
                                             {o.booking_status === 'failed'
-                                                ? <button className="btn pri" onClick={() => router.post(`/delivery/${o.id}/retry`)}>{t('Retry')}</button>
-                                                : <button className="btn pri" onClick={() => setSendOrder(o)}>{t('Send to Courier')}</button>}
+                                                ? <button className="btn" style={{ background: '#DC2626', color: '#fff', borderColor: '#DC2626' }} onClick={() => router.post(`/delivery/${o.id}/retry`)}>{t('Retry')}</button>
+                                                : <button className="btn" onClick={() => setSendOrder(o)}>{t('Send to Courier')}</button>}
                                         </td>
                                     </tr>
                                 ))}

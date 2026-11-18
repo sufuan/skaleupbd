@@ -32,7 +32,7 @@ class DeliveryController extends Controller
             return [
                 'id' => $m->id, 'name' => $m->name, 'label' => $m->label(), 'type' => $m->courier_type,
                 'class' => $m->courierClass(), 'booking_mode' => $m->bookingMode(),
-                'charge' => $order ? $m->chargeFor($order->district) : null,
+                'charge' => $order ? $m->chargeFor($order->effectiveDistrict()) : null,
                 'charge_inside' => (float) $m->charge_inside_dhaka, 'charge_outside' => (float) $m->charge_outside_dhaka,
                 'is_default' => $m->is_default, 'is_preferred' => $m->is_preferred,
                 'stores' => $m->pickupStores->map(fn ($s) => ['id' => $s->id, 'store_id' => $s->store_id, 'name' => $s->name, 'is_default' => $s->is_default])->all(),
@@ -55,14 +55,24 @@ class DeliveryController extends Controller
         $rows = $orders->map(function (Order $o) use ($activeMethods) {
             $suggestion = $this->suggester->suggest($o, $activeMethods);
 
+            $district = $o->effectiveDistrict();
+            $waiting = '—';
+            if ($o->approved_at) {
+                $mins = (int) $o->approved_at->diffInMinutes(now());
+                $waiting = $mins >= 1440
+                    ? intdiv($mins, 1440) . 'd ' . intdiv($mins % 1440, 60) . 'h'
+                    : ($mins >= 60 ? intdiv($mins, 60) . 'h ' . str_pad((string) ($mins % 60), 2, '0', STR_PAD_LEFT) . 'm' : $mins . 'm');
+            }
+
             return [
                 'id' => $o->id, 'invoice' => $o->invoice, 'customer_name' => $o->customer_name,
-                'customer_phone' => $o->customer_phone, 'district' => $o->district, 'area' => $o->area,
-                'zone' => strtolower((string) $o->district) === 'dhaka' ? 'Inside Dhaka' : 'Outside Dhaka',
+                'customer_phone' => $o->customer_phone, 'district' => $district, 'area' => $o->area,
+                'date' => $o->created_at?->format('j M, g:i a'),
+                'zone' => strtolower((string) $district) === 'dhaka' ? 'Inside Dhaka' : 'Outside Dhaka',
                 'items_count' => (int) $o->items->sum('qty'),
                 'items_label' => $o->items->map(fn ($i) => $i->name . ' × ' . $i->qty)->implode(', '),
                 'cod' => $o->codAmount(), 'status' => $o->status,
-                'waiting' => $o->approved_at ? $o->approved_at->diffForHumans(null, true) : '—',
+                'waiting' => $waiting,
                 'booking_status' => $o->booking_status,
                 'last_error' => $o->bookingLogs()->where('booking_status', 'failed')->latest()->value('error'),
                 'suggested_method_id' => $suggestion['method']->id ?? null,
@@ -145,7 +155,7 @@ class DeliveryController extends Controller
     public function parcels(Request $request)
     {
         $biz = $this->biz($request);
-        $status = (string) $request->query('status', '');
+        $status = (string) $request->query('status', 'In Transit'); // the prototype's default pill; 'all' = no status filter
         $base = Order::with(['items', 'courierMethod'])
             ->where('business_id', $biz)
             ->whereNotNull('courier_method_id')
@@ -164,7 +174,7 @@ class DeliveryController extends Controller
 
         $query = clone $base;
         match ($status) {
-            'In Transit' => $query->where('status', 'Shipped'),
+            'In Transit' => $query->where('status', 'Shipped')->where(fn ($q) => $q->whereNull('courier_status')->orWhereNotIn('courier_status', ['Assigned for Delivery'])),
             'Assigned for Delivery' => $query->where('status', 'Shipped')->where('courier_status', 'Assigned for Delivery'),
             'Cancelled' => $query->where('status', 'Cancelled'),
             'Pending Entry' => $query->where('status', 'Shipped')->whereNull('tracking_id'),
@@ -173,16 +183,43 @@ class DeliveryController extends Controller
             'Damage & Lost' => $query->whereNotNull('claim_status'),
             default => null,
         };
+
+        // Prototype filter card: search / courier / age / tags / in-charge (rider attempt has no data source yet).
+        $filters = [
+            'search' => trim((string) $request->query('search', '')),
+            'courier' => (string) $request->query('courier', ''),
+            'age_from' => $request->query('age_from'), 'age_to' => $request->query('age_to'),
+            'tag' => trim((string) $request->query('tag', '')),
+            'in_charge' => (string) $request->query('in_charge', ''),
+        ];
+        if ($filters['search'] !== '') {
+            $s = $filters['search'];
+            $digits = preg_replace('/\D/', '', $s);
+            $query->where(fn ($q) => $q->where('invoice_no', 'like', "%{$s}%")
+                ->orWhere('customer_name', 'like', "%{$s}%")
+                ->when(strlen($digits) >= 3, fn ($w) => $w->orWhere('customer_phone', 'like', "%{$digits}%")));
+        }
+        if ($filters['courier'] !== '') {
+            $query->whereHas('courierMethod', fn ($q) => $q->where('courier_type', $filters['courier']));
+        }
         $parcels = $query->latest('shipped_at')->get()->map(fn (Order $o) => [
             'id' => $o->id, 'invoice' => $o->invoice, 'customer_name' => $o->customer_name, 'customer_phone' => $o->customer_phone,
-            'courier' => $o->courierMethod?->label(), 'tracking_id' => $o->tracking_id, 'consignment_id' => $o->consignment_id,
+            'address' => $o->address, 'tags' => $o->tags ?? [],
+            'product_name' => $o->items->first()?->name, 'product_sku' => $o->items->first()?->sku,
+            'courier' => $o->courierMethod ? (\App\Models\CourierMethod::LABELS[$o->courierMethod->courier_type] ?? $o->courierMethod->label()) : null,
+            'courier_label' => $o->courierMethod?->label(), 'tracking_id' => $o->tracking_id, 'consignment_id' => $o->consignment_id,
             'status' => $o->status, 'courier_status' => $o->courier_status, 'cod' => $o->codAmount(),
             'call_slot' => $o->call_slot, 'call_status' => $o->call_status, 'in_charge' => $o->in_charge,
             'return_tag' => $o->return_tag, 'claim_status' => $o->claim_status, 'claim_amount' => $o->claim_amount ? (float) $o->claim_amount : null,
             'shipped_at' => $o->shipped_at?->format('d M, h:i A'), 'district' => $o->district,
             'age_days' => $o->shipped_at ? (int) $o->shipped_at->diffInDays(now()) : 0,
             'day_tag' => $o->shipped_at ? 'Day' . min(3, (int) $o->shipped_at->diffInDays(now()) + 1) : null,
-        ])->all();
+        ])
+            ->when($filters['age_from'] !== null && $filters['age_from'] !== '', fn ($c) => $c->filter(fn ($p) => $p['age_days'] >= (int) $filters['age_from']))
+            ->when($filters['age_to'] !== null && $filters['age_to'] !== '', fn ($c) => $c->filter(fn ($p) => $p['age_days'] <= (int) $filters['age_to']))
+            ->when($filters['tag'] !== '', fn ($c) => $c->filter(fn ($p) => collect($p['tags'])->contains(fn ($tg) => str_contains(strtolower((string) $tg), strtolower($filters['tag'])))))
+            ->when($filters['in_charge'] !== '', fn ($c) => $c->filter(fn ($p) => ($p['in_charge'] ?? '') === $filters['in_charge']))
+            ->values()->all();
 
         $methods = CourierMethod::where('business_id', $biz)->get();
         $analysis = $methods->map(function (CourierMethod $m) use ($biz) {
@@ -202,9 +239,14 @@ class DeliveryController extends Controller
                 'at' => $l->created_at?->format('d M, h:i A'),
             ])->all();
 
+        $couriers = $methods->pluck('courier_type')->unique()
+            ->map(fn ($ty) => ['value' => $ty, 'label' => \App\Models\CourierMethod::LABELS[$ty] ?? $ty])->values()->all();
+        $incharges = (clone $base)->whereNotNull('in_charge')->where('in_charge', '!=', '')->distinct()->pluck('in_charge')->values()->all();
+
         return Inertia::render('Delivery/Parcels', [
             'parcels' => $parcels, 'counts' => $counts, 'status' => $status,
             'analysis' => $analysis, 'entries' => $entries,
+            'filters' => $filters, 'couriers' => $couriers, 'incharges' => $incharges,
         ]);
     }
 

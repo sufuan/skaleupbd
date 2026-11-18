@@ -246,6 +246,7 @@ function Security({ tab, totpEnabled, totpEnrolled, m2 }) {
                     <div className="conn-row"><div style={{ flex: 1 }}><div className="b" style={{ color: 'var(--bad)' }}>{t('Reset Shop Data')}</div><div className="sm mut">{t('Every order and product will be deleted — this cannot be undone')}</div></div><button className="btn" style={{ color: 'var(--bad)', borderColor: '#f0caca' }}>{t('Reset')}</button></div>
                 </div>
                 <OrderTogglesForm m2={m2} />
+                <InventorySettingsForm m2={m2} />
             </>
         );
     }
@@ -256,6 +257,33 @@ function Security({ tab, totpEnabled, totpEnrolled, m2 }) {
                     <span className={`pill ${s2 === 'Pending' ? 'amber' : 'green'}`}>{t(s2)}</span>
                     {s2 === 'Pending' && <button className="btn pri">{t('Approve')}</button>}</div>
             ))}<SaveBar /></div>
+    );
+}
+
+function InventorySettingsForm({ m2 }) {
+    const [inv, setInv] = useState(m2.inventory);
+    useEffect(() => { setInv(m2.inventory); }, [m2.inventory]);
+    const rows = [
+        ['branch_stock_enabled', 'Multi Warehouse / Branch Stock', 'Each branch keeps its own stock count; transfers move stock between branches'],
+        ['warehouse_cartons', 'Warehouse Cartons', 'Transfers also record how many cartons move'],
+        ['stock_management_disabled', 'Disable Stock Management', 'Orders flow without reserving or deducting stock'],
+    ];
+    return (
+        <div className="card"><h3>{t('Inventory')}</h3><div className="card-sub">{t('How stock is kept across the shop')}</div>
+            {rows.map(([key, label, desc]) => (
+                <div className="conn-row" key={key}>
+                    <div style={{ flex: 1 }}><div className="b">{t(label)}</div><div className="sm mut">{t(desc)}</div></div>
+                    <button className={`switch ${inv[key] ? 'on' : ''}`} aria-label={label} onClick={() => setInv({ ...inv, [key]: !inv[key] })} />
+                </div>
+            ))}
+            <div className="conn-row">
+                <div style={{ flex: 1 }}><div className="b">{t('Stock Valuation')}</div><div className="sm mut">{t('How the Stock Ledger values your stock')}</div></div>
+                <select className="inp" style={{ maxWidth: 240 }} value={inv.valuation} onChange={(e) => setInv({ ...inv, valuation: e.target.value })}>
+                    <option value="average_cost">{t('Product Average Cost')}</option>
+                </select>
+            </div>
+            <div className="flex mt16"><span className="spacer" /><button className="btn pri" onClick={() => router.post('/settings/inventory', inv, { preserveScroll: true })}>{t('Save Changes')}</button></div>
+        </div>
     );
 }
 

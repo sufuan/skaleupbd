@@ -12,6 +12,39 @@ export function StatusPill({ status }) {
     return <span className={`pill ${STATUS_PILL[status] || ''}`}>{t(status)}</span>;
 }
 
+/**
+ * The prototype Order List success cell, copied from orders.html ringHTML +
+ * verdictHTML: a 28px ring beside "Success: X% / Order: d/t" lines, with the
+ * verdict written underneath.
+ */
+export function SuccessCell({ fraud }) {
+    const rate = fraud?.rate;
+    const verdict = fraud?.verdict || 'not_checked';
+    const d = fraud?.delivered ?? 0;
+    const total = fraud?.orders ?? 0;
+    const has = rate !== null && rate !== undefined;
+    const pct = has ? Math.round(rate) : null;
+    const color = !has ? '#CBD5E1' : pct >= 70 ? '#16A34A' : pct >= 40 ? '#F59E0B' : '#EF4444';
+    const off = has ? (69.1 * (1 - pct / 100)).toFixed(1) : 69.1;
+    const vLabel = verdict === 'safe' ? 'Safe' : verdict === 'risky' ? 'Risky — take advance' : 'Not checked';
+    const vColor = verdict === 'safe' ? '#16A34A' : verdict === 'risky' ? '#DC2626' : '#64748B';
+    return (
+        <span style={{ display: 'inline-block' }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                <svg width="28" height="28" viewBox="0 0 28 28">
+                    <circle cx="14" cy="14" r="11" fill="none" stroke="#E5E7EB" strokeWidth="3.5" />
+                    <circle cx="14" cy="14" r="11" fill="none" stroke={color} strokeWidth="3.5" strokeLinecap="round" strokeDasharray="69.1" strokeDashoffset={off} transform="rotate(-90 14 14)" />
+                </svg>
+                <span style={{ fontSize: 12, lineHeight: 1.5, whiteSpace: 'nowrap' }}>
+                    <span style={{ color: has ? color : '#94A3B8', fontWeight: 600 }}>{t('Success')}: {has ? `${pct}%` : '—'}</span><br />
+                    {t('Order')}: {d}/{total}
+                </span>
+            </span><br />
+            <span style={{ fontSize: 11.5, fontWeight: 600, color: vColor }}>{t(vLabel)}</span>
+        </span>
+    );
+}
+
 /** Success-rate ring + one-line verdict, as in the prototype Order List. */
 export function SuccessRing({ fraud, size = 44 }) {
     const rate = fraud?.rate;

@@ -32,6 +32,21 @@ Route::middleware('auth')->group(function () {
 
 Route::middleware(['auth', 'verified', 'totp'])->group(function () {
     Route::get('/dashboard', [\App\Http\Controllers\DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard/earnings', [\App\Http\Controllers\DashboardController::class, 'earnings'])->name('dashboard.earnings');
+
+    // Live sidebar/topbar counts, polled by the app shell (no page reload needed).
+    Route::get('/sidebar-counts', function (\Illuminate\Http\Request $request) {
+        $biz = $request->user()?->business_id;
+        $hasOrders = $biz && \Illuminate\Support\Facades\Schema::hasTable('orders');
+        return response()->json([
+            'orders_pending' => $hasOrders ? \App\Models\Order::where('business_id', $biz)->where('status', 'Pending')->count() : 0,
+            'delivery_waiting' => $hasOrders ? \App\Models\Order::where('business_id', $biz)->where('status', 'Processing')->count() : 0,
+            'notifications_unread' => \Illuminate\Support\Facades\Schema::hasTable('app_notifications')
+                ? \App\Models\AppNotification::whereNull('read_at')->count()
+                : 0,
+            'messages_unread' => 0, // M6 Messages is not built yet; lights up when it lands.
+        ]);
+    })->name('sidebar.counts');
 
     Route::get('/settings', [SettingsController::class, 'index'])->name('settings');
     Route::post('/settings/totp', [SettingsController::class, 'updateTotp'])->name('settings.totp');
@@ -40,6 +55,7 @@ Route::middleware(['auth', 'verified', 'totp'])->group(function () {
     Route::post('/settings/sources/reset', [SettingsController::class, 'resetSources'])->name('settings.sources.reset');
     Route::post('/settings/templates', [SettingsController::class, 'updateTemplates'])->name('settings.templates');
     Route::post('/settings/order-toggles', [SettingsController::class, 'updateOrderToggles'])->name('settings.orderToggles');
+    Route::post('/settings/inventory', [SettingsController::class, 'updateInventory'])->name('settings.inventory');
     Route::post('/settings/courier-methods', [SettingsController::class, 'addCourierMethod'])->name('settings.courierMethods');
 
     // M2 Orders
@@ -106,6 +122,39 @@ Route::middleware(['auth', 'verified', 'totp'])->group(function () {
     Route::post('/orders/{order}/block', [OrderController::class, 'block'])->name('orders.block');
     Route::delete('/orders/{order}', [OrderController::class, 'destroy'])->name('orders.destroy');
     Route::get('/orders/{order}/invoice', [OrderController::class, 'invoice'])->name('orders.invoice');
+
+    // Inventory (M4)
+    Route::get('/inventory/dashboard', [\App\Http\Controllers\InventoryController::class, 'dashboard'])->name('inventory.dashboard');
+    Route::get('/inventory/products', [\App\Http\Controllers\InventoryController::class, 'products'])->name('inventory.products');
+    Route::get('/inventory/products/create', [\App\Http\Controllers\InventoryController::class, 'createProduct'])->name('inventory.products.create');
+    Route::post('/inventory/products', [\App\Http\Controllers\InventoryController::class, 'storeProduct'])->name('inventory.products.store');
+    Route::post('/inventory/products/import', [\App\Http\Controllers\InventoryController::class, 'importProducts'])->name('inventory.products.import');
+    Route::patch('/inventory/products/{product}', [\App\Http\Controllers\InventoryController::class, 'updateProduct'])->name('inventory.products.update');
+    Route::delete('/inventory/products/{product}', [\App\Http\Controllers\InventoryController::class, 'destroyProduct'])->name('inventory.products.destroy');
+    Route::post('/inventory/products/{product}/copy', [\App\Http\Controllers\InventoryController::class, 'copyProduct'])->name('inventory.products.copy');
+    Route::post('/inventory/products/{product}/toggle', [\App\Http\Controllers\InventoryController::class, 'toggleProduct'])->name('inventory.products.toggle');
+    Route::post('/inventory/products/{product}/adjust', [\App\Http\Controllers\InventoryController::class, 'adjustStock'])->name('inventory.products.adjust');
+    Route::post('/inventory/categories', [\App\Http\Controllers\InventoryController::class, 'storeCategory'])->name('inventory.categories.store');
+    Route::delete('/inventory/categories/{category}', [\App\Http\Controllers\InventoryController::class, 'destroyCategory'])->name('inventory.categories.destroy');
+    Route::post('/inventory/brands', [\App\Http\Controllers\InventoryController::class, 'storeBrand'])->name('inventory.brands.store');
+    Route::delete('/inventory/brands/{brand}', [\App\Http\Controllers\InventoryController::class, 'destroyBrand'])->name('inventory.brands.destroy');
+    Route::post('/inventory/products/{product}/variants', [\App\Http\Controllers\InventoryController::class, 'storeVariant'])->name('inventory.variants.store');
+    Route::delete('/inventory/variants/{variant}', [\App\Http\Controllers\InventoryController::class, 'destroyVariant'])->name('inventory.variants.destroy');
+    Route::post('/inventory/groups/{kind}', [\App\Http\Controllers\InventoryController::class, 'storeGroup'])->name('inventory.groups.store');
+    Route::delete('/inventory/groups/{kind}/{group}', [\App\Http\Controllers\InventoryController::class, 'destroyGroup'])->name('inventory.groups.destroy');
+    Route::get('/inventory/ledger', [\App\Http\Controllers\InventoryOpsController::class, 'ledger'])->name('inventory.ledger');
+    Route::post('/inventory/reconcile', [\App\Http\Controllers\InventoryOpsController::class, 'reconcile'])->name('inventory.reconcile');
+    Route::get('/inventory/branches', [\App\Http\Controllers\InventoryOpsController::class, 'branches'])->name('inventory.branches');
+    Route::post('/inventory/branches/toggle-stock', [\App\Http\Controllers\InventoryOpsController::class, 'toggleBranchStock'])->name('inventory.branches.toggleStock');
+    Route::post('/inventory/branches', [\App\Http\Controllers\InventoryOpsController::class, 'storeBranch'])->name('inventory.branches.store');
+    Route::patch('/inventory/branches/{branch}', [\App\Http\Controllers\InventoryOpsController::class, 'updateBranch'])->name('inventory.branches.update');
+    Route::delete('/inventory/branches/{branch}', [\App\Http\Controllers\InventoryOpsController::class, 'destroyBranch'])->name('inventory.branches.destroy');
+    Route::post('/inventory/transfers', [\App\Http\Controllers\InventoryOpsController::class, 'storeTransfer'])->name('inventory.transfers.store');
+    Route::patch('/inventory/transfers/{transfer}', [\App\Http\Controllers\InventoryOpsController::class, 'updateTransfer'])->name('inventory.transfers.update');
+    Route::get('/inventory/warranty', [\App\Http\Controllers\InventoryOpsController::class, 'warranty'])->name('inventory.warranty');
+    Route::post('/inventory/warranty', [\App\Http\Controllers\InventoryOpsController::class, 'storeClaim'])->name('inventory.warranty.store');
+    Route::patch('/inventory/warranty/{claim}', [\App\Http\Controllers\InventoryOpsController::class, 'updateClaim'])->name('inventory.warranty.update');
+    Route::post('/inventory/warranty-settings', [\App\Http\Controllers\InventoryOpsController::class, 'saveWarrantySettings'])->name('inventory.warranty.settings');
 
     Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead'])->name('notifications.readAll');
     Route::post('/notifications/{notification}/read', [NotificationController::class, 'markRead'])->name('notifications.read');

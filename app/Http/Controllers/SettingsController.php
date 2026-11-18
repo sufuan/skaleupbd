@@ -50,6 +50,12 @@ class SettingsController extends Controller
                     'advance' => MessageTemplate::where('business_id', $biz)->where('key', 'advance')->value('body') ?? '',
                     'invoice_template' => (string) $this->settings->get('invoice.template', 'a4'),
                 ],
+                'inventory' => [
+                    'branch_stock_enabled' => (bool) $this->settings->get('inventory.branch_stock_enabled', false),
+                    'warehouse_cartons' => (bool) $this->settings->get('inventory.warehouse_cartons', false),
+                    'stock_management_disabled' => (bool) $this->settings->get('inventory.stock_management_disabled', false),
+                    'valuation' => (string) $this->settings->get('inventory.valuation', 'average_cost'),
+                ],
                 'toggles' => [
                     'show_email' => (bool) $this->settings->get('orders.show_email', true),
                     'show_alt_number' => (bool) $this->settings->get('orders.show_alt_number', false),
@@ -169,6 +175,22 @@ class SettingsController extends Controller
         $this->setLogged($request, 'invoice.template', $data['invoice_template']);
 
         return back()->with('success', 'Templates saved');
+    }
+
+    public function updateInventory(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'branch_stock_enabled' => ['required', 'boolean'],
+            'warehouse_cartons' => ['required', 'boolean'],
+            'stock_management_disabled' => ['required', 'boolean'],
+            'valuation' => ['required', 'string', 'in:average_cost'],
+        ]);
+        $this->setLogged($request, 'inventory.branch_stock_enabled', (bool) $data['branch_stock_enabled']);
+        $this->setLogged($request, 'inventory.warehouse_cartons', (bool) $data['warehouse_cartons']);
+        $this->setLogged($request, 'inventory.stock_management_disabled', (bool) $data['stock_management_disabled']);
+        $this->setLogged($request, 'inventory.valuation', $data['valuation']);
+
+        return back()->with('success', 'Inventory settings saved');
     }
 
     public function updateOrderToggles(Request $request): RedirectResponse

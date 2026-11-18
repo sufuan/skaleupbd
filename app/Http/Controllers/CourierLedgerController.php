@@ -32,30 +32,61 @@ class CourierLedgerController extends Controller
             ])->all();
     }
 
+    /** Receivable / bucket / difference data — displayed on the Ledger page (its one home). */
+    private function moneyProps(int $biz): array
+    {
+        $receivables = $this->settlements->receivables($biz);
+        $buckets = ['0–7' => 0.0, '8–15' => 0.0, '16–30' => 0.0, '31+' => 0.0];
+        foreach ($receivables->where('unsettled', true) as $r) {
+            $buckets[$r['bucket']] += $r['expected'] - $r['settled'];
+        }
+
+        return [
+            'receivables' => $receivables->map(fn ($r) => [
+                'invoice' => $r['order']->invoice, 'courier' => $r['order']->courierMethod?->label(),
+                'cod' => $r['cod'], 'committed_charge' => $r['committed_charge'], 'expected' => $r['expected'],
+                'settled' => $r['settled'], 'difference' => $r['difference'], 'bucket' => $r['bucket'],
+                'unsettled' => $r['unsettled'],
+            ])->all(),
+            'buckets' => $buckets,
+            // Short-paid only: a parcel that was paid something but less than expected.
+            // Never-paid parcels are owed money — they live in COD Receivable, not here.
+            'differences' => $receivables->filter(fn ($r) => $r['difference'] < -0.01 && $r['settled'] > 0)->map(fn ($r) => [
+                'invoice' => $r['order']->invoice, 'courier' => $r['order']->courierMethod?->label(),
+                'type' => 'COD Difference', 'severity' => $r['difference'] < -500 ? 'High' : ($r['difference'] < -100 ? 'Medium' : 'Low'),
+                'expected' => $r['expected'], 'actual' => $r['settled'], 'difference' => $r['difference'],
+            ])->values()->all(),
+        ];
+    }
+
     public function ledger(Request $request)
     {
         $biz = $this->biz($request);
         $data = $this->settlements->ledger($biz);
+        $methods = CourierMethod::where('business_id', $biz)->orderBy('name')->get();
 
         return Inertia::render('Delivery/Ledger', [
             'rows' => collect($data['rows'])->map(fn ($r) => [
                 'courier' => $r['method']->label(), 'class' => $r['method']->courierClass(),
+                'company' => \App\Models\CourierMethod::LABELS[$r['method']->courier_type] ?? $r['method']->label(),
+                'manual' => $r['method']->courier_type === 'OTHERS',
+                'delivered' => \App\Models\Order::where('business_id', $biz)->where('courier_method_id', $r['method']->id)->where('status', 'Delivered')->count(),
                 'collected' => $r['collected'], 'settled' => $r['settled'], 'still' => $r['still'],
             ])->all(),
             'total' => $data['total'],
-            'settlements' => $this->settlementRows($biz),
+            'ratecard' => $methods->map(fn (CourierMethod $m) => [
+                'id' => $m->id, 'label' => $m->label(), 'class' => $m->courierClass(),
+                'charge_inside' => (float) $m->charge_inside_dhaka, 'charge_outside' => (float) $m->charge_outside_dhaka,
+            ])->all(),
+            ...$this->moneyProps($biz),
         ]);
     }
 
     public function workbench(Request $request)
     {
         $biz = $this->biz($request);
-        $receivables = $this->settlements->receivables($biz);
-        $buckets = ['0–7' => 0.0, '8–15' => 0.0, '16–30' => 0.0, '31+' => 0.0];
-        foreach ($receivables->where('unsettled', true) as $r) {
-            $buckets[$r['bucket']] += $r['expected'] - $r['settled'];
-        }
         $methods = CourierMethod::where('business_id', $biz)->orderBy('name')->get();
+        $money = $this->moneyProps($biz);
 
         return Inertia::render('Delivery/InvoiceUpload', [
             'methods' => $methods->map(fn (CourierMethod $m) => [
@@ -68,18 +99,8 @@ class CourierLedgerController extends Controller
                     'date' => $p->date?->format('d M Y'), 'reference' => $p->reference,
                     'deposit_account' => $p->deposit_account, 'status' => $p->status,
                 ])->all(),
-            'receivables' => $receivables->map(fn ($r) => [
-                'invoice' => $r['order']->invoice, 'courier' => $r['order']->courierMethod?->label(),
-                'cod' => $r['cod'], 'committed_charge' => $r['committed_charge'], 'expected' => $r['expected'],
-                'settled' => $r['settled'], 'difference' => $r['difference'], 'bucket' => $r['bucket'],
-                'unsettled' => $r['unsettled'],
-            ])->all(),
-            'buckets' => $buckets,
-            'differences' => $receivables->filter(fn ($r) => $r['difference'] < -0.01)->map(fn ($r) => [
-                'invoice' => $r['order']->invoice, 'courier' => $r['order']->courierMethod?->label(),
-                'type' => 'COD Difference', 'severity' => $r['difference'] < -500 ? 'High' : ($r['difference'] < -100 ? 'Medium' : 'Low'),
-                'expected' => $r['expected'], 'actual' => $r['settled'], 'difference' => $r['difference'],
-            ])->values()->all(),
+            // Lookup data for the Search & Add card (the receivable display itself lives on the Ledger page).
+            'receivables' => $money['receivables'],
         ]);
     }
 
@@ -106,8 +127,11 @@ class CourierLedgerController extends Controller
             'lines' => 'required|array|min:1',
             'lines.*.invoice' => 'required|string',
             'lines.*.paid_amount' => 'required|numeric',
+            'source' => 'nullable|in:upload,manual',
+            'deposit_account' => 'nullable|string|max:120',
         ]);
-        $result = $this->settlements->matchUpload($this->biz($request), $data['lines'], true, $request->user());
+        $reference = ! empty($data['deposit_account']) ? 'Deposit: ' . $data['deposit_account'] : null;
+        $result = $this->settlements->matchUpload($this->biz($request), $data['lines'], true, $request->user(), $data['source'] ?? 'upload', $reference);
 
         return back()->with('success', 'Statement saved — ' . count($result['matched']) . ' parcel(s) settled' . (count($result['unmatched']) ? ', ' . count($result['unmatched']) . ' line(s) did not match' : ''));
     }

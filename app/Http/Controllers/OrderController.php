@@ -116,10 +116,14 @@ class OrderController extends Controller
         }
         if ($search !== '') {
             $digits = preg_replace('/\D+/', '', $search);
-            $query->where(function ($q) use ($search, $digits) {
+            // Phone matching only for phone-like queries (digits, +, spaces, dashes).
+            // An invoice term like "OB312" must not match orders whose phone merely
+            // contains those digits (e.g. 01312349876 contains "312").
+            $phoneLike = (bool) preg_match('/^[\d+\s-]+$/', $search);
+            $query->where(function ($q) use ($search, $digits, $phoneLike) {
                 $q->where('invoice_no', 'like', "%{$search}%")
                     ->orWhere('customer_name', 'like', "%{$search}%");
-                if (strlen($digits) >= 3) {
+                if ($phoneLike && strlen($digits) >= 3) {
                     $q->orWhere('customer_phone', 'like', "%{$digits}%");
                 }
             });
@@ -188,6 +192,9 @@ class OrderController extends Controller
                 ->get()->map(fn ($p) => ['id' => $p->id, 'name' => $p->name, 'sku' => $p->sku,
                     'price' => (float) $p->price, 'stock' => $p->stock_qty - $p->reserved_qty]),
             'couriers' => $this->settings->get('couriers.methods', []),
+            'allTags' => Order::where('business_id', $biz)->pluck('tags')->filter()
+                ->flatMap(fn ($t) => is_array($t) ? $t : [])->unique()->values(),
+            'paymentMethods' => ['bKash', 'Nagad', 'Rocket', 'Bank', 'Cash on Delivery'],
             'defaults' => [
                 'delivery_charge' => (float) $this->settings->get('business.default_delivery_cost', 60),
                 'invoice_slug' => (string) $this->settings->get('business.invoice_slug', 'OB'),
@@ -229,6 +236,10 @@ class OrderController extends Controller
             'advance' => ['nullable', 'numeric', 'min:0'],
             'txn_id' => [$mandatoryTxn && (float) $request->input('advance', 0) > 0 ? 'required' : 'nullable', 'string', 'max:80'],
             'tags' => ['nullable', 'array'],
+            'payment_method' => ['nullable', 'string', 'max:60'],
+            'reference_link' => ['nullable', 'string', 'max:255'],
+            'cross_sale' => ['nullable', 'boolean'],
+            'invoice_prefix' => ['nullable', 'string', 'max:20'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.product_id' => ['nullable', 'integer'],
             'items.*.name' => ['required', 'string', 'max:160'],
@@ -352,7 +363,7 @@ class OrderController extends Controller
             'courierMethods' => \App\Models\CourierMethod::where('business_id', $biz)->where('is_active', true)->with('pickupStores')->orderBy('name')->get()->map(function ($m) use ($order, $suggestion) {
                 return ['id' => $m->id, 'name' => $m->name, 'label' => $m->label(), 'type' => $m->courier_type,
                     'class' => $m->courierClass(), 'booking_mode' => $m->bookingMode(),
-                    'charge' => $m->chargeFor($order->district),
+                    'charge' => $m->chargeFor($order->effectiveDistrict()),
                     'is_default' => $m->is_default, 'is_preferred' => $m->is_preferred,
                     'suggested' => $suggestion && $suggestion['method']->id === $m->id,
                     'suggested_reason' => $suggestion && $suggestion['method']->id === $m->id ? $suggestion['reason'] : null,

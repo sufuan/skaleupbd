@@ -68,7 +68,7 @@ class MockDriver implements CourierDriver
         if ($orders->isEmpty()) {
             return [];
         }
-        $amount = $orders->sum(fn (Order $o) => max(0, $o->codAmount() - $method->chargeFor($o->district)));
+        $amount = $orders->sum(fn (Order $o) => max(0, $o->codAmount() - $method->chargeFor($o->effectiveDistrict())));
 
         return [[
             'payment_id' => 'SFC-MOCK-1', 'amount' => round($amount, 2), 'method' => 'Bank',
@@ -80,7 +80,7 @@ class MockDriver implements CourierDriver
     {
         return $this->unsettledDelivered($method)->map(fn (Order $o) => [
             'invoice' => $o->invoice,
-            'amount' => round(max(0, $o->codAmount() - $method->chargeFor($o->district)), 2),
+            'amount' => round(max(0, $o->codAmount() - $method->chargeFor($o->effectiveDistrict())), 2),
         ])->all();
     }
 
@@ -93,7 +93,7 @@ class MockDriver implements CourierDriver
         return [
             'collected' => $order->codAmount(),
             'cod_fee' => 0.0,
-            'delivery_fee' => $method->chargeFor($order->district),
+            'delivery_fee' => $method->chargeFor($order->effectiveDistrict()),
             'payment_status' => 'Collected',
         ];
     }

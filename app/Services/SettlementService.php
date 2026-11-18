@@ -24,7 +24,7 @@ class SettlementService
 {
     public function committedCharge(Order $order): float
     {
-        return $order->courierMethod ? $order->courierMethod->chargeFor($order->district) : (float) $order->delivery_charge;
+        return $order->courierMethod ? $order->courierMethod->chargeFor($order->effectiveDistrict()) : (float) $order->delivery_charge;
     }
 
     public function expectedNet(Order $order): float
@@ -145,7 +145,7 @@ class SettlementService
      * Match uploaded statement lines (invoice → paid net amount).
      * Preview mode returns matched/unmatched/duplicate without writing.
      */
-    public function matchUpload(int $businessId, array $lines, bool $commit, User $actor): array
+    public function matchUpload(int $businessId, array $lines, bool $commit, User $actor, string $source = 'upload', ?string $reference = null): array
     {
         $matched = [];
         $unmatched = [];
@@ -181,8 +181,9 @@ class SettlementService
                 $method = CourierMethod::find($methodId);
                 $settlement = CourierSettlement::create([
                     'business_id' => $businessId, 'courier_method_id' => $methodId,
-                    'amount' => $group->sum('paid_amount'), 'source' => 'upload',
-                    'status_label' => 'Statement upload', 'paid_at' => now(),
+                    'amount' => $group->sum('paid_amount'), 'source' => $source,
+                    'reference' => $reference,
+                    'status_label' => $source === 'manual' ? 'Manual entry' : 'Statement upload', 'paid_at' => now(),
                 ]);
                 foreach ($group as $m) {
                     CourierSettlementAllocation::create(['settlement_id' => $settlement->id, 'order_id' => $m['order_id'], 'amount' => $m['paid_amount']]);

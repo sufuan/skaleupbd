@@ -8,7 +8,7 @@ export const FIELD_DEFS = {
         ['client_id', 'Client Id'], ['client_secret', 'Client Secret', 'secret'],
         ['client_email', 'Client Email'], ['password', 'Password', 'secret'], ['store_id', 'Store Id'],
         ['default_city_id', 'Default City ID'], ['default_zone_id', 'Default Zone ID'], ['default_area_id', 'Default Area ID'],
-        ['webhook_secret', 'Webhook Secret (Optional)', 'secret'], ['sandbox', 'Sandbox Mode (Test)', 'check'],
+        ['webhook_secret', 'Webhook Secret (Optional)', 'secret'],
     ],
     STEADFAST: [
         ['api_key', 'ApiKey', 'secret'], ['api_secret', 'Api Secret', 'secret'],
@@ -19,7 +19,6 @@ export const FIELD_DEFS = {
         ['default_area', 'Default Area'], ['default_area_id', 'Default Area ID'],
         ['default_weight', 'Default Parcel Weight (kg)'],
         ['webhook_token', 'Webhook Token (Optional)', 'secret'],
-        ['sandbox', 'Sandbox Mode (Test)', 'check'],
     ],
     CARRYBEE: [
         ['client_id', 'Client ID'], ['client_secret', 'Client Secret', 'secret'], ['client_context', 'Client Context', 'secret'],
@@ -27,7 +26,6 @@ export const FIELD_DEFS = {
         ['default_weight', 'Default Parcel Weight (kg)'],
         ['default_city_id', 'Default City ID'], ['default_zone_id', 'Default Zone ID'], ['default_area_id', 'Default Area ID'],
         ['webhook_secret', 'Webhook Secret (Optional)', 'secret'],
-        ['sandbox', 'Sandbox Mode (Test)', 'check'],
     ],
     ECOURIER: [
         ['api_key', 'API Key', 'secret'], ['api_secret', 'API Secret', 'secret'], ['user_id', 'User ID'],
@@ -47,8 +45,8 @@ export const FIELD_DEFS = {
 const GUIDE = {
     STEADFAST: 'How to get these: register free at steadfast.com.bd/register, then in the merchant panel open API → Your API keys and copy the Api-Key and Secret-Key. There is no fee for API access.',
     PATHAO: 'How to get these: register free at merchant.pathao.com/register, add your store and payment info, then open the Developer API section in the panel for the Client ID and Secret. The username is your merchant login email. A new store takes about an hour to be approved.',
-    REDX: 'How to get this: open redx.com.bd/developer-api — your access token is shown on that page (sign in to your merchant account if it is blank). The same page lists the sandbox address and its own separate token for testing. There is no fee for API access.',
-    CARRYBEE: 'How to get these: register free at merchant.carrybee.com/register, then ask your Carrybee account manager (KAM) or support for the API credentials — they issue the Client ID, Secret and Context. There is no fee for API access. Sandbox access also comes from Carrybee technical support (ecomsupport@carrybee.com) — tick Sandbox Mode only with sandbox credentials they give you.',
+    REDX: 'How to get this: open redx.com.bd/developer-api — your access token is shown on that page (sign in to your merchant account if it is blank). There is no fee for API access.',
+    CARRYBEE: 'How to get these: register free at merchant.carrybee.com/register, then open the API section in your merchant panel — the Client ID, Secret and Context are already generated there for your business, ready to copy. There is no fee for API access.',
     ECOURIER: 'How to get these: register at ecourier.com.bd and wait for eCourier to activate your account, then copy the API-KEY, API-SECRET and USER-ID from the panel\'s API credentials section — or ask eCourier support. The fraud check needs eCourier support to switch it on.',
     PAPERFLY: 'How to get these: sign in to the Paperfly merchant panel (go.paperfly.com.bd) and open Developer Guide — your API Key is printed inside the Order Creation code sample there. Tracking signs in with your panel username + password, so keep those here too. There is no sandbox: every booking is a real parcel.',
     BAHOK: 'Bahok has no public API — book in the Bahok app and record the CN number when sending, like a manual courier.',
@@ -167,16 +165,16 @@ export default function CourierSettings({ couriers }) {
                     <div className="conn-row" key={m.id}>
                         <div style={{ flex: 1 }}>
                             <div className="b">{m.name}
+                                {m.is_active
+                                    ? <span className="pill green" style={{ marginLeft: 8 }}>{t('Connected')}</span>
+                                    : <span className="pill" style={{ marginLeft: 8 }}>{t('Off')}</span>}
                                 {m.is_default && <span className="pill green" style={{ marginLeft: 8 }}>{t('Default')}</span>}
                                 {m.is_preferred && <span className="pill blue" style={{ marginLeft: 8 }}>{t('Fallback')}</span>}
-                                <span className="pill" style={{ marginLeft: 8 }}>{t('Class')} {m.class}</span>
                             </div>
                             <div className="sm mut">{m.label} · {t('Inside Dhaka')} ৳{m.charge_inside_dhaka} · {t('Outside Dhaka')} ৳{m.charge_outside_dhaka}
                                 {m.stores.length > 0 && <> · {m.stores.length} {t('pickup stores')}</>}</div>
                         </div>
-                        <span className={`pill ${m.is_active ? 'green' : ''}`}>{m.is_active ? t('On') : t('Off')}</span>
                         <button className="btn" onClick={() => setEditing(m)}>{t('Configure')}</button>
-                        {m.booking_mode === 'api' && <button className="btn" onClick={() => router.post(`/settings/couriers/${m.id}/test`)}>{t('Test Connection')}</button>}
                         {(m.courier_type === 'PATHAO' || m.courier_type === 'CARRYBEE') && <button className="btn" onClick={() => router.post(`/settings/couriers/${m.id}/sync-stores`)}>{t('Sync Stores')}</button>}
                         {!m.is_default && <button className="btn" onClick={() => router.post(`/settings/couriers/${m.id}/default`)}>{t('Set Default')}</button>}
                         {!m.is_preferred && <button className="btn" onClick={() => router.post(`/settings/couriers/${m.id}/preferred`)}>{t('Set Fallback')}</button>}

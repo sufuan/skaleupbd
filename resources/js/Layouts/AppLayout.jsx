@@ -1,7 +1,10 @@
 import LanguageSwitcher from '@/Components/LanguageSwitcher';
 import { t } from '@/lib/i18n';
 import { Link, router, usePage } from '@inertiajs/react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
+
+// Live counts for sidebar/topbar badges, refreshed by polling /sidebar-counts.
+const CountsContext = createContext({});
 
 const I = ({ d, size = 17 }) => (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d={d} /></svg>
@@ -43,10 +46,10 @@ const NAV = [
         { label: 'Dashboard', icon: 'grid', href: '/dashboard' },
     ]},
     { sec: 'Operations', items: [
-        { label: 'Orders', icon: 'box', children: [{ label: 'New Order', href: '/orders/create' }, { label: 'Order List', href: '/orders' }, { label: 'Auto Pick Orders', href: '/orders/autopick' }, { label: 'Auto Call Center', href: '/orders/autocall' }, { label: 'Order Block List', href: '/orders/block-list' }, { label: 'Preorders', href: '/orders/preorders' }, { label: 'Orders Dashboard', href: '/orders/dashboard' }], href: '/orders' },
+        { label: 'Orders', icon: 'box', badgeKey: 'orders_pending', children: [{ label: 'New Order', href: '/orders/create' }, { label: 'Order List', href: '/orders' }, { label: 'Auto Pick Orders', href: '/orders/autopick' }, { label: 'Auto Call Center', href: '/orders/autocall' }, { label: 'Order Block List', href: '/orders/block-list' }, { label: 'Preorders', href: '/orders/preorders' }, { label: 'Orders Dashboard', href: '/orders/dashboard' }], href: '/orders' },
         { label: 'Delivery', icon: 'truck', badgeKey: 'delivery_waiting', children: [{ label: 'Ready to Ship', href: '/delivery/ready' }, { label: 'Courier Management', href: '/delivery/parcels' }, { label: 'Scan To Update', href: '/delivery/scan' }, { label: 'Courier Invoice Upload', href: '/delivery/invoice' }, { label: 'Courier Ledger', href: '/delivery/ledger' }], href: '/delivery/ready' },
-        { label: 'Inventory', icon: 'layers', children: ['Inventory Dashboard', 'Products', 'Stock Ledger', 'Branches', 'Warranty'], href: mod('inventory') },
-        { label: 'Messages', icon: 'chat', children: ['Inbox', 'Comments', 'AI Activity'], href: mod('messages') },
+        { label: 'Inventory', icon: 'layers', children: [{ label: 'Inventory Dashboard', href: '/inventory/dashboard' }, { label: 'Products', href: '/inventory/products' }, { label: 'Stock Ledger', href: '/inventory/ledger' }, { label: 'Branches', href: '/inventory/branches' }, { label: 'Warranty', href: '/inventory/warranty' }], href: '/inventory/dashboard' },
+        { label: 'Messages', icon: 'chat', badgeKey: 'messages_unread', children: ['Inbox', 'Comments', 'AI Activity'], href: mod('messages') },
         { label: 'Purchase', icon: 'cart', children: ['Purchase Dashboard', 'Purchase List', 'New Purchase', 'Receive Purchase', 'Supplier Ledger', 'Suppliers', 'Ask for Quotation'], href: mod('purchase') },
         { label: 'Task & Follow-up', icon: 'check', children: ['Task Board', 'Agent Cockpit', 'Follow-up Management', 'My Follow-ups', 'Follow-up Performance'], href: mod('task') },
         { label: 'Call Center', icon: 'phone', children: ['Call Dashboard', 'Call Reports', 'Contacts'], href: mod('call-center') },
@@ -95,6 +98,8 @@ const KIND_ICON = { order: 'box', delivery: 'truck', stock: 'layers', task: 'che
 
 function NavGroup({ item, current }) {
     const pageProps = usePage().props;
+    const counts = useContext(CountsContext);
+    const badgeValue = item.badgeKey ? (counts[item.badgeKey] ?? pageProps[item.badgeKey] ?? 0) : 0;
     const active = current.startsWith(item.href);
     const [open, setOpen] = useState(active);
     if (!item.children) {
@@ -105,7 +110,7 @@ function NavGroup({ item, current }) {
             <div className={`nav-item ${open ? 'open' : ''} ${active ? 'act' : ''}`} onClick={() => setOpen(!open)}>
                 <I d={P[item.icon]} />{t(item.label)}
                 {item.badge && <span className="badge">{item.badge}</span>}
-                {item.badgeKey && Number(pageProps[item.badgeKey] ?? 0) > 0 && <span className="badge">{pageProps[item.badgeKey]}</span>}
+                {item.badgeKey && Number(badgeValue) > 0 && <span className="badge">{badgeValue}</span>}
                 <span className="chev">›</span>
             </div>
             {open && (
@@ -242,7 +247,27 @@ export default function AppLayout({ children }) {
     const [askOpen, setAskOpen] = useState(false);
     const [theme, setTheme] = useState(() => (typeof document !== 'undefined' && document.documentElement.dataset.theme) || 'light');
     const [toast, setToast] = useState(null);
-    const unread = props.notifications?.unread || 0;
+    const [liveCounts, setLiveCounts] = useState(null);
+    const counts = {
+        orders_pending: liveCounts?.orders_pending ?? props.orders_pending ?? 0,
+        delivery_waiting: liveCounts?.delivery_waiting ?? props.delivery_waiting ?? 0,
+        notifications_unread: liveCounts?.notifications_unread ?? props.notifications?.unread ?? 0,
+        messages_unread: liveCounts?.messages_unread ?? 0,
+    };
+    const unread = counts.notifications_unread;
+
+    useEffect(() => {
+        let stop = false;
+        const poll = async () => {
+            try {
+                const res = await fetch('/sidebar-counts', { headers: { Accept: 'application/json' }, credentials: 'same-origin' });
+                if (res.ok && !stop) setLiveCounts(await res.json());
+            } catch { /* keep the last known counts */ }
+        };
+        poll();
+        const id = setInterval(poll, 15000);
+        return () => { stop = true; clearInterval(id); };
+    }, []);
     const userName = props.auth?.user?.name || 'User';
     const initials = userName.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase();
 
@@ -263,6 +288,15 @@ export default function AppLayout({ children }) {
         }
     }, [props.flash?.success]);
 
+    const [toastErr, setToastErr] = useState(null);
+    useEffect(() => {
+        if (props.flash?.error) {
+            setToastErr(props.flash.error);
+            const id = setTimeout(() => setToastErr(null), 6000);
+            return () => clearTimeout(id);
+        }
+    }, [props.flash?.error]);
+
     useEffect(() => { setSbOpen(false); }, [current]);
 
     const toggleTheme = () => {
@@ -273,6 +307,7 @@ export default function AppLayout({ children }) {
     };
 
     return (
+        <CountsContext.Provider value={counts}>
         <div className="shell">
             {sbOpen && <div className="sb-overlay" onClick={() => setSbOpen(false)} />}
             <aside className={`sb ${sbOpen ? 'open' : ''}`}>
@@ -324,6 +359,8 @@ export default function AppLayout({ children }) {
             {searchOpen && <SearchModal close={() => setSearchOpen(false)} />}
             {askOpen && <AskDrawer close={() => setAskOpen(false)} />}
             {toast && <div className="toast">{toast}</div>}
+            {toastErr && <div className="toast err">{toastErr}</div>}
         </div>
+        </CountsContext.Provider>
     );
 }

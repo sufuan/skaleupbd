@@ -14,6 +14,7 @@ class Order extends Model
         'tags' => 'array',
         'attachments' => 'array',
         'is_preorder' => 'boolean',
+        'cross_sale' => 'boolean',
         'preorder_notified' => 'boolean',
         'approved_at' => 'datetime',
         'shipped_at' => 'datetime',
@@ -55,6 +56,28 @@ class Order extends Model
     public function processor(): BelongsTo
     {
         return $this->belongsTo(User::class, 'processed_by');
+    }
+
+    /**
+     * The district used for courier zone decisions. The New Order form (like
+     * the prototype) has no district field — the zone is chosen through the
+     * delivery method itself ("… — Inside Dhaka" / "… — Outside Dhaka"), so
+     * when no district was stored, read it back from the method.
+     */
+    public function effectiveDistrict(): ?string
+    {
+        if (! empty($this->district)) {
+            return $this->district;
+        }
+        $m = (string) $this->delivery_method;
+        if (str_contains($m, 'Outside Dhaka')) {
+            return 'Outside Dhaka';
+        }
+        if (str_contains($m, 'Inside Dhaka')) {
+            return 'Dhaka';
+        }
+
+        return $this->district;
     }
 
     public function getInvoiceAttribute(): ?string
