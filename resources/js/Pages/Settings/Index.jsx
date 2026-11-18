@@ -94,14 +94,8 @@ function BusinessProfileForm({ m2 }) {
     );
 }
 
-function Api({ tab, couriers }) {
-    if (tab === 'channels') return (
-        <div className="card"><h3>{t('Messaging Channels')}</h3><div className="card-sub">{t('One account per channel per shop (v1 rule)')}</div>
-            <ConnRow name="Facebook Page" desc="Demo Shop BD — Page ID 1473954169130280" status="Connected" pillCls="green" />
-            <ConnRow name="WhatsApp" desc="+880 1712-445566 — WABA connected" status="Connected" pillCls="green" />
-            <ConnRow name="Instagram" desc="A Professional account is needed — this channel is parked for now" status="Not Connected" pillCls="" />
-            <SaveBar /></div>
-    );
+function Api({ tab, couriers, channels }) {
+    if (tab === 'channels') return <ChannelsForm channels={channels} />;
     if (tab === 'app') return (
         <div className="card"><h3>{t('App Integration')}</h3><div className="card-sub">{t('External API for outside apps and AI systems')}</div>
             <Field label="API Key (sk_…)" value="sk_••••••••••••••••••48" /><Field label="Webhook URL" value="https://demoshop.com.bd/hooks/skaleup" />
@@ -113,6 +107,88 @@ function Api({ tab, couriers }) {
             <ConnRow name="WooCommerce" desc="Plugin connected — order sync is on" status="Connected" pillCls="green" /><SaveBar /></div>
     );
     return <CourierSettings couriers={couriers} />;
+}
+
+function ChannelsForm({ channels }) {
+    const c = channels || {};
+    const form = useForm({
+        app_id: c.app_id || '',
+        app_secret: '',
+        facebook_account_id: c.facebook?.account_id || '',
+        facebook_page_name: c.facebook?.page_name || '',
+        facebook_token: '',
+        whatsapp_account_id: c.whatsapp?.account_id || '',
+        whatsapp_waba_id: c.whatsapp?.waba_id || '',
+        whatsapp_phone_number: c.whatsapp?.phone_number || '',
+        whatsapp_token: '',
+        instagram_account_id: c.instagram?.account_id || '',
+        instagram_username: c.instagram?.username || '',
+        instagram_token: '',
+    });
+    const [checks, setChecks] = useState({});
+    const save = (e) => { e.preventDefault(); form.post('/settings/channels', { preserveScroll: true }); };
+    const check = async (channel) => {
+        setChecks((s) => ({ ...s, [channel]: t('Checking...') }));
+        try {
+            const token = document.querySelector('meta[name="csrf-token"]')?.content || '';
+            const res = await fetch('/settings/channels/check', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': token, Accept: 'application/json' }, body: JSON.stringify({ channel }) });
+            const j = await res.json();
+            setChecks((s) => ({ ...s, [channel]: j.detail || (j.ok ? 'Connected' : 'Failed') }));
+        } catch { setChecks((s) => ({ ...s, [channel]: t('Check failed — try again') })); }
+    };
+    const savedNote = (set) => set ? t('Saved — leave blank to keep it') : t('Not saved yet');
+    const block = (title, channelKey, cfg, children) => (
+        <div className="card" style={{ marginBottom: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <h3 style={{ margin: 0 }}>{t(title)}</h3>
+                <span style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
+                    {checks[channelKey] ? <span style={{ fontSize: 12.5 }}>{checks[channelKey]}</span> : null}
+                    <button type="button" className="btn" onClick={() => check(channelKey)}>{t('Check connection')}</button>
+                </span>
+            </div>
+            {children}
+        </div>
+    );
+
+    return (
+        <form onSubmit={save}>
+            <div className="card" style={{ marginBottom: 12 }}>
+                <h3>{t('Meta App')}</h3>
+                <div className="card-sub">{t('Messages from Facebook, WhatsApp and Instagram arrive at this webhook address. Put the same address and verify token in the Meta app.')}</div>
+                <div className="frow"><label className="fl">{t('Webhook URL')}</label><input className="inp" readOnly value={c.webhook_url || ''} onFocus={(e) => e.target.select()} /></div>
+                <div className="frow"><label className="fl">{t('Verify Token')}</label><input className="inp" readOnly value={c.verify_token || ''} onFocus={(e) => e.target.select()} /></div>
+                <div className="frow"><label className="fl">{t('App ID')}</label><input className="inp" value={form.data.app_id} onChange={(e) => form.setData('app_id', e.target.value)} /></div>
+                <div className="frow"><label className="fl">{t('App Secret')}</label><input className="inp" type="password" value={form.data.app_secret} onChange={(e) => form.setData('app_secret', e.target.value)} placeholder={savedNote(c.app_secret_set)} /></div>
+            </div>
+
+            {block('Facebook Page (Messenger)', 'facebook', c.facebook, (
+                <>
+                    <div className="frow"><label className="fl">{t('Page ID')}</label><input className="inp" value={form.data.facebook_account_id} onChange={(e) => form.setData('facebook_account_id', e.target.value)} /></div>
+                    <div className="frow"><label className="fl">{t('Page name')}</label><input className="inp" value={form.data.facebook_page_name} onChange={(e) => form.setData('facebook_page_name', e.target.value)} /></div>
+                    <div className="frow"><label className="fl">{t('Page Access Token')}</label><input className="inp" type="password" value={form.data.facebook_token} onChange={(e) => form.setData('facebook_token', e.target.value)} placeholder={savedNote(c.facebook?.token_set)} /></div>
+                </>
+            ))}
+
+            {block('WhatsApp', 'whatsapp', c.whatsapp, (
+                <>
+                    <div className="frow"><label className="fl">{t('Phone Number ID')}</label><input className="inp" value={form.data.whatsapp_account_id} onChange={(e) => form.setData('whatsapp_account_id', e.target.value)} /></div>
+                    <div className="frow"><label className="fl">{t('WhatsApp Business Account ID')}</label><input className="inp" value={form.data.whatsapp_waba_id} onChange={(e) => form.setData('whatsapp_waba_id', e.target.value)} /></div>
+                    <div className="frow"><label className="fl">{t('Phone number')}</label><input className="inp" value={form.data.whatsapp_phone_number} onChange={(e) => form.setData('whatsapp_phone_number', e.target.value)} /></div>
+                    <div className="frow"><label className="fl">{t('Permanent Access Token')}</label><input className="inp" type="password" value={form.data.whatsapp_token} onChange={(e) => form.setData('whatsapp_token', e.target.value)} placeholder={savedNote(c.whatsapp?.token_set)} /></div>
+                </>
+            ))}
+
+            {block('Instagram', 'instagram', c.instagram, (
+                <>
+                    <div className="frow"><label className="fl">{t('Instagram User ID')}</label><input className="inp" value={form.data.instagram_account_id} onChange={(e) => form.setData('instagram_account_id', e.target.value)} /></div>
+                    <div className="frow"><label className="fl">{t('Username')}</label><input className="inp" value={form.data.instagram_username} onChange={(e) => form.setData('instagram_username', e.target.value)} /></div>
+                    <div className="frow"><label className="fl">{t('Access Token')}</label><input className="inp" type="password" value={form.data.instagram_token} onChange={(e) => form.setData('instagram_token', e.target.value)} placeholder={savedNote(c.instagram?.token_set)} /></div>
+                </>
+            ))}
+
+            <div className="flex mt16"><span className="spacer" /><button className="btn pri" disabled={form.processing}>{t('Save Changes')}</button></div>
+        </form>
+    );
 }
 
 function Calls({ tab, m2 }) {
@@ -172,41 +248,188 @@ function TemplatesForm({ m2 }) {
     );
 }
 
-function Ai({ tab }) {
-    if (tab === 'ailvl') return (
-        <div className="card"><h3>{t('AI Reply')}</h3><div className="card-sub">{t('How much the AI may do alone, per channel — for a new channel, starting with Draft only for the first 7 days is recommended')}</div>
-            {[['Messenger', 'Draft only — AI writes, a human sends', 'New channel'], ['WhatsApp', 'Draft only — AI writes, a human sends', 'New channel']].map(([c, v, d]) => (
-                <div className="frow" key={c}><label className="fl">{c} <span className="mut">({t(d)})</span></label>
-                    <select className="inp" defaultValue={v}><option value={v}>{t(v)}</option><option>{t('Off')}</option><option>{t('Auto — simple answers sent by itself')}</option><option>{t('Full auto — everything including bargaining')}</option></select></div>
-            ))}
-            <Field label="Working Hours" value="সকাল 9টা — রাত 11টা (এর বাইরে AI শুধু draft রাখবে)" /><SaveBar /></div>
-    );
-    if (tab === 'negotiation') return (
-        <div className="card"><h3>{t('Price & Negotiation')}</h3><div className="card-sub">{t('The AI lowers the price step by step — never below the floor, held back by code')}</div>
-            <Field label="Maximum discount (%)" value="15" type="number" /><Field label="Discount per step (%)" value="5" type="number" />
-            <div className="rule-card"><div className="b">{t('Price ladder (example)')}</div>
-                <div className="flex mt8" style={{ gap: 8, flexWrap: 'wrap' }}>
-                    {['৳600', '→', '৳570', '→', '৳540', '→', '৳510 (floor)'].map((x, i) => <span key={i} className={x.includes('floor') ? 'pill red' : 'pill'}>{x}</span>)}
-                </div></div>
-            <Field label="Free delivery (at least ৳)" value="1000" type="number" /><SaveBar /></div>
-    );
-    if (tab === 'knowledge') return (
-        <div className="card"><h3>{t('Knowledge')}</h3><div className="card-sub">{t('The AI reads these notes to build answers — if it is not here, the AI will not make it up')}</div>
-            <Field label="Delivery & Return Policy" value="ঢাকার ভিতরে 24–48 ঘণ্টা, বাইরে 3–5 দিন। ত্রুটিপূর্ণ পণ্য 7 দিনে বদলি।" area />
-            <Field label="Payment Info" value="Cash on Delivery, bKash 01712-445566" area />
-            <Field label="Tone & Banned Words" value="ভদ্র, সংক্ষিপ্ত বাংলা। 'সস্তা' শব্দটা ব্যবহার করা যাবে না।" area /><SaveBar /></div>
-    );
+function Ai({ tab, ai }) {
+    const rules = ai?.rules || [];
+    const proposals = (ai?.proposals || []).filter((p) => p.status === 'pending');
+    const [testText, setTestText] = useState('');
+    const [testResult, setTestResult] = useState(null);
+    const runTest = async () => {
+        const token = document.querySelector('meta[name="csrf-token"]')?.content || '';
+        const res = await fetch('/settings/ai-rules/test', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': token, 'X-Requested-With': 'XMLHttpRequest' }, body: JSON.stringify({ text: testText }) });
+        setTestResult(await res.json());
+    };
+    if (tab === 'ailvl') {
+        return <AiReplyForm ai={ai} />;
+    }
+    if (tab === 'negotiation') {
+        return <NegotiationForm ai={ai} />;
+    }
+    if (tab === 'knowledge') {
+        return <KnowledgeForm ai={ai} />;
+    }
     return (
         <div className="card"><h3>{t('Rule Brain')}</h3><div className="card-sub">{t('When a rule matches, the AI gives that answer — every number comes from live data')}</div>
-            {[['Default First Reply', 'Welcome on the first message + how can I help', true], ['When they ask the price', 'The product\'s live price + delivery charge', true], ['Delivery charge question', 'From the charge table, by district', true], ['Stock question', 'In stock or not, from live stock', false]].map(([label, d, on]) => (
-                <div className="rule-card" key={label}><div className="flex"><div style={{ flex: 1 }}><div className="b">{t(label)}</div><div className="sm mut">{t(d)}</div></div><Sw on={on} /></div></div>
-            ))}
+            {rules.map((r) => <RuleRow key={r.id} rule={r} />)}
+            {rules.length === 0 && <div className="sm mut">{t('No rules yet — add the first one below')}</div>}
+            <RuleAddForm />
             <div className="rule-card note-box">
                 <div className="b">{t('Learning from your edits')}</div>
-                <div className="sm mut mt8">{t('The AI reads staff edits and conversations and proposes new rules here')} — <b>{t('no rule ever turns on unless a human approves it.')}</b> {t('2 proposals are waiting now.')}</div>
+                <div className="sm mut mt8">{t('The AI reads staff edits and conversations and proposes new rules here')} — <b>{t('no rule ever turns on unless a human approves it.')}</b> {proposals.length > 0 ? `${proposals.length} ${t('proposals are waiting now.')}` : t('No proposals are waiting.')}</div>
+                {proposals.map((p) => (
+                    <div key={p.id} className="rule-card" style={{ background: '#fff' }}>
+                        <div className="b">{p.title}</div>
+                        <div className="sm mut mt8">{p.detail}</div>
+                        <div className="flex mt8" style={{ gap: 8 }}>
+                            <button type="button" className="btn pri" onClick={() => router.post(`/settings/ai-proposals/${p.id}/approve`, {}, { preserveScroll: true })}>{t('Approve')}</button>
+                            <button type="button" className="btn" onClick={() => router.post(`/settings/ai-proposals/${p.id}/reject`, {}, { preserveScroll: true })}>{t('Reject')}</button>
+                        </div>
+                    </div>
+                ))}
             </div>
-            <div className="frow"><label className="fl">{t('Try a message')}</label><input className="inp" placeholder={t('e.g. How much is this?')} /></div>
-            <SaveBar /></div>
+            <div className="frow"><label className="fl">{t('Try a message')}</label>
+                <div className="flex" style={{ gap: 8, flex: 1 }}>
+                    <input className="inp" style={{ flex: 1 }} placeholder={t('e.g. How much is this?')} value={testText} onChange={(e) => setTestText(e.target.value)} />
+                    <button type="button" className="btn pri" onClick={runTest}>{t('Test')}</button>
+                </div>
+            </div>
+            {testResult && (
+                <div className="rule-card">
+                    {testResult.matched
+                        ? <><div className="b">{t('Rule')}: {testResult.rule} ({testResult.action})</div><div className="sm mt8">{testResult.reply}</div><div className="sm mut mt8">{testResult.verified ? t('Money figures verified against live data') : t('Money figures did NOT match — this would be held as a flagged draft')}</div></>
+                        : <div className="sm">{testResult.note}</div>}
+                </div>
+            )}
+        </div>
+    );
+}
+
+function RuleRow({ rule }) {
+    const form = useForm({ name: rule.name, trigger_type: rule.trigger_type, match_text: rule.match_text || '', action: rule.action, reply_template: rule.reply_template || '', active: rule.active });
+    const [open, setOpen] = useState(false);
+    const submit = (e) => { e.preventDefault(); form.patch(`/settings/ai-rules/${rule.id}`, { preserveScroll: true }); };
+    return (
+        <div className="rule-card">
+            <div className="flex"><div style={{ flex: 1 }}><div className="b">{rule.name}</div>
+                <div className="sm mut">{rule.trigger_type === 'intent' ? `${t('Intent')}: ${rule.match_text}` : `${t('Keywords')}: ${rule.match_text}`} · {rule.action}{rule.reply_template ? ` — ${rule.reply_template.slice(0, 70)}` : ''}</div></div>
+                <button type="button" className={`switch ${form.data.active ? 'on' : ''}`} aria-label="toggle" onClick={() => { const next = !form.data.active; form.setData('active', next); router.patch(`/settings/ai-rules/${rule.id}`, { ...form.data, active: next }, { preserveScroll: true }); }} />
+            </div>
+            <div className="flex mt8" style={{ gap: 8 }}>
+                <button type="button" className="btn" onClick={() => setOpen(!open)}>{t('Edit')}</button>
+                <button type="button" className="btn" onClick={() => { if (confirm(t('Delete this rule?'))) router.delete(`/settings/ai-rules/${rule.id}`, { preserveScroll: true }); }}>{t('Delete')}</button>
+            </div>
+            {open && (
+                <form onSubmit={submit} className="mt8">
+                    <div className="frow"><label className="fl">{t('Rule name')}</label><input className="inp" value={form.data.name} onChange={(e) => form.setData('name', e.target.value)} /></div>
+                    <div className="frow"><label className="fl">{t('Trigger')}</label>
+                        <select className="inp" value={form.data.trigger_type} onChange={(e) => form.setData('trigger_type', e.target.value)}>
+                            <option value="intent">{t('Intent')}</option><option value="keyword">{t('Keywords')}</option>
+                        </select></div>
+                    <div className="frow"><label className="fl">{t('Intent / Keywords')}</label><input className="inp" value={form.data.match_text} onChange={(e) => form.setData('match_text', e.target.value)} /></div>
+                    <div className="frow"><label className="fl">{t('Action')}</label>
+                        <select className="inp" value={form.data.action} onChange={(e) => form.setData('action', e.target.value)}>
+                            <option value="answer">{t('Answer')}</option><option value="draft">{t('Draft')}</option><option value="hide">{t('Hide (comments)')}</option><option value="handover">{t('Hand to human')}</option>
+                        </select></div>
+                    <div className="frow"><label className="fl">{t('Reply template')}</label><textarea className="inp" rows="3" value={form.data.reply_template} onChange={(e) => form.setData('reply_template', e.target.value)} /></div>
+                    <div className="sm mut">{'{product} · {price} · {stock} · {delivery_inside} · {delivery_outside} '}{t('are filled in from live data')}</div>
+                    <SaveBar />
+                </form>
+            )}
+        </div>
+    );
+}
+
+function RuleAddForm() {
+    const form = useForm({ name: '', trigger_type: 'keyword', match_text: '', action: 'answer', reply_template: '' });
+    const [open, setOpen] = useState(false);
+    if (!open) return <div className="mt8"><button type="button" className="btn pri" onClick={() => setOpen(true)}>{t('Add Rule')}</button></div>;
+    return (
+        <form onSubmit={(e) => { e.preventDefault(); form.post('/settings/ai-rules', { preserveScroll: true, onSuccess: () => { form.reset(); setOpen(false); } }); }} className="rule-card">
+            <div className="frow"><label className="fl">{t('Rule name')}</label><input className="inp" value={form.data.name} onChange={(e) => form.setData('name', e.target.value)} required /></div>
+            <div className="frow"><label className="fl">{t('Trigger')}</label>
+                <select className="inp" value={form.data.trigger_type} onChange={(e) => form.setData('trigger_type', e.target.value)}>
+                    <option value="intent">{t('Intent')}</option><option value="keyword">{t('Keywords')}</option>
+                </select></div>
+            <div className="frow"><label className="fl">{t('Intent / Keywords')}</label><input className="inp" value={form.data.match_text} onChange={(e) => form.setData('match_text', e.target.value)} placeholder={t('price, delivery, stock — or keywords separated by commas')} /></div>
+            <div className="frow"><label className="fl">{t('Action')}</label>
+                <select className="inp" value={form.data.action} onChange={(e) => form.setData('action', e.target.value)}>
+                    <option value="answer">{t('Answer')}</option><option value="draft">{t('Draft')}</option><option value="hide">{t('Hide (comments)')}</option><option value="handover">{t('Hand to human')}</option>
+                </select></div>
+            <div className="frow"><label className="fl">{t('Reply template')}</label><textarea className="inp" rows="3" value={form.data.reply_template} onChange={(e) => form.setData('reply_template', e.target.value)} /></div>
+            <SaveBar />
+        </form>
+    );
+}
+
+function AiReplyForm({ ai }) {
+    const a = ai?.autonomy || {};
+    const form = useForm({ facebook: a.facebook || 'draft', whatsapp: a.whatsapp || 'draft', instagram: a.instagram || 'draft', comment: a.comment || 'draft', working_hours: ai?.working_hours || '' });
+    const MODES = [['off', 'Off'], ['draft', 'Draft only — AI writes, a human sends'], ['auto', 'Auto — simple answers sent by itself'], ['full_auto', 'Full auto — everything including bargaining']];
+    const rows = [['facebook', 'Messenger'], ['whatsapp', 'WhatsApp'], ['instagram', 'Instagram'], ['comment', 'Comments']];
+    return (
+        <form onSubmit={(e) => { e.preventDefault(); form.post('/settings/ai-reply', { preserveScroll: true }); }}>
+            <div className="card"><h3>{t('AI Reply')}</h3><div className="card-sub">{t('How much the AI may do alone, per channel — for a new channel, starting with Draft only for the first 7 days is recommended')}</div>
+                {rows.map(([key, label]) => (
+                    <div className="frow" key={key}><label className="fl">{label}{key === 'comment' ? <span className="mut"> ({t('runs one step more cautiously')})</span> : ''}</label>
+                        <select className="inp" value={form.data[key]} onChange={(e) => form.setData(key, e.target.value)}>
+                            {MODES.map(([v, l]) => <option key={v} value={v}>{t(l)}</option>)}
+                        </select></div>
+                ))}
+                <div className="frow"><label className="fl">{t('Working Hours')}</label><input className="inp" value={form.data.working_hours} onChange={(e) => form.setData('working_hours', e.target.value)} /></div>
+                <div className="sm mut">{t('Outside working hours the AI only drafts. The first 7 days in Draft only is a recommendation, not a lock.')}</div>
+                <SaveBar />
+            </div>
+        </form>
+    );
+}
+
+function NegotiationForm({ ai }) {
+    const n = ai?.negotiation || { max: 15, step: 5, free_delivery_min: 1000 };
+    const form = useForm({ max_discount: n.max, step: n.step, free_delivery_min: n.free_delivery_min });
+    const price = 600;
+    const rungs = [];
+    for (let d = 0; d <= form.data.max_discount; d += Math.max(1, Number(form.data.step) || 5)) rungs.push(Math.round(price * (1 - d / 100)));
+    return (
+        <form onSubmit={(e) => { e.preventDefault(); form.post('/settings/ai-negotiation', { preserveScroll: true }); }}>
+            <div className="card"><h3>{t('Price & Negotiation')}</h3><div className="card-sub">{t('The AI lowers the price step by step — never below the floor, held back by code')}</div>
+                <div className="frow"><label className="fl">{t('Maximum discount (%)')}</label><input className="inp" type="number" value={form.data.max_discount} onChange={(e) => form.setData('max_discount', e.target.value)} /></div>
+                <div className="frow"><label className="fl">{t('Discount per step (%)')}</label><input className="inp" type="number" value={form.data.step} onChange={(e) => form.setData('step', e.target.value)} /></div>
+                <div className="rule-card"><div className="b">{t('Price ladder (example)')}</div>
+                    <div className="flex mt8" style={{ gap: 8, flexWrap: 'wrap' }}>
+                        {rungs.map((x, i) => <span key={i} style={{ display: 'contents' }}>{i > 0 && <span>→</span>}<span className={i === rungs.length - 1 ? 'pill red' : 'pill'}>৳{x}{i === rungs.length - 1 ? ' (floor)' : ''}</span></span>)}
+                    </div></div>
+                <div className="frow"><label className="fl">{t('Free delivery (at least ৳)')}</label><input className="inp" type="number" value={form.data.free_delivery_min} onChange={(e) => form.setData('free_delivery_min', e.target.value)} /></div>
+                <SaveBar />
+            </div>
+        </form>
+    );
+}
+
+function KnowledgeForm({ ai }) {
+    const entries = ai?.knowledge || [];
+    const add = useForm({ title: '', body: '' });
+    return (
+        <div className="card"><h3>{t('Knowledge')}</h3><div className="card-sub">{t('The AI reads these notes to build answers — if it is not here, the AI will not make it up')}</div>
+            {entries.map((e) => <KnowledgeRow key={e.id} entry={e} />)}
+            <form onSubmit={(ev) => { ev.preventDefault(); add.post('/settings/ai-knowledge', { preserveScroll: true, onSuccess: () => add.reset() }); }} className="rule-card">
+                <div className="frow"><label className="fl">{t('New note title')}</label><input className="inp" value={add.data.title} onChange={(e) => add.setData('title', e.target.value)} required /></div>
+                <div className="frow"><label className="fl">{t('Note')}</label><textarea className="inp" rows="3" value={add.data.body} onChange={(e) => add.setData('body', e.target.value)} required /></div>
+                <SaveBar />
+            </form>
+        </div>
+    );
+}
+
+function KnowledgeRow({ entry }) {
+    const form = useForm({ title: entry.title, body: entry.body });
+    return (
+        <form onSubmit={(e) => { e.preventDefault(); form.patch(`/settings/ai-knowledge/${entry.id}`, { preserveScroll: true }); }} className="rule-card">
+            <div className="frow"><label className="fl">{entry.title}</label><textarea className="inp" rows="3" value={form.data.body} onChange={(e) => form.setData('body', e.target.value)} /></div>
+            <div className="flex" style={{ gap: 8 }}>
+                <span className="spacer" />
+                <button type="button" className="btn" onClick={() => { if (confirm(t('Delete this note?'))) router.delete(`/settings/ai-knowledge/${entry.id}`, { preserveScroll: true }); }}>{t('Delete')}</button>
+                <button type="submit" className="btn pri">{t('Save Changes')}</button>
+            </div>
+        </form>
     );
 }
 
@@ -311,11 +534,103 @@ function OrderTogglesForm({ m2 }) {
     );
 }
 
-export default function SettingsIndex({ group: initial = 'home', totpEnabled = false, totpEnrolled = false, m2, couriers }) {
+const pkgTk = (n) => `৳${Number(n || 0).toLocaleString('en-IN')}`;
+
+function PackagesSettings({ data }) {
+    const catalog = data?.catalog || [];
+    const packages = data?.packages || [];
+    const labelOf = (k) => catalog.find((c) => c.key === k)?.label || k;
+    const [editing, setEditing] = useState(null);
+    const addForm = useForm({ name: '', price: '', duration_days: 30, description: '', features: [] });
+    const editForm = useForm({ name: '', price: '', duration_days: 30, description: '', features: [], active: true });
+    const add = (e) => { e.preventDefault(); addForm.post('/settings/packages', { preserveScroll: true, onSuccess: () => addForm.reset() }); };
+    const openEdit = (p) => { setEditing(p); editForm.setData({ name: p.name, price: p.price, duration_days: p.duration_days, description: p.description || '', features: p.features || [], active: p.active }); };
+    const saveEdit = (e) => { e.preventDefault(); editForm.patch(`/settings/packages/${editing.id}`, { preserveScroll: true, onSuccess: () => setEditing(null) }); };
+    const remove = (p) => { if (confirm(`${t('Delete package')} ${p.name}?`)) router.delete(`/settings/packages/${p.id}`, { preserveScroll: true }); };
+    const featPicker = (form) => (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: '6px 14px', margin: '6px 0 4px' }}>
+            {catalog.map((c) => {
+                const on = (form.data.features || []).includes(c.key);
+                return (
+                    <label key={c.key} style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 13.5, cursor: 'pointer' }}>
+                        <input type="checkbox" checked={on} onChange={() => { const cur = form.data.features || []; form.setData('features', on ? cur.filter((x) => x !== c.key) : [...cur, c.key]); }} />
+                        {t(c.label)}
+                    </label>
+                );
+            })}
+        </div>
+    );
+    const fields = (form) => (
+        <>
+            <div className="frow"><label className="fl">{t('Package name')}</label><input className="inp" value={form.data.name} onChange={(e) => form.setData('name', e.target.value)} required /></div>
+            <div className="frow"><label className="fl">{t('Price (৳)')}</label><input className="inp" type="number" min="0" value={form.data.price} onChange={(e) => form.setData('price', e.target.value)} required /></div>
+            <div className="frow"><label className="fl">{t('Duration (days)')}</label><input className="inp" type="number" min="1" value={form.data.duration_days} onChange={(e) => form.setData('duration_days', e.target.value)} required /></div>
+            <div className="frow"><label className="fl">{t('Short description')}</label><input className="inp" value={form.data.description} onChange={(e) => form.setData('description', e.target.value)} /></div>
+            <div style={{ fontSize: 13, fontWeight: 600, marginTop: 10 }}>{t('Features in this package')}</div>
+            <div style={{ fontSize: 12, color: 'var(--muted)' }}>{t('Only features that exist in the software can be chosen — nothing outside it.')}</div>
+            {featPicker(form)}
+        </>
+    );
+
+    return (
+        <div>
+            <div style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 14 }}>{t('The service packages sellers buy from us. Price and features are set here — everywhere else just shows them.')}</div>
+            <div className="plat-pkgs" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12, marginBottom: 14 }}>
+                {packages.map((p) => (
+                    <div key={p.id} className="card" style={{ display: 'flex', flexDirection: 'column' }}>
+                        <div style={{ display: 'flex', alignItems: 'center' }}>
+                            <div style={{ fontSize: 16, fontWeight: 700 }}>{p.name}</div>
+                            <span style={{ marginLeft: 'auto' }}>{p.active ? <span className="pill green">{t('Active')}</span> : <span className="pill">{t('Off')}</span>}</span>
+                        </div>
+                        <div style={{ fontSize: 26, fontWeight: 700, margin: '8px 0 2px' }}>{pkgTk(p.price)}<span style={{ fontSize: 13, fontWeight: 400, color: 'var(--muted)' }}> / {p.duration_days} {t('days')}</span></div>
+                        <div style={{ fontSize: 12.5, color: 'var(--muted)' }}>{p.description || ''}</div>
+                        <ul style={{ fontSize: 13, margin: '10px 0', paddingLeft: 16, lineHeight: 1.9 }}>
+                            {(p.features || []).map((f) => <li key={f}>{t(labelOf(f))}</li>)}
+                        </ul>
+                        <div style={{ marginTop: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
+                            <span style={{ fontSize: 12.5, color: 'var(--muted)' }}>{p.sellers} {t('sellers')}</span>
+                            <button className="btn" style={{ marginLeft: 'auto' }} onClick={() => openEdit(p)}>{t('Edit')}</button>
+                            <button className="btn" style={{ color: '#B91C1C' }} onClick={() => remove(p)}>{t('Delete')}</button>
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            <div className="card" style={{ maxWidth: 640 }}>
+                <h4 style={{ fontSize: 15, marginBottom: 10 }}>{t('Add a package')}</h4>
+                <form onSubmit={add}>
+                    {fields(addForm)}
+                    <div className="flex mt16"><span className="spacer" /><button className="btn pri" disabled={addForm.processing}>{t('Create package')}</button></div>
+                </form>
+            </div>
+
+            {editing && (
+                <div className="modal-overlay" onClick={() => setEditing(null)}>
+                    <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 560, maxHeight: '88vh', overflowY: 'auto' }}>
+                        <h3 style={{ fontSize: 17, marginBottom: 14 }}>{t('Edit package')} — {editing.name}</h3>
+                        <form onSubmit={saveEdit}>
+                            {fields(editForm)}
+                            <label style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 10, fontSize: 13.5 }}>
+                                <input type="checkbox" checked={!!editForm.data.active} onChange={(e) => editForm.setData('active', e.target.checked)} /> {t('Package is active (sellers can be put on it)')}
+                            </label>
+                            <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
+                                <button type="button" className="btn" onClick={() => setEditing(null)}>{t('Cancel')}</button>
+                                <button className="btn pri" disabled={editForm.processing} style={{ marginLeft: 'auto' }}>{t('Save')}</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
+
+export default function SettingsIndex({ group: initial = 'home', totpEnabled = false, totpEnrolled = false, m2, couriers, ai, isPlatform = false, packagesData = null, channels = null }) {
+    const groups = isPlatform ? [...GROUPS, { id: 'packages', label: 'Seller Packages', tabs: [] }] : GROUPS;
     const [group, setGroup] = useState(initial);
-    const g = GROUPS.find((x) => x.id === group) || GROUPS[0];
+    const g = groups.find((x) => x.id === group) || groups[0];
     const [tab, setTab] = useState(g.tabs[0]?.[0]);
-    const pick = (id) => { setGroup(id); const ng = GROUPS.find((x) => x.id === id); setTab(ng.tabs[0]?.[0]); };
+    const pick = (id) => { setGroup(id); const ng = groups.find((x) => x.id === id); setTab(ng?.tabs[0]?.[0]); };
     useEffect(() => { pick(initial); }, [initial]);
     return (
         <AppLayout>
@@ -324,7 +639,7 @@ export default function SettingsIndex({ group: initial = 'home', totpEnabled = f
             <div style={{ height: 14 }} />
             <div className="set-wrap">
                 <div className="set-menu">
-                    {GROUPS.map((x) => (
+                    {groups.map((x) => (
                         <div key={x.id} className={`nav-item ${group === x.id ? 'act' : ''}`} onClick={() => pick(x.id)}>{t(x.label)}</div>
                     ))}
                 </div>
@@ -336,10 +651,11 @@ export default function SettingsIndex({ group: initial = 'home', totpEnabled = f
                     )}
                     {group === 'home' && <Home />}
                     {group === 'business' && <Business tab={tab} m2={m2} />}
-                    {group === 'api' && <Api tab={tab} couriers={couriers} />}
+                    {group === 'api' && <Api tab={tab} couriers={couriers} channels={channels} />}
                     {group === 'calls' && <Calls tab={tab} m2={m2} />}
-                    {group === 'ai' && <Ai tab={tab} />}
+                    {group === 'ai' && <Ai tab={tab} ai={ai} />}
                     {group === 'security' && <Security tab={tab} totpEnabled={totpEnabled} totpEnrolled={totpEnrolled} m2={m2} />}
+                    {group === 'packages' && isPlatform && <PackagesSettings data={packagesData} />}
                 </div>
             </div>
         </AppLayout>

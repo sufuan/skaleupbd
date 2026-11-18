@@ -33,8 +33,36 @@ class SettingsController extends Controller
                     ->map(fn ($r) => ['id' => $r->id, 'scope' => $r->scope, 'product_id' => $r->product_id, 'category' => $r->category, 'district' => $r->district, 'area' => $r->area, 'method_id' => $r->courier_method_id, 'method_label' => $r->method?->label(), 'priority' => $r->priority])->all(),
                 'products' => \App\Models\Product::where('business_id', $biz)->orderBy('name')->get(['id', 'name', 'sku'])->all(),
             ],
+            'ai' => [
+                'rules' => \App\Models\AiRule::where('business_id', $biz)->orderBy('id')->get()
+                    ->map(fn ($r) => ['id' => $r->id, 'name' => $r->name, 'trigger_type' => $r->trigger_type, 'match_text' => $r->match_text, 'action' => $r->action, 'reply_template' => $r->reply_template, 'channel' => $r->channel, 'active' => (bool) $r->active])->all(),
+                'autonomy' => app(\App\Services\RuleBrainService::class)->autonomy(),
+                'working_hours' => (string) $this->settings->get('ai.working_hours', 'সকাল 9টা — রাত 11টা'),
+                'negotiation' => app(\App\Services\NegotiationService::class)->config(),
+                'knowledge' => \App\Models\KnowledgeEntry::where('business_id', $biz)->orderBy('id')->get(['id', 'title', 'body'])->all(),
+                'proposals' => \App\Models\AiRuleProposal::where('business_id', $biz)->orderByRaw("CASE WHEN status = 'pending' THEN 0 ELSE 1 END")->orderByDesc('id')->get()
+                    ->map(fn ($p) => ['id' => $p->id, 'title' => $p->title, 'detail' => $p->detail, 'status' => $p->status])->all(),
+            ],
             'totpEnabled' => $this->totp->enabled(),
             'totpEnrolled' => (bool) $request->user()?->hasTotpEnabled(),
+            'isPlatform' => (bool) ($request->user()?->is_platform_admin),
+            'channels' => [
+                'webhook_url' => url('/api/webhooks/meta'),
+                'verify_token' => (string) $this->settings->get('meta.verify_token', ''),
+                'app_id' => (string) $this->settings->get('meta.app_id', ''),
+                'app_secret_set' => ! empty($this->settings->get('meta.app_secret_enc')),
+                'facebook' => $this->channelView('facebook', ['page_name']),
+                'whatsapp' => $this->channelView('whatsapp', ['waba_id', 'phone_number']),
+                'instagram' => $this->channelView('instagram', ['username']),
+            ],
+            'packagesData' => ($request->user()?->is_platform_admin) ? [
+                'catalog' => collect(\App\Support\FeatureCatalog::all())->map(fn ($label, $key) => ['key' => $key, 'label' => $label])->values()->all(),
+                'packages' => \App\Models\Package::orderBy('sort')->orderBy('id')->get()->map(fn ($p) => [
+                    'id' => $p->id, 'name' => $p->name, 'price' => (float) $p->price, 'duration_days' => (int) $p->duration_days,
+                    'description' => $p->description, 'features' => $p->features ?? [], 'active' => (bool) $p->active,
+                    'sellers' => \App\Models\SellerSubscription::where('package_id', $p->id)->distinct('business_id')->count('business_id'),
+                ])->all(),
+            ] : null,
             'm2' => [
                 'business' => [
                     'name' => (string) $this->settings->get('business.name', 'Demo Shop'),
@@ -221,5 +249,275 @@ class SettingsController extends Controller
         }
 
         return back()->with('success', 'Delivery method added');
+    }
+
+    // ---------- AI & Auto Reply (M6) ----------
+
+    public function storeAiRule(Request $request): RedirectResponse
+    {
+        $biz = (int) ($request->user()?->business_id ?? 0);
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:120'],
+            'trigger_type' => ['required', 'string', 'in:intent,keyword'],
+            'match_text' => ['nullable', 'string', 'max:200'],
+            'action' => ['required', 'string', 'in:answer,draft,hide,handover'],
+            'reply_template' => ['nullable', 'string', 'max:2000'],
+        ]);
+        \App\Models\AiRule::create($data + ['business_id' => $biz, 'active' => true]);
+
+        return back()->with('success', 'Rule added');
+    }
+
+    public function updateAiRule(Request $request, \App\Models\AiRule $rule): RedirectResponse
+    {
+        abort_unless((int) $rule->business_id === (int) ($request->user()?->business_id ?? 0), 403);
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:120'],
+            'trigger_type' => ['required', 'string', 'in:intent,keyword'],
+            'match_text' => ['nullable', 'string', 'max:200'],
+            'action' => ['required', 'string', 'in:answer,draft,hide,handover'],
+            'reply_template' => ['nullable', 'string', 'max:2000'],
+            'active' => ['required', 'boolean'],
+        ]);
+        $rule->update($data);
+
+        return back()->with('success', 'Rule saved');
+    }
+
+    public function deleteAiRule(Request $request, \App\Models\AiRule $rule): RedirectResponse
+    {
+        abort_unless((int) $rule->business_id === (int) ($request->user()?->business_id ?? 0), 403);
+        $rule->delete();
+
+        return back()->with('success', 'Rule deleted');
+    }
+
+    public function testAiRule(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $biz = (int) ($request->user()?->business_id ?? 0);
+        $data = $request->validate(['text' => ['required', 'string', 'max:500']]);
+        $brain = app(\App\Services\RuleBrainService::class);
+        $rule = $brain->matchRule($biz, $data['text']);
+        if (! $rule) {
+            return response()->json(['matched' => false, 'note' => 'কোনো নিয়ম মেলেনি — AI product-এর বিবরণ পড়ে draft বানাবে, মানুষ দেখে পাঠাবে।']);
+        }
+        $product = $brain->productFor($biz, $data['text']);
+        $reply = $rule->action === 'hide' ? '(comment hide হবে)' : ($rule->action === 'handover' ? '(মানুষের হাতে যাবে)' : $brain->buildReply($rule, $product, $biz));
+
+        return response()->json([
+            'matched' => true, 'rule' => $rule->name, 'action' => $rule->action, 'reply' => $reply,
+            'verified' => $brain->moneyCheck($biz, (string) $reply, $product),
+        ]);
+    }
+
+    public function updateAiReply(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'facebook' => ['required', 'string', 'in:off,draft,auto,full_auto'],
+            'whatsapp' => ['required', 'string', 'in:off,draft,auto,full_auto'],
+            'instagram' => ['required', 'string', 'in:off,draft,auto,full_auto'],
+            'comment' => ['required', 'string', 'in:off,draft,auto,full_auto'],
+            'working_hours' => ['nullable', 'string', 'max:200'],
+        ]);
+        $auto = $this->settings->get('ai.autonomy', []);
+        $auto = array_merge(is_array($auto) ? $auto : [], [
+            'facebook' => $data['facebook'], 'whatsapp' => $data['whatsapp'],
+            'instagram' => $data['instagram'], 'comment' => $data['comment'],
+        ]);
+        $this->setLogged($request, 'ai.autonomy', $auto);
+        $this->setLogged($request, 'ai.working_hours', (string) ($data['working_hours'] ?? ''));
+
+        return back()->with('success', 'AI Reply settings saved');
+    }
+
+    public function updateAiNegotiation(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'max_discount' => ['required', 'integer', 'min:0', 'max:90'],
+            'step' => ['required', 'integer', 'min:1', 'max:50'],
+            'free_delivery_min' => ['required', 'numeric', 'min:0'],
+        ]);
+        $this->setLogged($request, 'ai.negotiation', $data);
+
+        return back()->with('success', 'Negotiation settings saved');
+    }
+
+    public function storeKnowledge(Request $request): RedirectResponse
+    {
+        $biz = (int) ($request->user()?->business_id ?? 0);
+        $data = $request->validate(['title' => ['required', 'string', 'max:160'], 'body' => ['required', 'string', 'max:4000']]);
+        \App\Models\KnowledgeEntry::create($data + ['business_id' => $biz]);
+
+        return back()->with('success', 'Knowledge added');
+    }
+
+    public function updateKnowledge(Request $request, \App\Models\KnowledgeEntry $entry): RedirectResponse
+    {
+        abort_unless((int) $entry->business_id === (int) ($request->user()?->business_id ?? 0), 403);
+        $data = $request->validate(['title' => ['required', 'string', 'max:160'], 'body' => ['required', 'string', 'max:4000']]);
+        $entry->update($data);
+
+        return back()->with('success', 'Knowledge saved');
+    }
+
+    public function deleteKnowledge(Request $request, \App\Models\KnowledgeEntry $entry): RedirectResponse
+    {
+        abort_unless((int) $entry->business_id === (int) ($request->user()?->business_id ?? 0), 403);
+        $entry->delete();
+
+        return back()->with('success', 'Knowledge deleted');
+    }
+
+    public function approveProposal(Request $request, \App\Models\AiRuleProposal $proposal): RedirectResponse
+    {
+        $biz = (int) ($request->user()?->business_id ?? 0);
+        abort_unless((int) $proposal->business_id === $biz, 403);
+        $data = $proposal->rule_data ?? [];
+        if (! empty($data['new_rule'])) {
+            \App\Models\AiRule::create($data['new_rule'] + ['business_id' => $biz, 'active' => true]);
+        }
+        if (! empty($data['edit_rule_match'])) {
+            $rule = \App\Models\AiRule::where('business_id', $biz)->where('match_text', $data['edit_rule_match'])->first();
+            if ($rule && ! empty($data['append_template'])) {
+                $rule->reply_template = rtrim((string) $rule->reply_template) . $data['append_template'];
+                $rule->save();
+            }
+        }
+        $proposal->status = 'approved';
+        $proposal->save();
+
+        return back()->with('success', 'Proposal approved');
+    }
+
+    public function rejectProposal(Request $request, \App\Models\AiRuleProposal $proposal): RedirectResponse
+    {
+        abort_unless((int) $proposal->business_id === (int) ($request->user()?->business_id ?? 0), 403);
+        $proposal->status = 'rejected';
+        $proposal->save();
+
+        return back()->with('success', 'Proposal rejected');
+    }
+
+    // ---------- Messaging Channels (Meta connection) ----------
+
+    private function channelView(string $channel, array $extraKeys): array
+    {
+        $cfg = (array) $this->settings->get("channels.{$channel}", []);
+        $view = [
+            'account_id' => (string) ($cfg['account_id'] ?? ''),
+            'token_set' => ! empty($cfg['token_enc']),
+        ];
+        foreach ($extraKeys as $k) {
+            $view[$k] = (string) ($cfg[$k] ?? '');
+        }
+
+        return $view;
+    }
+
+    public function updateChannels(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'app_id' => ['nullable', 'string', 'max:40'],
+            'app_secret' => ['nullable', 'string', 'max:200'],
+            'facebook_account_id' => ['nullable', 'string', 'max:40'],
+            'facebook_page_name' => ['nullable', 'string', 'max:120'],
+            'facebook_token' => ['nullable', 'string', 'max:2000'],
+            'whatsapp_account_id' => ['nullable', 'string', 'max:40'],
+            'whatsapp_waba_id' => ['nullable', 'string', 'max:40'],
+            'whatsapp_phone_number' => ['nullable', 'string', 'max:40'],
+            'whatsapp_token' => ['nullable', 'string', 'max:2000'],
+            'instagram_account_id' => ['nullable', 'string', 'max:40'],
+            'instagram_username' => ['nullable', 'string', 'max:120'],
+            'instagram_token' => ['nullable', 'string', 'max:2000'],
+        ]);
+        $uid = $request->user()?->id;
+        $this->settings->set('meta.app_id', trim((string) ($data['app_id'] ?? '')), $uid);
+        if (! empty($data['app_secret'])) {
+            $this->settings->set('meta.app_secret_enc', \App\Services\MetaGraphService::encrypt($data['app_secret']), $uid);
+        }
+        if ((string) $this->settings->get('meta.verify_token', '') === '') {
+            $this->settings->set('meta.verify_token', 'skaleup_' . \Illuminate\Support\Str::random(24), $uid);
+        }
+        $this->settings->set('channels.business_id', (int) ($request->user()?->business_id ?? 0) ?: (int) $this->settings->get('channels.business_id', 1), $uid);
+        $map = [
+            'facebook' => ['account_id' => 'facebook_account_id', 'page_name' => 'facebook_page_name', 'token' => 'facebook_token'],
+            'whatsapp' => ['account_id' => 'whatsapp_account_id', 'waba_id' => 'whatsapp_waba_id', 'phone_number' => 'whatsapp_phone_number', 'token' => 'whatsapp_token'],
+            'instagram' => ['account_id' => 'instagram_account_id', 'username' => 'instagram_username', 'token' => 'instagram_token'],
+        ];
+        foreach ($map as $channel => $fields) {
+            $cfg = (array) $this->settings->get("channels.{$channel}", []);
+            foreach ($fields as $key => $input) {
+                if ($key === 'token') {
+                    if (! empty($data[$input])) {
+                        $cfg['token_enc'] = \App\Services\MetaGraphService::encrypt($data[$input]);
+                    }
+                } else {
+                    $cfg[$key] = trim((string) ($data[$input] ?? ''));
+                }
+            }
+            $this->settings->set("channels.{$channel}", $cfg, $uid);
+        }
+
+        return back()->with('success', 'Messaging channels saved');
+    }
+
+    public function checkChannel(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $channel = (string) $request->input('channel', '');
+        abort_unless(in_array($channel, ['facebook', 'whatsapp', 'instagram'], true), 422);
+
+        return response()->json(app(\App\Services\MetaGraphService::class)->check($channel));
+    }
+
+    // ---------- Seller Packages (platform admin only; lives in Settings) ----------
+
+    private function packageData(Request $request): array
+    {
+        abort_unless((bool) ($request->user()?->is_platform_admin), 403);
+
+        return $request->validate([
+            'name' => ['required', 'string', 'max:80'],
+            'price' => ['required', 'numeric', 'min:0'],
+            'duration_days' => ['required', 'integer', 'min:1', 'max:3650'],
+            'description' => ['nullable', 'string', 'max:200'],
+            'features' => ['nullable', 'array'],
+            'features.*' => ['string', \Illuminate\Validation\Rule::in(\App\Support\FeatureCatalog::keys())],
+            'active' => ['sometimes', 'boolean'],
+        ]);
+    }
+
+    public function storePackage(Request $request): RedirectResponse
+    {
+        $data = $this->packageData($request);
+        \App\Models\Package::create([
+            'name' => $data['name'], 'price' => $data['price'], 'duration_days' => $data['duration_days'],
+            'description' => $data['description'] ?? null, 'features' => array_values($data['features'] ?? []),
+            'active' => true, 'sort' => (int) (\App\Models\Package::max('sort') ?? 0) + 1,
+        ]);
+
+        return back()->with('success', 'Package created');
+    }
+
+    public function updatePackage(Request $request, \App\Models\Package $package): RedirectResponse
+    {
+        $data = $this->packageData($request);
+        $package->update([
+            'name' => $data['name'], 'price' => $data['price'], 'duration_days' => $data['duration_days'],
+            'description' => $data['description'] ?? null, 'features' => array_values($data['features'] ?? []),
+            'active' => (bool) ($data['active'] ?? $package->active),
+        ]);
+
+        return back()->with('success', 'Package saved');
+    }
+
+    public function deletePackage(Request $request, \App\Models\Package $package): RedirectResponse
+    {
+        abort_unless((bool) ($request->user()?->is_platform_admin), 403);
+        if (\App\Models\SellerSubscription::where('package_id', $package->id)->exists()) {
+            return back()->with('error', 'This package has sellers on it — deactivate it instead of deleting');
+        }
+        $package->delete();
+
+        return back()->with('success', 'Package deleted');
     }
 }

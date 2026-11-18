@@ -49,7 +49,7 @@ const NAV = [
         { label: 'Orders', icon: 'box', badgeKey: 'orders_pending', children: [{ label: 'New Order', href: '/orders/create' }, { label: 'Order List', href: '/orders' }, { label: 'Auto Pick Orders', href: '/orders/autopick' }, { label: 'Auto Call Center', href: '/orders/autocall' }, { label: 'Order Block List', href: '/orders/block-list' }, { label: 'Preorders', href: '/orders/preorders' }, { label: 'Orders Dashboard', href: '/orders/dashboard' }], href: '/orders' },
         { label: 'Delivery', icon: 'truck', badgeKey: 'delivery_waiting', children: [{ label: 'Ready to Ship', href: '/delivery/ready' }, { label: 'Courier Management', href: '/delivery/parcels' }, { label: 'Scan To Update', href: '/delivery/scan' }, { label: 'Courier Invoice Upload', href: '/delivery/invoice' }, { label: 'Courier Ledger', href: '/delivery/ledger' }], href: '/delivery/ready' },
         { label: 'Inventory', icon: 'layers', children: [{ label: 'Inventory Dashboard', href: '/inventory/dashboard' }, { label: 'Products', href: '/inventory/products' }, { label: 'Stock Ledger', href: '/inventory/ledger' }, { label: 'Branches', href: '/inventory/branches' }, { label: 'Warranty', href: '/inventory/warranty' }], href: '/inventory/dashboard' },
-        { label: 'Messages', icon: 'chat', badgeKey: 'messages_unread', children: ['Inbox', 'Comments', 'AI Activity'], href: mod('messages') },
+        { label: 'Messages', icon: 'chat', badgeKey: 'messages_unread', children: [{ label: 'Inbox', href: '/messages/inbox' }, { label: 'Comments', href: '/messages/comments' }, { label: 'AI Activity', href: '/messages/activity' }], href: '/messages/inbox' },
         { label: 'Purchase', icon: 'cart', children: ['Purchase Dashboard', 'Purchase List', 'New Purchase', 'Receive Purchase', 'Supplier Ledger', 'Suppliers', 'Ask for Quotation'], href: mod('purchase') },
         { label: 'Task & Follow-up', icon: 'check', children: ['Task Board', 'Agent Cockpit', 'Follow-up Management', 'My Follow-ups', 'Follow-up Performance'], href: mod('task') },
         { label: 'Call Center', icon: 'phone', children: ['Call Dashboard', 'Call Reports', 'Contacts'], href: mod('call-center') },
@@ -58,7 +58,7 @@ const NAV = [
     { sec: 'Growth', items: [
         { label: 'Ads', icon: 'chart', children: ['Ads Dashboard', 'Meta Ads', 'TikTok Ads'], href: mod('ads') },
         { label: 'Marketing', icon: 'megaphone', children: ['Automation', 'SMS Marketing'], href: mod('marketing') },
-        { label: 'Customers', icon: 'users', children: ['Customer List', 'Bulk Upload'], href: mod('customers') },
+        { label: 'Customers', icon: 'users', children: [{ label: 'Customer List', href: '/customers' }, { label: 'Bulk Upload', href: '/customers/upload' }], href: '/customers' },
     ]},
     { sec: 'Business Control', items: [
         { label: 'HRM', icon: 'briefcase', children: ['HR Dashboard', 'Attendance', 'Departments & SOP', 'User & Role', 'HR Settings'], href: mod('hrm') },
@@ -269,6 +269,13 @@ export default function AppLayout({ children }) {
         return () => { stop = true; clearInterval(id); };
     }, []);
     const userName = props.auth?.user?.name || 'User';
+    const isPlatform = !!props.auth?.user?.is_platform_admin;
+    const baseNav = NAV.map((sec) => ({ ...sec, items: sec.items.map((it) => (it.settings && isPlatform)
+        ? { ...it, children: [...it.children, { label: 'Seller Packages', g: 'packages' }] } : it) }));
+    const navGroups = isPlatform ? [...baseNav, { sec: 'Platform', items: [
+        { label: 'Seller Dashboard', icon: 'grid', href: '/admin' },
+        { label: 'Sellers', icon: 'users', children: [{ label: 'All Sellers', href: '/admin/sellers' }, { label: 'Packages', href: '/settings?group=packages' }], href: '/admin/sellers' },
+    ] }] : baseNav;
     const initials = userName.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase();
 
     useEffect(() => {
@@ -319,7 +326,7 @@ export default function AppLayout({ children }) {
                 <button type="button" className="sb-search" style={{ width: 'calc(100% - 28px)', textAlign: 'left' }} onClick={() => setSearchOpen(true)}>
                     <I d={P.search} size={14} /> {t('Quick Search')} <kbd>CTRL K</kbd>
                 </button>
-                {NAV.map((group, gi) => (
+                {navGroups.map((group, gi) => (
                     <div key={gi}>
                         {group.sec && <div className="nav-sec">{t(group.sec).toUpperCase()}</div>}
                         {group.items.map((item) => <NavGroup key={item.label} item={item} current={current} />)}

@@ -44,7 +44,10 @@ Route::middleware(['auth', 'verified', 'totp'])->group(function () {
             'notifications_unread' => \Illuminate\Support\Facades\Schema::hasTable('app_notifications')
                 ? \App\Models\AppNotification::whereNull('read_at')->count()
                 : 0,
-            'messages_unread' => 0, // M6 Messages is not built yet; lights up when it lands.
+            'messages_unread' => $biz && \Illuminate\Support\Facades\Schema::hasTable('conversations')
+                ? (int) \App\Models\Conversation::where('business_id', $biz)->sum('unread_count')
+                    + \App\Models\ChatMessage::where('business_id', $biz)->whereIn('status', ['draft', 'flagged'])->count()
+                : 0,
         ]);
     })->name('sidebar.counts');
 
@@ -156,6 +159,62 @@ Route::middleware(['auth', 'verified', 'totp'])->group(function () {
     Route::patch('/inventory/warranty/{claim}', [\App\Http\Controllers\InventoryOpsController::class, 'updateClaim'])->name('inventory.warranty.update');
     Route::post('/inventory/warranty-settings', [\App\Http\Controllers\InventoryOpsController::class, 'saveWarrantySettings'])->name('inventory.warranty.settings');
 
+    // M6 Messages
+    Route::get('/messages/inbox', [\App\Http\Controllers\MessagesController::class, 'inbox'])->name('messages.inbox');
+    Route::post('/messages/panic', [\App\Http\Controllers\MessagesController::class, 'panic'])->name('messages.panic');
+    Route::post('/messages/conversations/{conversation}/reply', [\App\Http\Controllers\MessagesController::class, 'reply'])->name('messages.reply');
+    Route::post('/messages/conversations/{conversation}/toggle-ai', [\App\Http\Controllers\MessagesController::class, 'toggleAi'])->name('messages.toggleAi');
+    Route::post('/messages/drafts/{message}/approve', [\App\Http\Controllers\MessagesController::class, 'approveDraft'])->name('messages.drafts.approve');
+    Route::post('/messages/drafts/{message}/reject', [\App\Http\Controllers\MessagesController::class, 'rejectDraft'])->name('messages.drafts.reject');
+    Route::get('/messages/activity', [\App\Http\Controllers\MessagesController::class, 'activity'])->name('messages.activity');
+    Route::get('/messages/comments', [\App\Http\Controllers\CommentsController::class, 'index'])->name('messages.comments');
+    Route::post('/messages/comments/{comment}/reply', [\App\Http\Controllers\CommentsController::class, 'reply'])->name('messages.comments.reply');
+    Route::post('/messages/comments/{comment}/private-reply', [\App\Http\Controllers\CommentsController::class, 'privateReply'])->name('messages.comments.private');
+    Route::post('/messages/comments/{comment}/like', [\App\Http\Controllers\CommentsController::class, 'like'])->name('messages.comments.like');
+    Route::post('/messages/comments/{comment}/hide', [\App\Http\Controllers\CommentsController::class, 'hide'])->name('messages.comments.hide');
+    Route::post('/messages/comments/{comment}/done', [\App\Http\Controllers\CommentsController::class, 'done'])->name('messages.comments.done');
+    Route::delete('/messages/comments/{comment}', [\App\Http\Controllers\CommentsController::class, 'destroy'])->name('messages.comments.destroy');
+    Route::post('/messages/comment-replies/{reply}/approve', [\App\Http\Controllers\CommentsController::class, 'approveReply'])->name('messages.commentReplies.approve');
+    Route::post('/messages/comment-replies/{reply}/reject', [\App\Http\Controllers\CommentsController::class, 'rejectReply'])->name('messages.commentReplies.reject');
+
+    // Settings → AI & Auto Reply (M6)
+    Route::post('/settings/ai-rules', [SettingsController::class, 'storeAiRule'])->name('settings.aiRules.store');
+    Route::patch('/settings/ai-rules/{rule}', [SettingsController::class, 'updateAiRule'])->name('settings.aiRules.update');
+    Route::delete('/settings/ai-rules/{rule}', [SettingsController::class, 'deleteAiRule'])->name('settings.aiRules.destroy');
+    Route::post('/settings/ai-rules/test', [SettingsController::class, 'testAiRule'])->name('settings.aiRules.test');
+    Route::post('/settings/ai-reply', [SettingsController::class, 'updateAiReply'])->name('settings.aiReply');
+    Route::post('/settings/ai-negotiation', [SettingsController::class, 'updateAiNegotiation'])->name('settings.aiNegotiation');
+    Route::post('/settings/ai-knowledge', [SettingsController::class, 'storeKnowledge'])->name('settings.aiKnowledge.store');
+    Route::patch('/settings/ai-knowledge/{entry}', [SettingsController::class, 'updateKnowledge'])->name('settings.aiKnowledge.update');
+    Route::delete('/settings/ai-knowledge/{entry}', [SettingsController::class, 'deleteKnowledge'])->name('settings.aiKnowledge.destroy');
+    Route::post('/settings/ai-proposals/{proposal}/approve', [SettingsController::class, 'approveProposal'])->name('settings.aiProposals.approve');
+    Route::post('/settings/ai-proposals/{proposal}/reject', [SettingsController::class, 'rejectProposal'])->name('settings.aiProposals.reject');
+
+    // M7 Customers (seller-facing)
+    Route::get('/customers', [\App\Http\Controllers\CustomersController::class, 'index'])->name('customers.index');
+    Route::post('/customers', [\App\Http\Controllers\CustomersController::class, 'store'])->name('customers.store');
+    Route::get('/customers/upload', [\App\Http\Controllers\CustomersController::class, 'upload'])->name('customers.upload');
+    Route::post('/customers/upload', [\App\Http\Controllers\CustomersController::class, 'uploadStore'])->name('customers.upload.store');
+    Route::get('/customers/sample-csv', [\App\Http\Controllers\CustomersController::class, 'sampleCsv'])->name('customers.sample');
+    Route::get('/customers/{customer}', [\App\Http\Controllers\CustomersController::class, 'show'])->name('customers.show');
+    Route::patch('/customers/{customer}', [\App\Http\Controllers\CustomersController::class, 'update'])->name('customers.update');
+    Route::delete('/customers/{customer}', [\App\Http\Controllers\CustomersController::class, 'destroy'])->name('customers.destroy');
+    Route::post('/customers/{customer}/blacklist', [\App\Http\Controllers\CustomersController::class, 'toggleBlacklist'])->name('customers.blacklist');
+
+    // Platform (Super Admin) — Sellers & Packages
+    Route::get('/admin', [\App\Http\Controllers\PlatformController::class, 'dashboard'])->name('platform.dashboard');
+    Route::get('/admin/sellers', [\App\Http\Controllers\PlatformController::class, 'sellers'])->name('platform.sellers');
+    Route::get('/admin/sellers/{business}', [\App\Http\Controllers\PlatformController::class, 'sellerShow'])->name('platform.seller');
+    Route::patch('/admin/sellers/{business}', [\App\Http\Controllers\PlatformController::class, 'updateSeller'])->name('platform.seller.update');
+    Route::post('/admin/sellers/{business}/subscribe', [\App\Http\Controllers\PlatformController::class, 'subscribe'])->name('platform.seller.subscribe');
+    Route::post('/admin/sellers/{business}/payments', [\App\Http\Controllers\PlatformController::class, 'storePayment'])->name('platform.seller.payment');
+    Route::get('/admin/packages', fn () => redirect('/settings?group=packages'))->name('platform.packages');
+    Route::post('/settings/packages', [SettingsController::class, 'storePackage'])->name('settings.packages.store');
+    Route::post('/settings/channels', [SettingsController::class, 'updateChannels'])->name('settings.channels');
+    Route::post('/settings/channels/check', [SettingsController::class, 'checkChannel'])->name('settings.channels.check');
+    Route::patch('/settings/packages/{package}', [SettingsController::class, 'updatePackage'])->name('settings.packages.update');
+    Route::delete('/settings/packages/{package}', [SettingsController::class, 'deletePackage'])->name('settings.packages.destroy');
+
     Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead'])->name('notifications.readAll');
     Route::post('/notifications/{notification}/read', [NotificationController::class, 'markRead'])->name('notifications.read');
 
@@ -174,6 +233,8 @@ Route::middleware('auth')->group(function () {
 
 // External API intake for sellers' websites (API-key auth, no session).
 Route::post('/api/external/v1/orders', [ExternalOrderController::class, 'store'])->name('api.external.orders');
+Route::get('/api/webhooks/meta', [\App\Http\Controllers\MetaWebhookController::class, 'verify'])->name('api.webhooks.meta.verify');
+Route::post('/api/webhooks/meta', [\App\Http\Controllers\MetaWebhookController::class, 'receive'])->name('api.webhooks.meta');
 Route::post('/api/webhooks/steadfast/dm/{method}', [WebhookController::class, 'steadfast'])->name('api.webhooks.steadfast');
 Route::post('/api/webhooks/pathao/dm/{method}', [WebhookController::class, 'pathao'])->name('api.webhooks.pathao');
 Route::post('/api/webhooks/carrybee/dm/{method}', [WebhookController::class, 'carrybee'])->name('api.webhooks.carrybee');
