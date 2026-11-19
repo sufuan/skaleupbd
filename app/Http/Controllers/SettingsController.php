@@ -90,6 +90,16 @@ class SettingsController extends Controller
                     'accounts' => \App\Models\FinanceAccount::where('business_id', $biz)->where('active', true)
                         ->orderBy('id')->get(['id', 'name'])->map(fn ($a) => ['id' => $a->id, 'name' => $a->name])->all(),
                 ],
+                'marketing_sms' => [
+                    'rate' => (float) $this->settings->get('marketing.' . $biz . '.sms_rate', 1.50),
+                    'cap_day' => (int) $this->settings->get('marketing.' . $biz . '.cap_day', 1),
+                    'cap_week' => (int) $this->settings->get('marketing.' . $biz . '.cap_week', 3),
+                    'balance' => (float) $this->settings->get('marketing.' . $biz . '.sms_balance', 0),
+                    'driver' => (string) $this->settings->get('marketing.sms_driver', 'log'),
+                    'gateway_provider' => (string) $this->settings->get('marketing.gateway_provider', ''),
+                    'gateway_sender' => (string) $this->settings->get('marketing.gateway_sender', ''),
+                    'has_gateway_key' => (bool) $this->settings->get('marketing.gateway_api_key_enc'),
+                ],
                 'toggles' => [
                     'show_email' => (bool) $this->settings->get('orders.show_email', true),
                     'show_alt_number' => (bool) $this->settings->get('orders.show_alt_number', false),
@@ -238,6 +248,38 @@ class SettingsController extends Controller
         $this->setLogged($request, 'finance.' . $biz . '.advance_account_id', (int) ($data['advance_account_id'] ?? 0));
 
         return back()->with('success', 'Finance settings saved');
+    }
+
+    public function updateMarketingSms(Request $request): RedirectResponse
+    {
+        $biz = (int) $request->user()->business_id;
+        $data = $request->validate([
+            'rate' => ['required', 'numeric', 'min:0', 'max:100'],
+            'cap_day' => ['required', 'integer', 'min:0', 'max:50'],
+            'cap_week' => ['required', 'integer', 'min:0', 'max:200'],
+            'add_balance' => ['nullable', 'numeric', 'min:0', 'max:1000000'],
+            'driver' => ['required', 'string', 'in:log,gateway'],
+            'gateway_provider' => ['nullable', 'string', 'max:80'],
+            'gateway_sender' => ['nullable', 'string', 'max:40'],
+            'gateway_api_key' => ['nullable', 'string', 'max:255'],
+        ]);
+        $sms = app(\App\Services\SmsService::class);
+        $sms->setSetting($biz, 'sms_rate', (float) $data['rate']);
+        $sms->setSetting($biz, 'cap_day', (int) $data['cap_day']);
+        $sms->setSetting($biz, 'cap_week', (int) $data['cap_week']);
+        if (! empty($data['add_balance'])) {
+            $sms->setSetting($biz, 'sms_balance', round($sms->balance($biz) + (float) $data['add_balance'], 2));
+        }
+        $this->setLogged($request, 'marketing.sms_driver', $data['driver']);
+        $this->setLogged($request, 'marketing.gateway_provider', $data['gateway_provider'] ?? '');
+        $this->setLogged($request, 'marketing.gateway_sender', $data['gateway_sender'] ?? '');
+        if (! empty($data['gateway_api_key'])) {
+            $this->setLogged($request, 'marketing.gateway_api_key_enc', \Illuminate\Support\Facades\Crypt::encryptString($data['gateway_api_key']));
+            // SmsService checks this plain marker to know a key exists.
+            $this->setLogged($request, 'marketing.gateway_api_key', 'set');
+        }
+
+        return back()->with('success', 'SMS settings saved');
     }
 
     public function updateOrderToggles(Request $request): RedirectResponse

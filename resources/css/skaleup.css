@@ -762,3 +762,73 @@ label.fl{display:block;font-size:12.5px;font-weight:600;color:#55496e;margin:0 0
 .hrm .form-grid{display:flex;gap:10px;flex-wrap:wrap;align-items:end}
 .hrm .form-grid .fld{display:flex;flex-direction:column;gap:4px}
 @media (max-width: 760px){.hrm .x-kpis{grid-template-columns:repeat(2,1fr)}.hrm .x-table{display:block;overflow-x:auto}}
+
+/* M12 Marketing — prototype marketing.html styles, scoped under .mkt */
+.mkt .mk-strip{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
+.mkt .mk-kpi{background:#fff;border:1px solid #E7EAF0;border-radius:14px;padding:14px 16px}
+.mkt .mk-kpi b{font-size:23px;color:#1E293B;display:block}
+.mkt .mk-kpi span{font-size:13px;color:#64748B}
+.mkt .mk-group{font-size:15.5px;font-weight:700;color:#411550;margin:20px 0 10px}
+.mkt .flow-card{background:#fff;border:1px solid #E7EAF0;border-radius:14px;padding:15px 17px;margin-bottom:10px;display:flex;gap:14px;align-items:flex-start}
+.mkt .flow-main{flex:1;min-width:0}
+.mkt .flow-title{font-size:15.5px;font-weight:700;color:#1E293B}
+.mkt .flow-when{font-size:13px;color:#64748B;margin:2px 0 6px}
+.mkt .flow-tpl{font-size:13px;color:#475569;background:#F8FAFC;border:1px dashed #CBD5E1;border-radius:9px;padding:8px 11px}
+.mkt .flow-time{font-size:13px;color:#64748B;margin-top:9px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.mkt .flow-time .ft-in{width:58px;height:30px;border:1px solid #E2E8F0;border-radius:7px;padding:0 7px;font-family:inherit;font-size:13.5px;text-align:center}
+.mkt .flow-time .ft-lab{font-weight:600;color:#411550}
+.mkt .flow-side{text-align:right;flex-shrink:0}
+.mkt .flow-runs{font-size:12.5px;color:#94A3B8;margin-top:7px;max-width:190px}
+.mkt .switch{width:46px;height:26px;border-radius:99px;background:#E2E8F0;border:none;cursor:pointer;position:relative;flex-shrink:0}
+.mkt .switch::after{content:'';position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:left .15s}
+.mkt .switch.on{background:#7C3AED}
+.mkt .switch.on::after{left:23px}
+.mkt .tpl-row{background:#fff;border:1px solid #E7EAF0;border-radius:12px;padding:12px 15px;margin-bottom:9px}
+.mkt .tpl-name{font-weight:700;color:#1E293B;font-size:14.5px}
+.mkt .tpl-text{font-size:13.5px;color:#475569;margin:3px 0}
+.mkt .tpl-used{font-size:12.5px;color:#94A3B8}
+.mkt .step-card{background:#fff;border:1px solid #E7EAF0;border-radius:16px;padding:18px;margin-bottom:14px}
+.mkt .step-title{font-size:16px;font-weight:700;color:#411550;margin-bottom:12px}
+.mkt .aud-chip{display:inline-block;border:1.5px solid #E2E8F0;background:#fff;border-radius:99px;padding:8px 14px;font-size:13.5px;font-weight:600;color:#334155;cursor:pointer;margin:0 8px 8px 0;font-family:inherit}
+.mkt .aud-chip.sel{border-color:#411550;background:#F4EDF7;color:#411550}
+.mkt .phone{width:250px;flex-shrink:0;background:#111827;border-radius:26px;padding:12px}
+.mkt .phone-screen{background:#E7E5E4;border-radius:18px;padding:14px 12px;min-height:150px}
+.mkt .sms-bubble{background:#fff;border-radius:14px;padding:10px 12px;font-size:13.5px;color:#1F2937;box-shadow:0 1px 2px rgba(0,0,0,.08);white-space:pre-wrap;word-break:break-word}
+.mkt .mk-modal{display:none;position:fixed;inset:0;background:rgba(15,10,25,.45);z-index:200;align-items:center;justify-content:center}
+.mkt .mk-modal.open{display:flex}
+.mkt .mk-modal-box{background:#fff;border-radius:16px;padding:22px;width:min(480px,92vw)}
+.mkt .mk-modal-box textarea,.mkt .mk-modal-box input[type=text]{width:100%;border:1px solid #E2E8F0;border-radius:9px;padding:9px 11px;font-family:inherit;font-size:14px;margin:6px 0 12px;box-sizing:border-box}
+.mkt table.mk-table{width:100%;border-collapse:collapse;background:#fff;border:1px solid #E7EAF0;border-radius:12px;overflow:hidden}
+.mkt table.mk-table th,.mkt table.mk-table td{padding:11px 13px;font-size:13.5px;text-align:left;border-bottom:1px solid #F1F5F9;vertical-align:top}
+.mkt table.mk-table th{background:#FAF8FC;color:#64748B;font-weight:600}
+.mkt .chip{display:inline-block;padding:2px 9px;border-radius:99px;font-size:12px;font-weight:600}
+.mkt .chip-green{background:#F0FDF4;color:#16A34A}
+.mkt .chip-amber{background:#FFFBEB;color:#D97706}
+.mkt .chip-grey{background:#F1F5F9;color:#64748B}
+.mkt .btn-p{background:#411550;color:#fff;border:none;padding:10px 18px;border-radius:9px;font-weight:700;cursor:pointer;font-size:14.5px;font-family:inherit}
+.mkt .btn-s{background:#fff;color:#411550;border:1px solid #D8CBE3;padding:8px 14px;border-radius:8px;font-weight:600;cursor:pointer;font-size:13.5px;font-family:inherit}
+@media (max-width: 760px){.mkt .mk-strip{grid-template-columns:1fr}.mkt table.mk-table{display:block;overflow-x:auto}.mkt .flow-card{flex-wrap:wrap}.mkt .phone{width:100%}}
+
+/* M15 Reports — prototype x-* language, scoped under .rep */
+.rep .x-head{margin-bottom:14px}
+.rep .x-head h3{font-size:20px;color:#1E293B}
+.rep .x-head p{color:#64748B;font-size:13.5px;margin-top:3px}
+.rep .x-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+.rep .x-kpi{background:#fff;border:1px solid #E7EAF0;border-radius:14px;padding:14px 16px}
+.rep .x-kpi b{font-size:23px;color:#1E293B;display:block}
+.rep .x-kpi span{font-size:13px;color:#64748B}
+.rep .x-kpi.red b{color:#DC2626}
+.rep .x-kpi.green b{color:#16A34A}
+.rep .x-kpi.purple b{color:#411550}
+.rep .x-table{width:100%;border-collapse:collapse;background:#fff;border:1px solid #E7EAF0;border-radius:12px;overflow:hidden}
+.rep .x-table th,.rep .x-table td{padding:10px 12px;font-size:13.5px;text-align:left;border-bottom:1px solid #F1F5F9}
+.rep .x-table th{background:#FAF8FC;color:#64748B;font-weight:600}
+.rep .x-note{font-size:13px;color:#94A3B8;margin-top:10px}
+.rep .chip{display:inline-block;padding:2px 9px;border-radius:99px;font-size:12px;font-weight:600}
+.rep .chip-green{background:#F0FDF4;color:#16A34A}
+.rep .chip-amber{background:#FFFBEB;color:#D97706}
+.rep .chip-red{background:#FEF2F2;color:#DC2626}
+.rep .chip-grey{background:#F1F5F9;color:#64748B}
+.rep .date-chips{display:flex;gap:4px;align-items:center;margin-bottom:16px;flex-wrap:wrap}
+.rep .btn-s{background:#fff;color:#411550;border:1px solid #D8CBE3;padding:8px 14px;border-radius:8px;font-weight:600;cursor:pointer;font-size:13.5px;font-family:inherit;text-decoration:none;display:inline-block}
+@media (max-width: 760px){.rep .x-kpis{grid-template-columns:repeat(2,1fr)}.rep .x-table{display:block;overflow-x:auto}}

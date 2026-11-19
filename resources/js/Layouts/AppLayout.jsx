@@ -57,13 +57,13 @@ const NAV = [
     ]},
     { sec: 'Growth', items: [
         { label: 'Ads', icon: 'chart', children: ['Ads Dashboard', 'Meta Ads', 'TikTok Ads'], href: mod('ads') },
-        { label: 'Marketing', icon: 'megaphone', children: ['Automation', 'SMS Marketing'], href: mod('marketing') },
+        { label: 'Marketing', icon: 'megaphone', children: [{ label: 'Automation', href: '/marketing' }, { label: 'SMS Marketing', href: '/marketing/sms' }, { label: 'SMS Report', href: '/marketing/report' }], href: '/marketing' },
         { label: 'Customers', icon: 'users', children: [{ label: 'Customer List', href: '/customers' }, { label: 'Bulk Upload', href: '/customers/upload' }], href: '/customers' },
     ]},
     { sec: 'Business Control', items: [
         { label: 'HRM', icon: 'briefcase', children: [{ label: 'HR Dashboard', href: '/hrm' }, { label: 'Attendance', href: '/hrm/attendance' }, { label: 'Departments & SOP', href: '/hrm/departments' }, { label: 'User & Role', href: '/hrm/users' }, { label: 'HR Settings', href: '/hrm/settings' }], href: '/hrm' },
         { label: 'Finance', icon: 'wallet', children: [{ label: 'Finance Dashboard', href: '/finance' }, { label: 'Accounts & Bank', href: '/finance/accounts' }, { label: 'Income & Expense', href: '/finance/income-expense' }, { label: 'Cash Flow', href: '/finance/cash-flow' }], href: '/finance' },
-        { label: 'Reports', icon: 'report', children: ['Profit & Loss', 'Order Report', 'Courier Report', 'Product Report', 'Employee Report', 'Call Center Report', 'Customer Report'], href: mod('reports') },
+        { label: 'Reports', icon: 'report', children: [{ label: 'Profit & Loss', href: '/reports' }, { label: 'Order Report', href: '/reports/order' }, { label: 'Courier Report', href: '/reports/courier' }, { label: 'Product Report', href: '/reports/product' }, { label: 'Employee Report', href: '/reports/employee' }, { label: 'Call Center Report', href: '/reports/call' }, { label: 'Customer Report', href: '/reports/customer' }], href: '/reports' },
         { label: 'Settings', icon: 'gear', settings: true, children: [
             { label: 'Settings Dashboard', g: 'home' }, { label: 'Business Settings', g: 'business' },
             { label: 'API Connection', g: 'api' }, { label: 'Calls & Orders', g: 'calls' },

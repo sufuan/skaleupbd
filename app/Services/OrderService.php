@@ -9,6 +9,7 @@ use App\Models\Setting;
 use App\Models\StockLedger;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 /** The order book's core operations: intake, approve, lifecycle moves, stock. */
 class OrderService
@@ -147,6 +148,11 @@ class OrderService
 
             $fresh = $order->fresh(['items']);
             app(\App\Services\FinanceService::class)->syncOrderAdvance($fresh, $actor);
+            try {
+                app(\App\Services\AutomationService::class)->onOrderCreated($fresh);
+            } catch (\Throwable) {
+                // Marketing must never break order intake.
+            }
 
             return $fresh;
         });
@@ -160,10 +166,54 @@ class OrderService
         return $row ? (bool) $row->decodedValue() : false;
     }
 
+    /**
+     * Owner rule (2026-11-19): an order may not be approved beyond available
+     * stock (stock_qty − reserved_qty). Returns one line per short product;
+     * empty array = the order can be approved. Free-text items (no product)
+     * cannot be stock-checked and are skipped.
+     */
+    public function shortagesForItems(int $businessId, array $items): array
+    {
+        if ($this->stockOff()) {
+            return [];
+        }
+        $need = [];
+        foreach ($items as $i) {
+            $pid = (int) ($i['product_id'] ?? 0);
+            if ($pid > 0) {
+                $need[$pid] = ($need[$pid] ?? 0) + (int) ($i['qty'] ?? 1);
+            }
+        }
+        $short = [];
+        foreach ($need as $pid => $qty) {
+            $product = Product::where('business_id', $businessId)->find($pid);
+            if (! $product) {
+                continue;
+            }
+            $available = (int) $product->stock_qty - (int) $product->reserved_qty;
+            if ($qty > $available) {
+                $short[] = "{$product->name}: need {$qty}, available {$available}";
+            }
+        }
+
+        return $short;
+    }
+
+    /** Stock shortages for an existing order's items (see shortagesForItems). */
+    public function stockShortages(Order $order): array
+    {
+        return $this->shortagesForItems($order->business_id,
+            $order->items->map(fn ($i) => ['product_id' => $i->product_id, 'qty' => $i->qty])->all());
+    }
+
     /** Approve: fraud re-check -> stock reserve -> Processing -> Processed By. */
     public function approve(Order $order, User $actor): Order
     {
         return DB::transaction(function () use ($order, $actor) {
+            $short = $this->stockShortages($order);
+            if ($short) {
+                throw ValidationException::withMessages(['stock' => 'Not enough stock — '.implode('; ', $short)]);
+            }
             $check = $this->fraud->forPhone($order->business_id, $order->customer_phone);
             $order->fraud_verdict = $check['verdict'];
             $order->fraud_rate = $check['rate'];
@@ -262,6 +312,17 @@ class OrderService
             $order->save();
             $order->logHistory($from, $to, $actor, $reason);
             $order->logActivity('action', "Status changed by {$actor->name} — {$from} → {$to}".($reason ? " ({$reason})" : ''), $actor);
+
+            try {
+                $auto = app(\App\Services\AutomationService::class);
+                if ($to === 'Shipped') {
+                    $auto->onShipped($order);
+                } elseif ($to === 'Delivered') {
+                    $auto->onDelivered($order);
+                }
+            } catch (\Throwable) {
+                // Marketing must never break the lifecycle.
+            }
 
             return $order;
         });

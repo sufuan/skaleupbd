@@ -60,6 +60,7 @@ Route::middleware(['auth', 'verified', 'totp'])->group(function () {
     Route::post('/settings/order-toggles', [SettingsController::class, 'updateOrderToggles'])->name('settings.orderToggles');
     Route::post('/settings/inventory', [SettingsController::class, 'updateInventory'])->name('settings.inventory');
     Route::post('/settings/finance', [SettingsController::class, 'updateFinance'])->name('settings.finance');
+    Route::post('/settings/marketing-sms', [SettingsController::class, 'updateMarketingSms'])->name('settings.marketingSms');
     Route::post('/settings/courier-methods', [SettingsController::class, 'addCourierMethod'])->name('settings.courierMethods');
 
     // M2 Orders
@@ -176,6 +177,29 @@ Route::middleware(['auth', 'verified', 'totp'])->group(function () {
     Route::post('/hrm/payroll/build', [\App\Http\Controllers\PayrollController::class, 'build'])->name('hrm.payroll.build');
     Route::patch('/hrm/payroll/items/{item}', [\App\Http\Controllers\PayrollController::class, 'updateItem'])->name('hrm.payroll.items.update');
     Route::post('/hrm/payroll/{run}/pay', [\App\Http\Controllers\PayrollController::class, 'pay'])->name('hrm.payroll.pay');
+
+    // Marketing (M12)
+    Route::get('/marketing', [\App\Http\Controllers\MarketingController::class, 'automation'])->name('marketing.automation');
+    Route::post('/marketing/flows/{key}', [\App\Http\Controllers\MarketingController::class, 'saveFlow'])->name('marketing.flows.save');
+    Route::post('/marketing/templates', [\App\Http\Controllers\MarketingController::class, 'storeTemplate'])->name('marketing.templates.store');
+    Route::patch('/marketing/templates/{template}', [\App\Http\Controllers\MarketingController::class, 'updateTemplate'])->name('marketing.templates.update');
+    Route::delete('/marketing/templates/{template}', [\App\Http\Controllers\MarketingController::class, 'deleteTemplate'])->name('marketing.templates.delete');
+    Route::get('/marketing/sms', [\App\Http\Controllers\MarketingController::class, 'sms'])->name('marketing.sms');
+    Route::post('/marketing/sms/send', [\App\Http\Controllers\MarketingController::class, 'sendCampaign'])->name('marketing.sms.send');
+    Route::get('/marketing/report', [\App\Http\Controllers\MarketingController::class, 'report'])->name('marketing.report');
+    Route::post('/marketing/report/window', [\App\Http\Controllers\MarketingController::class, 'saveWindow'])->name('marketing.report.window');
+
+    // Reports (M15)
+    Route::get('/reports', [\App\Http\Controllers\ReportsController::class, 'pl'])->name('reports.pl');
+    Route::post('/reports/pl/estimate', [\App\Http\Controllers\ReportsController::class, 'saveEstimate'])->name('reports.pl.estimate');
+    Route::get('/reports/order', [\App\Http\Controllers\ReportsController::class, 'order'])->name('reports.order');
+    Route::get('/reports/courier', [\App\Http\Controllers\ReportsController::class, 'courier'])->name('reports.courier');
+    Route::get('/reports/product', [\App\Http\Controllers\ReportsController::class, 'product'])->name('reports.product');
+    Route::get('/reports/employee', [\App\Http\Controllers\ReportsController::class, 'employee'])->name('reports.employee');
+    Route::get('/reports/call', [\App\Http\Controllers\ReportsController::class, 'call'])->name('reports.call');
+    Route::get('/reports/customer', [\App\Http\Controllers\ReportsController::class, 'customer'])->name('reports.customer');
+    Route::get('/reports/limits', [\App\Http\Controllers\ReportsController::class, 'limits'])->name('reports.limits');
+    Route::get('/reports/{key}/export', [\App\Http\Controllers\ReportsController::class, 'export'])->name('reports.export');
 
     // Inventory (M4)
     Route::get('/inventory/dashboard', [\App\Http\Controllers\InventoryController::class, 'dashboard'])->name('inventory.dashboard');

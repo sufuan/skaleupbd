@@ -259,6 +259,14 @@ class OrderController extends Controller
             $attachments[] = ['name' => $request->file('attachment')->getClientOriginalName(), 'path' => $path, 'url' => Storage::disk('public')->url($path)];
         }
 
+        if ($data['mode'] === 'approved') {
+            // Owner rule: creating straight into Approved must respect stock too.
+            $short = $this->orders->shortagesForItems($this->businessId($request), $data['items']);
+            if ($short) {
+                return back()->with('error', 'Not enough stock — '.implode('; ', $short))->withInput();
+            }
+        }
+
         $order = $this->orders->create($this->businessId($request), [
             ...$data,
             'status' => $data['mode'] === 'approved' ? 'Processing' : 'Pending',
@@ -471,7 +479,11 @@ class OrderController extends Controller
         if (! in_array($order->status, ['Pending', 'Incomplete'], true)) {
             return back()->with('success', 'This order is already processed');
         }
-        $this->orders->approve($order, $request->user());
+        try {
+            $this->orders->approve($order, $request->user());
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return back()->with('error', collect($e->errors())->flatten()->first());
+        }
 
         if ($request->boolean('next')) {
             $next = Order::where('business_id', $order->business_id)->where('status', 'Pending')->oldest()->first();

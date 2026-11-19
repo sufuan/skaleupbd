@@ -192,7 +192,7 @@ function ChannelsForm({ channels }) {
 }
 
 function Calls({ tab, m2 }) {
-    if (tab === 'templates') return <TemplatesForm m2={m2} />;
+    if (tab === 'templates') return (<><TemplatesForm m2={m2} /><MarketingSmsForm ms={m2.marketing_sms} /></>);
     if (tab === 'pbx') return (
         <div className="card"><h3>{t('PBX & Auto Call')}</h3><div className="card-sub">{t('Auto Call rate ৳1.00/min — real robot calls start after the move to a server; for now staff call themselves and write the outcome')}</div>
             <div className="conn-row"><div style={{ flex: 1 }}><div className="b">{t('PBX Status')}</div><div className="sm mut">{t('Line active — 3 agents')}</div></div><span className="pill green">{t('Active')}</span><Sw on /></div>
@@ -222,6 +222,34 @@ function SourcesForm({ m2 }) {
                 <span className="spacer" /><button className="btn pri" onClick={save}>{t('Save Changes')}</button>
             </div>
         </div>
+    );
+}
+
+function MarketingSmsForm({ ms }) {
+    const form = useForm({ rate: ms?.rate ?? 1.5, cap_day: ms?.cap_day ?? 1, cap_week: ms?.cap_week ?? 3, add_balance: '', driver: ms?.driver ?? 'log', gateway_provider: ms?.gateway_provider ?? '', gateway_sender: ms?.gateway_sender ?? '', gateway_api_key: '' });
+    useEffect(() => { form.setData({ rate: ms?.rate ?? 1.5, cap_day: ms?.cap_day ?? 1, cap_week: ms?.cap_week ?? 3, add_balance: '', driver: ms?.driver ?? 'log', gateway_provider: ms?.gateway_provider ?? '', gateway_sender: ms?.gateway_sender ?? '', gateway_api_key: '' }); }, [ms]);
+    return (
+        <form className="card" style={{ marginTop: 16 }} onSubmit={(e) => { e.preventDefault(); form.post('/settings/marketing-sms', { preserveScroll: true }); }}>
+            <h3>{t('Marketing SMS')}</h3><div className="card-sub">{t('How campaign and automation SMS are priced and sent — the balance is prepaid and every SMS is charged from it')}</div>
+            <div className="frow"><label className="fl">{t('SMS Balance')}</label><div className="b">৳{Number(ms?.balance ?? 0).toLocaleString('en-IN')}</div></div>
+            <div className="frow"><label className="fl">{t('Add Balance (৳)')}</label><input className="inp" type="number" min="0" step="any" style={{ maxWidth: 200 }} value={form.data.add_balance} onChange={(e) => form.setData('add_balance', e.target.value)} placeholder="0" /></div>
+            <div className="frow"><label className="fl">{t('Rate per SMS part (৳)')}</label><input className="inp" type="number" min="0" step="any" style={{ maxWidth: 200 }} value={form.data.rate} onChange={(e) => form.setData('rate', e.target.value)} /></div>
+            <div className="frow"><label className="fl">{t('Frequency cap per customer')}</label>
+                <span style={{ display: 'inline-flex', gap: 8, alignItems: 'center' }}>
+                    <input className="inp" type="number" min="0" style={{ maxWidth: 90 }} value={form.data.cap_day} onChange={(e) => form.setData('cap_day', e.target.value)} /> {t('per day')} ·
+                    <input className="inp" type="number" min="0" style={{ maxWidth: 90 }} value={form.data.cap_week} onChange={(e) => form.setData('cap_week', e.target.value)} /> {t('per week')}
+                </span>
+                <div className="sm mut mt8">{t('Marketing SMS only — order news (thank-you, courier, delivered) is never capped')}</div></div>
+            <div className="frow"><label className="fl">{t('Sending mode')}</label>
+                <select className="inp" style={{ maxWidth: 300 }} value={form.data.driver} onChange={(e) => form.setData('driver', e.target.value)}>
+                    <option value="log">{t('Demo / log only (no gateway connected)')}</option>
+                    <option value="gateway">{t('SMS gateway (API)')}</option>
+                </select></div>
+            <div className="frow"><label className="fl">{t('Gateway provider')}</label><input className="inp" style={{ maxWidth: 300 }} value={form.data.gateway_provider} onChange={(e) => form.setData('gateway_provider', e.target.value)} placeholder="e.g. Greenweb / MIMSMS" /></div>
+            <div className="frow"><label className="fl">{t('Sender ID (masking name)')}</label><input className="inp" style={{ maxWidth: 300 }} value={form.data.gateway_sender} onChange={(e) => form.setData('gateway_sender', e.target.value)} /></div>
+            <div className="frow"><label className="fl">{t('Gateway API key')}</label><input className="inp" type="password" style={{ maxWidth: 300 }} value={form.data.gateway_api_key} onChange={(e) => form.setData('gateway_api_key', e.target.value)} placeholder={ms?.has_gateway_key ? t('Saved — leave blank to keep') : ''} /></div>
+            <div className="flex mt16"><span className="spacer" /><button className="btn pri" disabled={form.processing}>{t('Save Changes')}</button></div>
+        </form>
     );
 }
 
