@@ -60,6 +60,12 @@ class HandleInertiaRequests extends Middleware
             ...parent::share($request),
             'auth' => [
                 'user' => $request->user(),
+                'permissions' => ($request->user() && Schema::hasColumn('users', 'role'))
+                    ? $request->user()->effectivePermissions()
+                    : \App\Support\Permissions::ALL,
+                'payroll_enabled' => ($request->user() && $request->user()->business_id && Schema::hasTable('settings'))
+                    ? (bool) app(\App\Services\SettingsService::class)->get('hr.'.$request->user()->business_id.'.payroll_enabled', false)
+                    : false,
             ],
             'locale' => $locale,
             'translations' => $translations,

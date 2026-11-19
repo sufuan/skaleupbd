@@ -61,8 +61,8 @@ const NAV = [
         { label: 'Customers', icon: 'users', children: [{ label: 'Customer List', href: '/customers' }, { label: 'Bulk Upload', href: '/customers/upload' }], href: '/customers' },
     ]},
     { sec: 'Business Control', items: [
-        { label: 'HRM', icon: 'briefcase', children: ['HR Dashboard', 'Attendance', 'Departments & SOP', 'User & Role', 'HR Settings'], href: mod('hrm') },
-        { label: 'Finance', icon: 'wallet', children: ['Finance Dashboard', 'Accounts & Bank', 'Income & Expense', 'Cash Flow', 'Asset Management'], href: mod('finance') },
+        { label: 'HRM', icon: 'briefcase', children: [{ label: 'HR Dashboard', href: '/hrm' }, { label: 'Attendance', href: '/hrm/attendance' }, { label: 'Departments & SOP', href: '/hrm/departments' }, { label: 'User & Role', href: '/hrm/users' }, { label: 'HR Settings', href: '/hrm/settings' }], href: '/hrm' },
+        { label: 'Finance', icon: 'wallet', children: [{ label: 'Finance Dashboard', href: '/finance' }, { label: 'Accounts & Bank', href: '/finance/accounts' }, { label: 'Income & Expense', href: '/finance/income-expense' }, { label: 'Cash Flow', href: '/finance/cash-flow' }], href: '/finance' },
         { label: 'Reports', icon: 'report', children: ['Profit & Loss', 'Order Report', 'Courier Report', 'Product Report', 'Employee Report', 'Call Center Report', 'Customer Report'], href: mod('reports') },
         { label: 'Settings', icon: 'gear', settings: true, children: [
             { label: 'Settings Dashboard', g: 'home' }, { label: 'Business Settings', g: 'business' },
@@ -270,8 +270,22 @@ export default function AppLayout({ children }) {
     }, []);
     const userName = props.auth?.user?.name || 'User';
     const isPlatform = !!props.auth?.user?.is_platform_admin;
-    const baseNav = NAV.map((sec) => ({ ...sec, items: sec.items.map((it) => (it.settings && isPlatform)
-        ? { ...it, children: [...it.children, { label: 'Seller Packages', g: 'packages' }] } : it) }));
+    // M13 User & Role: hide modules the user has no permission for.
+    const MODKEY = { Dashboard: 'dashboard', Orders: 'orders', Delivery: 'delivery', Inventory: 'inventory', Messages: 'messages', Purchase: 'purchase', 'Task & Follow-up': 'tasks', 'Call Center': 'callcenter', 'Work Inbox': 'workinbox', Ads: 'ads', Marketing: 'marketing', Customers: 'customers', HRM: 'hrm', Finance: 'finance', Reports: 'reports', Settings: 'settings' };
+    const perms = props.auth?.permissions || [];
+    const payrollOn = !!props.auth?.payroll_enabled;
+    const baseNav = NAV.map((sec) => ({ ...sec, items: sec.items
+        .filter((it) => { const k = MODKEY[it.label]; return !k || perms.includes(k); })
+        .map((it) => {
+            let item = it;
+            if (item.label === 'HRM' && payrollOn) {
+                item = { ...item, children: [...item.children, { label: 'Payroll', href: '/hrm/payroll' }] };
+            }
+            if (item.settings && isPlatform) {
+                item = { ...item, children: [...item.children, { label: 'Seller Packages', g: 'packages' }] };
+            }
+            return item;
+        }) })).filter((sec) => sec.items.length > 0);
     const navGroups = isPlatform ? [...baseNav, { sec: 'Platform', items: [
         { label: 'Seller Dashboard', icon: 'grid', href: '/admin' },
         { label: 'Sellers', icon: 'users', children: [{ label: 'All Sellers', href: '/admin/sellers' }, { label: 'Packages', href: '/settings?group=packages' }], href: '/admin/sellers' },

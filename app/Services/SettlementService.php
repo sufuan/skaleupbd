@@ -137,6 +137,8 @@ class SettlementService
         if (abs($sum - $amount) >= 0.01) {
             $this->raiseDifferenceEvent($method, 'A recorded payment of ৳' . number_format($amount) . ' could not be fully matched to delivered parcels (৳' . number_format(abs($sum - $amount)) . ' left over).');
         }
+        $payment->setRelation('method', $method);
+        app(FinanceService::class)->syncCourierPayment($payment);
 
         return $payment;
     }

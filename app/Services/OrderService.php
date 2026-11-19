@@ -145,7 +145,10 @@ class OrderService
                 : ($check['verdict'] === 'risky' ? "Fraud check — Risky (success rate ".($check['rate'] ?? 0)."%) — {$check['note']}" : 'Fraud check — Not checked (no delivery history)');
             $order->logActivity('system', $verdictText, $actor);
 
-            return $order->fresh(['items']);
+            $fresh = $order->fresh(['items']);
+            app(\App\Services\FinanceService::class)->syncOrderAdvance($fresh, $actor);
+
+            return $fresh;
         });
     }
 

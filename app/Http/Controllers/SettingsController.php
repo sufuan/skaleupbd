@@ -84,6 +84,12 @@ class SettingsController extends Controller
                     'stock_management_disabled' => (bool) $this->settings->get('inventory.stock_management_disabled', false),
                     'valuation' => (string) $this->settings->get('inventory.valuation', 'average_cost'),
                 ],
+                'finance' => [
+                    'daily_closing' => (bool) $this->settings->get('finance.' . $biz . '.daily_closing', false),
+                    'advance_account_id' => (int) ($this->settings->get('finance.' . $biz . '.advance_account_id', 0) ?: 0),
+                    'accounts' => \App\Models\FinanceAccount::where('business_id', $biz)->where('active', true)
+                        ->orderBy('id')->get(['id', 'name'])->map(fn ($a) => ['id' => $a->id, 'name' => $a->name])->all(),
+                ],
                 'toggles' => [
                     'show_email' => (bool) $this->settings->get('orders.show_email', true),
                     'show_alt_number' => (bool) $this->settings->get('orders.show_alt_number', false),
@@ -219,6 +225,19 @@ class SettingsController extends Controller
         $this->setLogged($request, 'inventory.valuation', $data['valuation']);
 
         return back()->with('success', 'Inventory settings saved');
+    }
+
+    public function updateFinance(Request $request): RedirectResponse
+    {
+        $biz = (int) $request->user()->business_id;
+        $data = $request->validate([
+            'daily_closing' => ['required', 'boolean'],
+            'advance_account_id' => ['nullable', 'integer'],
+        ]);
+        $this->setLogged($request, 'finance.' . $biz . '.daily_closing', (bool) $data['daily_closing']);
+        $this->setLogged($request, 'finance.' . $biz . '.advance_account_id', (int) ($data['advance_account_id'] ?? 0));
+
+        return back()->with('success', 'Finance settings saved');
     }
 
     public function updateOrderToggles(Request $request): RedirectResponse

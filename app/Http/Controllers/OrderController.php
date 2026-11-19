@@ -415,6 +415,9 @@ class OrderController extends Controller
             $order->logActivity('action', 'Advance payment recorded: ৳'.number_format((float) $data['advance_payment'])." by {$request->user()->name}", $request->user());
         }
         $order->save();
+        if (! empty($data['advance_payment'])) {
+            app(\App\Services\FinanceService::class)->syncOrderAdvance($order, $request->user());
+        }
 
         if (! empty($data['processing_status'])) {
             $order->logActivity('action', "Processing status set to {$data['processing_status']} by {$request->user()->name}", $request->user());

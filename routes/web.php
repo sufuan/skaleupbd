@@ -59,6 +59,7 @@ Route::middleware(['auth', 'verified', 'totp'])->group(function () {
     Route::post('/settings/templates', [SettingsController::class, 'updateTemplates'])->name('settings.templates');
     Route::post('/settings/order-toggles', [SettingsController::class, 'updateOrderToggles'])->name('settings.orderToggles');
     Route::post('/settings/inventory', [SettingsController::class, 'updateInventory'])->name('settings.inventory');
+    Route::post('/settings/finance', [SettingsController::class, 'updateFinance'])->name('settings.finance');
     Route::post('/settings/courier-methods', [SettingsController::class, 'addCourierMethod'])->name('settings.courierMethods');
 
     // M2 Orders
@@ -125,6 +126,56 @@ Route::middleware(['auth', 'verified', 'totp'])->group(function () {
     Route::post('/orders/{order}/block', [OrderController::class, 'block'])->name('orders.block');
     Route::delete('/orders/{order}', [OrderController::class, 'destroy'])->name('orders.destroy');
     Route::get('/orders/{order}/invoice', [OrderController::class, 'invoice'])->name('orders.invoice');
+
+    // Finance (M14)
+    Route::get('/finance', [\App\Http\Controllers\FinanceController::class, 'dashboard'])->name('finance.dashboard');
+    Route::get('/finance/accounts', [\App\Http\Controllers\FinanceController::class, 'accounts'])->name('finance.accounts');
+    Route::post('/finance/accounts', [\App\Http\Controllers\FinanceController::class, 'storeAccount'])->name('finance.accounts.store');
+    Route::patch('/finance/accounts/{account}', [\App\Http\Controllers\FinanceController::class, 'updateAccount'])->name('finance.accounts.update');
+    Route::post('/finance/transactions', [\App\Http\Controllers\FinanceController::class, 'storeTransaction'])->name('finance.transactions.store');
+    Route::post('/finance/transactions/{transaction}/void', [\App\Http\Controllers\FinanceController::class, 'voidTransaction'])->name('finance.transactions.void');
+    Route::get('/finance/income-expense', [\App\Http\Controllers\FinanceController::class, 'incomeExpense'])->name('finance.ie');
+    Route::get('/finance/income-expense/export', [\App\Http\Controllers\FinanceController::class, 'exportCsv'])->name('finance.ie.export');
+    Route::post('/finance/categories', [\App\Http\Controllers\FinanceController::class, 'storeCategory'])->name('finance.categories.store');
+    Route::patch('/finance/categories/{category}', [\App\Http\Controllers\FinanceController::class, 'updateCategory'])->name('finance.categories.update');
+    Route::delete('/finance/categories/{category}', [\App\Http\Controllers\FinanceController::class, 'deleteCategory'])->name('finance.categories.delete');
+    Route::get('/finance/cash-flow', [\App\Http\Controllers\FinanceController::class, 'cashflow'])->name('finance.cashflow');
+    Route::post('/finance/close-month', [\App\Http\Controllers\FinanceController::class, 'closeMonth'])->name('finance.closeMonth');
+    Route::post('/finance/daily-close', [\App\Http\Controllers\FinanceController::class, 'dailyClose'])->name('finance.dailyClose');
+    Route::post('/finance/payout-task', [\App\Http\Controllers\FinanceController::class, 'raisePayoutTask'])->name('finance.payoutTask');
+
+    // HRM (M13)
+    Route::get('/hrm', [\App\Http\Controllers\HrmController::class, 'dashboard'])->name('hrm.dashboard');
+    Route::get('/hrm/attendance', [\App\Http\Controllers\HrmController::class, 'attendance'])->name('hrm.attendance');
+    Route::get('/hrm/attendance/export', [\App\Http\Controllers\HrmController::class, 'exportReport'])->name('hrm.attendance.export');
+    Route::post('/hrm/attendance/check-in', [\App\Http\Controllers\HrmController::class, 'checkIn'])->name('hrm.checkin');
+    Route::post('/hrm/attendance/check-out', [\App\Http\Controllers\HrmController::class, 'checkOut'])->name('hrm.checkout');
+    Route::post('/hrm/attendance/break', [\App\Http\Controllers\HrmController::class, 'breakToggle'])->name('hrm.break');
+    Route::post('/hrm/leaves', [\App\Http\Controllers\HrmController::class, 'applyLeave'])->name('hrm.leaves.apply');
+    Route::post('/hrm/leaves/{leave}/decide', [\App\Http\Controllers\HrmController::class, 'decideLeave'])->name('hrm.leaves.decide');
+    Route::get('/hrm/departments', [\App\Http\Controllers\HrmController::class, 'departments'])->name('hrm.departments');
+    Route::post('/hrm/departments', [\App\Http\Controllers\HrmController::class, 'storeDepartment'])->name('hrm.departments.store');
+    Route::patch('/hrm/departments/{department}', [\App\Http\Controllers\HrmController::class, 'updateDepartment'])->name('hrm.departments.update');
+    Route::delete('/hrm/departments/{department}', [\App\Http\Controllers\HrmController::class, 'destroyDepartment'])->name('hrm.departments.destroy');
+    Route::post('/hrm/sops', [\App\Http\Controllers\HrmController::class, 'storeSop'])->name('hrm.sops.store');
+    Route::patch('/hrm/sops/{sop}', [\App\Http\Controllers\HrmController::class, 'updateSop'])->name('hrm.sops.update');
+    Route::delete('/hrm/sops/{sop}', [\App\Http\Controllers\HrmController::class, 'destroySop'])->name('hrm.sops.destroy');
+    Route::post('/hrm/shifts', [\App\Http\Controllers\HrmController::class, 'storeShift'])->name('hrm.shifts.store');
+    Route::patch('/hrm/shifts/{shift}', [\App\Http\Controllers\HrmController::class, 'updateShift'])->name('hrm.shifts.update');
+    Route::delete('/hrm/shifts/{shift}', [\App\Http\Controllers\HrmController::class, 'destroyShift'])->name('hrm.shifts.destroy');
+    Route::post('/hrm/shifts/{shift}/assign', [\App\Http\Controllers\HrmController::class, 'assignShift'])->name('hrm.shifts.assign');
+    Route::get('/hrm/users', [\App\Http\Controllers\HrmController::class, 'users'])->name('hrm.users');
+    Route::post('/hrm/users', [\App\Http\Controllers\HrmController::class, 'storeUser'])->name('hrm.users.store');
+    Route::patch('/hrm/users/{user}', [\App\Http\Controllers\HrmController::class, 'updateUser'])->name('hrm.users.update');
+    Route::get('/hrm/settings', [\App\Http\Controllers\HrmController::class, 'settings'])->name('hrm.settings');
+    Route::post('/hrm/settings', [\App\Http\Controllers\HrmController::class, 'updateSettings'])->name('hrm.settings.update');
+    Route::post('/hrm/holidays', [\App\Http\Controllers\HrmController::class, 'storeHoliday'])->name('hrm.holidays.store');
+    Route::delete('/hrm/holidays/{holiday}', [\App\Http\Controllers\HrmController::class, 'destroyHoliday'])->name('hrm.holidays.destroy');
+    // Payroll (M13) — built, disabled by default (HR Settings switch)
+    Route::get('/hrm/payroll', [\App\Http\Controllers\PayrollController::class, 'index'])->name('hrm.payroll');
+    Route::post('/hrm/payroll/build', [\App\Http\Controllers\PayrollController::class, 'build'])->name('hrm.payroll.build');
+    Route::patch('/hrm/payroll/items/{item}', [\App\Http\Controllers\PayrollController::class, 'updateItem'])->name('hrm.payroll.items.update');
+    Route::post('/hrm/payroll/{run}/pay', [\App\Http\Controllers\PayrollController::class, 'pay'])->name('hrm.payroll.pay');
 
     // Inventory (M4)
     Route::get('/inventory/dashboard', [\App\Http\Controllers\InventoryController::class, 'dashboard'])->name('inventory.dashboard');

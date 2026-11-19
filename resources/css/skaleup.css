@@ -682,3 +682,83 @@ label.fl{display:block;font-size:12.5px;font-weight:600;color:#55496e;margin:0 0
 .msg-pg .ctl-btn{background:#fff;color:#411550;border:1px solid #d8cfe0;padding:7px 12px;border-radius:8px;font-weight:600;cursor:pointer;font-size:13px}
 .msg-pg .ctl-btn:disabled{opacity:.55;cursor:default}
 .msg-pg .ctl-btn.pri{background:#411550;color:#fff;border-color:#411550}
+
+/* M14 Finance — prototype x-* language, scoped under .fin */
+.fin .x-head{margin-bottom:14px}
+.fin .x-head h3{font-size:20px;color:#1E293B}
+.fin .x-head p{color:#64748B;font-size:13.5px;margin-top:3px}
+.fin .x-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+.fin .x-kpi{background:#fff;border:1px solid #E7EAF0;border-radius:14px;padding:14px 16px}
+.fin .x-kpi b{font-size:23px;color:#1E293B;display:block}
+.fin .x-kpi span{font-size:13px;color:#64748B}
+.fin .x-kpi.red b{color:#DC2626}
+.fin .x-kpi.green b{color:#16A34A}
+.fin .x-kpi.purple b{color:#411550}
+.fin .x-card{background:#fff;border:1px solid #E7EAF0;border-radius:14px;padding:16px 18px;margin-bottom:14px}
+.fin .x-card h4{font-size:16px;margin-bottom:10px;color:#1E293B}
+.fin .x-table{width:100%;border-collapse:collapse;background:#fff;border:1px solid #E7EAF0;border-radius:12px;overflow:hidden}
+.fin .x-table th,.fin .x-table td{padding:10px 12px;font-size:13.5px;text-align:left;border-bottom:1px solid #F1F5F9}
+.fin .x-table th{background:#FAF8FC;color:#64748B;font-weight:600}
+.fin .x-note{font-size:13px;color:#94A3B8;margin-top:10px}
+.fin .chip{display:inline-block;padding:2px 9px;border-radius:99px;font-size:12px;font-weight:600}
+.fin .chip-green{background:#F0FDF4;color:#16A34A}
+.fin .chip-amber{background:#FFFBEB;color:#D97706}
+.fin .chip-red{background:#FEF2F2;color:#DC2626}
+.fin .chip-grey{background:#F1F5F9;color:#64748B}
+.fin .bridge{display:flex;gap:8px;flex-wrap:wrap;align-items:stretch}
+.fin .bridge .bstep{flex:1;min-width:130px;background:#FAF8FC;border:1px solid #EDE9F2;border-radius:12px;padding:10px 12px}
+.fin .bridge .bstep b{font-size:19px;color:#1E293B;display:block}
+.fin .bridge .bstep span{font-size:12.5px;color:#64748B}
+.fin .bridge .barrow{align-self:center;color:#94A3B8;font-weight:700}
+.fin .fin-actions{position:sticky;bottom:12px;display:flex;gap:8px;justify-content:center;margin-top:14px;z-index:5;background:rgba(255,255,255,.88);backdrop-filter:blur(4px);border-radius:14px;padding:8px;width:fit-content;margin-left:auto;margin-right:auto}
+.fin .fin-actions button{box-shadow:0 6px 18px rgba(65,21,80,.18)}
+.fin .cat-chips{display:flex;gap:8px;flex-wrap:wrap}
+.fin .cat-chips button{border:1px solid #E7EAF0;background:#fff;border-radius:99px;padding:7px 14px;font-size:13.5px;cursor:pointer}
+.fin .cat-chips button.on{background:#411550;color:#fff;border-color:#411550}
+@media (max-width: 760px){.fin .x-kpis{grid-template-columns:repeat(2,1fr)}.fin .x-table{display:block;overflow-x:auto}}
+
+/* M13 HRM — same prototype x-* language, scoped under .hrm */
+.hrm .x-head{margin-bottom:14px}
+.hrm .x-head h3{font-size:20px;color:#1E293B}
+.hrm .x-head p{color:#64748B;font-size:13.5px;margin-top:3px}
+.hrm .x-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+.hrm .x-kpi{background:#fff;border:1px solid #E7EAF0;border-radius:14px;padding:14px 16px}
+.hrm .x-kpi b{font-size:23px;color:#1E293B;display:block}
+.hrm .x-kpi span{font-size:13px;color:#64748B}
+.hrm .x-kpi.red b{color:#DC2626}
+.hrm .x-kpi.green b{color:#16A34A}
+.hrm .x-kpi.purple b{color:#411550}
+.hrm .x-card{background:#fff;border:1px solid #E7EAF0;border-radius:14px;padding:16px 18px;margin-bottom:14px}
+.hrm .x-card h4{font-size:16px;margin-bottom:10px;color:#1E293B}
+.hrm .x-table{width:100%;border-collapse:collapse;background:#fff;border:1px solid #E7EAF0;border-radius:12px;overflow:hidden}
+.hrm .x-table th,.hrm .x-table td{padding:10px 12px;font-size:13.5px;text-align:left;border-bottom:1px solid #F1F5F9}
+.hrm .x-table th{background:#FAF8FC;color:#64748B;font-weight:600}
+.hrm .x-note{font-size:13px;color:#94A3B8;margin-top:10px}
+.hrm .chip{display:inline-block;padding:2px 9px;border-radius:99px;font-size:12px;font-weight:600}
+.hrm .chip-green{background:#F0FDF4;color:#16A34A}
+.hrm .chip-amber{background:#FFFBEB;color:#D97706}
+.hrm .chip-red{background:#FEF2F2;color:#DC2626}
+.hrm .chip-grey{background:#F1F5F9;color:#64748B}
+.hrm .chip-blue{background:#EFF6FF;color:#2563EB}
+.hrm .tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.hrm .tabs a,.hrm .tabs button{border:1px solid #E7EAF0;background:#fff;border-radius:99px;padding:7px 14px;font-size:13.5px;cursor:pointer;color:#1E293B;text-decoration:none}
+.hrm .tabs a.on,.hrm .tabs button.on{background:#411550;color:#fff;border-color:#411550}
+.hrm .daycard{display:flex;gap:18px;flex-wrap:wrap;align-items:center}
+.hrm .daycard .nums{display:flex;gap:22px;flex-wrap:wrap}
+.hrm .daycard .nums b{font-size:19px;color:#1E293B;display:block}
+.hrm .daycard .nums span{font-size:12.5px;color:#64748B}
+.hrm .perm-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px 14px}
+.hrm .perm-grid label{display:flex;gap:7px;align-items:center;font-size:13.5px;cursor:pointer}
+.hrm .row-actions{display:flex;gap:6px;flex-wrap:wrap}
+.hrm .btn-mini{border:1px solid #E7EAF0;background:#fff;border-radius:8px;padding:4px 10px;font-size:12.5px;cursor:pointer}
+.hrm .btn-mini:hover{border-color:#411550;color:#411550}
+.hrm .btn-mini.danger:hover{border-color:#DC2626;color:#DC2626}
+.hrm .switch-row{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:10px 0;border-bottom:1px solid #F1F5F9}
+.hrm .switch-row:last-child{border-bottom:none}
+.hrm .btn-p{background:#411550;color:#fff;border:none;border-radius:9px;padding:9px 16px;font-size:13.5px;font-weight:600;cursor:pointer;font-family:inherit}
+.hrm .btn-p:disabled{opacity:.55;cursor:not-allowed}
+.hrm .btn-g{background:#fff;color:#1E293B;border:1px solid #E7EAF0;border-radius:9px;padding:8px 14px;font-size:13.5px;cursor:pointer;font-family:inherit}
+.hrm .btn-g:hover{border-color:#411550;color:#411550}
+.hrm .form-grid{display:flex;gap:10px;flex-wrap:wrap;align-items:end}
+.hrm .form-grid .fld{display:flex;flex-direction:column;gap:4px}
+@media (max-width: 760px){.hrm .x-kpis{grid-template-columns:repeat(2,1fr)}.hrm .x-table{display:block;overflow-x:auto}}

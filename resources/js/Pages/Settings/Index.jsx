@@ -470,6 +470,7 @@ function Security({ tab, totpEnabled, totpEnrolled, m2 }) {
                 </div>
                 <OrderTogglesForm m2={m2} />
                 <InventorySettingsForm m2={m2} />
+                <FinanceSettingsForm m2={m2} />
             </>
         );
     }
@@ -480,6 +481,28 @@ function Security({ tab, totpEnabled, totpEnrolled, m2 }) {
                     <span className={`pill ${s2 === 'Pending' ? 'amber' : 'green'}`}>{t(s2)}</span>
                     {s2 === 'Pending' && <button className="btn pri">{t('Approve')}</button>}</div>
             ))}<SaveBar /></div>
+    );
+}
+
+function FinanceSettingsForm({ m2 }) {
+    const [fin, setFin] = useState(m2.finance);
+    useEffect(() => { setFin(m2.finance); }, [m2.finance]);
+    if (!fin) return null;
+    return (
+        <div className="card"><h3>{t('Finance')}</h3><div className="card-sub">{t('How the Finance module behaves for this shop')}</div>
+            <div className="conn-row">
+                <div style={{ flex: 1 }}><div className="b">{t('Daily Closing')}</div><div className="sm mut">{t('Match the cash in hand against the books every day; a mismatch raises a Work Inbox task')}</div></div>
+                <button className={`switch ${fin.daily_closing ? 'on' : ''}`} aria-label="Daily Closing" onClick={() => setFin({ ...fin, daily_closing: !fin.daily_closing })} />
+            </div>
+            <div className="conn-row">
+                <div style={{ flex: 1 }}><div className="b">{t('Advance Money Goes To')}</div><div className="sm mut">{t('When a customer pays an order advance (bKash/Nagad), the money lands in this account')}</div></div>
+                <select className="inp" style={{ maxWidth: 240 }} value={fin.advance_account_id || ''} onChange={(e) => setFin({ ...fin, advance_account_id: Number(e.target.value) || 0 })}>
+                    <option value="">{t('First mobile account')}</option>
+                    {(fin.accounts || []).map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
+                </select>
+            </div>
+            <div className="flex mt16"><span className="spacer" /><button className="btn pri" onClick={() => router.post('/settings/finance', { daily_closing: !!fin.daily_closing, advance_account_id: fin.advance_account_id || 0 }, { preserveScroll: true })}>{t('Save Changes')}</button></div>
+        </div>
     );
 }
 
