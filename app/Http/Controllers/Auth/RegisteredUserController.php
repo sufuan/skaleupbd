@@ -44,6 +44,10 @@ class RegisteredUserController extends Controller
             'role' => 'admin',
         ]);
 
+        // Every account owns a shop: create its Business and the default
+        // per-business data, and link the user to it.
+        app(\App\Services\BusinessProvisioner::class)->provision($user);
+
         event(new Registered($user));
 
         Auth::login($user);

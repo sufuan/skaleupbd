@@ -158,14 +158,14 @@ function ChannelsForm({ channels }) {
                 <div className="frow"><label className="fl">{t('Webhook URL')}</label><input className="inp" readOnly value={c.webhook_url || ''} onFocus={(e) => e.target.select()} /></div>
                 <div className="frow"><label className="fl">{t('Verify Token')}</label><input className="inp" readOnly value={c.verify_token || ''} onFocus={(e) => e.target.select()} /></div>
                 <div className="frow"><label className="fl">{t('App ID')}</label><input className="inp" value={form.data.app_id} onChange={(e) => form.setData('app_id', e.target.value)} /></div>
-                <div className="frow"><label className="fl">{t('App Secret')}</label><input className="inp" type="password" value={form.data.app_secret} onChange={(e) => form.setData('app_secret', e.target.value)} placeholder={savedNote(c.app_secret_set)} /></div>
+                <div className="frow"><label className="fl">{t('App Secret')}</label><input className="inp" type="password" autoComplete="new-password" value={form.data.app_secret} onChange={(e) => form.setData('app_secret', e.target.value)} placeholder={savedNote(c.app_secret_set)} /></div>
             </div>
 
             {block('Facebook Page (Messenger)', 'facebook', c.facebook, (
                 <>
                     <div className="frow"><label className="fl">{t('Page ID')}</label><input className="inp" value={form.data.facebook_account_id} onChange={(e) => form.setData('facebook_account_id', e.target.value)} /></div>
                     <div className="frow"><label className="fl">{t('Page name')}</label><input className="inp" value={form.data.facebook_page_name} onChange={(e) => form.setData('facebook_page_name', e.target.value)} /></div>
-                    <div className="frow"><label className="fl">{t('Page Access Token')}</label><input className="inp" type="password" value={form.data.facebook_token} onChange={(e) => form.setData('facebook_token', e.target.value)} placeholder={savedNote(c.facebook?.token_set)} /></div>
+                    <div className="frow"><label className="fl">{t('Page Access Token')}</label><input className="inp" type="password" autoComplete="new-password" value={form.data.facebook_token} onChange={(e) => form.setData('facebook_token', e.target.value)} placeholder={savedNote(c.facebook?.token_set)} /></div>
                 </>
             ))}
 
@@ -174,7 +174,7 @@ function ChannelsForm({ channels }) {
                     <div className="frow"><label className="fl">{t('Phone Number ID')}</label><input className="inp" value={form.data.whatsapp_account_id} onChange={(e) => form.setData('whatsapp_account_id', e.target.value)} /></div>
                     <div className="frow"><label className="fl">{t('WhatsApp Business Account ID')}</label><input className="inp" value={form.data.whatsapp_waba_id} onChange={(e) => form.setData('whatsapp_waba_id', e.target.value)} /></div>
                     <div className="frow"><label className="fl">{t('Phone number')}</label><input className="inp" value={form.data.whatsapp_phone_number} onChange={(e) => form.setData('whatsapp_phone_number', e.target.value)} /></div>
-                    <div className="frow"><label className="fl">{t('Permanent Access Token')}</label><input className="inp" type="password" value={form.data.whatsapp_token} onChange={(e) => form.setData('whatsapp_token', e.target.value)} placeholder={savedNote(c.whatsapp?.token_set)} /></div>
+                    <div className="frow"><label className="fl">{t('Permanent Access Token')}</label><input className="inp" type="password" autoComplete="new-password" value={form.data.whatsapp_token} onChange={(e) => form.setData('whatsapp_token', e.target.value)} placeholder={savedNote(c.whatsapp?.token_set)} /></div>
                 </>
             ))}
 
@@ -182,7 +182,7 @@ function ChannelsForm({ channels }) {
                 <>
                     <div className="frow"><label className="fl">{t('Instagram User ID')}</label><input className="inp" value={form.data.instagram_account_id} onChange={(e) => form.setData('instagram_account_id', e.target.value)} /></div>
                     <div className="frow"><label className="fl">{t('Username')}</label><input className="inp" value={form.data.instagram_username} onChange={(e) => form.setData('instagram_username', e.target.value)} /></div>
-                    <div className="frow"><label className="fl">{t('Access Token')}</label><input className="inp" type="password" value={form.data.instagram_token} onChange={(e) => form.setData('instagram_token', e.target.value)} placeholder={savedNote(c.instagram?.token_set)} /></div>
+                    <div className="frow"><label className="fl">{t('Access Token')}</label><input className="inp" type="password" autoComplete="new-password" value={form.data.instagram_token} onChange={(e) => form.setData('instagram_token', e.target.value)} placeholder={savedNote(c.instagram?.token_set)} /></div>
                 </>
             ))}
 
