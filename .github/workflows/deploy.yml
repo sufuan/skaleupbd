@@ -9,7 +9,7 @@ jobs:
     steps:
       - name: Pull latest code on the server
         run: |
-          curl -s -H "Authorization: cpanel ${{ secrets.CPANEL_USER }}:${{ secrets.CPANEL_TOKEN }}" "https://${{ secrets.CPANEL_HOST }}:2083/execute/VersionControl/update?repository_root=%2Fhome%2Fscalenow%2Fskaleupbd&branch=main"
+          curl -s --fail-with-body -H "Authorization: cpanel ${{ secrets.CPANEL_USER }}:${{ secrets.CPANEL_TOKEN }}" "https://${{ secrets.CPANEL_HOST }}:2083/execute/VersionControl/update?repository_root=%2Fhome%2Fscalenow%2Fskaleupbd&branch=main"
       - name: Run deployment tasks
         run: |
-          curl -s -X POST -H "Authorization: cpanel ${{ secrets.CPANEL_USER }}:${{ secrets.CPANEL_TOKEN }}" "https://${{ secrets.CPANEL_HOST }}:2083/execute/VersionControlDeployment/create" --data-urlencode "repository_root=/home/scalenow/skaleupbd"
+          curl -s --fail-with-body -X POST -H "Authorization: cpanel ${{ secrets.CPANEL_USER }}:${{ secrets.CPANEL_TOKEN }}" "https://${{ secrets.CPANEL_HOST }}:2083/execute/VersionControlDeployment/create" --data-urlencode "repository_root=/home/scalenow/skaleupbd"
