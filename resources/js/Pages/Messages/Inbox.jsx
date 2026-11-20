@@ -150,7 +150,7 @@ export default function Inbox({ conversations, selected, report, aiMode, aiPanic
                                     {selected.drafts.map((d) => <DraftCard key={d.id} draft={d} />)}
                                 </div>
                                 <form onSubmit={sendReply} style={{ display: 'flex', gap: 9, marginTop: 10 }}>
-                                    <input placeholder={t('Type a message...')} value={reply.data.body} onChange={(e) => reply.setData('body', e.target.value)} style={{ flex: 1, padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: 9 }} />
+                                    <input placeholder={t('Type a message...')} value={reply.data.body} onChange={(e) => reply.setData('body', e.target.value)} style={{ flex: 1, minWidth: 0, padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: 9 }} />
                                     <button type="submit" style={BTN} disabled={reply.processing}>{t('Send')}</button>
                                 </form>
                             </div>

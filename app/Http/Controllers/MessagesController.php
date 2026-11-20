@@ -174,7 +174,7 @@ class MessagesController extends Controller
                     'source' => $source,
                     'status' => 'Pending',
                     'delivery_charge' => 60,
-                    'items' => [['product_id' => $product->id, 'qty' => 1]],
+                    'items' => [['product_id' => $product->id, 'qty' => 1, 'price' => isset($message->meta['unit_price']) ? (float) $message->meta['unit_price'] : null]],
                 ], $request->user(), 'Chat order intake');
 
                 return back()->with('success', 'Order created from chat');

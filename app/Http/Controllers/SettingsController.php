@@ -37,6 +37,7 @@ class SettingsController extends Controller
                 'rules' => \App\Models\AiRule::where('business_id', $biz)->orderBy('id')->get()
                     ->map(fn ($r) => ['id' => $r->id, 'name' => $r->name, 'trigger_type' => $r->trigger_type, 'match_text' => $r->match_text, 'action' => $r->action, 'reply_template' => $r->reply_template, 'channel' => $r->channel, 'active' => (bool) $r->active])->all(),
                 'autonomy' => app(\App\Services\RuleBrainService::class)->autonomy(),
+                'talker' => app(\App\Services\AiTalkerService::class)->config(),
                 'working_hours' => (string) $this->settings->get('ai.working_hours', 'সকাল 9টা — রাত 11টা'),
                 'negotiation' => app(\App\Services\NegotiationService::class)->config(),
                 'knowledge' => \App\Models\KnowledgeEntry::where('business_id', $biz)->orderBy('id')->get(['id', 'title', 'body'])->all(),
@@ -389,6 +390,50 @@ class SettingsController extends Controller
         $this->setLogged($request, 'ai.working_hours', (string) ($data['working_hours'] ?? ''));
 
         return back()->with('success', 'AI Reply settings saved');
+    }
+
+    public function updateAiTalker(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'enabled' => ['required', 'boolean'],
+            'normal_provider' => ['required', 'string', 'in:gemini,claude'],
+            'normal_model' => ['required', 'string', 'max:80'],
+            'complex_provider' => ['required', 'string', 'in:gemini,claude'],
+            'complex_model' => ['required', 'string', 'max:80'],
+            'route_angry' => ['required', 'boolean'],
+            'route_long_bargain' => ['required', 'boolean'],
+            'gemini_key' => ['nullable', 'string', 'max:300'],
+            'claude_key' => ['nullable', 'string', 'max:300'],
+        ]);
+        $cfg = $this->settings->get('ai.talker', []);
+        $cfg = is_array($cfg) ? $cfg : [];
+        $cfg = array_merge($cfg, [
+            'enabled' => (bool) $data['enabled'],
+            'normal_provider' => $data['normal_provider'],
+            'normal_model' => trim($data['normal_model']),
+            'complex_provider' => $data['complex_provider'],
+            'complex_model' => trim($data['complex_model']),
+            'route_angry' => (bool) $data['route_angry'],
+            'route_long_bargain' => (bool) $data['route_long_bargain'],
+        ]);
+        // Blank key field = keep the saved key, exactly like channel tokens.
+        foreach (['gemini', 'claude'] as $provider) {
+            $plain = trim((string) ($data[$provider . '_key'] ?? ''));
+            if ($plain !== '') {
+                $cfg[$provider . '_key_enc'] = \Illuminate\Support\Facades\Crypt::encryptString($plain);
+            }
+        }
+        $this->setLogged($request, 'ai.talker', $cfg);
+
+        return back()->with('success', 'AI Model settings saved');
+    }
+
+    public function testAiTalker(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $data = $request->validate(['provider' => ['required', 'string', 'in:gemini,claude']]);
+        $result = app(\App\Services\AiTalkerService::class)->testConnection($data['provider']);
+
+        return response()->json($result);
     }
 
     public function updateAiNegotiation(Request $request): RedirectResponse

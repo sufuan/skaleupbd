@@ -357,7 +357,7 @@ export default function AppLayout({ children }) {
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M4 7h16M4 12h16M4 17h16" /></svg>
                     </button>
                     <span className="tb-item tb-hide-sm"><I d={P.grid} size={16} /></span>
-                    <button type="button" className="tb-item" onClick={() => setSearchOpen(true)}><I d={P.search} size={15} /> {t('Search')}</button>
+                    <button type="button" className="tb-item" onClick={() => setSearchOpen(true)}><I d={P.search} size={15} /><span className="tb-hide-sm">{t('Search')}</span></button>
                     <Link href="/orders/create" className="tb-item tb-hide-sm"><I d={P.cart} size={15} /> {t('New Order')}</Link>
                     <Link href="/orders" className="tb-item tb-hide-sm"><I d={P.file} size={15} /> {t('Order List')}</Link>
                     <Link href={mod('messages')} className="tb-item tb-hide-sm"><I d={P.send} size={15} /> {t('Send Message')}</Link>
@@ -381,8 +381,8 @@ export default function AppLayout({ children }) {
             {searchOpen && <SearchModal close={() => setSearchOpen(false)} />}
             {askOpen && <AskDrawer close={() => setAskOpen(false)} />}
             <ConfirmHost />
-            {toast && <div className="toast">{toast}</div>}
-            {toastErr && <div className="toast err">{toastErr}</div>}
+            {toast && <div className="toast">{t(toast)}</div>}
+            {toastErr && <div className="toast err">{t(toastErr)}</div>}
         </div>
         </CountsContext.Provider>
     );

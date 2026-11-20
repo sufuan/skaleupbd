@@ -190,7 +190,7 @@ function MyDashboard({ my }) {
             <div className="card" style={{ marginBottom: 18 }}>
                 <div style={{ display: 'flex', alignItems: 'flex-start', flexWrap: 'wrap', gap: 8 }}>
                     <div><h3>{t('Order Counts')}</h3><div className="card-sub" style={{ margin: '2px 0 0' }}>{t('Orders created vs sent to courier in the selected range')}</div></div>
-                    <span style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+                    <span style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'flex-start', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                         <select className="ctl-btn" value={range} onChange={(e) => setRange(Number(e.target.value))}>
                             <option value={30}>{t('Last 30 days')}</option><option value={7}>{t('Last 7 days')}</option><option value={1}>{t('Today')}</option>
                         </select>
@@ -253,12 +253,12 @@ function MyDashboard({ my }) {
                         <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', fontSize: 9.5, color: 'var(--mut2)', height: 86, padding: '1px 0' }}>
                             {[4, 3, 2, 1, 0].map((i) => <span key={i}>{Math.round((hMax * i) / 4)}</span>)}
                         </div>
-                        <svg viewBox="0 0 300 86" preserveAspectRatio="none" style={{ flex: 1, height: 86 }}>
+                        <div style={{ flex: 1, minWidth: 0 }}><svg viewBox="0 0 300 86" preserveAspectRatio="none" style={{ width: '100%', height: 86, display: 'block' }}>
                             <line x1="0" y1="10" x2="300" y2="10" stroke="#eef2f7" /><line x1="0" y1="29" x2="300" y2="29" stroke="#eef2f7" />
                             <line x1="0" y1="48" x2="300" y2="48" stroke="#eef2f7" /><line x1="0" y1="67" x2="300" y2="67" stroke="#eef2f7" />
                             <line x1="0" y1="84" x2="300" y2="84" stroke="#e5e7eb" />
                             <polyline points={hPoints} fill="none" stroke="#16a34a" strokeWidth="2" />
-                        </svg>
+                        </svg></div>
                     </div>
                     <div className="hour-labels" style={{ display: 'flex', justifyContent: 'space-between', fontSize: 8.5, color: 'var(--mut2)', marginLeft: 16, overflow: 'hidden' }}>
                         {HOURS.map((h) => <span key={h} style={{ whiteSpace: 'nowrap' }}>{h}</span>)}

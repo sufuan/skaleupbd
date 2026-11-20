@@ -77,7 +77,7 @@ export default function Parcels({ parcels, counts, status, analysis, entries, fi
                         </div>
 
                         <form className="card" style={{ marginTop: 16, padding: 24 }} onSubmit={applyFilters}>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+                            <div className="fld-grid2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
                                 <div className="fld-l" style={{ fontSize: 11, letterSpacing: '.04em' }}>{t('COURIER AGE')}
                                     <span style={{ display: 'flex', gap: 8 }}>
                                         <input className="fld" style={{ width: 100, flex: 'none' }} placeholder={t('From')} type="number" min="0" value={f.age_from} onChange={(e) => setF({ ...f, age_from: e.target.value })} />
@@ -93,7 +93,7 @@ export default function Parcels({ parcels, counts, status, analysis, entries, fi
                                     <span className="muted-sm" style={{ fontWeight: 400, letterSpacing: 0 }}>{t('Latest rider attempt number. Blank To means plus.')}</span>
                                 </div>
                             </div>
-                            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                            <div className="parcels-filter-row" style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
                                 <label className="fld-l" style={{ fontSize: 11, letterSpacing: '.04em', flex: '0 0 320px' }}>{t('SEARCH')}
                                     <input className="fld" placeholder={t('Search invoice, name, phone...')} value={f.search} onChange={(e) => setF({ ...f, search: e.target.value })} />
                                 </label>

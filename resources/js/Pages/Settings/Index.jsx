@@ -60,7 +60,7 @@ function Home() {
                     </div>
                 ))}
             </div>
-            <div className="grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
+            <div className="grid set-home-grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
                 {cards.map(([label, s, c]) => (
                     <div className="card stat-card" key={label}><div><div className="b">{t(label)}</div><div className="sm mut">{t(s)}</div></div><span className={`pill ${c}`}>{c === 'green' ? t('Done') : t('Pending')}</span></div>
                 ))}
@@ -288,7 +288,7 @@ function Ai({ tab, ai }) {
         setTestResult(await res.json());
     };
     if (tab === 'ailvl') {
-        return <AiReplyForm ai={ai} />;
+        return <><AiReplyForm ai={ai} /><TalkerForm ai={ai} /></>;
     }
     if (tab === 'negotiation') {
         return <NegotiationForm ai={ai} />;
@@ -405,6 +405,75 @@ function AiReplyForm({ ai }) {
                 ))}
                 <div className="frow"><label className="fl">{t('Working Hours')}</label><input className="inp" value={form.data.working_hours} onChange={(e) => form.setData('working_hours', e.target.value)} /></div>
                 <div className="sm mut">{t('Outside working hours the AI only drafts. The first 7 days in Draft only is a recommendation, not a lock.')}</div>
+                <SaveBar />
+            </div>
+        </form>
+    );
+}
+
+function TalkerForm({ ai }) {
+    const tk = ai?.talker || {};
+    const form = useForm({
+        enabled: !!tk.enabled,
+        normal_provider: tk.normal_provider || 'gemini',
+        normal_model: tk.normal_model || 'gemini-3.5-flash',
+        complex_provider: tk.complex_provider || 'claude',
+        complex_model: tk.complex_model || 'claude-sonnet-4-5',
+        route_angry: tk.route_angry !== false,
+        route_long_bargain: tk.route_long_bargain !== false,
+        gemini_key: '',
+        claude_key: '',
+    });
+    const [checks, setChecks] = useState({});
+    const runCheck = async (provider) => {
+        setChecks((c) => ({ ...c, [provider]: { busy: true } }));
+        const token = document.querySelector('meta[name="csrf-token"]')?.content || '';
+        try {
+            const res = await fetch('/settings/ai-talker/test', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': token, 'X-Requested-With': 'XMLHttpRequest' }, body: JSON.stringify({ provider }) });
+            const json = await res.json();
+            setChecks((c) => ({ ...c, [provider]: json }));
+        } catch {
+            setChecks((c) => ({ ...c, [provider]: { ok: false, detail: t('Check failed — try again') } }));
+        }
+    };
+    const tier = (name, label) => {
+        const provider = form.data[name + '_provider'];
+        const keyField = provider + '_key';
+        const keySet = provider === 'gemini' ? tk.gemini_key_set : tk.claude_key_set;
+        const check = checks[provider];
+        return (
+            <>
+                <div className="b" style={{ marginTop: 14 }}>{t(label)}</div>
+                <div className="frow"><label className="fl">{t('Provider')}</label>
+                    <select className="inp" value={provider} onChange={(e) => form.setData(name + '_provider', e.target.value)}>
+                        <option value="gemini">Gemini (Google)</option>
+                        <option value="claude">Claude (Anthropic)</option>
+                    </select></div>
+                <div className="frow"><label className="fl">{t('Model')}</label><input className="inp" value={form.data[name + '_model']} onChange={(e) => form.setData(name + '_model', e.target.value)} /></div>
+                <div className="frow"><label className="fl">{t('API key')}</label>
+                    <div className="flex" style={{ gap: 8, flex: 1 }}>
+                        <input className="inp" type="password" autoComplete="new-password" style={{ flex: 1 }} value={form.data[keyField]} onChange={(e) => form.setData(keyField, e.target.value)} placeholder={keySet ? t('Saved — leave blank to keep it') : ''} />
+                        <button type="button" className="btn" disabled={check?.busy} onClick={() => runCheck(provider)}>{t('Check connection')}</button>
+                    </div></div>
+                {check && !check.busy && (
+                    <div className="sm" style={{ color: check.ok ? '#16A34A' : '#DC2626' }}>{check.detail}</div>
+                )}
+            </>
+        );
+    };
+    return (
+        <form onSubmit={(e) => { e.preventDefault(); form.post('/settings/ai-talker', { preserveScroll: true, onSuccess: () => form.reset('gemini_key', 'claude_key') }); }}>
+            <div className="card" style={{ marginTop: 16 }}><h3>{t('AI Model')}</h3>
+                <div className="card-sub">{t('The model only writes the reply in a natural voice — the Rule Brain still decides every fact and figure, and every figure is re-checked before sending')}</div>
+                <div className="frow"><label className="fl">{t('Use AI model for replies')}</label>
+                    <button type="button" className={`switch ${form.data.enabled ? 'on' : ''}`} aria-label="toggle" onClick={() => form.setData('enabled', !form.data.enabled)} /></div>
+                {tier('normal', 'Everyday replies')}
+                {tier('complex', 'Complex replies')}
+                <div className="b" style={{ marginTop: 14 }}>{t('Which replies use the complex model')}</div>
+                <div className="frow"><label className="fl">{t('Angry customers')}</label>
+                    <button type="button" className={`switch ${form.data.route_angry ? 'on' : ''}`} aria-label="toggle" onClick={() => form.setData('route_angry', !form.data.route_angry)} /></div>
+                <div className="frow"><label className="fl">{t('Long bargaining (3rd offer onwards)')}</label>
+                    <button type="button" className={`switch ${form.data.route_long_bargain ? 'on' : ''}`} aria-label="toggle" onClick={() => form.setData('route_long_bargain', !form.data.route_long_bargain)} /></div>
                 <SaveBar />
             </div>
         </form>

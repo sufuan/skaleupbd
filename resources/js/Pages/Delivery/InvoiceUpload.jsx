@@ -92,7 +92,7 @@ export default function InvoiceUpload({ methods, history, payments, receivables 
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
                     <span style={{ display: 'inline-flex', flexDirection: 'column', gap: 6 }}>
                         <span style={{ fontSize: 13, fontWeight: 600, color: '#64748B' }}>{t('Select Section')}</span>
-                        <select id="invSection" className="fld" style={{ width: 445 }} value={section} onChange={(e) => setSection(e.target.value)}>
+                        <select id="invSection" className="fld" style={{ width: '100%', maxWidth: 445 }} value={section} onChange={(e) => setSection(e.target.value)}>
                             <option>Manual Entry</option>
                             <option>Invoice History</option>
                         </select>

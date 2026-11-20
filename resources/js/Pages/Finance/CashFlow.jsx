@@ -2,27 +2,28 @@ import { Head, router } from '@inertiajs/react';
 import AppLayout from '@/Layouts/AppLayout';
 import { confirmDialog } from '@/lib/confirm';
 import { FinActions, fmt, fmtSigned } from './EntrySheet';
+import { t } from '@/lib/i18n';
 
-const SRC_LABEL = { manual: 'হাতে লেখা', order: 'Order', courier: 'Courier', system: 'System' };
+const SRC_LABEL = { manual: 'Written by hand', order: 'Order', courier: 'Courier', system: 'System' };
 
 export default function CashFlow(props) {
     const { tab, days, list, filters, accounts, categories, closedThrough } = props;
     const go = (params) => router.get('/finance/cash-flow', { ...filters, ...params }, { preserveState: true, replace: true });
-    const voidTxn = async (t) => { if (await confirmDialog(`এই entry বাতিল করবে? (${t.note})`)) router.post(`/finance/transactions/${t.id}/void`); };
+    const voidTxn = async (x) => { if (await confirmDialog(t('Void this entry?') + ` (${x.note})`)) router.post(`/finance/transactions/${x.id}/void`); };
     const net7 = days.reduce((s, d) => s + d.net, 0);
 
     return (
-        <AppLayout title="Cash Flow">
-            <Head title="Cash Flow" />
+        <AppLayout title={t('Cash Flow')}>
+            <Head title={t('Cash Flow')} />
             <div className="fin">
                 <div className="x-head">
-                    <h3>Cash Flow</h3>
-                    <p>সব লেনদেন একটাই খাতায় — এটাই system-এর একমাত্র ledger। গত 7 দিনে টাকা কেমন এসেছে-গেছে, নিচে পুরো তালিকা।</p>
+                    <h3>{t('Cash Flow')}</h3>
+                    <p>{t("All transactions in one single book — this is the system's only ledger. How the money came and went in the last 7 days — the full list is below.")}</p>
                 </div>
 
                 <div style={{ overflowX: 'auto', marginBottom: 14 }}>
                     <table className="x-table">
-                        <thead><tr><th>দিন</th><th>এসেছে</th><th>গেছে</th><th>হাতে রইল (net)</th></tr></thead>
+                        <thead><tr><th>{t('Day')}</th><th>{t('Came in')}</th><th>{t('Went out')}</th><th>{t('Left in hand (net)')}</th></tr></thead>
                         <tbody>
                             {days.map((d) => (
                                 <tr key={d.label}><td>{d.label}</td>
@@ -33,15 +34,15 @@ export default function CashFlow(props) {
                         </tbody>
                     </table>
                 </div>
-                <div className="x-note" style={{ marginBottom: 14 }}>7 দিনে মোট net: <b style={{ color: net7 >= 0 ? '#16A34A' : '#DC2626' }}>{net7 >= 0 ? '+ ' : '− '}{fmt(Math.abs(net7))}</b> — বড় খরচের দিনগুলোতে (ভাড়া, supplier payment) net কমে যায়, এটা স্বাভাবিক।</div>
+                <div className="x-note" style={{ marginBottom: 14 }}>{t('Total net in 7 days:')} <b style={{ color: net7 >= 0 ? '#16A34A' : '#DC2626' }}>{net7 >= 0 ? '+ ' : '− '}{fmt(Math.abs(net7))}</b> {t('— On big-expense days (rent, supplier payment) the net goes down — that is normal.')}</div>
 
                 <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
                     {[['ledger', 'Ledger'], ['activity', 'Activity']].map(([k, l]) => (
-                        <button key={k} className={tab === k ? 'btn-p' : 'btn-s'} onClick={() => go({ tab: k })}>{l}</button>
+                        <button key={k} className={tab === k ? 'btn-p' : 'btn-s'} onClick={() => go({ tab: k })}>{t(l)}</button>
                     ))}
                     <span style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
-                        {closedThrough && <span className="chip chip-grey">{closedThrough} পর্যন্ত মাস বন্ধ</span>}
-                        <button className="btn-s" onClick={async () => { if (await confirmDialog('আগের মাস বন্ধ করবে? ওই মাসের entry আর বদলানো/বাতিল হবে না।')) router.post('/finance/close-month'); }}>আগের মাস বন্ধ করো</button>
+                        {closedThrough && <span className="chip chip-grey">{t('Month closed until :date', { date: closedThrough })}</span>}
+                        <button className="btn-s" onClick={async () => { if (await confirmDialog(t('Close the previous month? Entries of that month can no longer be changed or voided.'))) router.post('/finance/close-month'); }}>{t('Close the previous month')}</button>
                     </span>
                 </div>
 
@@ -49,36 +50,36 @@ export default function CashFlow(props) {
                     <>
                         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
                             <select className="inp" style={{ width: 170 }} value={filters.account || ''} onChange={(e) => go({ tab: 'ledger', account: e.target.value || undefined })}>
-                                <option value="">সব account</option>
+                                <option value="">{t('All accounts')}</option>
                                 {accounts.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
                             </select>
                             <select className="inp" style={{ width: 170 }} value={filters.category || ''} onChange={(e) => go({ tab: 'ledger', category: e.target.value || undefined })}>
-                                <option value="">সব category</option>
+                                <option value="">{t('All categories')}</option>
                                 {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                             </select>
                             <select className="inp" style={{ width: 140 }} value={filters.direction || ''} onChange={(e) => go({ tab: 'ledger', direction: e.target.value || undefined })}>
-                                <option value="">আসা + যাওয়া</option><option value="in">শুধু আসা</option><option value="out">শুধু যাওয়া</option>
+                                <option value="">{t('In + Out')}</option><option value="in">{t('In only')}</option><option value="out">{t('Out only')}</option>
                             </select>
                             <select className="inp" style={{ width: 150 }} value={filters.source || ''} onChange={(e) => go({ tab: 'ledger', source: e.target.value || undefined })}>
-                                <option value="">সব উৎস</option><option value="manual">হাতে লেখা</option><option value="order">Order</option><option value="courier">Courier</option><option value="system">System</option>
+                                <option value="">{t('All sources')}</option><option value="manual">{t('Written by hand')}</option><option value="order">{t('Order')}</option><option value="courier">{t('Courier')}</option><option value="system">{t('System')}</option>
                             </select>
-                            {filters.account && <span className="chip chip-amber">একটা account বাছা — তাই চলমান balance দেখাচ্ছে</span>}
+                            {filters.account && <span className="chip chip-amber">{t('One account chosen — so the running balance is shown')}</span>}
                         </div>
                         <div style={{ overflowX: 'auto' }}>
                             <table className="x-table">
-                                <thead><tr><th>তারিখ</th><th>বিবরণ</th><th>Account</th><th>Category</th><th>উৎস</th><th>টাকা</th>{filters.account && <th>Balance</th>}<th></th></tr></thead>
+                                <thead><tr><th>{t('Date')}</th><th>{t('Description')}</th><th>{t('Account')}</th><th>{t('Category')}</th><th>{t('Source')}</th><th>{t('Amount')}</th>{filters.account && <th>{t('Balance')}</th>}<th></th></tr></thead>
                                 <tbody>
-                                    {list.map((t) => (
-                                        <tr key={t.id} style={t.voided ? { opacity: 0.55 } : undefined}>
-                                            <td>{t.date}</td>
-                                            <td>{t.note}{t.voided && <span className="chip chip-red" style={{ marginLeft: 6 }}>বাতিল</span>}{t.is_reversal && <span className="chip chip-grey" style={{ marginLeft: 6 }}>উল্টো entry</span>}</td>
-                                            <td>{t.account}</td><td>{t.category || '—'}</td><td>{SRC_LABEL[t.source] || t.source}</td>
-                                            <td><b style={{ color: t.direction === 'in' ? '#16A34A' : '#DC2626' }}>{fmtSigned(t.amount, t.direction)}</b></td>
-                                            {filters.account && <td>{t.running !== undefined && t.running !== null ? fmt(t.running) : '—'}</td>}
-                                            <td>{!t.voided && !t.is_reversal && <button className="btn-s" onClick={() => voidTxn(t)}>বাতিল করো</button>}</td>
+                                    {list.map((x) => (
+                                        <tr key={x.id} style={x.voided ? { opacity: 0.55 } : undefined}>
+                                            <td>{x.date}</td>
+                                            <td>{x.note}{x.voided && <span className="chip chip-red" style={{ marginLeft: 6 }}>{t('Voided')}</span>}{x.is_reversal && <span className="chip chip-grey" style={{ marginLeft: 6 }}>{t('Reversal entry')}</span>}</td>
+                                            <td>{x.account}</td><td>{x.category || '—'}</td><td>{t(SRC_LABEL[x.source] || x.source)}</td>
+                                            <td><b style={{ color: x.direction === 'in' ? '#16A34A' : '#DC2626' }}>{fmtSigned(x.amount, x.direction)}</b></td>
+                                            {filters.account && <td>{x.running !== undefined && x.running !== null ? fmt(x.running) : '—'}</td>}
+                                            <td>{!x.voided && !x.is_reversal && <button className="btn-s" onClick={() => voidTxn(x)}>{t('Void')}</button>}</td>
                                         </tr>
                                     ))}
-                                    {!list.length && <tr><td colSpan={8}>এই ছাঁকনিতে কোনো লেনদেন নেই।</td></tr>}
+                                    {!list.length && <tr><td colSpan={8}>{t('No transactions in this filter.')}</td></tr>}
                                 </tbody>
                             </table>
                         </div>
@@ -88,17 +89,17 @@ export default function CashFlow(props) {
                 {tab === 'activity' && (
                     <div style={{ overflowX: 'auto' }}>
                         <table className="x-table">
-                            <thead><tr><th>তারিখ</th><th>কী হয়েছে</th><th>বিবরণ</th><th>কে করেছে</th><th>টাকা</th></tr></thead>
+                            <thead><tr><th>{t('Date')}</th><th>{t('What happened')}</th><th>{t('Description')}</th><th>{t('Who did it')}</th><th>{t('Amount')}</th></tr></thead>
                             <tbody>
-                                {list.map((t) => (
-                                    <tr key={t.id}>
-                                        <td>{t.date}</td>
-                                        <td>{t.voided ? <span className="chip chip-red">বাতিল হয়েছে</span> : t.is_reversal ? <span className="chip chip-grey">বাতিলের উল্টো entry</span> : <span className="chip chip-green">নতুন entry</span>}</td>
-                                        <td>{t.note}</td><td>{t.by || '—'}</td>
-                                        <td><b style={{ color: t.direction === 'in' ? '#16A34A' : '#DC2626' }}>{fmtSigned(t.amount, t.direction)}</b></td>
+                                {list.map((x) => (
+                                    <tr key={x.id}>
+                                        <td>{x.date}</td>
+                                        <td>{x.voided ? <span className="chip chip-red">{t('Entry voided')}</span> : x.is_reversal ? <span className="chip chip-grey">{t('Reversal of the void')}</span> : <span className="chip chip-green">{t('New entry')}</span>}</td>
+                                        <td>{x.note}</td><td>{x.by || '—'}</td>
+                                        <td><b style={{ color: x.direction === 'in' ? '#16A34A' : '#DC2626' }}>{fmtSigned(x.amount, x.direction)}</b></td>
                                     </tr>
                                 ))}
-                                {!list.length && <tr><td colSpan={5}>কোনো activity নেই।</td></tr>}
+                                {!list.length && <tr><td colSpan={5}>{t('No activity.')}</td></tr>}
                             </tbody>
                         </table>
                     </div>

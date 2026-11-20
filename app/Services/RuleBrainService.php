@@ -28,7 +28,7 @@ class RuleBrainService
         'delivery' => ['delivery', 'ডেলিভারি', 'চার্জ', 'charge', 'shipping', 'পাঠাতে কত'],
         'stock' => ['স্টক', 'stock', 'আছে কি', 'available', 'ache ki', 'আছেনি'],
         'greeting' => ['আসসালামু', 'salam', 'hello', 'hi', 'হ্যালো', 'আদাব'],
-        'bargain' => ['কমান', 'কমাতে', 'discount', 'কম হবে', 'কম রাখেন', 'dam kom', 'less hobe'],
+        'bargain' => ['কমান', 'কমাতে', 'discount', 'কম হবে', 'কম রাখেন', 'dam kom', 'less hobe', 'শেষ দাম', 'কম দাম', 'কমে দেন', 'দিলে নিব', 'টাকায় দিলে'],
         'spam' => ['follower', 'ফলোয়ার', 'সস্তায় follower', 'cheap follower', 'like কিনুন', 'free money', 'click here', 'click link', 'scam', 'earn money', 'make money', 'casino', 'ক্যাসিনো', 'betting', 'বাজি', 'ফ্রি টাকা', 'টাকা ইনকাম', 'লিংকে ক্লিক', 'crypto', 'double investment', 'lottery', 'লটারি'],
         'angry' => ['পাইনি', 'পাই নাই', 'রেগে', 'complain', 'অভিযোগ', 'দুই দিন হলো', 'এখনো আসেনি'],
         'order_intent' => ['order confirm', 'অর্ডার কনফার্ম', 'confirm korlam', 'নিতে চাই', 'order korte chai'],
@@ -37,6 +37,7 @@ class RuleBrainService
     public function __construct(
         private SettingsService $settings,
         private NegotiationService $negotiation,
+        private AiTalkerService $talker,
     ) {
     }
 
@@ -63,14 +64,63 @@ class RuleBrainService
         };
     }
 
-    public function matchRule(int $businessId, string $text, ?string $channel = null): ?AiRule
+    public function matchRule(int $businessId, string $text, ?string $channel = null, ?Conversation $conversation = null): ?AiRule
     {
         $rules = AiRule::where('business_id', $businessId)->where('active', true)->orderBy('id')->get();
+        $hay = mb_strtolower($text);
+
+        $findIntent = function (string $intent) use ($rules, $channel) {
+            foreach ($rules as $r) {
+                if ($r->trigger_type === 'intent' && $r->match_text === $intent && (!$channel || !$r->channel || $r->channel === $channel)) {
+                    return $r;
+                }
+            }
+
+            return null;
+        };
+
+        // Mid-bargaining continuation: once a ladder is running, a bare
+        // amount or another push for less continues the SAME negotiation —
+        // the customer will not repeat the product name every time.
+        if ($conversation && (int) $conversation->neg_step >= 1) {
+            $hasAmount = (bool) preg_match('/[0-9\x{09E6}-\x{09EF}]/u', $text);
+            $pushes = false;
+            foreach (['কমান', 'কম', 'দাম', 'দিলে', 'শেষ', 'পারবেন', 'হবে না', 'হয় না'] as $w) {
+                if (str_contains($hay, $w)) {
+                    $pushes = true;
+                    break;
+                }
+            }
+            if (($hasAmount || $pushes) && ($bargain = $findIntent('bargain'))) {
+                return $bargain;
+            }
+        }
+
+        // A delivery-charge question is a delivery question even though it
+        // contains "কত" — unless the customer also asks a product's price.
+        $deliveryFirst = false;
+        foreach (['ডেলিভারি চার্জ', 'delivery charge', 'কুরিয়ার চার্জ', 'ডেলিভারি খরচ', 'shipping charge', 'চার্জ কত', 'ডেলিভারি কত'] as $p) {
+            if (str_contains($hay, $p)) {
+                $deliveryFirst = true;
+                break;
+            }
+        }
+        if ($deliveryFirst) {
+            foreach (['দাম', 'price', 'dam '] as $p) {
+                if (str_contains($hay, $p)) {
+                    $deliveryFirst = false;
+                    break;
+                }
+            }
+        }
+        if ($deliveryFirst && ($delivery = $findIntent('delivery'))) {
+            return $delivery;
+        }
+
         // Priority intents first — a bargaining or angry message also contains
         // price words, and it must not be answered as a plain price question.
         $priority = ['spam', 'angry', 'bargain', 'order_intent'];
         $rules = $rules->sortBy(fn ($r) => in_array($r->match_text, $priority, true) ? 0 : 1)->values();
-        $hay = mb_strtolower($text);
         foreach ($rules as $rule) {
             if ($channel && $rule->channel && $rule->channel !== $channel) {
                 continue;
@@ -212,8 +262,14 @@ class RuleBrainService
             return null;
         }
 
-        $rule = $this->matchRule($biz, $text, $conversation->channel);
+        $rule = $this->matchRule($biz, $text, $conversation->channel, $conversation);
         $product = $this->productFor($biz, $text, $conversation);
+        if ($product && (int) $conversation->product_id !== (int) $product->id) {
+            // Remember the product for this conversation — follow-up
+            // messages ("আরেকটু কমান", "স্টকে আছে?") rarely repeat its name.
+            $conversation->product_id = $product->id;
+            $conversation->save();
+        }
 
         if ($rule && $rule->action === 'handover') {
             $conversation->needs_human = true;
@@ -248,17 +304,34 @@ class RuleBrainService
                 return null;
             }
             $delivery = 60.0;
-            $total = (float) $product->price + $delivery;
+            // A price agreed in bargaining is the price the customer pays —
+            // the summary must not jump back to the full price.
+            $unit = $conversation->neg_offer !== null ? (float) $conversation->neg_offer : (float) $product->price;
+            $total = $unit + $delivery;
             $body = $conversation->customer_name . ' · ' . ($conversation->customer_address ?: 'ঠিকানা বাকি') . "\n"
-                . $product->name . ' ×1 — ৳' . number_format((float) $product->price) . ' + delivery ৳' . number_format($delivery) . ' = মোট ৳' . number_format($total) . ' (Cash on Delivery)';
+                . $product->name . ' ×1 — ৳' . number_format($unit) . ' + delivery ৳' . number_format($delivery) . ' = মোট ৳' . number_format($total) . ' (Cash on Delivery)';
             $kind = 'order_summary';
-            $meta = ['product_id' => $product->id, 'total' => $total];
+            $meta = ['product_id' => $product->id, 'total' => $total, 'unit_price' => $unit];
         } elseif ($rule) {
+            // A price/stock answer needs a product. A one-product shop can
+            // only mean that product; with several, ask which one instead
+            // of sending a template with the price left blank.
+            if (!$product && in_array($rule->match_text, ['price', 'stock'], true)) {
+                $all = Product::where('business_id', $biz)->get();
+                if ($all->count() === 1) {
+                    $product = $all->first();
+                }
+            }
             $body = $this->buildReply($rule, $product, $biz);
             if ($body === '') {
                 return null;
             }
-            $meta = [];
+            if (preg_match('/৳\s*([।,]|$)/u', $body)) {
+                $body = 'আপু, কোন পণ্যটার কথা বলছেন? পণ্যের নামটা বললে দাম আর স্টক জানিয়ে দিচ্ছি।';
+                $meta = ['clarify' => true];
+            } else {
+                $meta = [];
+            }
         } else {
             // No rule matched — the AI drafts from the product description and
             // a human always checks it before it goes out.
@@ -270,6 +343,25 @@ class RuleBrainService
                 ? 'আপু, ' . $desc
                 : 'আপু, ' . $product->name . '-এর দাম ৳' . number_format((float) $product->price) . '। আর কিছু জানতে চাইলে বলুন।';
             $meta = ['no_rule' => true];
+        }
+
+        // The talker only phrases what was decided above — the order
+        // summary keeps its exact factual format. moneyCheck() below still
+        // re-verifies every figure in the phrased text before any send.
+        $talkerMeta = [];
+        if ($kind !== 'order_summary') {
+            $phrased = $this->talker->phrase([
+                'business_id' => $biz,
+                'channel' => $conversation->channel,
+                'incoming' => $text,
+                'intent' => $rule?->match_text,
+                'neg_step' => (int) $conversation->neg_step,
+                'draft' => $body,
+            ]);
+            if ($phrased) {
+                $body = $phrased['text'];
+                $talkerMeta = ['talker' => $phrased['provider'], 'talker_model' => $phrased['model'], 'talker_tier' => $phrased['tier']];
+            }
         }
 
         $verified = $this->moneyCheck($biz, $body, $product);
@@ -289,7 +381,7 @@ class RuleBrainService
             'body' => $body,
             'ai_rule_id' => $rule?->id,
             'status' => $status,
-            'meta' => array_merge($meta ?? [], $kind ? ['kind' => $kind] : []),
+            'meta' => array_merge($meta ?? [], $kind ? ['kind' => $kind] : [], $talkerMeta),
         ]);
 
         $action = $status === 'sent' ? 'auto_sent' : ($status === 'flagged' ? 'flagged' : 'draft_created');
@@ -357,8 +449,20 @@ class RuleBrainService
         }
         $product = $comment->product_id ? Product::where('business_id', $biz)->find($comment->product_id) : $this->productFor($biz, $comment->body);
         $body = $this->buildReply($rule, $product, $biz);
-        if ($body === '') {
+        if ($body === '' || preg_match('/৳\s*([।,]|$)/u', $body)) {
+            // Never post a public reply with a blank figure in it.
             return null;
+        }
+        $phrased = $this->talker->phrase([
+            'business_id' => $biz,
+            'channel' => 'comment',
+            'incoming' => $comment->body,
+            'intent' => $rule->match_text,
+            'neg_step' => 0,
+            'draft' => $body,
+        ]);
+        if ($phrased) {
+            $body = $phrased['text'];
         }
         $mode = $this->cautious($auto['comment'] ?? 'draft');
         $verified = $this->moneyCheck($biz, $body, $product);

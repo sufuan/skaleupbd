@@ -1,10 +1,12 @@
+import { t } from '@/lib/i18n';
+
 export const fmt = (n) => '৳' + Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 });
 export const fmtNum = (n) => Number(n || 0).toLocaleString('en-IN');
 
 export function Verdict({ profit }) {
     return profit > 0
-        ? <span className="chip chip-green">লাভ হয়েছে</span>
-        : <span className="chip chip-amber">তেমন লাভ হয়নি — পরেরবার ছোট audience-এ পাঠাও</span>;
+        ? <span className="chip chip-green">{t('Profit made')}</span>
+        : <span className="chip chip-amber">{t('Not much profit — next time send to a smaller audience')}</span>;
 }
 
 /** SMS parts, mirroring SmsService::parts (GSM 160/153, Unicode 70/67). */

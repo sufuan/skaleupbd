@@ -276,8 +276,15 @@ label.fl{display:block;font-size:12.5px;font-weight:600;color:#55496e;margin:0 0
 
   .tb-hide-sm{display:none}
   /* topbar compaction so the right cluster fits small screens */
-  .topbar{padding:0 8px}
-  .tb-right{gap:4px}
+  .topbar{padding:0 8px;gap:4px}
+  .tb-right{gap:4px;min-width:0}
+  /* wide desktop rows stack/wrap so nothing pushes the page sideways */
+  .conn-row{flex-wrap:wrap}
+  .conn-row>div{flex:1 1 100% !important}
+  .fld-grid2{grid-template-columns:1fr !important}
+  .fld-grid3{grid-template-columns:1fr !important}
+  .parcels-filter-row>.fld-l{flex:1 1 150px !important}
+  .set-home-grid{grid-template-columns:1fr !important}
   .tb-right > a.icon-btn{display:none}
   .ask-btn{padding:5px 9px;font-size:12px}
   .lang-switch button{padding:4px 8px;font-size:12px}
@@ -512,7 +519,7 @@ label.fl{display:block;font-size:12.5px;font-weight:600;color:#55496e;margin:0 0
 .dash-pg .dash-2col{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px}
 @media (max-width:1100px){.dash-pg .kpi-grid{grid-template-columns:repeat(2,1fr)}}
 .dash-pg .hour-labels span{min-width:0}
-@media (max-width:700px){.dash-pg .dash-2col{grid-template-columns:1fr}.dash-pg .kpi-grid{grid-template-columns:1fr}.dash-pg .kpi{min-width:0}.dash-pg .hour-labels span:nth-child(even){display:none}.dash-pg .ptabs{min-width:0 !important}}
+@media (max-width:700px){.dash-pg .dash-2col{grid-template-columns:1fr}.dash-pg .kpi-grid{grid-template-columns:1fr}.dash-pg .kpi{min-width:0}.dash-pg .hour-labels span:nth-child(even){display:none}.dash-pg .ptabs{min-width:0 !important}.dash-pg .dash-head{flex-direction:column;align-items:stretch}.dash-pg .dash-tools{flex-wrap:wrap}.dash-pg .seg-light{flex-wrap:wrap}}
 
 /* ===== M4 Inventory: imported inventory views, scoped under .invx (copied from prototype inventory.html) ===== */
 /* imported inventory views (user-provided file), scoped under .invx */

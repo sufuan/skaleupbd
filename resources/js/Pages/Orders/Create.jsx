@@ -118,7 +118,7 @@ export default function Create({ sources, products, couriers, defaults, toggles,
                             </div>
 
                             <div className="card" style={{ marginBottom: 16 }}>
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 16 }}>
+                                <div className="fld-grid3" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 16 }}>
                                     <label className="fld-l frow">{t('Mobile Number')} *<input className="fld" placeholder="01XXXXXXXXX" value={form.data.customer_phone} onChange={(e) => form.setData('customer_phone', e.target.value)} /></label>
                                     <label className="fld-l frow">{t('Customer Name')} *<input className="fld" placeholder={t('Customer name')} value={form.data.customer_name} onChange={(e) => form.setData('customer_name', e.target.value)} /></label>
                                     {toggles.show_email && !hide('email') && (

@@ -1,20 +1,21 @@
 import { router } from '@inertiajs/react';
+import { t } from '@/lib/i18n';
 
 export const fmt = (n) => '৳' + Number(Math.round(Number(n) || 0)).toLocaleString('en-IN');
 
 export function StatusChip({ row }) {
-    if (row.status_key === 'present') return <span className="chip chip-green">এসেছে</span>;
-    if (row.status_key === 'grace') return <span className="chip chip-amber">দেরি (grace-এর ভিতরে)</span>;
-    if (row.status_key === 'late') return <span className="chip chip-red">দেরি</span>;
-    if (row.status_key === 'leave') return <span className="chip chip-blue">ছুটি</span>;
-    return <span className="chip chip-grey">আসেনি</span>;
+    if (row.status_key === 'present') return <span className="chip chip-green">{t('Present')}</span>;
+    if (row.status_key === 'grace') return <span className="chip chip-amber">{t('Late (within grace)')}</span>;
+    if (row.status_key === 'late') return <span className="chip chip-red">{t('Late')}</span>;
+    if (row.status_key === 'leave') return <span className="chip chip-blue">{t('Leave')}</span>;
+    return <span className="chip chip-grey">{t('Absent')}</span>;
 }
 
 export function TodayTable({ rows }) {
     return (
         <table className="x-table">
             <thead>
-                <tr><th>নাম</th><th>Department</th><th>Check-in</th><th>Check-out</th><th>অবস্থা</th></tr>
+                <tr><th>{t('Name')}</th><th>{t('Department')}</th><th>{t('Check-in')}</th><th>{t('Check-out')}</th><th>{t('Status')}</th></tr>
             </thead>
             <tbody>
                 {rows.map((r) => (
@@ -27,7 +28,7 @@ export function TodayTable({ rows }) {
                     </tr>
                 ))}
                 {rows.length === 0 && (
-                    <tr><td colSpan={5} style={{ color: '#94A3B8' }}>এখনো কোনো কর্মী যোগ হয়নি।</td></tr>
+                    <tr><td colSpan={5} style={{ color: '#94A3B8' }}>{t('No staff added yet.')}</td></tr>
                 )}
             </tbody>
         </table>
@@ -39,17 +40,17 @@ export function LeaveCards({ leaves, canManage }) {
     const decide = (id, decision) => router.post(`/hrm/leaves/${id}/decide`, { decision }, { preserveScroll: true });
     return (
         <div className="x-card">
-            <h4>ছুটির আবেদন — সিদ্ধান্ত বাকি</h4>
+            <h4>{t('Leave applications — decision pending')}</h4>
             {leaves.map((l) => (
                 <div key={l.id} className="leave-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, padding: '9px 0', borderBottom: '1px solid #F1F5F9', flexWrap: 'wrap' }}>
                     <div style={{ fontSize: 13.5 }}>
-                        <b>{l.name}</b> — {l.from} থেকে {l.to} ({l.days} দিন)
-                        {l.reason && <span style={{ color: '#64748B' }}> · কারণ: {l.reason}</span>}
+                        <b>{l.name}</b> — {t('Leave from :from to :to (:days days)', { from: l.from, to: l.to, days: l.days })}
+                        {l.reason && <span style={{ color: '#64748B' }}> · {t('Reason')}: {l.reason}</span>}
                     </div>
                     {canManage && (
                         <div className="row-actions">
-                            <button type="button" className="btn-mini" onClick={() => decide(l.id, 'approved')}>অনুমোদন</button>
-                            <button type="button" className="btn-mini danger" onClick={() => decide(l.id, 'rejected')}>বাতিল</button>
+                            <button type="button" className="btn-mini" onClick={() => decide(l.id, 'approved')}>{t('Approve')}</button>
+                            <button type="button" className="btn-mini danger" onClick={() => decide(l.id, 'rejected')}>{t('Cancel')}</button>
                         </div>
                     )}
                 </div>
