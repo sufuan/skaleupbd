@@ -45,7 +45,7 @@ class PathaoDriver implements CourierDriver
     {
         $c = $method->credentials ?? [];
         try {
-            $res = Http::timeout(8)->connectTimeout(4)->post($this->base($method) . '/aladdin/api/v1/issue-token', $grant + [
+            $res = Http::timeout(30)->connectTimeout(8)->post($this->base($method) . '/aladdin/api/v1/issue-token', $grant + [
                 'client_id' => (string) ($c['client_id'] ?? ''),
                 'client_secret' => (string) ($c['client_secret'] ?? ''),
             ]);
@@ -67,7 +67,7 @@ class PathaoDriver implements CourierDriver
 
     private function http(CourierMethod $method)
     {
-        return Http::timeout(8)->connectTimeout(4)->withToken((string) $this->token($method));
+        return Http::timeout(30)->connectTimeout(8)->withToken((string) $this->token($method));
     }
 
     public function createBooking(Order $order, CourierMethod $method, array $opts = []): array
