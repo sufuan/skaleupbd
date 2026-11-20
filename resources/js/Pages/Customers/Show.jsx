@@ -1,5 +1,6 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import AppLayout from '@/Layouts/AppLayout';
+import { confirmDialog } from '@/lib/confirm';
 import { t } from '@/lib/i18n';
 
 const tk = (n) => `৳${Number(n || 0).toLocaleString('en-IN')}`;
@@ -16,7 +17,7 @@ export default function CustomerShow({ customer, orders }) {
                 <h3 style={{ fontSize: 19 }}>{customer.name || '—'}{customer.blacklisted ? <span className="pill red" style={{ marginLeft: 8 }}>{t('Blocked')}</span> : null}</h3>
                 <span style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
                     <button className="btn-ghost" onClick={() => router.post(`/customers/${customer.id}/blacklist`, {}, { preserveScroll: true })}>{customer.blacklisted ? t('Unblock') : t('Block customer')}</button>
-                    <button className="btn-ghost" style={{ color: '#B91C1C' }} onClick={() => { if (confirm(t('Delete this customer?'))) router.delete(`/customers/${customer.id}`); }}>{t('Delete')}</button>
+                    <button className="btn-ghost" style={{ color: '#B91C1C' }} onClick={async () => { if (await confirmDialog(t('Delete this customer?'))) router.delete(`/customers/${customer.id}`); }}>{t('Delete')}</button>
                 </span>
             </div>
 

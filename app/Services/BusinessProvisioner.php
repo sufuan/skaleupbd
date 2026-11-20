@@ -42,6 +42,19 @@ class BusinessProvisioner
 
         $user->forceFill(['business_id' => $biz->id])->save();
 
+        $this->ensureSeeds($biz);
+
+        return $biz;
+    }
+
+    /**
+     * Idempotently install the default per-business data (order sources,
+     * standard templates, finance categories, Cash account). Safe to call
+     * on an existing shop — used by the backfill migration for shops that
+     * were created before provisioning existed.
+     */
+    public function ensureSeeds(Business $biz): void
+    {
         $sources = [
             ['FB', 'Facebook'], ['WEB', 'Website'], ['DIRECT', 'Direct'], ['UNKNOWN', 'Unknown'],
             ['INSTAGRAM', 'Instagram'], ['TIKTOK', 'TikTok'], ['WHATSAPP', 'WhatsApp'], ['EXCHANGE', 'Exchange'],
@@ -67,8 +80,6 @@ class BusinessProvisioner
             ['business_id' => $biz->id, 'name' => 'Cash'],
             ['type' => 'cash', 'opening_balance' => 0, 'sort' => 0]
         );
-
-        return $biz;
     }
 
     /** The standard template library (same texts MarketingSeeder installs). */

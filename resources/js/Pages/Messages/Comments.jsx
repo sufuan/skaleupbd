@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, router } from '@inertiajs/react';
+import { confirmDialog } from '@/lib/confirm';
 import AppLayout from '@/Layouts/AppLayout';
 import { t } from '@/lib/i18n';
 
@@ -66,7 +67,7 @@ function CommentCard({ c }) {
                             : <button type="button" className="ctl-btn" onClick={() => post(`/messages/comments/${c.id}/private-reply`)}>{t('Private Reply')}</button>}
                         <button type="button" className="ctl-btn" onClick={() => post(`/messages/comments/${c.id}/like`)}>{c.liked ? t('Liked') : t('Like')}</button>
                         <button type="button" className="ctl-btn" onClick={() => post(`/messages/comments/${c.id}/hide`)}>{c.status === 'hidden' ? t('Unhide') : t('Hide')}</button>
-                        <button type="button" className="ctl-btn" onClick={() => { if (confirm(t('Delete this comment?'))) router.delete(`/messages/comments/${c.id}`, { preserveScroll: true }); }}>{t('Delete')}</button>
+                        <button type="button" className="ctl-btn" onClick={async () => { if (await confirmDialog(t('Delete this comment?'))) router.delete(`/messages/comments/${c.id}`, { preserveScroll: true }); }}>{t('Delete')}</button>
                         <button type="button" className="ctl-btn" onClick={() => post(`/messages/comments/${c.id}/done`)}>{t('Done — no reply needed')}</button>
                     </div>
                     {replyOpen && (

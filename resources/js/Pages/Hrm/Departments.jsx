@@ -1,5 +1,6 @@
 import { Head, router, useForm } from '@inertiajs/react';
 import { useState } from 'react';
+import { confirmDialog } from '@/lib/confirm';
 import AppLayout from '@/Layouts/AppLayout';
 
 function MemberPicker({ options, selected, onToggle }) {
@@ -25,7 +26,7 @@ function DeptCard({ dept, staffOptions, canManage }) {
         head_user_id: dept.head ? String(dept.head.id) : '',
         member_ids: dept.members.map((m) => m.id),
     });
-    const del = () => { if (window.confirm('এই Department মুছে ফেলতে চান?')) router.delete(`/hrm/departments/${dept.id}`, { preserveScroll: true }); };
+    const del = async () => { if (await confirmDialog('এই Department মুছে ফেলতে চান?')) router.delete(`/hrm/departments/${dept.id}`, { preserveScroll: true }); };
     return (
         <div className="x-card">
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
@@ -72,7 +73,7 @@ function SopCard({ sop, departments, canManage }) {
         department_id: sop.department_id ? String(sop.department_id) : '',
         steps_text: (sop.steps || []).join('\n'),
     });
-    const del = () => { if (window.confirm('এই SOP মুছে ফেলতে চান?')) router.delete(`/hrm/sops/${sop.id}`, { preserveScroll: true }); };
+    const del = async () => { if (await confirmDialog('এই SOP মুছে ফেলতে চান?')) router.delete(`/hrm/sops/${sop.id}`, { preserveScroll: true }); };
     return (
         <div className="x-card">
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>

@@ -1,5 +1,6 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { useState } from 'react';
+import { confirmDialog } from '@/lib/confirm';
 import AppLayout from '@/Layouts/AppLayout';
 import { TodayTable, LeaveCards } from './parts';
 
@@ -112,7 +113,7 @@ function ShiftCard({ shift, staffOptions, canManage }) {
             : [...assign.data.member_ids, id];
         assign.setData('member_ids', ids);
     };
-    const del = () => { if (window.confirm('এই Shift মুছে ফেলতে চান?')) router.delete(`/hrm/shifts/${shift.id}`, { preserveScroll: true }); };
+    const del = async () => { if (await confirmDialog('এই Shift মুছে ফেলতে চান?')) router.delete(`/hrm/shifts/${shift.id}`, { preserveScroll: true }); };
     return (
         <div className="x-card">
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>

@@ -1,3 +1,4 @@
+import ConfirmHost from '@/Components/ConfirmHost';
 import LanguageSwitcher from '@/Components/LanguageSwitcher';
 import { t } from '@/lib/i18n';
 import { Link, router, usePage } from '@inertiajs/react';
@@ -379,6 +380,7 @@ export default function AppLayout({ children }) {
             </div>
             {searchOpen && <SearchModal close={() => setSearchOpen(false)} />}
             {askOpen && <AskDrawer close={() => setAskOpen(false)} />}
+            <ConfirmHost />
             {toast && <div className="toast">{toast}</div>}
             {toastErr && <div className="toast err">{toastErr}</div>}
         </div>

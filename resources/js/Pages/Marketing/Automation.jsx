@@ -1,5 +1,6 @@
 import { Head, router } from '@inertiajs/react';
 import { useState } from 'react';
+import { confirmDialog } from '@/lib/confirm';
 import AppLayout from '@/Layouts/AppLayout';
 import { fmt, fmtNum } from './parts';
 
@@ -79,7 +80,7 @@ export default function Automation({ flows, templates, strip }) {
         if (editing) router.patch(`/marketing/templates/${editing.id}`, { name: tName, body: tBody }, opts);
         else router.post('/marketing/templates', { name: tName, body: tBody }, opts);
     };
-    const delTemplate = (t) => { if (window.confirm('এই template-টা মুছে ফেলবে?')) router.delete(`/marketing/templates/${t.id}`, { preserveScroll: true }); };
+    const delTemplate = async (t) => { if (await confirmDialog('এই template-টা মুছে ফেলবে?')) router.delete(`/marketing/templates/${t.id}`, { preserveScroll: true }); };
 
     return (
         <AppLayout>

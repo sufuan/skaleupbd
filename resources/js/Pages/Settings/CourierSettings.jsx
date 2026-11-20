@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { router } from '@inertiajs/react';
+import { confirmDialog } from '@/lib/confirm';
 import { t } from '@/lib/i18n';
 
 /** Credential fields per courier (§10.7a). secret fields are never shown back. */
@@ -179,7 +180,7 @@ export default function CourierSettings({ couriers }) {
                         {!m.is_default && <button className="btn" onClick={() => router.post(`/settings/couriers/${m.id}/default`)}>{t('Set Default')}</button>}
                         {!m.is_preferred && <button className="btn" onClick={() => router.post(`/settings/couriers/${m.id}/preferred`)}>{t('Set Fallback')}</button>}
                         <button className="btn" onClick={() => router.post(`/settings/couriers/${m.id}/toggle`)}>{m.is_active ? t('Turn Off') : t('Turn On')}</button>
-                        <button className="btn" onClick={() => { if (confirm(t('Remove this courier connection?'))) router.delete(`/settings/couriers/${m.id}`); }}>{t('Remove')}</button>
+                        <button className="btn" onClick={async () => { if (await confirmDialog(t('Remove this courier connection?'))) router.delete(`/settings/couriers/${m.id}`); }}>{t('Remove')}</button>
                     </div>
                 ))}
                 {methods.length === 0 && <p className="mut sm">{t('No courier connected yet — add your first courier below.')}</p>}

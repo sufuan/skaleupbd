@@ -1,5 +1,6 @@
 import { Head, router, useForm } from '@inertiajs/react';
 import { useState } from 'react';
+import { confirmDialog } from '@/lib/confirm';
 import AppLayout from '@/Layouts/AppLayout';
 import { fmt } from './parts';
 
@@ -61,9 +62,9 @@ export default function Payroll({ month, run, runs, accounts, can_manage }) {
     const [m, setM] = useState(month);
     const build = useForm({ month });
     const pay = useForm({ account_id: accounts[0]?.id || '' });
-    const doPay = (e) => {
+    const doPay = async (e) => {
         e.preventDefault();
-        if (window.confirm(`মোট ${fmt(run.total)} Finance-এ খরচ entry হবে। বেতন দেওয়া হলো?`)) {
+        if (await confirmDialog(`মোট ${fmt(run.total)} Finance-এ খরচ entry হবে। বেতন দেওয়া হলো?`)) {
             pay.post(`/hrm/payroll/${run.id}/pay`, { preserveScroll: true });
         }
     };

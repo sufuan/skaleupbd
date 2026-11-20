@@ -34,12 +34,16 @@ class ReportsController extends Controller
     private function period(Request $request): array
     {
         $preset = (string) $request->query('preset', 'month');
-        $to = Carbon::now()->endOfDay();
+        // Asia/Dhaka, like Finance: the app default tz is UTC, so Carbon::now()
+        // ends "this month" a day early in Dhaka terms and P&L disagreed with
+        // the Finance dashboard by exactly the boundary day's expenses.
+        $now = Carbon::now('Asia/Dhaka');
+        $to = $now->copy()->endOfDay();
 
         return [$preset, match ($preset) {
-            'today' => Carbon::today(),
-            '7d' => Carbon::now()->subDays(6)->startOfDay(),
-            default => Carbon::now()->startOfMonth(),
+            'today' => $now->copy()->startOfDay(),
+            '7d' => $now->copy()->subDays(6)->startOfDay(),
+            default => $now->copy()->startOfMonth(),
         }, $to];
     }
 

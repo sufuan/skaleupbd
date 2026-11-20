@@ -1,5 +1,6 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { useState } from 'react';
+import { confirmDialog } from '@/lib/confirm';
 import AppLayout from '@/Layouts/AppLayout';
 import EntrySheet, { FinActions, fmt, fmtSigned } from './EntrySheet';
 
@@ -14,7 +15,7 @@ export default function IncomeExpense(props) {
     const go = (params) => router.get('/finance/income-expense', params, { preserveState: true, replace: true });
     const activeFilter = categoryFilter ? categories.find((c) => c.id === categoryFilter) : null;
 
-    const voidTxn = (t) => { if (confirm(`এই entry বাতিল করবে? (${t.note})`)) router.post(`/finance/transactions/${t.id}/void`); };
+    const voidTxn = async (t) => { if (await confirmDialog(`এই entry বাতিল করবে? (${t.note})`)) router.post(`/finance/transactions/${t.id}/void`); };
 
     return (
         <AppLayout title="Income & Expense">
@@ -86,7 +87,7 @@ export default function IncomeExpense(props) {
                                         <div key={c.id} style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '7px 0', borderBottom: '1px solid #F1F5F9' }}>
                                             <span style={{ flex: 1 }}>{c.name}{c.is_system && <span className="chip chip-grey" style={{ marginLeft: 6 }}>system</span>}</span>
                                             <button className="btn-s" onClick={() => { setEditCat(c); editForm.setData('name', c.name); }}>বদলাও</button>
-                                            {!c.is_system && <button className="btn-s" onClick={() => { if (confirm('Category মুছবে?')) router.delete(`/finance/categories/${c.id}`); }}>মোছো</button>}
+                                            {!c.is_system && <button className="btn-s" onClick={async () => { if (await confirmDialog('Category মুছবে?')) router.delete(`/finance/categories/${c.id}`); }}>মোছো</button>}
                                         </div>
                                     ))}
                                 </div>

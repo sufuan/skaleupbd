@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, router, useForm } from '@inertiajs/react';
+import { confirmDialog } from '@/lib/confirm';
 import AppLayout from '@/Layouts/AppLayout';
 import { t } from '@/lib/i18n';
 import ProductFields, { BTN_OUTLINE, BTN_PRIMARY, INPUT } from './ProductFields';
@@ -88,7 +89,7 @@ export default function Products({ products, summary, inactive, combos, wraps, s
                                             <button type="button" className="block w-full rounded px-2 py-1.5 text-left hover:bg-accent" onClick={() => { setEditFor(p); setMenuFor(null); }}>{t('Edit')}</button>
                                             <button type="button" className="block w-full rounded px-2 py-1.5 text-left hover:bg-accent" onClick={() => { router.post(`/inventory/products/${p.id}/copy`, {}, { preserveScroll: true }); setMenuFor(null); }}>{t('Copy')}</button>
                                             <button type="button" className="block w-full rounded px-2 py-1.5 text-left hover:bg-accent" onClick={() => { setTab('Variations'); setMenuFor(null); }}>{t('Variant')}</button>
-                                            <button type="button" className="block w-full rounded px-2 py-1.5 text-left text-red-600 hover:bg-red-50" onClick={() => { if (confirm(t('Delete this product?'))) router.delete(`/inventory/products/${p.id}`, { preserveScroll: true }); setMenuFor(null); }}>{t('Delete')}</button>
+                                            <button type="button" className="block w-full rounded px-2 py-1.5 text-left text-red-600 hover:bg-red-50" onClick={async () => { if (await confirmDialog(t('Delete this product?'))) router.delete(`/inventory/products/${p.id}`, { preserveScroll: true }); setMenuFor(null); }}>{t('Delete')}</button>
                                         </div>
                                     )}
                                 </div>
@@ -209,7 +210,7 @@ function Groups({ kind, groups, allRows }) {
                     <div key={g.id} className="rounded-xl border bg-card p-4 space-y-2">
                         <div className="flex items-center justify-between">
                             <div className="font-semibold">{g.name}</div>
-                            <button type="button" className="text-xs text-red-600" onClick={() => { if (confirm(t('Delete this group?'))) router.delete(`/inventory/groups/${kind}/${g.id}`, { preserveScroll: true }); }}>{t('Delete')}</button>
+                            <button type="button" className="text-xs text-red-600" onClick={async () => { if (await confirmDialog(t('Delete this group?'))) router.delete(`/inventory/groups/${kind}/${g.id}`, { preserveScroll: true }); }}>{t('Delete')}</button>
                         </div>
                         <div className="flex flex-wrap gap-1">
                             {g.product_ids.map((id) => <span key={id} className="rounded-full border px-2 py-0.5 text-xs">{nameOf(id)}</span>)}
@@ -278,7 +279,7 @@ function Taxonomy({ categories, brands }) {
                 {categories.map((c) => (
                     <div key={c.id} className="flex items-center justify-between text-sm border-t pt-2">
                         <span>{c.name}</span>
-                        <button type="button" className="text-xs text-red-600" onClick={() => { if (confirm(t('Delete this category?'))) router.delete(`/inventory/categories/${c.id}`, { preserveScroll: true }); }}>{t('Delete')}</button>
+                        <button type="button" className="text-xs text-red-600" onClick={async () => { if (await confirmDialog(t('Delete this category?'))) router.delete(`/inventory/categories/${c.id}`, { preserveScroll: true }); }}>{t('Delete')}</button>
                     </div>
                 ))}
                 <div className="flex gap-2">
@@ -291,7 +292,7 @@ function Taxonomy({ categories, brands }) {
                 {brands.map((b) => (
                     <div key={b.id} className="flex items-center justify-between text-sm border-t pt-2">
                         <span>{b.name}</span>
-                        <button type="button" className="text-xs text-red-600" onClick={() => { if (confirm(t('Delete this brand?'))) router.delete(`/inventory/brands/${b.id}`, { preserveScroll: true }); }}>{t('Delete')}</button>
+                        <button type="button" className="text-xs text-red-600" onClick={async () => { if (await confirmDialog(t('Delete this brand?'))) router.delete(`/inventory/brands/${b.id}`, { preserveScroll: true }); }}>{t('Delete')}</button>
                     </div>
                 ))}
                 <div className="flex gap-2">

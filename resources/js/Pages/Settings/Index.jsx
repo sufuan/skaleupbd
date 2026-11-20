@@ -3,6 +3,7 @@ import AppLayout from '@/Layouts/AppLayout';
 import { t } from '@/lib/i18n';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
+import { confirmDialog } from '@/lib/confirm';
 
 const GROUPS = [
     { id: 'home', label: 'Settings Dashboard', tabs: [] },
@@ -343,7 +344,7 @@ function RuleRow({ rule }) {
             </div>
             <div className="flex mt8" style={{ gap: 8 }}>
                 <button type="button" className="btn" onClick={() => setOpen(!open)}>{t('Edit')}</button>
-                <button type="button" className="btn" onClick={() => { if (confirm(t('Delete this rule?'))) router.delete(`/settings/ai-rules/${rule.id}`, { preserveScroll: true }); }}>{t('Delete')}</button>
+                <button type="button" className="btn" onClick={async () => { if (await confirmDialog(t('Delete this rule?'))) router.delete(`/settings/ai-rules/${rule.id}`, { preserveScroll: true }); }}>{t('Delete')}</button>
             </div>
             {open && (
                 <form onSubmit={submit} className="mt8">
@@ -454,7 +455,7 @@ function KnowledgeRow({ entry }) {
             <div className="frow"><label className="fl">{entry.title}</label><textarea className="inp" rows="3" value={form.data.body} onChange={(e) => form.setData('body', e.target.value)} /></div>
             <div className="flex" style={{ gap: 8 }}>
                 <span className="spacer" />
-                <button type="button" className="btn" onClick={() => { if (confirm(t('Delete this note?'))) router.delete(`/settings/ai-knowledge/${entry.id}`, { preserveScroll: true }); }}>{t('Delete')}</button>
+                <button type="button" className="btn" onClick={async () => { if (await confirmDialog(t('Delete this note?'))) router.delete(`/settings/ai-knowledge/${entry.id}`, { preserveScroll: true }); }}>{t('Delete')}</button>
                 <button type="submit" className="btn pri">{t('Save Changes')}</button>
             </div>
         </form>
@@ -597,7 +598,7 @@ function PackagesSettings({ data }) {
     const add = (e) => { e.preventDefault(); addForm.post('/settings/packages', { preserveScroll: true, onSuccess: () => addForm.reset() }); };
     const openEdit = (p) => { setEditing(p); editForm.setData({ name: p.name, price: p.price, duration_days: p.duration_days, description: p.description || '', features: p.features || [], active: p.active }); };
     const saveEdit = (e) => { e.preventDefault(); editForm.patch(`/settings/packages/${editing.id}`, { preserveScroll: true, onSuccess: () => setEditing(null) }); };
-    const remove = (p) => { if (confirm(`${t('Delete package')} ${p.name}?`)) router.delete(`/settings/packages/${p.id}`, { preserveScroll: true }); };
+    const remove = async (p) => { if (await confirmDialog(`${t('Delete package')} ${p.name}?`)) router.delete(`/settings/packages/${p.id}`, { preserveScroll: true }); };
     const featPicker = (form) => (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: '6px 14px', margin: '6px 0 4px' }}>
             {catalog.map((c) => {

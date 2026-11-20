@@ -1,5 +1,6 @@
 import { Head, router } from '@inertiajs/react';
 import AppLayout from '@/Layouts/AppLayout';
+import { confirmDialog } from '@/lib/confirm';
 import { FinActions, fmt, fmtSigned } from './EntrySheet';
 
 const SRC_LABEL = { manual: 'হাতে লেখা', order: 'Order', courier: 'Courier', system: 'System' };
@@ -7,7 +8,7 @@ const SRC_LABEL = { manual: 'হাতে লেখা', order: 'Order', courier
 export default function CashFlow(props) {
     const { tab, days, list, filters, accounts, categories, closedThrough } = props;
     const go = (params) => router.get('/finance/cash-flow', { ...filters, ...params }, { preserveState: true, replace: true });
-    const voidTxn = (t) => { if (confirm(`এই entry বাতিল করবে? (${t.note})`)) router.post(`/finance/transactions/${t.id}/void`); };
+    const voidTxn = async (t) => { if (await confirmDialog(`এই entry বাতিল করবে? (${t.note})`)) router.post(`/finance/transactions/${t.id}/void`); };
     const net7 = days.reduce((s, d) => s + d.net, 0);
 
     return (
@@ -40,7 +41,7 @@ export default function CashFlow(props) {
                     ))}
                     <span style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
                         {closedThrough && <span className="chip chip-grey">{closedThrough} পর্যন্ত মাস বন্ধ</span>}
-                        <button className="btn-s" onClick={() => { if (confirm('আগের মাস বন্ধ করবে? ওই মাসের entry আর বদলানো/বাতিল হবে না।')) router.post('/finance/close-month'); }}>আগের মাস বন্ধ করো</button>
+                        <button className="btn-s" onClick={async () => { if (await confirmDialog('আগের মাস বন্ধ করবে? ওই মাসের entry আর বদলানো/বাতিল হবে না।')) router.post('/finance/close-month'); }}>আগের মাস বন্ধ করো</button>
                     </span>
                 </div>
 

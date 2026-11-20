@@ -1,5 +1,6 @@
 import { Head, router, useForm } from '@inertiajs/react';
 import AppLayout from '@/Layouts/AppLayout';
+import { confirmDialog } from '@/lib/confirm';
 
 const DAYS = ['Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 
@@ -13,7 +14,7 @@ export default function Settings({ settings, holidays, can_manage }) {
         payroll_enabled: settings.payroll_enabled,
     });
     const hol = useForm({ date: '', name: '' });
-    const delHoliday = (id) => { if (window.confirm('এই ছুটির দিন মুছে ফেলতে চান?')) router.delete(`/hrm/holidays/${id}`, { preserveScroll: true }); };
+    const delHoliday = async (id) => { if (await confirmDialog('এই ছুটির দিন মুছে ফেলতে চান?')) router.delete(`/hrm/holidays/${id}`, { preserveScroll: true }); };
 
     return (
         <AppLayout title="HR Settings">

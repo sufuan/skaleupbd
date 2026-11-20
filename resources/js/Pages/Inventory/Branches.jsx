@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { router } from '@inertiajs/react';
+import { confirmDialog } from '@/lib/confirm';
 import AppLayout from '@/Layouts/AppLayout';
 import { t } from '@/lib/i18n';
 import { BTN_OUTLINE, BTN_PRIMARY, INPUT } from './ProductFields';
@@ -78,7 +79,7 @@ export default function Branches({ branches, stats, branchStockEnabled, cartonsE
                                             <button type="button" className={BTN_OUTLINE + ' h-8 px-2 text-xs'} onClick={() => setEditFor(b)}>{t('Edit')}</button>
                                             <button type="button" className={BTN_OUTLINE + ' h-8 px-2 text-xs'} onClick={() => router.patch(`/inventory/branches/${b.id}`, { name: b.name, type: b.type, address: b.address, phone: b.phone, is_active: !b.is_active }, { preserveScroll: true })}>{b.is_active ? t('Deactivate') : t('Activate')}</button>
                                             {b.type !== 'central' && <button type="button" className={BTN_OUTLINE + ' h-8 px-2 text-xs'} onClick={() => router.patch(`/inventory/branches/${b.id}`, { name: b.name, type: 'central', address: b.address, phone: b.phone, is_active: b.is_active }, { preserveScroll: true })}>{t('Set as Central')}</button>}
-                                            <button type="button" className="h-8 px-2 text-xs text-red-600" onClick={() => { if (confirm(t('Delete this branch?'))) router.delete(`/inventory/branches/${b.id}`, { preserveScroll: true }); }}>{t('Delete')}</button>
+                                            <button type="button" className="h-8 px-2 text-xs text-red-600" onClick={async () => { if (await confirmDialog(t('Delete this branch?'))) router.delete(`/inventory/branches/${b.id}`, { preserveScroll: true }); }}>{t('Delete')}</button>
                                         </div>
                                     </div>
                                 ))}
