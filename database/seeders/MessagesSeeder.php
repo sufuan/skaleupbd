@@ -38,8 +38,9 @@ class MessagesSeeder extends Seeder
         // ---- Rule Brain defaults ----
         $ruleDefs = [
             ['name' => 'Default First Reply', 'match_text' => 'greeting', 'action' => 'answer', 'reply_template' => 'আসসালামু আলাইকুম! কিভাবে সাহায্য করতে পারি? কোন পণ্যটা সম্পর্কে জানতে চান?'],
-            ['name' => 'Price answer', 'match_text' => 'price', 'action' => 'answer', 'reply_template' => 'আপু, {product}-এর দাম ৳{price}। অর্ডার করতে চাইলে নাম, ঠিকানা আর ফোন নম্বরটা পাঠিয়ে দিন।'],
-            ['name' => 'Delivery charge answer', 'match_text' => 'delivery', 'action' => 'answer', 'reply_template' => 'ঢাকার ভিতরে ডেলিভারি চার্জ ৳{delivery_inside}, ঢাকার বাইরে ৳{delivery_outside} আপু। কোন এলাকায় ডেলিভারি চান?'],
+            ['name' => 'Price answer', 'match_text' => 'price', 'action' => 'answer', 'reply_template' => 'আপু, {product}-এর দাম {price} টাকা। অর্ডার করতে চাইলে নাম, ঠিকানা আর ফোন নম্বরটা পাঠিয়ে দিন।'],
+            ['name' => 'Delivery charge answer', 'match_text' => 'delivery', 'action' => 'answer', 'reply_template' => 'ঢাকার ভিতরে ডেলিভারি চার্জ {delivery_inside} টাকা, ঢাকার বাইরে {delivery_outside} টাকা আপু। কোন এলাকায় ডেলিভারি চান?'],
+            ['name' => 'Reaction reply', 'match_text' => 'reaction', 'action' => 'answer', 'reply_template' => 'ধন্যবাদ! আর কিছু জানতে চাইলে বলুন।'],
             ['name' => 'Stock answer', 'match_text' => 'stock', 'action' => 'answer', 'reply_template' => 'আপু, {product} এখন স্টকে আছে ({stock}টা)। অর্ডার করতে চাইলে ঠিকানাটা দিন।'],
             ['name' => 'Price negotiation (ladder)', 'match_text' => 'bargain', 'action' => 'draft', 'reply_template' => null],
             ['name' => 'Order intake', 'match_text' => 'order_intent', 'action' => 'draft', 'reply_template' => null],

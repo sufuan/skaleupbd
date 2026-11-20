@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, router, useForm } from '@inertiajs/react';
 import AppLayout from '@/Layouts/AppLayout';
 import { t } from '@/lib/i18n';
@@ -55,6 +55,28 @@ export default function Inbox({ conversations, selected, report, aiMode, aiPanic
         e.preventDefault();
         reply.post(`/messages/conversations/${selected.id}/reply`, { preserveScroll: true, onSuccess: () => reply.reset() });
     };
+
+    // Live thread: pull the fresh conversation list + open chat every few
+    // seconds so a new customer message appears on its own — the same way
+    // the sidebar badges update — with no page refresh. Skips while the tab
+    // is hidden or a reply is being sent; typed text is kept (state is
+    // preserved across the partial reload).
+    const sendingRef = useRef(false);
+    sendingRef.current = reply.processing;
+    const pollingRef = useRef(false);
+    useEffect(() => {
+        const id = setInterval(() => {
+            if (document.hidden || pollingRef.current || sendingRef.current) return;
+            pollingRef.current = true;
+            router.reload({
+                only: ['conversations', 'selected', 'report'],
+                preserveState: true,
+                preserveScroll: true,
+                onFinish: () => { pollingRef.current = false; },
+            });
+        }, 8000);
+        return () => clearInterval(id);
+    }, []);
 
     const toggleBtn = (active) => ({ background: active ? '#411550' : '#f3f4f6', color: active ? '#fff' : '#374151', border: 'none', padding: '8px 18px', borderRadius: 99, fontWeight: 700, cursor: 'pointer', fontSize: 13 });
     const chip = (active) => ({ display: 'inline-block', fontSize: 11, fontWeight: 700, borderRadius: 99, background: active ? '#411550' : '#f3f4f6', color: active ? '#fff' : '#374151', cursor: 'pointer', padding: '5px 12px' });

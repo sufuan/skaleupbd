@@ -90,8 +90,31 @@ class RuleBrainService
      * rule that answers is then the rule for that intent, never an accident
      * of the order the rules were created in.
      */
+    /**
+     * A message that is only emoji / a Like — 👍 ❤️ 😊 and friends, with no
+     * words at all. The Messenger Like sticker arrives as the text '👍'
+     * (the webhook translates it), so one check covers both.
+     */
+    public function isReaction(string $text): bool
+    {
+        $t = trim($text);
+        if ($t === '' || mb_strlen($t) > 12) {
+            return false;
+        }
+        $emoji = '/[\x{1F000}-\x{1FAFF}\x{2600}-\x{27BF}\x{2B00}-\x{2BFF}]/u';
+        if (! preg_match($emoji, $t)) {
+            return false;
+        }
+        $rest = preg_replace('/[\x{1F000}-\x{1FAFF}\x{2600}-\x{27BF}\x{2B00}-\x{2BFF}\x{FE0F}\x{200D}\s]/u', '', $t);
+
+        return $rest === '';
+    }
+
     public function detectIntent(string $text, ?Conversation $conversation = null): ?string
     {
+        if ($this->isReaction($text)) {
+            return 'reaction';
+        }
         $hay = mb_strtolower($text);
         if ($this->intentMatches('spam', $hay)) {
             return 'spam';
@@ -290,6 +313,23 @@ class RuleBrainService
         return strtr($text, $map);
     }
 
+    /**
+     * A money slot that rendered EMPTY — the text says "দাম ৳।" or
+     * "দাম টাকা।" with no figure in it. Such a reply must never be sent;
+     * the caller falls back to a clarification question instead.
+     */
+    public function hasBrokenFigure(string $rendered): bool
+    {
+        if (preg_match('/৳\s*([।,]|$)/u', $rendered)) {
+            return true;
+        }
+        // Remove every well-formed "1,250 টাকা" amount first; a টাকা still
+        // left standing at a sentence end had no figure in front of it.
+        $stripped = preg_replace('/[0-9\x{09E6}-\x{09EF}][0-9,\x{09E6}-\x{09EF}]*\s*টাকা/u', '', $rendered);
+
+        return (bool) preg_match('/টাকা\s*([।,]|$)/u', (string) $stripped);
+    }
+
     /** Truth context for the claim guard, from live data. */
     private function claimCtx(int $businessId, ?Product $product, array $slotValues = []): array
     {
@@ -431,7 +471,7 @@ class RuleBrainService
         $total = $unit + $delivery;
         $itemName = $product->name . ($variant ? ' (' . $variant->name . ')' : '');
         $body = $conversation->customer_name . ' · ' . ($conversation->customer_address ?: 'ঠিকানা বাকি') . "\n"
-            . $itemName . ' ×1 — ৳' . number_format($unit) . ' + delivery ৳' . number_format($delivery) . ' = মোট ৳' . number_format($total) . ' (Cash on Delivery)';
+            . $itemName . ' ×1 — ' . number_format($unit) . ' টাকা + delivery ' . number_format($delivery) . ' টাকা = মোট ' . number_format($total) . ' টাকা (Cash on Delivery)';
         // Cart snapshot: what this conversation is currently buying.
         $state = (array) ($conversation->state_data ?? []);
         $state['cart'] = [['product_id' => $product->id, 'variant_id' => $variant?->id, 'variant_name' => $variant?->name, 'qty' => 1, 'agreed_price' => $unit]];
@@ -927,11 +967,11 @@ class RuleBrainService
             $total = $offer + (float) $this->settings->get('business.default_delivery_cost', 60);
             $h = $this->honorific($biz);
             $first = match ($quote['kind']) {
-                'accept' => 'ঠিক আছে' . ($h !== '' ? ' ' . $h : '') . ', আপনার কথামতোই ৳⟦offer⟧-এ দিচ্ছি।',
-                'floor_repeat' => ($h !== '' ? $h . ', ' : '') . '৳⟦offer⟧-ই শেষ দাম — এর কমে আর হচ্ছে না।',
-                default => 'বুঝতে পারছি' . ($h !== '' ? ' ' . $h : '') . '। আপনার জন্য ৳⟦offer⟧-এ দিতে পারব।',
+                'accept' => 'ঠিক আছে' . ($h !== '' ? ' ' . $h : '') . ', আপনার কথামতোই ⟦offer⟧ টাকায় দিচ্ছি।',
+                'floor_repeat' => ($h !== '' ? $h . ', ' : '') . '⟦offer⟧ টাকাই শেষ দাম — এর কমে আর হচ্ছে না।',
+                default => 'বুঝতে পারছি' . ($h !== '' ? ' ' . $h : '') . '। আপনার জন্য ⟦offer⟧ টাকায় দিতে পারব।',
             };
-            $slottedBody = $first . ' ডেলিভারি চার্জসহ মোট ৳⟦total⟧ (ঢাকার ভিতরে)। অর্ডার করবেন?';
+            $slottedBody = $first . ' ডেলিভারি চার্জসহ মোট ⟦total⟧ টাকা (ঢাকার ভিতরে)। অর্ডার করবেন?';
             $slotValues = ['offer' => $offer, 'total' => $total];
             $meta = ['ladder_step' => (int) $conversation->neg_step, 'offer' => $offer, 'quote' => $quote['kind']];
         } elseif ($rule && $rule->match_text === 'order_intent') {
@@ -976,7 +1016,7 @@ class RuleBrainService
             if (trim($slottedBody) === '') {
                 return null;
             }
-            if (preg_match('/৳\s*([।,]|$)/u', $this->renderSlots($slottedBody, $product, $biz))) {
+            if ($this->hasBrokenFigure($this->renderSlots($slottedBody, $product, $biz))) {
                 $slottedBody = $this->honorificPrefix($biz) . 'কোন পণ্যটার কথা বলছেন? পণ্যের নামটা বললে দাম আর স্টক জানিয়ে দিচ্ছি।';
                 $meta = ['clarify' => true];
             } else {
@@ -1014,7 +1054,7 @@ class RuleBrainService
                 $desc = trim((string) ($product->short_description ?? ''));
                 $slottedBody = $desc !== ''
                     ? $this->honorificPrefix($biz) . $desc
-                    : $this->honorificPrefix($biz) . $product->name . '-এর দাম ৳⟦price⟧। আর কিছু জানতে চাইলে বলুন।';
+                    : $this->honorificPrefix($biz) . $product->name . '-এর দাম ⟦price⟧ টাকা। আর কিছু জানতে চাইলে বলুন।';
                 $meta = ['no_rule' => true];
             }
         }
@@ -1149,7 +1189,7 @@ class RuleBrainService
         $product = $comment->product_id ? Product::where('business_id', $biz)->find($comment->product_id) : $this->productFor($biz, $comment->body);
         $slottedBody = $this->buildReply($rule, $product, $biz, true);
         $draftRendered = $this->renderSlots($slottedBody, $product, $biz);
-        if (trim($slottedBody) === '' || preg_match('/৳\s*([।,]|$)/u', $draftRendered)) {
+        if (trim($slottedBody) === '' || $this->hasBrokenFigure($draftRendered)) {
             // Never post a public reply with a blank figure in it.
             return null;
         }

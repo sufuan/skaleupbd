@@ -125,6 +125,16 @@ class MetaWebhookController extends Controller
                 ]),
             ];
         }
+        // A sticker (the big Like is the common one) is a reaction, not a
+        // photo: never send it to the image pipeline. Give it the text form
+        // the brain's reaction rule understands.
+        $stickerId = $message['sticker_id'] ?? ($attachment['meta']['sticker_id'] ?? null);
+        if ($stickerId !== null && $attachment !== null) {
+            $attachment['type'] = 'sticker';
+            if ($text === '') {
+                $text = '👍';
+            }
+        }
         if ($text === '' && $attachment === null) {
             return;
         }
