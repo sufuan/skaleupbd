@@ -502,38 +502,38 @@ class OrderController extends Controller
         $this->own($request, $order);
         $type = $request->validate(['type' => ['required', 'in:reminder,advance']])['type'];
         $biz = $order->business_id;
-
-        $capDay = (int) $this->settings->get('sms.cap_day', 1);
-        $capWeek = (int) $this->settings->get('sms.cap_week', 3);
-        $sentToday = \App\Models\OrderActivity::where('kind', 'sms')
-            ->whereHas('order', fn ($q) => $q->where('business_id', $biz)->where('customer_phone', $order->customer_phone))
-            ->whereDate('created_at', today())->count();
-        $sentWeek = \App\Models\OrderActivity::where('kind', 'sms')
-            ->whereHas('order', fn ($q) => $q->where('business_id', $biz)->where('customer_phone', $order->customer_phone))
-            ->where('created_at', '>=', now()->subDays(7))->count();
-
         $label = $type === 'reminder' ? 'Reminder SMS' : 'Advance SMS';
-        if ($sentToday >= $capDay) {
-            $order->logActivity('sms', "{$label} skipped — daily SMS limit reached for this customer", $request->user());
-
-            return back()->with('success', "{$label} skipped — daily limit reached (logged on the order)");
-        }
-        if ($sentWeek >= $capWeek) {
-            $order->logActivity('sms', "{$label} skipped — weekly SMS limit reached for this customer", $request->user());
-
-            return back()->with('success', "{$label} skipped — weekly limit reached (logged on the order)");
-        }
 
         $template = MessageTemplate::where('business_id', $biz)->where('key', $type)->first();
-        $body = $template?->body ?? '';
-        $rendered = strtr($body, [
+        $rendered = strtr($template?->body ?? '', [
             '{name}' => $order->customer_name, '{invoice}' => $order->invoice_no,
             '{amount}' => number_format((float) $order->grand_total), '{advance}' => number_format(max(100, (float) $order->due)),
             '{shop}' => (string) $this->settings->get('business.name', 'Demo Shop'),
         ]);
-        $order->logActivity('sms', "{$label} sent to customer — \"{$rendered}\"", $request->user());
 
-        return back()->with('success', "{$label} sent");
+        // A real send through the one SMS service, under the same flow keys
+        // the automation uses — so the do-not-send list, the frequency caps
+        // (reminder is a marketing flow) and the prepaid balance all apply,
+        // and the attempt lands in sms_logs. The old code only wrote a
+        // timeline note and sent nothing.
+        $log = app(\App\Services\SmsService::class)->send($biz, $order->customer_phone, $rendered, [
+            'type' => 'automation', 'key' => $type, 'label' => $label, 'ref' => $order->invoice_no,
+        ], $order->customer_id);
+
+        if ($log->status === 'sent') {
+            $order->logActivity('sms', "{$label} sent to customer — \"{$rendered}\"", $request->user());
+
+            return back()->with('success', "{$label} sent");
+        }
+
+        $reason = match ($log->status) {
+            'skipped_dnd' => 'customer is on the do-not-send list',
+            'skipped_cap' => 'SMS limit reached for this customer',
+            default => $log->error ?: 'SMS could not be sent',
+        };
+        $order->logActivity('sms', "{$label} not sent — {$reason}", $request->user());
+
+        return back()->with('error', "{$label} not sent — {$reason}");
     }
 
     public function block(Request $request, Order $order): RedirectResponse

@@ -11,6 +11,9 @@ use Illuminate\Http\Request;
 
 class CourierSettingsController extends Controller
 {
+    /** Couriers whose drivers honour a 'sandbox' credential flag (test server). */
+    private const SANDBOX_TYPES = ['PATHAO', 'CARRYBEE', 'REDX'];
+
     private function businessId(Request $request): int
     {
         return $request->user()->business_id;
@@ -40,6 +43,7 @@ class CourierSettingsController extends Controller
             'is_active' => $m->is_active,
             'is_default' => $m->is_default,
             'is_preferred' => $m->is_preferred,
+            'sandbox' => ! empty(($m->credentials ?? [])['sandbox']),
             'charge_inside_dhaka' => (float) $m->charge_inside_dhaka,
             'charge_outside_dhaka' => (float) $m->charge_outside_dhaka,
             'default_shipping_note' => $m->default_shipping_note,
@@ -58,7 +62,12 @@ class CourierSettingsController extends Controller
             'charge_outside_dhaka' => 'nullable|numeric|min:0',
             'default_shipping_note' => 'nullable|string|max:500',
             'credentials' => 'nullable|array',
+            'sandbox' => 'nullable|boolean',
         ]);
+        $creds = collect($data['credentials'] ?? [])->filter(fn ($v) => filled($v))->all();
+        if (! empty($data['sandbox']) && in_array($data['courier_type'], self::SANDBOX_TYPES, true)) {
+            $creds['sandbox'] = true;
+        }
         $method = CourierMethod::create([
             'business_id' => $this->businessId($request),
             'name' => $data['name'],
@@ -66,7 +75,7 @@ class CourierSettingsController extends Controller
             'charge_inside_dhaka' => $data['charge_inside_dhaka'] ?? 0,
             'charge_outside_dhaka' => $data['charge_outside_dhaka'] ?? 0,
             'default_shipping_note' => $data['default_shipping_note'] ?? null,
-            'credentials' => collect($data['credentials'] ?? [])->filter(fn ($v) => filled($v))->all(),
+            'credentials' => $creds,
             'is_active' => true,
         ]);
         $method->update(['webhook_url' => url('/api/webhooks/' . strtolower($method->courier_type) . '/dm/' . $method->id)]);
@@ -84,12 +93,21 @@ class CourierSettingsController extends Controller
             'charge_outside_dhaka' => 'nullable|numeric|min:0',
             'default_shipping_note' => 'nullable|string|max:500',
             'credentials' => 'nullable|array',
+            'sandbox' => 'nullable|boolean',
         ]);
         // Blank credential fields keep the saved secret; a filled field replaces it.
         $creds = $courier->credentials ?? [];
         foreach (($data['credentials'] ?? []) as $k => $v) {
             if (filled($v)) {
                 $creds[$k] = $v;
+            }
+        }
+        // Sandbox is a plain on/off flag, not a secret: on = store true, off = remove the key.
+        if (array_key_exists('sandbox', $data)) {
+            if (! empty($data['sandbox']) && in_array($courier->courier_type, self::SANDBOX_TYPES, true)) {
+                $creds['sandbox'] = true;
+            } else {
+                unset($creds['sandbox']);
             }
         }
         $courier->update([

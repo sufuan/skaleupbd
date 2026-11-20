@@ -33,6 +33,7 @@ export default function Products({ products, summary, inactive, combos, wraps, s
     const [menuFor, setMenuFor] = useState(null);
     const [editFor, setEditFor] = useState(null);
     const [adjustFor, setAdjustFor] = useState(null);
+    const [ioOpen, setIoOpen] = useState(false);
     const allRows = products.data;
 
     const doSearch = (e) => { e.preventDefault(); router.get('/inventory/products', { search }, { preserveState: true }); };
@@ -117,10 +118,7 @@ export default function Products({ products, summary, inactive, combos, wraps, s
                         <div className="flex flex-wrap items-center gap-2">
                             <span className={BTN_OUTLINE + ' h-9 px-3'}>{t('Guide')}</span>
                             <button type="button" className={BTN_OUTLINE + ' h-9 px-3'} onClick={() => router.reload({ preserveScroll: true })}>{t('Sync Products')}</button>
-                            <button type="button" className={BTN_OUTLINE + ' h-9 px-3'} onClick={() => {
-                                const csv = ['Code,Product,Cost Price,Stock Qty,Selling Price', ...allRows.map((p) => [p.sku, '"' + p.name.replace(/"/g, '""') + '"', p.cost, p.stock_qty, p.price].join(','))].join('\n');
-                                const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = 'products.csv'; a.click(); URL.revokeObjectURL(a.href);
-                            }}>{t('Import / Export')}</button>
+                            <button type="button" className={BTN_OUTLINE + ' h-9 px-3'} onClick={() => setIoOpen(true)}>{t('Import / Export')}</button>
                             <Link href="/inventory/products/create" className={BTN_PRIMARY + ' h-9 px-3'}>{t('Add Product')}</Link>
                         </div>
                     </div>
@@ -195,6 +193,7 @@ export default function Products({ products, summary, inactive, combos, wraps, s
 
             {editFor && <EditModal product={editFor} categories={categories} brands={brands} close={() => setEditFor(null)} />}
             {adjustFor && <AdjustModal product={adjustFor} close={() => setAdjustFor(null)} />}
+            {ioOpen && <ImportExportModal close={() => setIoOpen(false)} />}
         </AppLayout>
     );
 }
@@ -341,6 +340,38 @@ function EditModal({ product, categories, brands, close }) {
                         <button type="submit" className={BTN_PRIMARY} disabled={processing}>{t('Save Changes')}</button>
                     </div>
                 </form>
+            </div>
+        </div>
+    );
+}
+
+function ImportExportModal({ close }) {
+    const { data, setData, post, processing, errors } = useForm({ file: null });
+    const submit = (e) => { e.preventDefault(); post('/inventory/products/import', { forceFormData: true, onSuccess: close }); };
+    return (
+        <div className="overlay" onClick={close}>
+            <div className="modal invx" style={{ maxWidth: 560, width: '94vw', maxHeight: '92vh', overflowY: 'auto', padding: 0 }} onClick={(e) => e.stopPropagation()}>
+                <div className="flex items-center justify-between px-5 py-4 border-b">
+                    <div className="text-lg font-semibold">{t('Import / Export')}</div>
+                    <button type="button" className="text-xl leading-none" onClick={close}>×</button>
+                </div>
+                <div className="p-5 space-y-5">
+                    <form onSubmit={submit} className="space-y-3">
+                        <div className="font-semibold text-sm">{t('Import products')}</div>
+                        <input type="file" accept=".xlsx,.xls,.csv" className={INPUT} onChange={(e) => setData('file', e.target.files[0] || null)} />
+                        {errors.file && <div className="text-sm text-red-600">{errors.file}</div>}
+                        <div className="text-sm text-muted-foreground">{t('Name your product photos by SKU (like SP-001.jpg) and upload them all at once to the import-images folder on your server. Then either paste the photo link in the sheet, or leave it blank — the photo is matched by SKU on its own. Extra photos: SP-001_1.jpg, SP-001_2.jpg.')}</div>
+                        <button type="submit" className={BTN_PRIMARY + ' h-9 px-3'} disabled={processing || !data.file}>{t('Import')}</button>
+                    </form>
+                    <div className="border-t pt-4 space-y-2">
+                        <div className="font-semibold text-sm">{t('Export & template')}</div>
+                        <div className="flex flex-wrap gap-2">
+                            <a className={BTN_OUTLINE + ' h-9 px-3 inline-flex items-center'} href="/inventory/products/export?format=xlsx">{t('Export Excel')}</a>
+                            <a className={BTN_OUTLINE + ' h-9 px-3 inline-flex items-center'} href="/inventory/products/export?format=csv">{t('Export CSV')}</a>
+                            <a className={BTN_OUTLINE + ' h-9 px-3 inline-flex items-center'} href="/inventory/products/template">{t('Download template')}</a>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     );

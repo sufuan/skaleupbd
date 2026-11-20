@@ -97,10 +97,13 @@ class SettingsController extends Controller
                     'cap_day' => (int) $this->settings->get('marketing.' . $biz . '.cap_day', 1),
                     'cap_week' => (int) $this->settings->get('marketing.' . $biz . '.cap_week', 3),
                     'balance' => (float) $this->settings->get('marketing.' . $biz . '.sms_balance', 0),
-                    'driver' => (string) $this->settings->get('marketing.sms_driver', 'log'),
-                    'gateway_provider' => (string) $this->settings->get('marketing.gateway_provider', ''),
-                    'gateway_sender' => (string) $this->settings->get('marketing.gateway_sender', ''),
-                    'has_gateway_key' => (bool) $this->settings->get('marketing.gateway_api_key_enc'),
+                    // Per-seller provider account (the key itself is never sent).
+                    'provider' => (string) $this->settings->get('marketing.' . $biz . '.sms_provider', 'nishchit'),
+                    'mode' => (string) $this->settings->get('marketing.' . $biz . '.sms_mode', 'demo'),
+                    'sender_id' => (string) $this->settings->get('marketing.' . $biz . '.sms_sender_id', ''),
+                    'has_key' => (bool) ($this->settings->get('marketing.' . $biz . '.sms_api_key_enc')
+                        || $this->settings->get('marketing.gateway_api_key_enc')),
+                    'has_webhook_secret' => (bool) $this->settings->get('marketing.' . $biz . '.sms_webhook_secret_enc'),
                 ],
                 'toggles' => [
                     'show_email' => (bool) $this->settings->get('orders.show_email', true),
@@ -260,10 +263,11 @@ class SettingsController extends Controller
             'cap_day' => ['required', 'integer', 'min:0', 'max:50'],
             'cap_week' => ['required', 'integer', 'min:0', 'max:200'],
             'add_balance' => ['nullable', 'numeric', 'min:0', 'max:1000000'],
-            'driver' => ['required', 'string', 'in:log,gateway'],
-            'gateway_provider' => ['nullable', 'string', 'max:80'],
-            'gateway_sender' => ['nullable', 'string', 'max:40'],
-            'gateway_api_key' => ['nullable', 'string', 'max:255'],
+            'provider' => ['required', 'string', 'in:amarsms,nishchit'],
+            'mode' => ['required', 'string', 'in:demo,live'],
+            'sender_id' => ['nullable', 'string', 'max:40'],
+            'api_key' => ['nullable', 'string', 'max:255'],
+            'webhook_secret' => ['nullable', 'string', 'max:255'],
         ]);
         $sms = app(\App\Services\SmsService::class);
         $sms->setSetting($biz, 'sms_rate', (float) $data['rate']);
@@ -272,16 +276,50 @@ class SettingsController extends Controller
         if (! empty($data['add_balance'])) {
             $sms->setSetting($biz, 'sms_balance', round($sms->balance($biz) + (float) $data['add_balance'], 2));
         }
-        $this->setLogged($request, 'marketing.sms_driver', $data['driver']);
-        $this->setLogged($request, 'marketing.gateway_provider', $data['gateway_provider'] ?? '');
-        $this->setLogged($request, 'marketing.gateway_sender', $data['gateway_sender'] ?? '');
-        if (! empty($data['gateway_api_key'])) {
-            $this->setLogged($request, 'marketing.gateway_api_key_enc', \Illuminate\Support\Facades\Crypt::encryptString($data['gateway_api_key']));
-            // SmsService checks this plain marker to know a key exists.
-            $this->setLogged($request, 'marketing.gateway_api_key', 'set');
+        // The provider account is the seller's own: every field is saved
+        // per business (marketing.{biz}.sms_*), never platform-global.
+        $sms->setSetting($biz, 'sms_provider', $data['provider']);
+        $sms->setSetting($biz, 'sms_mode', $data['mode']);
+        $sms->setSetting($biz, 'sms_sender_id', $data['sender_id'] ?? '');
+        if (! empty($data['api_key'])) {
+            $sms->setSetting($biz, 'sms_api_key_enc', \Illuminate\Support\Facades\Crypt::encryptString($data['api_key']));
+            // Plain marker so views can tell a key exists without decrypting it.
+            $sms->setSetting($biz, 'sms_api_key', 'set');
+        }
+        if (! empty($data['webhook_secret'])) {
+            $sms->setSetting($biz, 'sms_webhook_secret_enc', \Illuminate\Support\Facades\Crypt::encryptString($data['webhook_secret']));
+            $sms->setSetting($biz, 'sms_webhook_secret', 'set');
         }
 
         return back()->with('success', 'SMS settings saved');
+    }
+
+    /** Settings → Marketing SMS "Check connection": provider balance as JSON. */
+    public function checkSmsConnection(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $biz = (int) ($request->user()?->business_id ?? 0);
+        $data = $request->validate(['key' => ['nullable', 'string', 'max:255']]);
+        // A key typed into the form is tested as typed; blank tests the saved one.
+        $result = app(\App\Services\SmsService::class)->testConnection($biz, $data['key'] ?? null);
+
+        return response()->json($result);
+    }
+
+    /** Settings → Marketing SMS "Send test SMS": one send in the current mode. */
+    public function sendTestSms(Request $request): RedirectResponse
+    {
+        $biz = (int) $request->user()->business_id;
+        $data = $request->validate([
+            'phone' => ['required', 'string', 'max:20'],
+            'message' => ['nullable', 'string', 'max:500'],
+        ]);
+        $body = trim((string) ($data['message'] ?? '')) ?: 'SkaleUp test SMS';
+        $log = app(\App\Services\SmsService::class)->sendTest($biz, $data['phone'], $body);
+        if ($log->status === 'sent') {
+            return back()->with('success', 'Test SMS sent');
+        }
+
+        return back()->with('error', 'Test SMS not sent — ' . ($log->error ?: 'unknown error'));
     }
 
     public function updateOrderToggles(Request $request): RedirectResponse

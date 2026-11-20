@@ -61,6 +61,8 @@ Route::middleware(['auth', 'verified', 'totp'])->group(function () {
     Route::post('/settings/inventory', [SettingsController::class, 'updateInventory'])->name('settings.inventory');
     Route::post('/settings/finance', [SettingsController::class, 'updateFinance'])->name('settings.finance');
     Route::post('/settings/marketing-sms', [SettingsController::class, 'updateMarketingSms'])->name('settings.marketingSms');
+    Route::post('/settings/sms-check', [SettingsController::class, 'checkSmsConnection'])->name('settings.smsCheck');
+    Route::post('/settings/sms-test', [SettingsController::class, 'sendTestSms'])->name('settings.smsTest');
     Route::post('/settings/courier-methods', [SettingsController::class, 'addCourierMethod'])->name('settings.courierMethods');
 
     // M2 Orders
@@ -207,6 +209,8 @@ Route::middleware(['auth', 'verified', 'totp'])->group(function () {
     Route::get('/inventory/products/create', [\App\Http\Controllers\InventoryController::class, 'createProduct'])->name('inventory.products.create');
     Route::post('/inventory/products', [\App\Http\Controllers\InventoryController::class, 'storeProduct'])->name('inventory.products.store');
     Route::post('/inventory/products/import', [\App\Http\Controllers\InventoryController::class, 'importProducts'])->name('inventory.products.import');
+    Route::get('/inventory/products/export', [\App\Http\Controllers\InventoryController::class, 'exportProducts'])->name('inventory.products.export');
+    Route::get('/inventory/products/template', [\App\Http\Controllers\InventoryController::class, 'templateProducts'])->name('inventory.products.template');
     Route::patch('/inventory/products/{product}', [\App\Http\Controllers\InventoryController::class, 'updateProduct'])->name('inventory.products.update');
     Route::delete('/inventory/products/{product}', [\App\Http\Controllers\InventoryController::class, 'destroyProduct'])->name('inventory.products.destroy');
     Route::post('/inventory/products/{product}/copy', [\App\Http\Controllers\InventoryController::class, 'copyProduct'])->name('inventory.products.copy');
@@ -318,5 +322,7 @@ Route::post('/api/webhooks/pathao/dm/{method}', [WebhookController::class, 'path
 Route::post('/api/webhooks/carrybee/dm/{method}', [WebhookController::class, 'carrybee'])->name('api.webhooks.carrybee');
 Route::post('/api/webhooks/paperfly/dm/{method}', [WebhookController::class, 'paperfly'])->name('api.webhooks.paperfly');
 Route::post('/api/webhooks/redx/dm/{method}', [WebhookController::class, 'redx'])->name('api.webhooks.redx');
+Route::post('/api/webhooks/sms/amarsms', [\App\Http\Controllers\SmsWebhookController::class, 'amarsms'])->name('api.webhooks.sms.amarsms');
+Route::post('/api/webhooks/sms/nishchit', [\App\Http\Controllers\SmsWebhookController::class, 'nishchit'])->name('api.webhooks.sms.nishchit');
 
 require __DIR__.'/auth.php';

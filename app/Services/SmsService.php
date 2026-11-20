@@ -6,13 +6,22 @@ use App\Models\Customer;
 use App\Models\Order;
 use App\Models\SmsDoNotSend;
 use App\Models\SmsLog;
+use App\Services\Sms\AmarSmsGateway;
+use App\Services\Sms\NishchitGateway;
+use App\Services\Sms\SmsGateway;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Crypt;
 
 /**
  * M12's one SMS sender. Every SMS the platform sends for a shop goes through
  * here: parts are priced, the prepaid balance is charged, marketing sends
  * honour the do-not-send list and the frequency cap, and every attempt is
  * written to sms_logs — the SMS Report's attribution is computed from them.
+ *
+ * Each shop sends through its OWN provider account (Settings → Marketing
+ * SMS): per-business keys marketing.{biz}.sms_provider / sms_mode /
+ * sms_sender_id / sms_api_key_enc. Demo mode only logs the send; Live mode
+ * calls the provider through a SmsGateway driver.
  */
 class SmsService
 {
@@ -114,16 +123,18 @@ class SmsService
         }
         if ($this->balance($biz) < $cost) {
             $row['status'] = 'failed';
+            $row['error'] = 'Not enough SMS balance';
 
             return SmsLog::create($row);
         }
 
-        // Driver: 'log' (local/demo — no gateway connected yet) marks the SMS
-        // sent. A real gateway driver is added when a provider is connected in
-        // Settings; until then a 'gateway' setting without credentials fails safe.
-        $driver = (string) $this->settings->get('marketing.sms_driver', 'log');
-        if ($driver === 'gateway' && ! $this->settings->get('marketing.gateway_api_key')) {
+        $dispatch = $this->dispatch($biz, $phone, $body);
+        $row['provider'] = $dispatch['provider'];
+        $row['provider_message_id'] = $dispatch['provider_message_id'];
+        $row['provider_response'] = $dispatch['response'];
+        if (! $dispatch['ok']) {
             $row['status'] = 'failed';
+            $row['error'] = $dispatch['error'] !== null ? mb_substr($dispatch['error'], 0, 250) : null;
 
             return SmsLog::create($row);
         }
@@ -133,6 +144,157 @@ class SmsService
         $row['cost'] = $cost;
 
         return SmsLog::create($row);
+    }
+
+    /**
+     * The shop's own SMS provider configuration. The API key is stored
+     * encrypted (sms_api_key_enc) with a plain 'set' marker (sms_api_key),
+     * the same pattern the gateway key used before it became per-seller.
+     *
+     * One-time fallback: before per-seller keys existed, the gateway key
+     * lived in the platform-global settings (marketing.gateway_api_key_enc).
+     * A shop that has not saved its own key yet keeps sending with the
+     * legacy global key until it saves one; new saves never write globally.
+     */
+    public function providerConfig(int $biz): array
+    {
+        $enc = (string) $this->setting($biz, 'sms_api_key_enc', '');
+        if ($enc === '') {
+            $enc = (string) $this->settings->get('marketing.gateway_api_key_enc', '');
+        }
+        $key = null;
+        if ($enc !== '') {
+            try {
+                $key = Crypt::decryptString($enc);
+            } catch (\Throwable) {
+                $key = null;
+            }
+        }
+
+        return [
+            'provider' => (string) $this->setting($biz, 'sms_provider', 'nishchit'),
+            'mode' => (string) $this->setting($biz, 'sms_mode', 'demo'),
+            'sender_id' => (string) $this->setting($biz, 'sms_sender_id', ''),
+            'api_key' => $key,
+            'has_key' => $key !== null && $key !== '',
+        ];
+    }
+
+    /** The gateway driver for a shop; a typed key wins over the saved one. */
+    public function gateway(int $biz, ?string $typedKey = null): ?SmsGateway
+    {
+        $cfg = $this->providerConfig($biz);
+        $key = $typedKey !== null && trim($typedKey) !== '' ? trim($typedKey) : (string) ($cfg['api_key'] ?? '');
+
+        return match ($cfg['provider']) {
+            'nishchit' => new NishchitGateway($key, $cfg['sender_id'] !== '' ? $cfg['sender_id'] : null),
+            'amarsms' => new AmarSmsGateway($key, $cfg['sender_id'] !== '' ? $cfg['sender_id'] : null),
+            default => null,
+        };
+    }
+
+    /**
+     * The shop's webhook signing secret for its provider account (stored
+     * encrypted as sms_webhook_secret_enc), or null when none is saved.
+     * The SMS webhook controller verifies delivery events against it.
+     */
+    public function webhookSecret(int $biz): ?string
+    {
+        $enc = (string) $this->setting($biz, 'sms_webhook_secret_enc', '');
+        if ($enc === '') {
+            return null;
+        }
+        try {
+            $secret = Crypt::decryptString($enc);
+        } catch (\Throwable) {
+            return null;
+        }
+
+        return $secret !== '' ? $secret : null;
+    }
+
+    /**
+     * Settings "Check connection": reads the provider account balance with
+     * the saved key (or the key typed into the form, which wins).
+     *
+     * @return array{ok: bool, balance: ?float, error: ?string}
+     */
+    public function testConnection(int $biz, ?string $typedKey = null): array
+    {
+        $cfg = $this->providerConfig($biz);
+        $key = $typedKey !== null && trim($typedKey) !== '' ? trim($typedKey) : $cfg['api_key'];
+        if (! $key) {
+            return ['ok' => false, 'balance' => null, 'error' => 'No API key saved yet'];
+        }
+        $gateway = $this->gateway($biz, $typedKey);
+        if (! $gateway) {
+            return ['ok' => false, 'balance' => null, 'error' => 'Unknown SMS provider'];
+        }
+        if (! $gateway->configured()) {
+            return ['ok' => false, 'balance' => null, 'error' => 'Gateway not configured'];
+        }
+        $balance = $gateway->balance();
+        if ($balance === null) {
+            return ['ok' => false, 'balance' => null, 'error' => 'Could not read the provider balance — check the API key'];
+        }
+
+        return ['ok' => true, 'balance' => $balance, 'error' => null];
+    }
+
+    /**
+     * Hand one SMS to the outside world. Demo mode: nothing leaves the app,
+     * the send is only logged (the long-standing local behaviour). Live mode:
+     * the shop's own provider account is called and its answer is mapped
+     * onto the log row.
+     *
+     * @return array{ok: bool, provider: ?string, provider_message_id: ?string, error: ?string, response: ?string}
+     */
+    private function dispatch(int $biz, string $phone, string $body): array
+    {
+        $cfg = $this->providerConfig($biz);
+        if ($cfg['mode'] !== 'live') {
+            return ['ok' => true, 'provider' => null, 'provider_message_id' => null, 'error' => null, 'response' => null];
+        }
+        if (! $cfg['has_key']) {
+            return ['ok' => false, 'provider' => $cfg['provider'], 'provider_message_id' => null, 'error' => 'SMS gateway API key not saved', 'response' => null];
+        }
+        $gateway = $this->gateway($biz);
+        if (! $gateway) {
+            return ['ok' => false, 'provider' => $cfg['provider'], 'provider_message_id' => null, 'error' => 'Unknown SMS provider', 'response' => null];
+        }
+        $result = $gateway->send($phone, $body, $cfg['sender_id'] !== '' ? $cfg['sender_id'] : null);
+        $response = $result['response'] ?? null;
+
+        return [
+            'ok' => (bool) $result['ok'],
+            'provider' => $cfg['provider'],
+            'provider_message_id' => $result['provider_message_id'] ?? null,
+            'error' => $result['error'] ?? null,
+            'response' => $response === null || is_string($response) ? $response : json_encode($response),
+        ];
+    }
+
+    /**
+     * Settings test SMS: one message through the shop's current mode,
+     * bypassing the frequency caps and the prepaid-balance charge (the
+     * seller is testing their own provider account), but still written to
+     * sms_logs like every send — source_type 'test', attached to no campaign.
+     */
+    public function sendTest(int $biz, string $phone, string $body): SmsLog
+    {
+        $phone = PhoneNormalizer::normalize($phone);
+        $dispatch = $this->dispatch($biz, $phone, $body);
+
+        return SmsLog::create([
+            'business_id' => $biz, 'phone' => $phone, 'customer_id' => null,
+            'source_type' => 'test', 'source_key' => 'settings', 'source_label' => 'Settings test SMS',
+            'ref' => null, 'body' => $body, 'parts' => $this->parts($body), 'cost' => 0,
+            'status' => $dispatch['ok'] ? 'sent' : 'failed',
+            'provider' => $dispatch['provider'],
+            'provider_message_id' => $dispatch['provider_message_id'],
+            'provider_response' => $dispatch['response'],
+            'error' => $dispatch['ok'] ? null : ($dispatch['error'] !== null ? mb_substr($dispatch['error'], 0, 250) : null),
+        ]);
     }
 
     /**

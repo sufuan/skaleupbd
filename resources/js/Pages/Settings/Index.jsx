@@ -227,30 +227,69 @@ function SourcesForm({ m2 }) {
 }
 
 function MarketingSmsForm({ ms }) {
-    const form = useForm({ rate: ms?.rate ?? 1.5, cap_day: ms?.cap_day ?? 1, cap_week: ms?.cap_week ?? 3, add_balance: '', driver: ms?.driver ?? 'log', gateway_provider: ms?.gateway_provider ?? '', gateway_sender: ms?.gateway_sender ?? '', gateway_api_key: '' });
-    useEffect(() => { form.setData({ rate: ms?.rate ?? 1.5, cap_day: ms?.cap_day ?? 1, cap_week: ms?.cap_week ?? 3, add_balance: '', driver: ms?.driver ?? 'log', gateway_provider: ms?.gateway_provider ?? '', gateway_sender: ms?.gateway_sender ?? '', gateway_api_key: '' }); }, [ms]);
+    const blank = { rate: ms?.rate ?? 1.5, cap_day: ms?.cap_day ?? 1, cap_week: ms?.cap_week ?? 3, add_balance: '', provider: ms?.provider ?? 'nishchit', mode: ms?.mode ?? 'demo', sender_id: ms?.sender_id ?? '', api_key: '', webhook_secret: '' };
+    const form = useForm(blank);
+    useEffect(() => { form.setData(blank); }, [ms]);
+    const [check, setCheck] = useState(null);
+    const runCheck = async () => {
+        setCheck({ busy: true });
+        const token = document.querySelector('meta[name="csrf-token"]')?.content || '';
+        try {
+            const res = await fetch('/settings/sms-check', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': token, 'X-Requested-With': 'XMLHttpRequest' }, body: JSON.stringify({ key: form.data.api_key || '' }) });
+            setCheck(await res.json());
+        } catch {
+            setCheck({ ok: false, error: t('Check failed — try again') });
+        }
+    };
+    const test = useForm({ phone: '', message: 'SkaleUp test SMS' });
     return (
-        <form className="card" style={{ marginTop: 16 }} onSubmit={(e) => { e.preventDefault(); form.post('/settings/marketing-sms', { preserveScroll: true }); }}>
-            <h3>{t('Marketing SMS')}</h3><div className="card-sub">{t('How campaign and automation SMS are priced and sent — the balance is prepaid and every SMS is charged from it')}</div>
-            <div className="frow"><label className="fl">{t('SMS Balance')}</label><div className="b">৳{Number(ms?.balance ?? 0).toLocaleString('en-IN')}</div></div>
-            <div className="frow"><label className="fl">{t('Add Balance (৳)')}</label><input className="inp" type="number" min="0" step="any" style={{ maxWidth: 200 }} value={form.data.add_balance} onChange={(e) => form.setData('add_balance', e.target.value)} placeholder="0" /></div>
-            <div className="frow"><label className="fl">{t('Rate per SMS part (৳)')}</label><input className="inp" type="number" min="0" step="any" style={{ maxWidth: 200 }} value={form.data.rate} onChange={(e) => form.setData('rate', e.target.value)} /></div>
-            <div className="frow"><label className="fl">{t('Frequency cap per customer')}</label>
-                <span style={{ display: 'inline-flex', gap: 8, alignItems: 'center' }}>
-                    <input className="inp" type="number" min="0" style={{ maxWidth: 90 }} value={form.data.cap_day} onChange={(e) => form.setData('cap_day', e.target.value)} /> {t('per day')} ·
-                    <input className="inp" type="number" min="0" style={{ maxWidth: 90 }} value={form.data.cap_week} onChange={(e) => form.setData('cap_week', e.target.value)} /> {t('per week')}
-                </span>
-                <div className="sm mut mt8">{t('Marketing SMS only — order news (thank-you, courier, delivered) is never capped')}</div></div>
-            <div className="frow"><label className="fl">{t('Sending mode')}</label>
-                <select className="inp" style={{ maxWidth: 300 }} value={form.data.driver} onChange={(e) => form.setData('driver', e.target.value)}>
-                    <option value="log">{t('Demo / log only (no gateway connected)')}</option>
-                    <option value="gateway">{t('SMS gateway (API)')}</option>
-                </select></div>
-            <div className="frow"><label className="fl">{t('Gateway provider')}</label><input className="inp" style={{ maxWidth: 300 }} value={form.data.gateway_provider} onChange={(e) => form.setData('gateway_provider', e.target.value)} placeholder="e.g. Greenweb / MIMSMS" /></div>
-            <div className="frow"><label className="fl">{t('Sender ID (masking name)')}</label><input className="inp" style={{ maxWidth: 300 }} value={form.data.gateway_sender} onChange={(e) => form.setData('gateway_sender', e.target.value)} /></div>
-            <div className="frow"><label className="fl">{t('Gateway API key')}</label><input className="inp" type="password" style={{ maxWidth: 300 }} value={form.data.gateway_api_key} onChange={(e) => form.setData('gateway_api_key', e.target.value)} placeholder={ms?.has_gateway_key ? t('Saved — leave blank to keep') : ''} /></div>
-            <div className="flex mt16"><span className="spacer" /><button className="btn pri" disabled={form.processing}>{t('Save Changes')}</button></div>
-        </form>
+        <>
+            <form className="card" style={{ marginTop: 16 }} onSubmit={(e) => { e.preventDefault(); form.post('/settings/marketing-sms', { preserveScroll: true, onSuccess: () => form.reset('api_key', 'webhook_secret') }); }}>
+                <h3>{t('Marketing SMS')}</h3><div className="card-sub">{t('How campaign and automation SMS are priced and sent — the balance is prepaid and every SMS is charged from it')}</div>
+                <div className="frow"><label className="fl">{t('SMS Balance')}</label><div className="b">৳{Number(ms?.balance ?? 0).toLocaleString('en-IN')}</div></div>
+                <div className="frow"><label className="fl">{t('Add Balance (৳)')}</label><input className="inp" type="number" min="0" step="any" style={{ maxWidth: 200 }} value={form.data.add_balance} onChange={(e) => form.setData('add_balance', e.target.value)} placeholder="0" /></div>
+                <div className="frow"><label className="fl">{t('Rate per SMS part (৳)')}</label><input className="inp" type="number" min="0" step="any" style={{ maxWidth: 200 }} value={form.data.rate} onChange={(e) => form.setData('rate', e.target.value)} /></div>
+                <div className="frow"><label className="fl">{t('Frequency cap per customer')}</label>
+                    <span style={{ display: 'inline-flex', gap: 8, alignItems: 'center' }}>
+                        <input className="inp" type="number" min="0" style={{ maxWidth: 90 }} value={form.data.cap_day} onChange={(e) => form.setData('cap_day', e.target.value)} /> {t('per day')} ·
+                        <input className="inp" type="number" min="0" style={{ maxWidth: 90 }} value={form.data.cap_week} onChange={(e) => form.setData('cap_week', e.target.value)} /> {t('per week')}
+                    </span>
+                    <div className="sm mut mt8">{t('Marketing SMS only — order news (thank-you, courier, delivered) is never capped')}</div></div>
+
+                <div className="b" style={{ marginTop: 16 }}>{t('SMS Provider')}</div>
+                <div className="sm mut">{t('Connect your own SMS provider account — in Live mode, SMS go out through your account')}</div>
+                <div className="frow"><label className="fl">{t('Status')}</label>
+                    {check && !check.busy
+                        ? (check.ok ? <span className="pill green">{t('Connected')}</span> : <span className="pill red">{t('Not connected')}</span>)
+                        : (ms?.has_key ? <span className="pill green">{t('Connected')}</span> : <span className="pill amber">{t('Not connected')}</span>)}
+                    <button type="button" className="btn" style={{ marginLeft: 10 }} disabled={check?.busy} onClick={runCheck}>{t('Check connection')}</button></div>
+                {check && !check.busy && (check.ok
+                    ? <div className="sm" style={{ color: '#16A34A' }}>{t('Provider balance')}: ৳{Number(check.balance ?? 0).toLocaleString('en-IN')}</div>
+                    : <div className="sm" style={{ color: '#DC2626' }}>{check.error}</div>)}
+                <div className="frow"><label className="fl">{t('SMS provider')}</label>
+                    <select className="inp" style={{ maxWidth: 300 }} value={form.data.provider} onChange={(e) => form.setData('provider', e.target.value)}>
+                        <option value="nishchit">Nishchit</option>
+                        <option value="amarsms">Amar SMS</option>
+                    </select></div>
+                <div className="frow"><label className="fl">{t('Mode')}</label>
+                    <select className="inp" style={{ maxWidth: 300 }} value={form.data.mode} onChange={(e) => form.setData('mode', e.target.value)}>
+                        <option value="demo">{t('Demo — logged only, no real SMS sent')}</option>
+                        <option value="live">{t('Live — real SMS via your provider')}</option>
+                    </select></div>
+                <div className="frow"><label className="fl">{t('Sender ID (masking name)')}</label><input className="inp" style={{ maxWidth: 300 }} value={form.data.sender_id} onChange={(e) => form.setData('sender_id', e.target.value)} /></div>
+                <div className="frow"><label className="fl">{t('API key')}</label><input className="inp" type="password" autoComplete="new-password" style={{ maxWidth: 300 }} value={form.data.api_key} onChange={(e) => form.setData('api_key', e.target.value)} placeholder={ms?.has_key ? t('Saved — leave blank to keep it') : ''} /></div>
+                <div className="frow"><label className="fl">{t('Webhook secret')}</label><input className="inp" type="password" autoComplete="new-password" style={{ maxWidth: 300 }} value={form.data.webhook_secret} onChange={(e) => form.setData('webhook_secret', e.target.value)} placeholder={ms?.has_webhook_secret ? t('Saved — leave blank to keep it') : ''} /></div>
+                <div className="flex mt16"><span className="spacer" /><button className="btn pri" disabled={form.processing}>{t('Save Changes')}</button></div>
+            </form>
+
+            <form className="card" style={{ marginTop: 16 }} onSubmit={(e) => { e.preventDefault(); test.post('/settings/sms-test', { preserveScroll: true }); }}>
+                <h3>{t('Send test SMS')}</h3>
+                <div className="card-sub">{t('Sends one SMS right now in the current mode — in Demo mode it is only logged, in Live mode your provider sends it for real')}</div>
+                <div className="frow"><label className="fl">{t('Phone number')}</label><input className="inp" style={{ maxWidth: 300 }} value={test.data.phone} onChange={(e) => test.setData('phone', e.target.value)} placeholder="01XXXXXXXXX" /></div>
+                <div className="frow"><label className="fl">{t('Message')}</label><input className="inp" style={{ maxWidth: 420 }} value={test.data.message} onChange={(e) => test.setData('message', e.target.value)} /></div>
+                <div className="flex mt16"><span className="spacer" /><button className="btn pri" disabled={test.processing}>{t('Send test SMS')}</button></div>
+            </form>
+        </>
     );
 }
 

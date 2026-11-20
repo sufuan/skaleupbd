@@ -56,6 +56,9 @@ const GUIDE = {
 
 const TYPE_LABELS = { PATHAO: 'Pathao', STEADFAST: 'Steadfast', REDX: 'RedX', CARRYBEE: 'Carrybee', PAPERFLY: 'Paperfly', ECOURIER: 'eCourier', BAHOK: 'Bahok', OTHERS: 'Manual (Other)' };
 
+/** Couriers with a test server their driver can be pointed at from Settings. */
+const SANDBOX_TYPES = ['PATHAO', 'CARRYBEE', 'REDX'];
+
 function MethodModal({ method, onClose }) {
     const isNew = !method?.id;
     const [type, setType] = useState(method?.courier_type || 'STEADFAST');
@@ -63,6 +66,7 @@ function MethodModal({ method, onClose }) {
     const [inside, setInside] = useState(method?.charge_inside_dhaka ?? 60);
     const [outside, setOutside] = useState(method?.charge_outside_dhaka ?? 120);
     const [note, setNote] = useState(method?.default_shipping_note || '');
+    const [sandbox, setSandbox] = useState(!!method?.sandbox);
     const [creds, setCreds] = useState(() => {
         const out = {};
         (FIELD_DEFS[method?.courier_type || 'STEADFAST'] || []).forEach(([key, , kind]) => {
@@ -87,6 +91,7 @@ function MethodModal({ method, onClose }) {
             charge_inside_dhaka: Number(inside) || 0,
             charge_outside_dhaka: Number(outside) || 0,
             default_shipping_note: note || null,
+            sandbox: SANDBOX_TYPES.includes(type) ? sandbox : false,
             credentials: Object.fromEntries((FIELD_DEFS[type] || []).map(([key, , kind]) => [
                 key, kind === 'check' ? (creds[key] ? 'yes' : 'no') : (creds[key] ?? ''),
             ])),
@@ -120,6 +125,13 @@ function MethodModal({ method, onClose }) {
                         )}
                     </div>
                 ))}
+                {SANDBOX_TYPES.includes(type) && (
+                    <div className="frow mt16"><label className="fl">{t('Sandbox / Test mode')}</label>
+                        <div className="flex">
+                            <button type="button" className={`switch ${sandbox ? 'on' : ''}`} aria-label="toggle sandbox" onClick={() => setSandbox(!sandbox)} />
+                            <span className="sm mut">{t("Uses the courier's test server. Bookings in test mode are not real parcels.")}</span>
+                        </div></div>
+                )}
                 {GUIDE[type] && <p className="sm mut" style={{ marginTop: 10 }}>{t(GUIDE[type])}</p>}
                 <div className="frow mt16"><label className="fl">{t('Inside Dhaka Charge')}</label>
                     <input className="inp" type="number" value={inside} onChange={(e) => setInside(e.target.value)} /></div>

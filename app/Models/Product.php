@@ -8,7 +8,7 @@ class Product extends Model
 {
     protected $guarded = [];
 
-    protected $casts = ['offer_starts_at' => 'date', 'offer_ends_at' => 'date'];
+    protected $casts = ['offer_starts_at' => 'date', 'offer_ends_at' => 'date', 'gallery' => 'array'];
 
     /** True while a campaign price exists and its window is open today. */
     public function offerActive(): bool
