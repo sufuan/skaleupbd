@@ -51,7 +51,7 @@ function Switch({ checked, onChange, label, hint }) {
     );
 }
 
-export default function ProductFields({ data, setData, categories = [], brands = [], businessName = '', forEdit = false, mode, setMode, variants, setVariants }) {
+export default function ProductFields({ data, setData, categories = [], brands = [], businessName = '', forEdit = false, mode, setMode, variants, setVariants, readiness = null }) {
     const [galleryUrl, setGalleryUrl] = useState('');
     const [newCategory, setNewCategory] = useState('');
     const profit = (parseFloat(data.price) || 0) - (parseFloat(data.cost) || 0);
@@ -112,6 +112,31 @@ export default function ProductFields({ data, setData, categories = [], brands =
                     {forEdit && (
                         <div className="text-sm text-muted-foreground">{t('Projected Profit')}: <b className="text-foreground">৳{profit.toFixed(2)}</b> · {t('Margin')}: <b className="text-foreground">{margin}%</b></div>
                     )}
+                </Section>
+
+                <Section title={t('Offer & AI')} desc={t('Campaign price the AI quotes while the offer runs, other names customers use, and this product’s own discount limit.')}>
+                    {readiness && (
+                        <div className="text-sm text-muted-foreground">{t('AI readiness')}: <b className="text-foreground">{readiness.score}%</b>{readiness.missing?.length > 0 && <> · {t('Missing')}: {readiness.missing.map((x) => t(x)).join(', ')}</>}</div>
+                    )}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <Field label={t('Offer Price')}>
+                            <input className={INPUT} type="number" step="0.01" placeholder="0.00" value={data.offer_price} onChange={(e) => setData('offer_price', e.target.value)} />
+                        </Field>
+                        <Field label={t('Offer Starts')}>
+                            <input className={INPUT} type="date" value={data.offer_starts_at} onChange={(e) => setData('offer_starts_at', e.target.value)} />
+                        </Field>
+                        <Field label={t('Offer Ends')}>
+                            <input className={INPUT} type="date" value={data.offer_ends_at} onChange={(e) => setData('offer_ends_at', e.target.value)} />
+                        </Field>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <Field label={t('Other Names (comma separated)')}>
+                            <input className={INPUT} type="text" placeholder={t('e.g. sada panjabi, eid panjabi')} value={data.aliases} onChange={(e) => setData('aliases', e.target.value)} />
+                        </Field>
+                        <Field label={t('Max Discount % for this product')}>
+                            <input className={INPUT} type="number" min="0" max="90" placeholder={t('Shop default')} value={data.max_discount_pct} onChange={(e) => setData('max_discount_pct', e.target.value)} />
+                        </Field>
+                    </div>
                 </Section>
 
                 <Section title={t('Inventory')} desc={t('Configure stock counts, alerts, and tracking switches.')}>

@@ -261,6 +261,7 @@ Route::middleware(['auth', 'verified', 'totp'])->group(function () {
     Route::post('/settings/ai-negotiation', [SettingsController::class, 'updateAiNegotiation'])->name('settings.aiNegotiation');
     Route::post('/settings/ai-talker', [SettingsController::class, 'updateAiTalker'])->name('settings.aiTalker');
     Route::post('/settings/ai-talker/test', [SettingsController::class, 'testAiTalker'])->name('settings.aiTalker.test');
+    Route::post('/settings/ai-behavior', [SettingsController::class, 'updateAiBehavior'])->name('settings.aiBehavior');
     Route::post('/settings/ai-knowledge', [SettingsController::class, 'storeKnowledge'])->name('settings.aiKnowledge.store');
     Route::patch('/settings/ai-knowledge/{entry}', [SettingsController::class, 'updateKnowledge'])->name('settings.aiKnowledge.update');
     Route::delete('/settings/ai-knowledge/{entry}', [SettingsController::class, 'deleteKnowledge'])->name('settings.aiKnowledge.destroy');

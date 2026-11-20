@@ -38,6 +38,7 @@ class SettingsController extends Controller
                     ->map(fn ($r) => ['id' => $r->id, 'name' => $r->name, 'trigger_type' => $r->trigger_type, 'match_text' => $r->match_text, 'action' => $r->action, 'reply_template' => $r->reply_template, 'channel' => $r->channel, 'active' => (bool) $r->active])->all(),
                 'autonomy' => app(\App\Services\RuleBrainService::class)->autonomy(),
                 'talker' => app(\App\Services\AiTalkerService::class)->config(),
+                'behavior' => (array) $this->settings->get('ai.behavior', []),
                 'working_hours' => (string) $this->settings->get('ai.working_hours', 'সকাল 9টা — রাত 11টা'),
                 'negotiation' => app(\App\Services\NegotiationService::class)->config(),
                 'knowledge' => \App\Models\KnowledgeEntry::where('business_id', $biz)->orderBy('id')->get(['id', 'title', 'body'])->all(),
@@ -430,8 +431,12 @@ class SettingsController extends Controller
 
     public function testAiTalker(Request $request): \Illuminate\Http\JsonResponse
     {
-        $data = $request->validate(['provider' => ['required', 'string', 'in:gemini,claude']]);
-        $result = app(\App\Services\AiTalkerService::class)->testConnection($data['provider']);
+        $data = $request->validate([
+            'provider' => ['required', 'string', 'in:gemini,claude'],
+            'key' => ['nullable', 'string', 'max:300'],
+        ]);
+        // A key typed into the form is tested as typed; blank tests the saved one.
+        $result = app(\App\Services\AiTalkerService::class)->testConnection($data['provider'], $data['key'] ?? null);
 
         return response()->json($result);
     }
@@ -446,6 +451,19 @@ class SettingsController extends Controller
         $this->setLogged($request, 'ai.negotiation', $data);
 
         return back()->with('success', 'Negotiation settings saved');
+    }
+
+    public function updateAiBehavior(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'angry_holding' => ['required', 'boolean'],
+            'honorific' => ['required', 'string', 'in:apu,bhaiya,none'],
+            'daily_llm_cap' => ['required', 'integer', 'min:0', 'max:100000'],
+            'debounce_seconds' => ['required', 'integer', 'min:0', 'max:60'],
+        ]);
+        $this->setLogged($request, 'ai.behavior', $data);
+
+        return back()->with('success', 'AI behaviour settings saved');
     }
 
     public function storeKnowledge(Request $request): RedirectResponse

@@ -63,6 +63,7 @@ export default function Products({ products, summary, inactive, combos, wraps, s
                                     <div className="min-w-0 space-y-1">
                                         <div className="block max-w-[260px] truncate font-medium">{p.name}</div>
                                         {p.featured && <span className="text-[11px] text-amber-600">★ {t('Featured')}</span>}
+                                        {typeof p.ai_score === 'number' && <span className={`block text-[11px] ${p.ai_score >= 80 ? 'text-emerald-600' : p.ai_score >= 50 ? 'text-amber-600' : 'text-red-500'}`}>{t('AI ready')} {p.ai_score}%</span>}
                                     </div>
                                 </div>
                             </td>
@@ -311,7 +312,7 @@ function EditModal({ product, categories, brands, close }) {
     const { data, setData, post, processing, errors } = useForm({
         _method: 'PATCH',
         name: product.name, sku: product.sku, price: product.price, cost: product.cost || '',
-        original_price: product.original_price || '', stock_qty: product.stock_qty, alert_qty: product.alert_qty,
+        original_price: product.original_price || '', offer_price: product.offer_price || '', offer_starts_at: product.offer_starts_at || '', offer_ends_at: product.offer_ends_at || '', aliases: product.aliases || '', max_discount_pct: product.max_discount_pct ?? '', stock_qty: product.stock_qty, alert_qty: product.alert_qty,
         manage_stock: product.manage_stock, featured: product.featured, is_active: product.is_active,
         type: product.type, category_id: product.category_id || '', brand_id: product.brand_id || '',
         weight: product.weight || '', weight_unit: product.weight_unit || 'kg',
@@ -334,7 +335,7 @@ function EditModal({ product, categories, brands, close }) {
                             {Object.values(errors)[0]}
                         </div>
                     )}
-                    <ProductFields data={data} setData={setData} categories={categories} brands={brands} forEdit />
+                    <ProductFields data={data} setData={setData} categories={categories} brands={brands} forEdit readiness={{ score: product.ai_score, missing: product.ai_missing }} />
                     <div className="flex items-center justify-end gap-2 mt-5">
                         <button type="button" className={BTN_OUTLINE} onClick={close}>{t('Cancel')}</button>
                         <button type="submit" className={BTN_PRIMARY} disabled={processing}>{t('Save Changes')}</button>

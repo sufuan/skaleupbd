@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AiActivity;
 use App\Models\Business;
+use App\Models\ChatMessage;
 use App\Models\Comment;
 use App\Models\Conversation;
 use App\Services\MetaGraphService;
@@ -87,23 +89,146 @@ class MetaWebhookController extends Controller
     private function handleMessagingEvent(string $channel, array $event): void
     {
         $message = (array) ($event['message'] ?? []);
+        $mid = (string) ($message['mid'] ?? '');
         if (! empty($message['is_echo'])) {
-            return; // our own sends coming back
+            $this->handleEcho($channel, $event, $message, $mid);
+
+            return;
         }
-        $text = trim((string) ($message['text'] ?? ''));
         $senderId = (string) ($event['sender']['id'] ?? '');
-        if ($text === '' || $senderId === '') {
-            return; // deliveries, reads, reactions, media-only — not handled yet
+        if ($senderId === '') {
+            return; // deliveries, reads, reactions — nothing to store
         }
         $biz = $this->businessId();
+        if ($mid !== '' && ChatMessage::where('business_id', $biz)->where('external_id', $mid)->exists()) {
+            return; // Meta redelivered this event — it was processed once already
+        }
+        $text = trim((string) ($message['text'] ?? ''));
+        // A quick-reply tap carries a payload — translate ours into the
+        // words the brain already understands (the tap also echoes the
+        // button title as text, but the payload is the certain signal).
+        $qrPayload = (string) ($message['quick_reply']['payload'] ?? '');
+        if ($qrPayload === 'IMG_CONFIRM_YES') {
+            $text = 'হ্যাঁ';
+        } elseif ($qrPayload === 'IMG_CONFIRM_NO') {
+            $text = 'না';
+        }
+        $attachment = null;
+        $first = (array) (((array) ($message['attachments'] ?? []))[0] ?? []);
+        if (! empty($first)) {
+            $attachment = [
+                'type' => (string) ($first['type'] ?? 'file'),
+                'path' => null,
+                'meta' => array_filter([
+                    'url' => (string) ($first['payload']['url'] ?? ''),
+                    'sticker_id' => $first['payload']['sticker_id'] ?? null,
+                ]),
+            ];
+        }
+        if ($text === '' && $attachment === null) {
+            return;
+        }
         $conv = Conversation::firstOrCreate(
             ['business_id' => $biz, 'channel' => $channel, 'external_id' => $senderId],
             ['customer_name' => $this->graph->senderName($channel, $senderId) ?? 'Messenger user'],
         );
-        $reply = $this->brain->handleIncoming($conv, $text);
+        // An ad/post referral can name the product outright (ref=product:ID).
+        $referral = $event['referral'] ?? ($event['postback']['referral'] ?? null);
+        if (is_array($referral) && !$conv->product_id && preg_match('/product[:=](\d+)/', (string) ($referral['ref'] ?? ''), $mm)) {
+            $refProduct = \App\Models\Product::where('business_id', $biz)->find((int) $mm[1]);
+            if ($refProduct) {
+                $conv->product_id = $refProduct->id;
+                $conv->focus_at = now();
+                $conv->save();
+            }
+        }
+        $opts = [
+            'external_id' => $mid !== '' ? $mid : null,
+            'attachment' => $attachment,
+            'referral' => $referral,
+        ];
+        if ($this->debounceSeconds() > 0) {
+            // Store now; the whole burst is answered once, after a quiet window.
+            $storedMsg = $this->brain->storeIncoming($conv, $text, $opts);
+            if (($attachment['type'] ?? null) === 'image') {
+                \App\Jobs\ProcessMediaMessageJob::dispatch($storedMsg->id);
+            }
+            if (in_array($attachment['type'] ?? null, ['audio', 'voice'], true)) {
+                \App\Jobs\ProcessVoiceMessageJob::dispatch($storedMsg->id);
+            }
+            \App\Jobs\ProcessAiReplyJob::dispatch($conv->id)->delay(now()->addSeconds($this->debounceSeconds()));
+
+            return;
+        }
+        $reply = $this->brain->handleIncoming($conv, $text, $opts);
         if ($reply) {
             $this->graph->dispatch($reply);
         }
+        if (in_array($attachment['type'] ?? null, ['image', 'audio', 'voice'], true) && $mid !== '') {
+            $stored = ChatMessage::where('business_id', $biz)->where('external_id', $mid)->first();
+            if ($stored) {
+                if (($attachment['type'] ?? null) === 'image') {
+                    \App\Jobs\ProcessMediaMessageJob::dispatch($stored->id);
+                } else {
+                    \App\Jobs\ProcessVoiceMessageJob::dispatch($stored->id);
+                }
+            }
+        }
+    }
+
+    private function debounceSeconds(): int
+    {
+        $behavior = (array) $this->settings->get('ai.behavior', []);
+
+        return max(0, (int) ($behavior['debounce_seconds'] ?? 0));
+    }
+
+    /**
+     * An echo is a message the Page sent. If it is one of ours (sent by this
+     * app, or a message id we recorded when sending) it is ignored. Anything
+     * else is a human replying from the Facebook app / Business Suite:
+     * record it as a staff message and pause the AI on that conversation,
+     * so a human and the AI never answer the same customer at once.
+     */
+    private function handleEcho(string $channel, array $event, array $message, string $mid): void
+    {
+        $biz = $this->businessId();
+        $appId = (string) ($message['app_id'] ?? '');
+        $ourApp = (string) $this->settings->get('meta.app_id', '');
+        if ($appId !== '' && $ourApp !== '' && $appId === $ourApp) {
+            return;
+        }
+        if ($mid !== '' && ChatMessage::where('business_id', $biz)->where('external_id', $mid)->exists()) {
+            return; // our own recorded send coming back
+        }
+        $customerId = (string) ($event['recipient']['id'] ?? '');
+        $text = trim((string) ($message['text'] ?? ''));
+        if ($customerId === '' || $text === '') {
+            return;
+        }
+        $conv = Conversation::where('business_id', $biz)->where('channel', $channel)->where('external_id', $customerId)->first();
+        if (! $conv) {
+            return;
+        }
+        ChatMessage::create([
+            'business_id' => $biz,
+            'conversation_id' => $conv->id,
+            'direction' => 'out',
+            'sender' => 'staff',
+            'body' => $text,
+            'status' => 'sent',
+            'external_id' => $mid !== '' ? $mid : null,
+        ]);
+        $conv->ai_paused = true;
+        $conv->last_message_at = now();
+        $conv->save();
+        AiActivity::create([
+            'business_id' => $biz,
+            'action' => 'human_takeover',
+            'detail' => $conv->customer_name . ' — staff replied from Facebook; AI paused',
+            'conversation_id' => $conv->id,
+            'source' => 'echo',
+        ]);
     }
 
     private function handleWhatsApp(array $payload): void
@@ -117,12 +242,31 @@ class MetaWebhookController extends Controller
                     $names[(string) ($contact['wa_id'] ?? '')] = (string) ($contact['profile']['name'] ?? '');
                 }
                 foreach ((array) ($value['messages'] ?? []) as $msg) {
-                    if (($msg['type'] ?? '') !== 'text') {
+                    $from = (string) ($msg['from'] ?? '');
+                    if ($from === '') {
                         continue;
                     }
-                    $from = (string) ($msg['from'] ?? '');
-                    $text = trim((string) ($msg['text']['body'] ?? ''));
-                    if ($from === '' || $text === '') {
+                    $waId = (string) ($msg['id'] ?? '');
+                    if ($waId !== '' && ChatMessage::where('business_id', $biz)->where('external_id', $waId)->exists()) {
+                        continue; // redelivery — processed once already
+                    }
+                    $type = (string) ($msg['type'] ?? 'text');
+                    $text = '';
+                    $attachment = null;
+                    if ($type === 'text') {
+                        $text = trim((string) ($msg['text']['body'] ?? ''));
+                    } elseif (in_array($type, ['image', 'audio', 'video', 'document', 'sticker'], true)) {
+                        $media = (array) ($msg[$type] ?? []);
+                        $text = trim((string) ($media['caption'] ?? ''));
+                        $attachment = [
+                            'type' => $type,
+                            'path' => null,
+                            'meta' => array_filter(['media_id' => (string) ($media['id'] ?? ''), 'mime' => (string) ($media['mime_type'] ?? '')]),
+                        ];
+                    } else {
+                        continue;
+                    }
+                    if ($text === '' && $attachment === null) {
                         continue;
                     }
                     $conv = Conversation::firstOrCreate(
@@ -132,9 +276,34 @@ class MetaWebhookController extends Controller
                     if (! $conv->customer_phone) {
                         $conv->update(['customer_phone' => '+' . $from]);
                     }
-                    $reply = $this->brain->handleIncoming($conv, $text);
+                    $waOpts = [
+                        'external_id' => $waId !== '' ? $waId : null,
+                        'attachment' => $attachment,
+                    ];
+                    if ($this->debounceSeconds() > 0) {
+                        $storedMsg = $this->brain->storeIncoming($conv, $text, $waOpts);
+                        if (($attachment['type'] ?? null) === 'image') {
+                            \App\Jobs\ProcessMediaMessageJob::dispatch($storedMsg->id);
+                        }
+                        if (in_array($attachment['type'] ?? null, ['audio', 'voice'], true)) {
+                            \App\Jobs\ProcessVoiceMessageJob::dispatch($storedMsg->id);
+                        }
+                        \App\Jobs\ProcessAiReplyJob::dispatch($conv->id)->delay(now()->addSeconds($this->debounceSeconds()));
+                        continue;
+                    }
+                    $reply = $this->brain->handleIncoming($conv, $text, $waOpts);
                     if ($reply) {
                         $this->graph->dispatch($reply);
+                    }
+                    if (in_array($attachment['type'] ?? null, ['image', 'audio', 'voice'], true) && $waId !== '') {
+                        $stored = ChatMessage::where('business_id', $biz)->where('external_id', $waId)->first();
+                        if ($stored) {
+                            if (($attachment['type'] ?? null) === 'image') {
+                                \App\Jobs\ProcessMediaMessageJob::dispatch($stored->id);
+                            } else {
+                                \App\Jobs\ProcessVoiceMessageJob::dispatch($stored->id);
+                            }
+                        }
                     }
                 }
             }

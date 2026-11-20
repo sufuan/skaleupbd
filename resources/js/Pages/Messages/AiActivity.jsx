@@ -8,7 +8,10 @@ import { t } from '@/lib/i18n';
 const CH = { facebook: 'Messenger', whatsapp: 'WhatsApp', instagram: 'Instagram' };
 const PILL = (bg, tx) => ({ display: 'inline-block', fontSize: 11, fontWeight: 700, borderRadius: 99, padding: '2px 9px', background: bg, color: tx });
 
-export default function AiActivity({ stats, draftQueue, handed, ruleStats, feed }) {
+export default function AiActivity({ stats, metrics, draftQueue, handed, ruleStats, feed }) {
+    const MINI = ({ v, label }) => (
+        <div><div style={{ fontSize: 20, fontWeight: 700 }}>{v}</div><div style={{ fontSize: 12, color: '#64748B' }}>{label}</div></div>
+    );
     return (
         <AppLayout title={t('AI Activity')}>
             <div className="msg-pg">
@@ -21,6 +24,22 @@ export default function AiActivity({ stats, draftQueue, handed, ruleStats, feed 
                     <div className="card kpi"><div className="val">{stats.drafts_waiting}</div><div className="sub">{t('Drafts waiting for you')}</div></div>
                     <div className="card kpi"><div className="val">{stats.handed}</div><div className="sub">{t('Handed to human')}</div></div>
                 </div>
+
+                {metrics && (
+                    <div className="card" style={{ marginBottom: 18 }}>
+                        <h4 style={{ fontSize: 15, marginBottom: 10 }}>{t('Last 7 days — how the AI is doing')}</h4>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(120px,1fr))', gap: 12 }}>
+                            <MINI v={metrics.auto_sent} label={t('Auto-sent')} />
+                            <MINI v={metrics.drafts} label={t('Drafts made')} />
+                            <MINI v={metrics.flagged} label={t('Flagged by the money guard')} />
+                            <MINI v={metrics.handed} label={t('Handed to human')} />
+                            <MINI v={metrics.auto_rate === null ? '—' : metrics.auto_rate + '%'} label={t('Auto-send rate')} />
+                            <MINI v={metrics.talker_share === null ? '—' : metrics.talker_share + '%'} label={t('Model-phrased')} />
+                            <MINI v={metrics.avg_latency_s === null ? '—' : metrics.avg_latency_s + 's'} label={t('Avg answer time')} />
+                        </div>
+                        <div style={{ fontSize: 12, color: '#94A3B8', marginTop: 8 }}>{t('Counted from the AI activity log of the last 7 days.')}</div>
+                    </div>
+                )}
 
                 <h4 style={{ fontSize: 15, marginBottom: 10 }}>{t('Draft queue — waiting for your approval')}</h4>
                 {draftQueue.map((d) => (

@@ -10,7 +10,7 @@ class Conversation extends Model
 {
     protected $guarded = [];
 
-    protected $casts = ['last_message_at' => 'datetime', 'ai_paused' => 'boolean', 'needs_human' => 'boolean'];
+    protected $casts = ['last_message_at' => 'datetime', 'ai_paused' => 'boolean', 'needs_human' => 'boolean', 'state_data' => 'array', 'focus_at' => 'datetime'];
 
     public function messages(): HasMany
     {

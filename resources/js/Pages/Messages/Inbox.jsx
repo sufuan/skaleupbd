@@ -138,7 +138,15 @@ export default function Inbox({ conversations, selected, report, aiMode, aiPanic
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: 9, padding: '12px 2px', minHeight: 300 }}>
                                     {selected.messages.map((m) => (
                                         <div key={m.id} style={{ display: 'contents' }}>
-                                            <div style={m.direction === 'in' ? BUB_C : BUB_B}>{m.body}</div>
+                                            <div style={m.direction === 'in' ? BUB_C : BUB_B}>
+                                                {m.attachment_type === 'image' && m.attachment_path && (
+                                                    <img src={'/storage/' + m.attachment_path} alt="" style={{ maxWidth: 220, borderRadius: 8, display: 'block', marginBottom: m.body ? 6 : 0 }} />
+                                                )}
+                                                {(m.attachment_type === 'audio' || m.attachment_type === 'voice') && (
+                                                    <div style={{ fontSize: 12.5, opacity: 0.85, marginBottom: m.body ? 4 : 0 }}>{t('Voice message')}{m.transcript ? ' — ' + m.transcript : ''}</div>
+                                                )}
+                                                {m.body ? <div>{m.body}</div> : null}
+                                            </div>
                                             {m.direction === 'out' && m.sender === 'ai' && m.rule && (
                                                 <div style={CAP}>{t('Rule')}: {m.rule} · <Link href="/settings?group=ai" style={{ color: '#92400e', fontWeight: 700 }}>{t('Settings')}</Link></div>
                                             )}

@@ -77,6 +77,9 @@ class MessagesController extends Controller
                 'orders' => $orders->map(fn ($o) => ['invoice' => $o->invoice_no, 'status' => $o->status, 'total' => (float) $o->grand_total])->all(),
                 'messages' => $sent->map(fn ($m) => [
                     'id' => $m->id, 'direction' => $m->direction, 'sender' => $m->sender, 'body' => $m->body,
+                    'attachment_type' => $m->attachment_type,
+                    'attachment_path' => $m->attachment_path,
+                    'transcript' => $m->meta['transcript'] ?? null,
                     'rule' => $m->ai_rule_id ? \App\Models\AiRule::find($m->ai_rule_id)?->name : null,
                     'time' => $m->created_at?->format('h:i A'),
                 ])->values()->all(),
@@ -174,7 +177,7 @@ class MessagesController extends Controller
                     'source' => $source,
                     'status' => 'Pending',
                     'delivery_charge' => 60,
-                    'items' => [['product_id' => $product->id, 'qty' => 1, 'price' => isset($message->meta['unit_price']) ? (float) $message->meta['unit_price'] : null]],
+                    'items' => [['product_id' => $product->id, 'qty' => 1, 'price' => isset($message->meta['unit_price']) ? (float) $message->meta['unit_price'] : null, 'variant_name' => $message->meta['variant_name'] ?? null]],
                 ], $request->user(), 'Chat order intake');
 
                 return back()->with('success', 'Order created from chat');
@@ -231,13 +234,45 @@ class MessagesController extends Controller
             ])->all();
 
         $handed = Conversation::where('business_id', $biz)->where('needs_human', true)->get()
-            ->map(fn ($c) => [
+            ->map(function ($c) use ($biz) {
+                // The reason comes from the handover record itself — guessing
+                // it from the negotiation state blamed the wrong cause.
+                $last = AiActivity::where('business_id', $biz)->where('conversation_id', $c->id)
+                    ->whereIn('action', ['handed_human', 'human_takeover', 'image_rejected', 'image_no_match', 'voice_to_human'])
+                    ->latest('id')->first();
+                $reason = 'Customer-এর উত্তরে মানুষ দরকার';
+                if ($last && $last->detail) {
+                    $reason = trim((string) preg_replace('/^.*?—\s*/u', '', (string) $last->detail)) ?: $reason;
+                }
+
+                return [
                 'id' => $c->id, 'customer' => $c->customer_name, 'channel' => $c->channel,
-                'reason' => $c->neg_offer !== null ? 'দাম floor-এ পৌঁছেছে' : 'Customer-এর উত্তরে মানুষ দরকার',
+                'reason' => $reason,
                 'last' => ChatMessage::where('conversation_id', $c->id)->where('direction', 'in')->latest('id')->first()?->body,
-            ])->all();
+                ];
+            })->all();
+
+        // Last 7 days, from the activity log the brief implementation now
+        // enriches with source + latency (brief §3.13).
+        $since = now()->subDays(7);
+        $acts = fn () => AiActivity::where('business_id', $biz)->where('created_at', '>=', $since);
+        $autoSent = $acts()->where('action', 'auto_sent')->count();
+        $draftMade = $acts()->where('action', 'draft_created')->count();
+        $replyRows = $acts()->whereIn('action', ['auto_sent', 'draft_created'])->whereNotNull('source')->count();
+        $talkerRows = $acts()->whereIn('action', ['auto_sent', 'draft_created'])->where('source', 'talker')->count();
+        $avgLatency = $acts()->whereNotNull('latency_ms')->avg('latency_ms');
+        $metrics = [
+            'auto_sent' => $autoSent,
+            'drafts' => $draftMade,
+            'flagged' => ChatMessage::where('business_id', $biz)->where('sender', 'ai')->where('status', 'flagged')->where('created_at', '>=', $since)->count(),
+            'handed' => $acts()->whereIn('action', ['handed_human', 'human_takeover'])->count(),
+            'auto_rate' => ($autoSent + $draftMade) > 0 ? (int) round($autoSent / ($autoSent + $draftMade) * 100) : null,
+            'talker_share' => $replyRows > 0 ? (int) round($talkerRows / $replyRows * 100) : null,
+            'avg_latency_s' => $avgLatency ? round($avgLatency / 1000, 1) : null,
+        ];
 
         return Inertia::render('Messages/AiActivity', [
+            'metrics' => $metrics,
             'stats' => [
                 'ai_replies_today' => ChatMessage::where('business_id', $biz)->where('sender', 'ai')->whereDate('created_at', today())->count()
                     + \App\Models\CommentReply::where('business_id', $biz)->where('sender', 'ai')->whereDate('created_at', today())->count(),

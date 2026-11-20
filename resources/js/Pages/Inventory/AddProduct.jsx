@@ -5,7 +5,7 @@ import ProductFields, { BTN_OUTLINE, BTN_PRIMARY } from './ProductFields';
 
 export default function AddProduct({ categories, brands, businessName }) {
     const { data, setData, post, processing, errors } = useForm({
-        name: '', sku: '', price: '', cost: '', original_price: '', stock_qty: 0, alert_qty: 5,
+        name: '', sku: '', price: '', cost: '', original_price: '', offer_price: '', offer_starts_at: '', offer_ends_at: '', aliases: '', max_discount_pct: '', stock_qty: 0, alert_qty: 5,
         manage_stock: true, featured: false, is_active: true, type: 'single',
         category_id: '', brand_id: '', weight: '', weight_unit: 'kg',
         short_description: '', long_description: '', shipping_note: '', admin_note: '',

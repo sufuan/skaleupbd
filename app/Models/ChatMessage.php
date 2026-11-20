@@ -9,7 +9,7 @@ class ChatMessage extends Model
 {
     protected $guarded = [];
 
-    protected $casts = ['meta' => 'array'];
+    protected $casts = ['meta' => 'array', 'attachment_meta' => 'array'];
 
     public function conversation(): BelongsTo
     {

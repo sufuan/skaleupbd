@@ -64,13 +64,18 @@ class MetaGraphService
         if (! $conv || ! $conv->external_id) {
             return [true, null]; // not a live channel conversation
         }
-        [$ok, $error] = $this->sendText($conv, (string) $msg->body);
+        [$ok, $error, $sentId] = $this->sendText($conv, (string) $msg->body);
         $meta = (array) ($msg->meta ?? []);
         $meta['send_status'] = $ok ? 'delivered_to_meta' : 'failed';
         if ($error) {
             $meta['send_error'] = $error;
         }
         $msg->meta = $meta;
+        if ($ok && $sentId) {
+            // Remember Meta's id for this send — when the echo comes back
+            // we can tell our own message apart from a human's.
+            $msg->external_id = $sentId;
+        }
         $msg->save();
         if (! $ok) {
             Log::warning('Meta send failed', ['message_id' => $msg->id, 'error' => $error]);
@@ -79,12 +84,12 @@ class MetaGraphService
         return [$ok, $error];
     }
 
-    /** @return array{0: bool, 1: ?string} */
+    /** @return array{0: bool, 1: ?string, 2: ?string} ok, error, Meta message id */
     public function sendText(Conversation $conv, string $text): array
     {
         $cfg = $this->channelConfig($conv->channel);
         if (empty($cfg['token']) || empty($cfg['account_id'])) {
-            return [false, 'Channel is not connected in Settings'];
+            return [false, 'Channel is not connected in Settings', null];
         }
         try {
             if ($conv->channel === 'whatsapp') {
@@ -105,13 +110,86 @@ class MetaGraphService
                 ]);
             }
             if ($res->successful()) {
-                return [true, null];
+                $mid = $conv->channel === 'whatsapp'
+                    ? (string) ($res->json('messages.0.id') ?? '')
+                    : (string) ($res->json('message_id') ?? '');
+
+                return [true, null, $mid !== '' ? $mid : null];
             }
 
-            return [false, (string) ($res->json('error.message') ?? ('HTTP ' . $res->status()))];
+            return [false, (string) ($res->json('error.message') ?? ('HTTP ' . $res->status())), null];
         } catch (\Throwable $e) {
-            return [false, $e->getMessage()];
+            return [false, $e->getMessage(), null];
         }
+    }
+
+    /**
+     * Send a message with Messenger/Instagram quick-reply buttons.
+     * $options: list of ['title' => ..., 'payload' => ...] (max 13, title ≤ 20 chars).
+     *
+     * @return array{0: bool, 1: ?string, 2: ?string} ok, error, Meta message id
+     */
+    public function sendQuickReplies(Conversation $conv, string $text, array $options): array
+    {
+        $cfg = $this->channelConfig($conv->channel);
+        if (empty($cfg['token']) || empty($cfg['account_id'])) {
+            return [false, 'Channel is not connected in Settings', null];
+        }
+        if ($conv->channel === 'whatsapp') {
+            // WhatsApp has no quick replies in this shape — plain text.
+            return $this->sendText($conv, $text);
+        }
+        try {
+            $quick = [];
+            foreach (array_slice($options, 0, 13) as $o) {
+                $quick[] = ['content_type' => 'text', 'title' => mb_substr((string) ($o['title'] ?? ''), 0, 20), 'payload' => (string) ($o['payload'] ?? '')];
+            }
+            $res = Http::timeout(12)->post(self::API . "/{$cfg['account_id']}/messages?access_token=" . urlencode($cfg['token']), [
+                'recipient' => ['id' => $conv->external_id],
+                'messaging_type' => 'RESPONSE',
+                'message' => ['text' => $text, 'quick_replies' => $quick],
+            ]);
+            if ($res->successful()) {
+                $mid = (string) ($res->json('message_id') ?? '');
+
+                return [true, null, $mid !== '' ? $mid : null];
+            }
+
+            return [false, (string) ($res->json('error.message') ?? ('HTTP ' . $res->status())), null];
+        } catch (\Throwable $e) {
+            return [false, $e->getMessage(), null];
+        }
+    }
+
+    /** dispatch() twin for quick-reply messages: same gating and bookkeeping. */
+    public function dispatchQuickReplies(ChatMessage $msg, array $options): array
+    {
+        if ($msg->direction !== 'out' || $msg->status !== 'sent') {
+            return [true, null];
+        }
+        $conv = $msg->conversation ?? Conversation::find($msg->conversation_id);
+        if (! $conv || ! $conv->external_id) {
+            return [true, null]; // not a live channel conversation
+        }
+        if ($conv->channel === 'whatsapp') {
+            return $this->dispatch($msg);
+        }
+        [$ok, $error, $sentId] = $this->sendQuickReplies($conv, (string) $msg->body, $options);
+        $meta = (array) ($msg->meta ?? []);
+        $meta['send_status'] = $ok ? 'delivered_to_meta' : 'failed';
+        if ($error) {
+            $meta['send_error'] = $error;
+        }
+        $msg->meta = $meta;
+        if ($ok && $sentId) {
+            $msg->external_id = $sentId;
+        }
+        $msg->save();
+        if (! $ok) {
+            Log::warning('Meta quick-reply send failed', ['message_id' => $msg->id, 'error' => $error]);
+        }
+
+        return [$ok, $error];
     }
 
     /** Public reply under a Facebook/Instagram comment. */
@@ -222,6 +300,37 @@ class MetaGraphService
             return ['ok' => false, 'detail' => (string) ($res->json('error.message') ?? ('HTTP ' . $res->status()))];
         } catch (\Throwable $e) {
             return ['ok' => false, 'detail' => $e->getMessage()];
+        }
+    }
+
+    /** Send an image by public URL (photo confirmation). Returns [ok, error]. */
+    public function sendImage(Conversation $conv, string $url): array
+    {
+        $cfg = $this->channelConfig($conv->channel);
+        if (empty($cfg['token']) || empty($cfg['account_id']) || !$conv->external_id) {
+            return [false, 'Channel is not connected in Settings'];
+        }
+        try {
+            if ($conv->channel === 'whatsapp') {
+                $to = preg_replace('/\D+/', '', (string) ($conv->external_id ?: $conv->customer_phone));
+                $res = Http::timeout(12)->withToken($cfg['token'])->post(self::API . "/{$cfg['account_id']}/messages", [
+                    'messaging_product' => 'whatsapp',
+                    'recipient_type' => 'individual',
+                    'to' => $to,
+                    'type' => 'image',
+                    'image' => ['link' => $url],
+                ]);
+            } else {
+                $res = Http::timeout(12)->post(self::API . "/{$cfg['account_id']}/messages?access_token=" . urlencode($cfg['token']), [
+                    'recipient' => ['id' => $conv->external_id],
+                    'messaging_type' => 'RESPONSE',
+                    'message' => ['attachment' => ['type' => 'image', 'payload' => ['url' => $url, 'is_reusable' => true]]],
+                ]);
+            }
+
+            return $res->successful() ? [true, null] : [false, (string) ($res->json('error.message') ?? ('HTTP ' . $res->status()))];
+        } catch (\Throwable $e) {
+            return [false, $e->getMessage()];
         }
     }
 

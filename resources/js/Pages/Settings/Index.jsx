@@ -288,7 +288,7 @@ function Ai({ tab, ai }) {
         setTestResult(await res.json());
     };
     if (tab === 'ailvl') {
-        return <><AiReplyForm ai={ai} /><TalkerForm ai={ai} /></>;
+        return <><AiReplyForm ai={ai} /><TalkerForm ai={ai} /><BehaviorForm ai={ai} /></>;
     }
     if (tab === 'negotiation') {
         return <NegotiationForm ai={ai} />;
@@ -425,11 +425,11 @@ function TalkerForm({ ai }) {
         claude_key: '',
     });
     const [checks, setChecks] = useState({});
-    const runCheck = async (provider) => {
+    const runCheck = async (provider, typedKey) => {
         setChecks((c) => ({ ...c, [provider]: { busy: true } }));
         const token = document.querySelector('meta[name="csrf-token"]')?.content || '';
         try {
-            const res = await fetch('/settings/ai-talker/test', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': token, 'X-Requested-With': 'XMLHttpRequest' }, body: JSON.stringify({ provider }) });
+            const res = await fetch('/settings/ai-talker/test', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': token, 'X-Requested-With': 'XMLHttpRequest' }, body: JSON.stringify({ provider, key: typedKey || '' }) });
             const json = await res.json();
             setChecks((c) => ({ ...c, [provider]: json }));
         } catch {
@@ -453,7 +453,7 @@ function TalkerForm({ ai }) {
                 <div className="frow"><label className="fl">{t('API key')}</label>
                     <div className="flex" style={{ gap: 8, flex: 1 }}>
                         <input className="inp" type="password" autoComplete="new-password" style={{ flex: 1 }} value={form.data[keyField]} onChange={(e) => form.setData(keyField, e.target.value)} placeholder={keySet ? t('Saved — leave blank to keep it') : ''} />
-                        <button type="button" className="btn" disabled={check?.busy} onClick={() => runCheck(provider)}>{t('Check connection')}</button>
+                        <button type="button" className="btn" disabled={check?.busy} onClick={() => runCheck(provider, form.data[keyField])}>{t('Check connection')}</button>
                     </div></div>
                 {check && !check.busy && (
                     <div className="sm" style={{ color: check.ok ? '#16A34A' : '#DC2626' }}>{check.detail}</div>
@@ -474,6 +474,36 @@ function TalkerForm({ ai }) {
                     <button type="button" className={`switch ${form.data.route_angry ? 'on' : ''}`} aria-label="toggle" onClick={() => form.setData('route_angry', !form.data.route_angry)} /></div>
                 <div className="frow"><label className="fl">{t('Long bargaining (3rd offer onwards)')}</label>
                     <button type="button" className={`switch ${form.data.route_long_bargain ? 'on' : ''}`} aria-label="toggle" onClick={() => form.setData('route_long_bargain', !form.data.route_long_bargain)} /></div>
+                <SaveBar />
+            </div>
+        </form>
+    );
+}
+
+function BehaviorForm({ ai }) {
+    const b = ai?.behavior || {};
+    const form = useForm({
+        angry_holding: !!b.angry_holding,
+        honorific: b.honorific || 'apu',
+        daily_llm_cap: b.daily_llm_cap ?? 0,
+        debounce_seconds: b.debounce_seconds ?? 0,
+    });
+    return (
+        <form onSubmit={(e) => { e.preventDefault(); form.post('/settings/ai-behavior', { preserveScroll: true }); }}>
+            <div className="card" style={{ marginTop: 16 }}><h3>{t('AI Behaviour')}</h3>
+                <div className="card-sub">{t('How the AI speaks and how much it may spend — code enforces every limit here')}</div>
+                <div className="frow"><label className="fl">{t('Holding line for angry customers')}</label>
+                    <button type="button" className={`switch ${form.data.angry_holding ? 'on' : ''}`} aria-label="toggle" onClick={() => form.setData('angry_holding', !form.data.angry_holding)} /></div>
+                <div className="sm mut">{t('One short line — "our admin has been told" — then a human takes over. Off = fully silent handover.')}</div>
+                <div className="frow"><label className="fl">{t('How replies address the customer')}</label>
+                    <select className="inp" value={form.data.honorific} onChange={(e) => form.setData('honorific', e.target.value)}>
+                        <option value="apu">{t('Apu')}</option>
+                        <option value="bhaiya">{t('Bhaiya')}</option>
+                        <option value="none">{t('No word — just Apni')}</option>
+                    </select></div>
+                <div className="frow"><label className="fl">{t('Daily AI model call limit (0 = no limit)')}</label><input className="inp" type="number" min="0" value={form.data.daily_llm_cap} onChange={(e) => form.setData('daily_llm_cap', e.target.value)} /></div>
+                <div className="frow"><label className="fl">{t('Wait seconds before answering a burst of messages (0 = off)')}</label><input className="inp" type="number" min="0" max="60" value={form.data.debounce_seconds} onChange={(e) => form.setData('debounce_seconds', e.target.value)} /></div>
+                <div className="sm mut">{t('Customers often send 3-4 short messages in a row. With this on, the AI waits, reads them together, and answers once.')}</div>
                 <SaveBar />
             </div>
         </form>
