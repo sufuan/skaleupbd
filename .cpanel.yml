@@ -3,6 +3,4 @@ deployment:
   tasks:
     - /opt/alt/php84/usr/bin/php /home/scalenow/bin/composer install --no-dev --optimize-autoloader --no-interaction --working-dir=/home/scalenow/skaleupbd
     - /opt/alt/php84/usr/bin/php /home/scalenow/skaleupbd/artisan migrate --force
-    - export PATH=/home/scalenow/tools/node-v20.19.0-linux-x64/bin:$PATH && cd /home/scalenow/skaleupbd && npm ci --no-audit --no-fund && npm run build
-    - chmod -R a+rX /home/scalenow/skaleupbd/public/build
     - /opt/alt/php84/usr/bin/php /home/scalenow/skaleupbd/artisan optimize:clear
