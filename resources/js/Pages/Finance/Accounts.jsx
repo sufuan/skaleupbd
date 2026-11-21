@@ -26,7 +26,7 @@ export default function Accounts({ accounts = [], categories = [], canSee }) {
                 {canSee && (
                     <div className="x-kpis">
                         {accounts.map((a) => (
-                            <div className="x-kpi" key={a.id}><b>{fmt(a.balance)}</b><span>{a.name} ({t(TYPE_LABEL[a.type])})</span></div>
+                            <div className="x-kpi" key={a.id}><b>{fmt(a.balance)}</b><span>{a.name}{TYPE_LABEL[a.type] && a.name.toLowerCase() !== TYPE_LABEL[a.type].toLowerCase() ? ` (${t(TYPE_LABEL[a.type])})` : ''}</span></div>
                         ))}
                     </div>
                 )}
@@ -37,7 +37,7 @@ export default function Accounts({ accounts = [], categories = [], canSee }) {
                         <tbody>
                             {accounts.map((a) => (
                                 <tr key={a.id} style={!a.active ? { opacity: 0.55 } : undefined}>
-                                    <td>{a.name} <span style={{ color: '#94A3B8' }}>· {t(TYPE_LABEL[a.type])}</span>{!a.active && <span className="chip chip-grey" style={{ marginLeft: 6 }}>{t('Inactive')}</span>}</td>
+                                    <td>{a.name}{TYPE_LABEL[a.type] && a.name.toLowerCase() !== TYPE_LABEL[a.type].toLowerCase() && <span style={{ color: '#94A3B8' }}> · {t(TYPE_LABEL[a.type])}</span>}{!a.active && <span className="chip chip-grey" style={{ marginLeft: 6 }}>{t('Inactive')}</span>}</td>
                                     <td style={{ color: '#16A34A' }}>+ {fmt(a.today_in)}</td>
                                     <td style={{ color: '#DC2626' }}>− {fmt(a.today_out)}</td>
                                     <td><b>{canSee ? fmt(a.balance) : '—'}</b></td>

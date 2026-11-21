@@ -63,7 +63,12 @@ class WorkInboxController extends Controller
             return null;
         }
         if ($t->due_at->isPast()) {
-            return ['text' => 'Overdue · ' . WorkInboxService::bnAge($t->due_at) . ' পার', 'chip' => 'chip-red'];
+            // A task can be born overdue (manual task with a past due time):
+            // never claim it has been overdue longer than it has existed —
+            // the card also shows "তৈরি: X আগে", and the two contradicted.
+            $since = $t->due_at->greaterThan($t->created_at) ? $t->due_at : $t->created_at;
+
+            return ['text' => 'Overdue · ' . WorkInboxService::bnAge($since) . ' পার', 'chip' => 'chip-red'];
         }
         if ($t->due_at->isToday()) {
             return ['text' => 'আজকের মধ্যে', 'chip' => 'chip-amber'];

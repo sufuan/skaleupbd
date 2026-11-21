@@ -28,7 +28,7 @@ export default function CustomersIndex({ customers, stats, q }) {
 
             <div className="cust-kpis" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12, margin: '14px 0' }}>
                 <div className="card"><div style={{ fontSize: 11, letterSpacing: '.06em', color: 'var(--muted)' }}>{t('TOTAL CUSTOMERS')}</div><div style={{ fontSize: 24, fontWeight: 700, marginTop: 4 }}>{stats.total}</div><div style={{ fontSize: 12, color: 'var(--muted)' }}>{t('Your shop customers')}</div></div>
-                <div className="card"><div style={{ fontSize: 11, letterSpacing: '.06em', color: 'var(--muted)' }}>{t('AVERAGE ORDER VALUE')}</div><div style={{ fontSize: 24, fontWeight: 700, marginTop: 4 }}>{tk(stats.aov)}</div><div style={{ fontSize: 12, color: 'var(--muted)' }}>{t('Per delivered order')}</div></div>
+                <div className="card"><div style={{ fontSize: 11, letterSpacing: '.06em', color: 'var(--muted)' }}>{t('AVERAGE ORDER VALUE')}</div><div style={{ fontSize: 24, fontWeight: 700, marginTop: 4 }}>{tk(stats.aov)}</div><div style={{ fontSize: 12, color: 'var(--muted)' }}>{t('Per order, cancelled excluded')}</div></div>
                 <div className="card"><div style={{ fontSize: 11, letterSpacing: '.06em', color: 'var(--muted)' }}>{t('CUSTOMER LIFETIME VALUE')}</div><div style={{ fontSize: 24, fontWeight: 700, marginTop: 4 }}>{tk(stats.clv)}</div><div style={{ fontSize: 12, color: 'var(--muted)' }}>{t('Average per customer')}</div></div>
             </div>
 

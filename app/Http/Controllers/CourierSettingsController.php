@@ -222,26 +222,10 @@ class CourierSettingsController extends Controller
         return back()->with('success', 'Rule removed');
     }
 
-    /** Keep the M2 form-facing method list in step with active connections. */
+    /** Keep the shop's own form-facing method list in step with its
+     *  active connections (per-business list — see DeliveryMethodList). */
     private function syncMethodList(Request $request): void
     {
-        $settings = app(\App\Services\SettingsService::class);
-        $methods = $settings->get('couriers.methods', []);
-        $active = CourierMethod::where('business_id', $this->businessId($request))->where('is_active', true)->get();
-        foreach ($active as $m) {
-            if ($m->bookingMode() === 'manual') {
-                if (! in_array($m->label(), $methods, true)) {
-                    $methods[] = $m->label();
-                }
-            } else {
-                foreach (['Inside Dhaka', 'Outside Dhaka'] as $zone) {
-                    $entry = $m->label() . ' — ' . $zone;
-                    if (! in_array($entry, $methods, true)) {
-                        $methods[] = $entry;
-                    }
-                }
-            }
-        }
-        $settings->set('couriers.methods', array_values($methods));
+        app(\App\Services\DeliveryMethodList::class)->syncFromConnections($this->businessId($request));
     }
 }

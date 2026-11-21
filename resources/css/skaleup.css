@@ -399,6 +399,7 @@ label.fl{display:block;font-size:12.5px;font-weight:600;color:#55496e;margin:0 0
 .ord-list .ord-tbl th{background:#E8E3EA;color:#411550;text-transform:none;letter-spacing:0;font-size:13px;font-weight:600;padding:13px 8px;white-space:normal;text-align:left}
 .ord-list .ord-tbl td{padding:14px 8px;vertical-align:top;font-size:12.5px;color:#111827}
 .ord-list .ord-tbl .addr{display:block;max-width:230px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ord-list .ord-tbl .site-cell{display:block;word-break:break-all;line-height:1.35}
 .ord-list .ord-tbl .iname{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .ord-list .ord-tbl th:last-child,.ord-list .ord-tbl td:last-child{position:sticky;right:0;z-index:2}
 .ord-list .ord-tbl th:last-child{background:#E8E3EA;border-left:1px solid #D9D2E0;box-shadow:-8px 0 10px -8px rgba(65,21,80,.35)}
@@ -468,6 +469,10 @@ label.fl{display:block;font-size:12.5px;font-weight:600;color:#55496e;margin:0 0
 .cm-pg table.cm-tbl th{background:#E8E3EA;color:#411550;font-size:13px;font-weight:600;padding:13px 8px;text-align:left;text-transform:none;letter-spacing:0;white-space:nowrap}
 .cm-pg table.cm-tbl td{font-size:12.5px;padding:14px 8px;color:#111827;border-top:1px solid #f1eef5;vertical-align:top}
 .cm-pg table.cm-tbl tr:hover td{background:#F7F2F8}
+/* Parcels table is wider than the screen — keep Actions reachable instead of clipped at the scroll edge */
+.cm-pg table.cm-tbl th:last-child{position:sticky;right:0;background:#E8E3EA;box-shadow:-6px 0 8px -6px rgba(65,21,80,.25)}
+.cm-pg table.cm-tbl td:last-child{position:sticky;right:0;background:#fff;box-shadow:-6px 0 8px -6px rgba(65,21,80,.18)}
+.cm-pg table.cm-tbl tr:hover td:last-child{background:#F7F2F8}
 
 /* ===== Courier Ledger + Update Courier Payment — copied from delivery.html ===== */
 .led-pg .page-head p,.inv-pg .page-head p{color:var(--mut);font-size:13px;margin-top:3px}
@@ -761,6 +766,7 @@ label.fl{display:block;font-size:12.5px;font-weight:600;color:#55496e;margin:0 0
 .hrm .btn-mini:hover{border-color:#411550;color:#411550}
 .hrm .btn-mini.danger:hover{border-color:#DC2626;color:#DC2626}
 .hrm .switch-row{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:10px 0;border-bottom:1px solid #F1F5F9}
+.hrm .switch-row>div:first-child{flex:1;min-width:0}
 .hrm .switch-row:last-child{border-bottom:none}
 .hrm .btn-p{background:#411550;color:#fff;border:none;border-radius:9px;padding:9px 16px;font-size:13.5px;font-weight:600;cursor:pointer;font-family:inherit}
 .hrm .btn-p:disabled{opacity:.55;cursor:not-allowed}

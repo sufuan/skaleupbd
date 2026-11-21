@@ -73,7 +73,7 @@ function MyDashboard({ my }) {
     const srcValue = srcRows.reduce((a, x) => a + x.value, 0);
     const [range, setRange] = useState(30);
     const slice = range === 30 ? my.counts30 : my.counts30.slice(-range);
-    const cMax = Math.max(1, ...slice.map((d) => d.created));
+    const cMax = Math.max(1, ...slice.map((d) => Math.max(d.created, d.sent)));
     const cSum = slice.reduce((a, d) => a + d.created, 0);
     const sSum = slice.reduce((a, d) => a + d.sent, 0);
     const [earn, setEarn] = useState(null);
@@ -195,13 +195,16 @@ function MyDashboard({ my }) {
                             <option value={30}>{t('Last 30 days')}</option><option value={7}>{t('Last 7 days')}</option><option value={1}>{t('Today')}</option>
                         </select>
                         <span className="legend-big on"><span className="lb-lbl">{t('Created')}</span><span className="lb-num" style={{ color: '#2563EB' }}>{cSum}</span></span>
-                        <span className="legend-big"><span className="lb-lbl">{t('Sent to Courier')}</span><span className="lb-num">{sSum}</span></span>
+                        <span className="legend-big"><span className="lb-lbl">{t('Sent to Courier')}</span><span className="lb-num" style={{ color: '#16a34a' }}>{sSum}</span></span>
                     </span>
                 </div>
                 <div style={{ height: 14 }} />
                 <div style={{ display: 'flex', alignItems: 'flex-end', gap: 3, height: 110, borderBottom: '1px solid var(--line)' }}>
                     {slice.map((d) => (
-                        <div key={d.date} title={d.date} style={{ flex: 1, background: d.created ? '#2563eb' : 'transparent', height: d.created ? `${Math.max(4, (d.created / cMax) * 100)}%` : 0, borderRadius: '3px 3px 0 0' }} />
+                        <div key={d.date} title={`${d.date} — ${t('Created')} ${d.created} · ${t('Sent to Courier')} ${d.sent}`} style={{ flex: 1, display: 'flex', alignItems: 'flex-end', gap: 1, height: '100%' }}>
+                            <div style={{ flex: 1, background: d.created ? '#2563eb' : 'transparent', height: d.created ? `${Math.max(4, (d.created / cMax) * 100)}%` : 0, borderRadius: '3px 3px 0 0' }} />
+                            <div style={{ flex: 1, background: d.sent ? '#16a34a' : 'transparent', height: d.sent ? `${Math.max(4, (d.sent / cMax) * 100)}%` : 0, borderRadius: '3px 3px 0 0' }} />
+                        </div>
                     ))}
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9.5, color: 'var(--mut2)', marginTop: 5 }}>
@@ -217,7 +220,7 @@ function MyDashboard({ my }) {
                     </span></div>
                 {!earn ? (
                     <div className="dashed-empty" style={{ marginTop: 12 }}>
-                        {t('This report is loaded only when you ask for it. Pick a date range above, then load it.')}<br /><br />
+                        {t('This report is loaded only when you ask for it. Press the button to load this year\'s earnings.')}<br /><br />
                         <button type="button" className="ctl-btn" style={{ background: 'var(--acc)', color: '#fff', borderColor: 'var(--acc)', padding: '9px 16px' }} onClick={loadEarn} disabled={earnBusy}>
                             {earnBusy ? t('Loading...') : t('Load Earning Reports')}
                         </button>
@@ -239,7 +242,7 @@ function MyDashboard({ my }) {
             <div className="dash-2col">
                 <div className="card">
                     <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}><h3>{t('Hourly Combined')}</h3></div>
-                    <div className="card-sub" style={{ margin: '2px 0 10px' }}>{my.day} vs {my.prev_iso} (Until {String(my.until_hour).padStart(2, '0')}:00)</div>
+                    <div className="card-sub" style={{ margin: '2px 0 10px' }}>{hDay === 'day' ? my.day : my.prev_iso}{hDay === 'day' && my.is_today ? ` · ${t('Today so far')} (${String(my.until_hour).padStart(2, '0')}:00)` : ''}</div>
                     <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
                         <select className="ctl-btn" value={hMode} onChange={(e) => setHMode(e.target.value)}>
                             <option value="combined">{t('Combined')}</option><option value="web">{t('Web Orders')}</option><option value="inc">{t('Incomplete Orders')}</option>
@@ -261,13 +264,13 @@ function MyDashboard({ my }) {
                         </svg></div>
                     </div>
                     <div className="hour-labels" style={{ display: 'flex', justifyContent: 'space-between', fontSize: 8.5, color: 'var(--mut2)', marginLeft: 16, overflow: 'hidden' }}>
-                        {HOURS.map((h) => <span key={h} style={{ whiteSpace: 'nowrap' }}>{h}</span>)}
+                        {HOURS.filter((_, i) => i % 3 === 0).map((h) => <span key={h} style={{ whiteSpace: 'nowrap' }}>{h}</span>)}
                     </div>
                 </div>
 
                 <div className="card">
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}><h3>{t('Top Selling Products')}</h3>
-                        <span className="pill grey">{t('Top')} {my.top_products.length}</span>
+                        {my.top_products.length > 0 && <span className="pill grey">{t('Top')} {my.top_products.length}</span>}
                         <span style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
                             <button type="button" className="ctl-btn">⧩ {t('Approved')}</button>
                             <button type="button" className="ctl-btn">{pill}</button>
@@ -411,7 +414,14 @@ export default function Dashboard({ stats, my, billing }) {
                 </div>
                 {view === 'My Dashboard' && <MyDashboard my={my} />}
                 {view === 'Overview' && <Overview stats={stats} />}
-                {!['My Dashboard', 'Overview'].includes(view) && (
+                {view === 'Marketing' && (
+                    <div className="card" style={{ textAlign: 'center', padding: '52px 18px' }}>
+                        <h3>{t('Marketing')}</h3>
+                        <p className="mut" style={{ marginTop: 8 }}>{t('SMS campaigns, automation flows and templates live in the Marketing module.')}</p>
+                        <p style={{ marginTop: 14 }}><a className="btn pri" href="/marketing">{t('Open Marketing')}</a></p>
+                    </div>
+                )}
+                {!['My Dashboard', 'Overview', 'Marketing'].includes(view) && (
                     <div className="card" style={{ textAlign: 'center', padding: '52px 18px' }}>
                         <h3>{t(view)}</h3>
                         <p className="mut" style={{ marginTop: 8 }}>{t('Coming Soon')}</p>

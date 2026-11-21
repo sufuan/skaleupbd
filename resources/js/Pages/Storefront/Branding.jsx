@@ -28,7 +28,7 @@ export default function Branding({ sf, branding, charges, imageUsageMb, imageQuo
         <AppLayout>
             <Head title={t('Branding & Tracking')} />
             <h3 style={{ fontSize: 19, margin: '0 0 14px' }}>{t('Branding & Tracking')}</h3>
-            <form onSubmit={submit} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, alignItems: 'start' }} className="sf-2col">
+            <form onSubmit={submit} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, alignItems: 'start' }} className="sf-2col sf-form">
                 <div className="card">
                     <h4 style={{ fontSize: 15.5, margin: '2px 0 10px' }}>{t('Shop branding')}</h4>
                     <label className="lbl">{t('Shop display name')}</label>
@@ -74,7 +74,9 @@ export default function Branding({ sf, branding, charges, imageUsageMb, imageQuo
                     <button className="btn pri" style={{ marginTop: 18 }} disabled={form.processing}>{t('Save branding')}</button>
                 </div>
             </form>
-            <style>{`@media (max-width: 760px){ .sf-2col{grid-template-columns:1fr !important} }`}</style>
+            <style>{`.sf-form .lbl { display:block; font-size:13px; font-weight:600; }
+.sf-form .fld { display:block; width:100%; height:40px; border-radius:8px; font-size:14px; border:1px solid #D9CDE4; background:#fff; padding:0 12px; margin-top:5px; font-family:inherit; color:var(--ink); box-sizing:border-box; }
+@media (max-width: 760px){ .sf-2col{grid-template-columns:1fr !important} }`}</style>
         </AppLayout>
     );
 }

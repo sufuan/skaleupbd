@@ -67,7 +67,7 @@ function PendingClaimCard({ claim, paymentInstructions, platformPayment }) {
             )}
             {paymentInstructions
                 ? <div style={{ fontSize: 14, whiteSpace: 'pre-wrap', background: '#fff', border: '1px solid #F0D48A', borderRadius: 8, padding: '10px 12px', marginTop: 12 }}>{paymentInstructions}</div>
-                : <div style={{ fontSize: 13.5, marginTop: 10 }}>{t('Payment details are being set up — please contact us to top up.')}</div>}
+                : null}
             <form onSubmit={submit} className="claim-form" style={{ marginTop: 14, maxWidth: 420 }}>
                 <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 6 }}>{t('Already paid? Tell us the details')}</div>
                 <label className="lbl">{t('Payment method')}</label>
@@ -147,7 +147,7 @@ export default function Index({ balance, pointsPerOrder, threshold, blocked, low
                 </div>
                 <div className="card">
                     <div style={{ fontSize: 11, letterSpacing: '.06em', color: 'var(--muted)' }}>{t('PER ORDER')}</div>
-                    <div style={{ fontSize: 20, fontWeight: 700, marginTop: 6 }}>{num(pointsPerOrder)} {t('point(s) per order')}</div>
+                    <div style={{ fontSize: 20, fontWeight: 700, marginTop: 6 }}>{num(pointsPerOrder)} {pointsPerOrder === 1 ? t('point per order') : t('points per order')}</div>
                     <div style={{ fontSize: 12.5, color: 'var(--muted)' }}>{t('Low-balance warning at')} {num(threshold)} {t('points')}</div>
                 </div>
             </div>
@@ -157,9 +157,17 @@ export default function Index({ balance, pointsPerOrder, threshold, blocked, low
                     <div className="card">
                         <h4 style={{ fontSize: 15, marginBottom: 4 }}>{openClaim ? t('Packs') : t('Choose a pack')}</h4>
                         <div style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 10 }}>{t('Pay by bKash / Nagad, submit the payment details, and we credit your points as soon as we confirm.')}</div>
+                        {platformPayment && platformPayment.length > 0 && (
+                            <div style={{ background: 'var(--surface2, #F6F1FA)', borderRadius: 8, padding: '10px 12px', marginBottom: 10 }}>
+                                <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4 }}>{t('Pay to these numbers (Personal)')}</div>
+                                {platformPayment.map((n) => (
+                                    <div key={n.method} style={{ fontSize: 15, display: 'flex', gap: 10 }}><span style={{ minWidth: 60, fontWeight: 600 }}>{n.label}</span><b>{n.number}</b></div>
+                                ))}
+                            </div>
+                        )}
                         {paymentInstructions
                             ? <div style={{ fontSize: 14, whiteSpace: 'pre-wrap', background: 'var(--surface2, #F6F1FA)', borderRadius: 8, padding: '10px 12px' }}>{paymentInstructions}</div>
-                            : <div style={{ fontSize: 13.5, color: 'var(--muted)' }}>{t('Payment details are being set up — please contact us to top up.')}</div>}
+                            : null}
                         {!firstPurchase && Number(onboardingFee) > 0 && (
                             <div style={{ fontSize: 12.5, color: 'var(--muted)', marginTop: 10 }}>{t('A one-time onboarding fee of')} {tk(onboardingFee)} {t('applies to your first purchase.')}</div>
                         )}

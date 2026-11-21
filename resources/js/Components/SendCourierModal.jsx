@@ -82,7 +82,7 @@ export default function SendCourierModal({ order, methods, suggestedId = null, s
                                 </select>
                             </div>
                         )}
-                        {selected && selected.type === 'PATHAO' && (!selected.stores || selected.stores.length === 0) && (
+                        {selected && selected.type === 'PATHAO' && !selected.has_store_id && (!selected.stores || selected.stores.length === 0) && (
                             <p className="sm mut" style={{ marginTop: 10 }}>{t('No pickup store synced yet — sync stores in Settings → Courier, or the booking will use the store saved on the connection.')}</p>
                         )}
 

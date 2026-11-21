@@ -66,6 +66,10 @@ class InventoryOpsController extends Controller
         $all = StockLedger::where('business_id', $biz);
         $inQty = (clone $all)->whereIn('type', ['return_in', 'adjust_in', 'transfer_in'])->sum('qty');
         $outQty = (clone $all)->whereIn('type', ['ship_out', 'adjust_out', 'transfer_out', 'damage'])->sum('qty');
+        // The "Stock Out" card means units that left through SALES (ship_out)
+        // — adjustments and damage have their own cards, and folding them in
+        // here counted a ±20 adjustment as sales out.
+        $salesOutQty = (clone $all)->where('type', 'ship_out')->sum('qty');
         $adjNet = (clone $all)->where('type', 'adjust_in')->sum('qty') - (clone $all)->where('type', 'adjust_out')->sum('qty');
         $damageQty = (clone $all)->where('type', 'damage')->sum('qty');
         $closing = (int) Product::where('business_id', $biz)->sum('stock_qty');
@@ -113,7 +117,9 @@ class InventoryOpsController extends Controller
                 'created_at' => $r->created_at?->format('d M Y, h:i A'),
                 'product' => $r->product ? ['name' => $r->product->name, 'sku' => $r->product->sku, 'image' => $r->product->image] : null,
                 'type' => $r->type,
-                'direction' => in_array($r->type, ['return_in', 'adjust_in', 'transfer_in'], true) ? 'In' : (in_array($r->type, ['reserve', 'release_reserve'], true) ? '—' : 'Out'),
+                // A reserve is a hold, not an in/out — labelling it '—' made
+                // reserve rows read as empty. Name what actually happened.
+                'direction' => in_array($r->type, ['return_in', 'adjust_in', 'transfer_in'], true) ? 'In' : ($r->type === 'reserve' ? 'Hold' : ($r->type === 'release_reserve' ? 'Released' : 'Out')),
                 'qty' => $r->qty,
                 'prev_stock' => $r->prev_stock,
                 'new_stock' => $r->new_stock,
@@ -129,14 +135,18 @@ class InventoryOpsController extends Controller
             'cards' => [
                 'opening' => $closing - ((int) $inQty - (int) $outQty),
                 'stock_in' => (int) $inQty,
-                'stock_out' => (int) $outQty,
+                'stock_out' => (int) $salesOutQty,
                 'closing' => $closing,
                 'adjustment' => (int) $adjNet,
                 'damage' => (int) $damageQty,
             ],
             'rail' => [
                 'total_movements' => (clone $all)->count(),
-                'manual_today' => (clone $all)->whereIn('type', ['adjust_in', 'adjust_out'])->whereDate('created_at', now()->toDateString())->count(),
+                // Opening stock on product creation / import is written as an
+                // adjustment row but is NOT a manual adjustment — exclude it.
+                'manual_today' => (clone $all)->whereIn('type', ['adjust_in', 'adjust_out'])
+                    ->whereNotIn('reason', ['Initial Stock', 'Import'])
+                    ->whereDate('created_at', now()->toDateString())->count(),
                 'accuracy' => $accuracy,
             ],
             'findings' => $findings,

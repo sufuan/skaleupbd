@@ -196,8 +196,8 @@ class StorefrontService
         $mk = fn (string $type, array $data = []) => ['id' => Str::random(8), 'type' => $type, 'data' => $data];
 
         return [
-            $mk('hero', ['title' => 'Welcome to our shop', 'subtitle' => 'Quality products, cash on delivery all over Bangladesh.', 'image' => null, 'cta_text' => 'Shop now', 'cta_product_id' => null]),
-            $mk('product_grid', ['source' => 'all', 'category_id' => null, 'count' => 8, 'title' => 'Our products']),
+            $mk('hero', ['title' => 'Coming soon', 'subtitle' => '', 'image' => null, 'cta_text' => 'Shop now', 'cta_product_id' => null]),
+            $mk('product_grid', ['source' => 'all', 'category_id' => null, 'count' => 24, 'title' => 'Our products']),
             $mk('faq', ['title' => 'Questions', 'items' => [
                 ['q' => 'How do I order?', 'a' => 'Pick a product, fill in your name, phone and address, and press Order. We will call to confirm.'],
                 ['q' => 'How do I pay?', 'a' => 'Cash on delivery — pay when your product arrives.'],
@@ -280,7 +280,7 @@ class StorefrontService
                 'product_grid' => [
                     'source' => ($d['source'] ?? 'all') === 'category' ? 'category' : 'all',
                     'category_id' => ! empty($d['category_id']) ? (int) $d['category_id'] : null,
-                    'count' => max(1, min(24, (int) ($d['count'] ?? 8))),
+                    'count' => max(1, min(24, (int) ($d['count'] ?? 24))),
                     'title' => $this->cleanText($d['title'] ?? '', 120),
                 ],
                 'price_offer' => [
@@ -425,14 +425,25 @@ class StorefrontService
 
         $body = "Your SkaleUp storefront verification code is {$code}. It is valid for 10 minutes.";
         $source = ['type' => 'transactional', 'key' => 'storefront_otp', 'label' => 'Storefront verification'];
-        $log = $this->sms->send($sf->business_id, $phone, $body, $source);
+        // Sender: the seller's own gateway when they saved one, else the
+        // platform's (business 1). The send is transactional — it is not
+        // gated on any shop's prepaid marketing balance (a fresh seller
+        // has ৳0 there even though the platform gateway is funded).
         $via = $sf->business_id;
-        if ($log->status !== 'sent' && $sf->business_id !== 1) {
-            $log = $this->sms->send(1, $phone, $body, $source);
+        if ((int) $sf->business_id !== 1 && ! $this->sms->providerConfig((int) $sf->business_id)['has_key']) {
             $via = 1;
         }
+        $log = $this->sms->sendPlatform($via, $phone, $body, $source, (int) $sf->business_id);
+        $sent = $log->status === 'sent';
+        if (! $sent) {
+            // The code never left — it must not be usable if it leaks
+            // from the log row. A fresh Send code issues a new one.
+            $sf->otp_hash = null;
+            $sf->otp_expires_at = null;
+            $sf->save();
+        }
 
-        return ['sent' => $log->status === 'sent', 'via' => $via, 'phone' => $phone];
+        return ['sent' => $sent, 'via' => $via, 'phone' => $phone, 'error' => $sent ? null : $log->error];
     }
 
     public function verifyOtp(Storefront $sf, string $code): bool

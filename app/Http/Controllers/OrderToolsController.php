@@ -241,7 +241,7 @@ class OrderToolsController extends Controller
             'filters' => $f, 'hasFilter' => $hasFilter, 'result' => $result,
             'sources' => \App\Models\OrderSource::where('business_id', $biz)->orderBy('sort')->get(['code', 'label']),
             'statuses' => array_merge(Order::STATUSES, Order::EXTRA_STATUSES),
-            'couriers' => $this->settings->get('couriers.methods', []),
+            'couriers' => app(\App\Services\DeliveryMethodList::class)->forBusiness($biz),
             'processingStatuses' => Order::PROCESSING_STATUSES,
         ]);
     }

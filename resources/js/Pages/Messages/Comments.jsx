@@ -129,7 +129,7 @@ export default function Comments({ comments, counts, posts }) {
                     </select>
                 </div>
                 <div style={{ display: 'flex', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
-                    {[['all', 'সব'], ['awaiting', 'Reply বাকি'], ['replied', 'Replied'], ['private_sent', 'Private reply গেছে'], ['hidden', 'Hidden'], ['done', 'Reply লাগবে না']].map(([v, l]) => (
+                    {[['all', t('All')], ['awaiting', t('Awaiting reply')], ['replied', t('Replied')], ['private_sent', t('Private reply sent')], ['hidden', t('Hidden')], ['done', t('No reply needed')]].map(([v, l]) => (
                         <span key={v} style={chip(status === v)} onClick={() => setStatus(v)}>{l}</span>
                     ))}
                 </div>

@@ -153,7 +153,9 @@ class TokenService
             if ($paid > 0) {
                 SellerPayment::create([
                     'business_id' => $businessId, 'amount' => $paid, 'method' => $method,
-                    'note' => $note ?: ($pack->name.' pack purchase'), 'paid_at' => now(),
+                    // The pack name always leads the note — the platform's
+                    // purchase history reads these rows back by it.
+                    'note' => $pack->name.' pack purchase'.($note ? ' — '.$note : ''), 'paid_at' => now(),
                 ]);
             }
             if ($first) {

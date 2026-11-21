@@ -97,7 +97,7 @@ export default function Dashboard({ health, movement, attention, lowStock, outSt
                                     <span className="text-xs text-muted-foreground">{t('Last 7 days')}</span>
                                 </div>
                                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                                    <HealthCard label={t('Units Sold')} value={movement.sold} />
+                                    <HealthCard label={t('Units shipped out')} value={movement.sold} />
                                     <HealthCard label={t('Units Purchased')} value={movement.purchased} />
                                     <HealthCard label={t('Returns')} value={movement.returns} />
                                     <HealthCard label={t('Net Change')} value={movement.net} />
@@ -180,12 +180,12 @@ export default function Dashboard({ health, movement, attention, lowStock, outSt
                         <div className="grid gap-4 lg:grid-cols-2">
                             <div className="rounded-xl border bg-card p-4 space-y-2">
                                 <div className="font-semibold">{t('Fast Moving')}</div>
-                                {fast.map((r) => <div key={r.id} className="flex justify-between border-t pt-2 text-sm"><span>{r.name}</span><span>{t('Sold (30d)')}: {r.sold_30d} · {t('Stock')}: {r.available}</span></div>)}
+                                {fast.map((r) => <div key={r.id} className="flex justify-between border-t pt-2 text-sm"><span>{r.name}</span><span>{t('Shipped (30d)')}: {r.sold_30d} · {t('Stock')}: {r.available}</span></div>)}
                                 {fast.length === 0 && <div className="text-sm text-muted-foreground">{t('No fast moving products yet')}</div>}
                             </div>
                             <div className="rounded-xl border bg-card p-4 space-y-2">
                                 <div className="font-semibold">{t('Slow Moving')}</div>
-                                {slow.map((r) => <div key={r.id} className="flex justify-between border-t pt-2 text-sm"><span>{r.name}</span><span>{t('Sold (30d)')}: {r.sold_30d} · {t('Stock')}: {r.available}</span></div>)}
+                                {slow.map((r) => <div key={r.id} className="flex justify-between border-t pt-2 text-sm"><span>{r.name}</span><span>{t('Shipped (30d)')}: {r.sold_30d} · {t('Stock')}: {r.available}</span></div>)}
                                 {slow.length === 0 && <div className="text-sm text-muted-foreground">{t('No slow moving products')}</div>}
                             </div>
                         </div>

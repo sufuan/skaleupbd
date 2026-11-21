@@ -28,7 +28,7 @@ export function TodayTable({ rows }) {
                     </tr>
                 ))}
                 {rows.length === 0 && (
-                    <tr><td colSpan={5} style={{ color: '#94A3B8' }}>{t('No staff added yet.')}</td></tr>
+                    <tr><td colSpan={5} style={{ color: '#94A3B8' }}>{t('No staff added yet — Admin logins are not counted as staff.')}</td></tr>
                 )}
             </tbody>
         </table>

@@ -119,7 +119,7 @@ class WorkInboxService
         // ---- Delivery / Courier (M3) — Done note mandatory (courier/return rules) ----
         $courier = ['note_required' => true];
         $add(7, 'ready_to_ship', 'delivery', 'Ready to Ship-এ আছে, পাঠানো হয়নি', 'Ready to Ship-এ ঢোকার পর এই সময় পার হলে', true, 1, 'days', 'urgent', 'delivery', $courier);
-        $add(8, 'booking_failing', 'delivery', 'Courier booking বারবার fail করছে', 'একই order-এর booking 2 বার fail করলেই', true, 0, 'immediate', 'critical', 'delivery', $courier + ['dedupe' => 'ever']);
+        $add(8, 'booking_failing', 'delivery', 'Courier booking বারবার fail করছে', 'একই order-এর booking 3 বার fail করলেই', true, 0, 'immediate', 'critical', 'delivery', $courier + ['dedupe' => 'ever']);
         $add(9, 'shipped_stuck', 'delivery', 'Shipped, অনেকদিন Delivered হচ্ছে না', 'Shipped হওয়ার পর এই কদিন পার হলে (প্রতি 12 ঘণ্টায় আবার যাচাই)', true, 4, 'days', 'urgent', 'delivery', $courier);
         $add(10, 'courier_hold', 'delivery', 'Courier hold — parcel নড়ছে না', 'Parcel-এর status এই কদিন না বদলালে', true, 2, 'days', 'urgent', 'delivery', $courier + ['dedupe' => 'ever']);
         $add(11, 'pathao_return', 'delivery', 'Pathao-তে return requested', 'Pathao panel-এ return request এলেই (সিস্টেম ~5 মিনিটে যাচাই করে)', true, 30, 'minutes', 'urgent', 'delivery', $courier + ['dedupe' => 'ever']);

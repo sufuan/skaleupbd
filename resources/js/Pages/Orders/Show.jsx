@@ -29,9 +29,14 @@ export default function Show({ order, customer, couriers, courierMethods = [], s
     const canApprove = ['Pending', 'Incomplete'].includes(order.status);
     const verdictLabel = order.fraud.verdict === 'safe' ? 'Safe' : risky ? 'Risky — take advance' : 'Not checked';
 
+    // The Change Status dropdown must show the order's CURRENT status.
+    // While the order is in the processing flow that is its processing
+    // sub-status; once it has moved on (Shipped, Delivered, ...) the
+    // main status is what the dropdown shows — never a stale "Processing".
+    const inFlow = ['Pending', 'Processing'].includes(order.status);
     const form = useForm({
         source: order.source || '',
-        processing_status: order.processing_status || 'Processing',
+        processing_status: inFlow ? (order.processing_status || 'Processing') : '',
         cancellation_reason: cancelReasons[0],
         delivery_method: order.delivery_method || '',
         delivery_note: order.delivery_note || '',
@@ -41,6 +46,9 @@ export default function Show({ order, customer, couriers, courierMethods = [], s
         advance_payment: '',
     });
     const [tagInput, setTagInput] = useState('');
+    const [statusSel, setStatusSel] = useState(inFlow ? (order.processing_status || 'Processing') : order.status);
+    const statusOptions = inFlow ? processingStatuses : [order.status, ...processingStatuses.filter((s) => s !== order.status)];
+    const onStatusSel = (v) => { setStatusSel(v); form.setData('processing_status', processingStatuses.includes(v) ? v : ''); };
 
     const save = (e) => { e.preventDefault(); form.patch(`/orders/${order.id}`, { preserveScroll: true, onSuccess: () => form.reset('note', 'advance_payment') }); };
     const approve = (next) => router.post(`/orders/${order.id}/approve`, { next }, { preserveScroll: false });
@@ -50,12 +58,12 @@ export default function Show({ order, customer, couriers, courierMethods = [], s
 
     return (
         <AppLayout>
-            <Head title={`${t('Web Order')} — ${order.invoice}`} />
+            <Head title={`${order.source_label ? `${order.source_label} ${t('Order')}` : t('Order')} — ${order.invoice}`} />
             <div className="ord-detail">
                 <div className="page-head">
                     <div>
-                        <h1>{t('Web Order')} — {order.invoice}</h1>
-                        <p>{order.created}, {order.created_time} · {t('Source')}: {order.source}</p>
+                        <h1>{order.source_label ? `${order.source_label} ${t('Order')}` : t('Order')} — {order.invoice}</h1>
+                        <p>{order.created}, {order.created_time} · {t('Source')}: {order.source_label || order.source}</p>
                     </div>
                     <span style={{ marginLeft: 'auto', display: 'flex', gap: 10, alignItems: 'center' }}>
                         <StatusPill status={order.status} />
@@ -142,8 +150,8 @@ export default function Show({ order, customer, couriers, courierMethods = [], s
                         <form onSubmit={save} className="card">
                             <h3 style={{ marginBottom: 12 }}>{t('Process Order')}</h3>
                             <label className="fld-l frow">{t('Change Status')}
-                                <select className="fld" value={form.data.processing_status} onChange={(e) => form.setData('processing_status', e.target.value)}>
-                                    {processingStatuses.map((s) => <option key={s} value={s}>{t(s)}</option>)}
+                                <select className="fld" value={statusSel} onChange={(e) => onStatusSel(e.target.value)}>
+                                    {statusOptions.map((s) => <option key={s} value={s}>{t(s)}</option>)}
                                 </select>
                             </label>
                             {form.data.processing_status === 'Cancel' && (

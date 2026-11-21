@@ -36,10 +36,12 @@ export default function Parcels({ parcels, counts, status, analysis, entries, fi
 
     const callCell = (p) => {
         const recorded = p.call_status && p.call_status !== 'Not called';
-        const am = recorded && p.call_slot === '10AM' ? p.call_status : null;
-        const pm = recorded && p.call_slot && p.call_slot !== '10AM' ? p.call_status : null;
-        const dots = <span style={{ color: '#CBD5E1' }}>••</span>;
-        return <span className="muted-sm">AM {am || dots}<br />PM {pm || dots}</span>;
+        if (!recorded) {
+            return <span className="muted-sm">{t('Not called')}</span>;
+        }
+        const am = p.call_slot === '10AM' ? p.call_status : null;
+        const pm = p.call_slot && p.call_slot !== '10AM' ? p.call_status : null;
+        return <span className="muted-sm">AM {am || '—'}<br />PM {pm || '—'}</span>;
     };
 
     return (
@@ -151,7 +153,7 @@ export default function Parcels({ parcels, counts, status, analysis, entries, fi
                                                 <td><span className="pill green">{t('Courier age')} {p.age_days}d</span>
                                                     {p.courier_status && <div className="muted-sm" style={{ marginTop: 4 }}>{p.courier_status}</div>}</td>
                                                 <td>—</td>
-                                                <td><span className="muted-sm">AM <span style={{ color: '#CBD5E1' }}>••</span><br />PM <span style={{ color: '#CBD5E1' }}>••</span></span></td>
+                                                <td><span className="muted-sm">—</span></td>
                                                 <td>{(p.tags || []).length > 0
                                                     ? <span style={{ display: 'inline-flex', gap: 4, flexWrap: 'wrap' }}>{p.tags.map((tg) => <span key={tg} style={{ background: '#FCE7F3', color: '#BE185D', borderRadius: 999, padding: '3px 9px', fontSize: 12, fontWeight: 600 }}>{tg}</span>)}</span>
                                                     : '—'}</td>

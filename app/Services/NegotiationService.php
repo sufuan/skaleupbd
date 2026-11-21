@@ -35,7 +35,9 @@ class NegotiationService
 
     public function floor(Product $product): float
     {
-        return round($product->effectivePrice() * (1 - $this->maxDiscount($product) / 100), 2);
+        // Whole taka only — customers were quoted ৳1,187.5. The floor rounds
+        // UP so rounding can never push an offer below the seller's floor.
+        return (float) ceil($product->effectivePrice() * (1 - $this->maxDiscount($product) / 100));
     }
 
     /** The full ladder for a product: [price, step1, step2, ..., floor]. */
@@ -46,7 +48,8 @@ class NegotiationService
         $rungs = [$price];
         $steps = (int) floor($this->maxDiscount($product) / $cfg['step']);
         for ($i = 1; $i <= $steps; $i++) {
-            $rungs[] = round($price * (1 - ($cfg['step'] * $i) / 100), 2);
+            // Never let whole-taka rounding dip a rung below the floor.
+            $rungs[] = max(round($price * (1 - ($cfg['step'] * $i) / 100)), $this->floor($product));
         }
         if (end($rungs) > $this->floor($product)) {
             $rungs[] = $this->floor($product);
@@ -61,7 +64,7 @@ class NegotiationService
         $cfg = $this->config();
         $floor = $this->floor($product);
         $nextStep = (int) $conversation->neg_step + 1;
-        $offer = round($product->effectivePrice() * (1 - ($cfg['step'] * $nextStep) / 100), 2);
+        $offer = round($product->effectivePrice() * (1 - ($cfg['step'] * $nextStep) / 100));
         if ($offer < $floor) {
             $offer = $floor;
         }

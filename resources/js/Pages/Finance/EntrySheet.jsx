@@ -4,7 +4,10 @@ import Modal from '@/Components/Modal';
 import { t } from '@/lib/i18n';
 
 export const fmt = (n) => '৳' + Number(Math.round(Number(n) || 0)).toLocaleString('en-IN');
-export const fmtSigned = (n, dir) => (dir === 'in' ? '+ ' : '− ') + fmt(Math.abs(Number(n) || 0));
+export const fmtSigned = (n, dir) => {
+    const v = Number(n) || 0;
+    return v === 0 ? fmt(0) : (dir === 'in' ? '+ ' : '− ') + fmt(Math.abs(v));
+};
 export const fmtMoney = (n) => (Number(n) < 0 ? '− ' : '') + fmt(Math.abs(Number(n) || 0));
 
 const KINDS = [
@@ -41,7 +44,16 @@ export default function EntrySheet({ open, kind, setKind, accounts = [], categor
 
     return (
         <Modal show={open} onClose={onClose} maxWidth="md">
-            <form onSubmit={submit} style={{ padding: 20 }}>
+            {/* The Modal portals out of the .fin page scope, so the .fin
+                .cat-chips/.lbl rules never reach it — the type buttons and
+                category chips rendered jammed. Own scoped copies here. */}
+            <style>{`
+                .entry-sheet .cat-chips{display:flex;gap:8px;flex-wrap:wrap}
+                .entry-sheet .cat-chips button{border:1px solid #E7EAF0;background:#fff;border-radius:99px;padding:7px 14px;font-size:13.5px;cursor:pointer}
+                .entry-sheet .cat-chips button.on{background:#411550;color:#fff;border-color:#411550}
+                .entry-sheet .lbl{display:block;font-size:13px;font-weight:600;color:#334155;margin-bottom:5px}
+            `}</style>
+            <form className="entry-sheet" onSubmit={submit} style={{ padding: 20 }}>
                 <h3 style={{ fontSize: 17, marginBottom: 12 }}>{t('New transaction')}</h3>
                 <div className="cat-chips" style={{ marginBottom: 14 }}>
                     {KINDS.map((x) => (

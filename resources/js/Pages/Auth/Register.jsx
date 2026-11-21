@@ -5,6 +5,7 @@ import { Head, Link, useForm } from '@inertiajs/react';
 export default function Register({ pack, onboardingFee }) {
     const { data, setData, post, processing, errors, reset } = useForm({
         name: '',
+        shop_name: '',
         email: '',
         password: '',
         password_confirmation: '',
@@ -43,6 +44,11 @@ export default function Register({ pack, onboardingFee }) {
                     <label className="fl" htmlFor="name">{t('Name')}</label>
                     <input id="name" type="text" name="name" value={data.name} className="inp" autoComplete="name" autoFocus onChange={(e) => setData('name', e.target.value)} />
                     {errors.name && <div className="auth-err">{errors.name}</div>}
+                </div>
+                <div className="frow">
+                    <label className="fl" htmlFor="shop_name">{t('Shop name')}</label>
+                    <input id="shop_name" type="text" name="shop_name" value={data.shop_name} className="inp" autoComplete="organization" onChange={(e) => setData('shop_name', e.target.value)} />
+                    {errors.shop_name && <div className="auth-err">{errors.shop_name}</div>}
                 </div>
                 <div className="frow">
                     <label className="fl" htmlFor="email">{t('Email')}</label>

@@ -23,10 +23,39 @@ class BookingService
         if ($order->status !== 'Processing') {
             return ['ok' => false, 'error' => 'Only Processing orders can be sent to a courier'];
         }
+        // Atomic claim: courier APIs can take ~60s, and a second overlapping
+        // send (double click, two tabs, bulk + single) used to pass the
+        // status check above before the first finished — booking TWO
+        // parcels at the courier for one order, each with its own CN, the
+        // order keeping only the last. Claim the row with one UPDATE; only
+        // the winner talks to the courier. Failure paths below release the
+        // claim by writing 'failed'/'booked' as before.
+        $claimed = Order::where('id', $order->id)
+            ->where('status', 'Processing')
+            ->whereNull('tracking_id')->whereNull('consignment_id')
+            ->where(fn ($q) => $q->whereNull('booking_status')
+                ->orWhereIn('booking_status', ['queued', 'failed', 'retrying', 'fallback', 'cancelled']))
+            ->update(['booking_status' => 'sending']);
+        if ($claimed !== 1) {
+            $fresh = Order::find($order->id);
+            if ($fresh && ($fresh->tracking_id || $fresh->consignment_id)) {
+                return ['ok' => true, 'method' => $fresh->courierMethod, 'tracking_id' => $fresh->tracking_id, 'already_booked' => true];
+            }
+            return ['ok' => false, 'error' => 'This order is already being sent to a courier'];
+        }
+        $order->booking_status = 'sending';
+        // The claim above wrote 'sending' through the query builder, so
+        // sync the model's original state to match — otherwise setting
+        // 'failed' back on a failure path looks "unchanged" to Eloquent
+        // (the loaded value was already 'failed') and is never saved,
+        // leaving the order stuck in 'sending' and un-retryable.
+        $order->syncOriginal();
         $method = $methodId
             ? CourierMethod::where('business_id', $order->business_id)->where('is_active', true)->find($methodId)
             : $this->suggester->suggest($order)['method'] ?? null;
         if (! $method) {
+            $order->update(['booking_status' => 'failed']);
+
             return ['ok' => false, 'error' => 'No courier configured yet'];
         }
         $suggestion = $this->suggester->suggest($order);
@@ -37,7 +66,35 @@ class BookingService
 
         $driver = DriverFactory::for($method);
         $isManual = $method->bookingMode() === 'manual';
-        $result = $driver->createBooking($order, $method, ['cn' => $cn, 'store_id' => null]);
+        try {
+            // The resolved store is a LOCAL pickup-store row id; drivers
+            // need the courier-side store_id from that row. Passing null
+            // here made couriers reject first bookings with "needs a
+            // pickup store" even when the shop had stores synced.
+            $storeRef = $storeId ? \App\Models\CourierPickupStore::find($storeId)?->store_id : null;
+            $result = $driver->createBooking($order, $method, ['cn' => $cn, 'store_id' => $storeRef]);
+        } catch (\Throwable $e) {
+            // Release the claim above so the order is not stuck in 'sending'.
+            $order->update(['courier_method_id' => $method->id, 'booking_status' => 'failed']);
+            // An exception (timeout, network) is still a FAILED BOOKING —
+            // it must leave a log row, or the failure counter behind the
+            // Work Inbox rule never sees it (the OB289 miss: its timeout-era
+            // attempts threw and were never counted).
+            CourierBookingLog::create([
+                'business_id' => $order->business_id,
+                'order_id' => $order->id,
+                'courier_method_id' => $method->id,
+                'pickup_store_id' => $storeId,
+                'mode' => $isManual ? 'manual_cn' : $mode,
+                'booking_status' => 'failed',
+                'request_payload' => ['invoice' => $order->invoice, 'cod' => $order->codAmount(), 'courier' => $method->courier_type],
+                'error' => mb_substr($e->getMessage(), 0, 250),
+                'attempts' => CourierBookingLog::where('order_id', $order->id)->count() + 1,
+                'created_by' => 'user',
+            ]);
+            $this->maybeRaiseFailureEvent($order, $method);
+            throw $e;
+        }
 
         $log = CourierBookingLog::create([
             'business_id' => $order->business_id,

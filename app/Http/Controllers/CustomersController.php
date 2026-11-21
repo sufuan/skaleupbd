@@ -27,12 +27,19 @@ class CustomersController extends Controller
         $orders = Order::where('business_id', $bizId)->where('customer_id', $c->id);
         $total = (clone $orders)->count();
         $delivered = (clone $orders)->where('status', 'Delivered')->count();
+        $returned = (clone $orders)->where('status', 'Returned')->count();
+        $outcomes = $delivered + $returned;
 
         return [
             'orders' => $total,
             'delivered' => $delivered,
-            'success_rate' => $total > 0 ? (int) round($delivered / $total * 100) : null,
-            'spent' => (float) (clone $orders)->where('status', 'Delivered')->sum('grand_total'),
+            // One definition everywhere (same as SuccessRateService and the
+            // Customer Report): success is decided outcomes only — a customer
+            // whose parcels are still in transit has NO rate yet, not 0%.
+            // Spent is the booked value of non-cancelled orders, matching
+            // the Customer Report's "spent".
+            'success_rate' => $outcomes > 0 ? (int) round($delivered / $outcomes * 100) : null,
+            'spent' => (float) (clone $orders)->whereNotIn('status', ['Cancelled'])->sum('grand_total'),
             'last_order' => (clone $orders)->latest('id')->first()?->created_at?->format('d M Y'),
         ];
     }
@@ -50,16 +57,18 @@ class CustomersController extends Controller
         ], $this->aggregates($bizId, $c)))->all();
 
         $orders = Order::where('business_id', $bizId);
-        $deliveredCount = (clone $orders)->where('status', 'Delivered')->count();
-        $deliveredSum = (float) (clone $orders)->where('status', 'Delivered')->sum('grand_total');
+        // Header figures use the same definition as the rows and the
+        // Customer Report: booked value of non-cancelled orders.
+        $liveCount = (clone $orders)->whereNotIn('status', ['Cancelled'])->count();
+        $liveSum = (float) (clone $orders)->whereNotIn('status', ['Cancelled'])->sum('grand_total');
 
         return Inertia::render('Customers/Index', [
             'customers' => $rows,
             'q' => $q,
             'stats' => [
                 'total' => $customers->count(),
-                'aov' => $deliveredCount > 0 ? (int) round($deliveredSum / $deliveredCount) : 0,
-                'clv' => $customers->count() > 0 ? (int) round($deliveredSum / $customers->count()) : 0,
+                'aov' => $liveCount > 0 ? (int) round($liveSum / $liveCount) : 0,
+                'clv' => $customers->count() > 0 ? (int) round($liveSum / $customers->count()) : 0,
             ],
         ]);
     }

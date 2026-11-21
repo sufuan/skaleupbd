@@ -76,7 +76,7 @@ function BlockEditor({ block, setData, products, categories }) {
                     </select>
                 </F>
             )}
-            <F label="How many products"><input className="fld" type="number" min={1} max={24} value={d.count ?? 8} onChange={(e) => setData('count', Number(e.target.value))} /></F>
+            <F label="How many products"><input className="fld" type="number" min={1} max={24} value={d.count ?? 24} onChange={(e) => setData('count', Number(e.target.value))} /></F>
         </>);
         case 'price_offer': return (<>
             <F label="Title"><input className="fld" value={d.title || ''} onChange={(e) => setData('title', e.target.value)} /></F>
@@ -210,7 +210,7 @@ export default function Builder({ sf, blocks: initial, products, categories }) {
                     <button type="button" className="btn pri" onClick={save} disabled={form.processing}>{t('Save page')}</button>
                 </div>
             </div>
-            <style>{`@media (max-width: 760px){ .sf-itemrow{grid-template-columns:1fr !important} }`}</style>
+            <style>{`textarea.fld{height:auto;padding:8px 12px} @media (max-width: 760px){ .sf-itemrow{grid-template-columns:1fr !important} }`}</style>
         </AppLayout>
     );
 }

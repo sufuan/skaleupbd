@@ -20,7 +20,7 @@ const USED_IN = {
     back_in_stock: 'Used in: Automation — when stock returns',
     winback: 'Used in: Automation — sleeping customer offer',
     post_return: 'Used in: Automation — call after a return',
-    offer: 'Used in: SMS campaign',
+    offer: 'Used in: SMS Marketing campaigns',
 };
 
 function FlowCard({ flow }) {
@@ -129,7 +129,7 @@ export default function Automation({ flows, templates, strip }) {
                                         <div>
                                             <div className="tpl-name">{tpl.name}</div>
                                             <div className="tpl-text">{tpl.body}</div>
-                                            <div className="tpl-used">{t(USED_IN[tpl.key] || 'Used in: SMS campaign')}</div>
+                                            <div className="tpl-used">{t(USED_IN[tpl.key] || 'Used in: SMS Marketing campaigns')}</div>
                                         </div>
                                         <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
                                             <button className="btn-s" onClick={() => openEdit(tpl)}>{t('Edit')}</button>

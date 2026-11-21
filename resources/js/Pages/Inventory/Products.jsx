@@ -14,6 +14,16 @@ const TAB_BTN = (active) => `inline-flex items-center justify-center text-sm fon
 const TH = 'h-12 px-4 text-left align-middle font-medium text-muted-foreground';
 const TD = 'p-4 align-middle';
 
+// Product thumbnail: a stored path whose file is missing used to render a
+// blank white box — fall back to the same IMG placeholder as no-image.
+function Thumb({ src }) {
+    const [bad, setBad] = useState(false);
+    if (!src || bad) {
+        return <div className="flex items-center justify-center border border-gray-200 bg-gray-50 h-10 w-10 rounded-md text-gray-400 text-xs">IMG</div>;
+    }
+    return <img src={src.startsWith('http') ? src : '/storage/' + src} alt="" className="h-10 w-10 rounded-md border object-cover" onError={() => setBad(true)} />;
+}
+
 function Pill({ on }) {
     return <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold whitespace-nowrap ${on ? 'border-green-200 bg-green-50 text-green-700' : 'border-red-200 bg-red-50 text-red-700'}`}>{on ? 'ON' : 'OFF'}</span>;
 }
@@ -58,13 +68,11 @@ export default function Products({ products, summary, inactive, combos, wraps, s
                             <td className={TD}><div className="font-medium">{p.sku}</div></td>
                             <td className={TD}>
                                 <div className="flex items-start gap-3">
-                                    {p.image
-                                        ? <img src={p.image.startsWith('http') ? p.image : '/storage/' + p.image} alt="" className="h-10 w-10 rounded-md border object-cover" />
-                                        : <div className="flex items-center justify-center border border-gray-200 bg-gray-50 h-10 w-10 rounded-md text-gray-400 text-xs">IMG</div>}
+                                    <Thumb src={p.image} />
                                     <div className="min-w-0 space-y-1">
                                         <div className="block max-w-[260px] truncate font-medium">{p.name}</div>
                                         {p.featured && <span className="text-[11px] text-amber-600">★ {t('Featured')}</span>}
-                                        {typeof p.ai_score === 'number' && <span className={`block text-[11px] ${p.ai_score >= 80 ? 'text-emerald-600' : p.ai_score >= 50 ? 'text-amber-600' : 'text-red-500'}`}>{t('AI ready')} {p.ai_score}%</span>}
+                                        {typeof p.ai_score === 'number' && <span title={t('How ready this product is for the AI to sell it — photo, price, description, other names and stock')} className={`block text-[11px] ${p.ai_score >= 80 ? 'text-emerald-600' : p.ai_score >= 50 ? 'text-amber-600' : 'text-red-500'}`}>{t('AI ready')} {p.ai_score}%</span>}
                                     </div>
                                 </div>
                             </td>

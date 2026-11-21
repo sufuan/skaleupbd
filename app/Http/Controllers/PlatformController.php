@@ -38,6 +38,21 @@ class PlatformController extends Controller
         $live = $sub && $sub->isLive();
         $wallet = \App\Models\BusinessWallet::where('business_id', $b->id)->first();
 
+        // M19 truth: the points wallet decides the pack display. The
+        // legacy subscription only fills the gap for a shop that has a
+        // subscription but never bought points (pre-M19 records).
+        $packName = $sub?->package?->name;
+        $status = $sub ? ($live ? 'active' : ($sub->status === 'cancelled' ? 'cancelled' : 'expired')) : 'none';
+        $expiresAt = $sub?->expires_at?->format('d M Y');
+        $daysLeft = $sub ? (int) today()->diffInDays($sub->expires_at, false) : null;
+        if ($wallet && $wallet->first_purchase_at) {
+            $until = $wallet->cycle_end ?? $wallet->wallet_expires_at;
+            $packName = $wallet->packName() ?? $packName;
+            $status = ($until && $until->isPast()) ? 'expired' : 'active';
+            $expiresAt = $until?->format('d M Y');
+            $daysLeft = $until ? (int) today()->diffInDays($until, false) : null;
+        }
+
         return [
             'id' => $b->id,
             'name' => $b->name,
@@ -50,17 +65,20 @@ class PlatformController extends Controller
             'email' => $b->email,
             'address' => $b->address,
             'joined' => $b->created_at?->format('d M Y'),
-            'package' => $sub?->package?->name,
+            'package' => $packName,
             'package_price' => $sub ? (float) $sub->amount : null,
-            'status' => $sub ? ($live ? 'active' : ($sub->status === 'cancelled' ? 'cancelled' : 'expired')) : 'none',
-            'expires_at' => $sub?->expires_at?->format('d M Y'),
-            'days_left' => $sub ? (int) today()->diffInDays($sub->expires_at, false) : null,
+            'status' => $status,
+            'expires_at' => $expiresAt,
+            'days_left' => $daysLeft,
             'paid_total' => (float) SellerPayment::where('business_id', $b->id)->sum('amount'),
             'token_balance' => $wallet ? (int) $wallet->balance : 0,
             'token_pack' => $wallet?->packName(),
             'token_until' => ($wallet?->cycle_end ?? $wallet?->wallet_expires_at)?->format('d M Y'),
             'orders' => (clone $orders)->count(),
-            'revenue' => (float) (clone $orders)->where('status', 'Delivered')->sum('grand_total'),
+            // "Sales" = the shop's booked order value, cancelled excluded —
+            // the same definition as the seller's Order Report. Delivered-only
+            // made every active seller read ৳0 until parcels completed.
+            'revenue' => (float) (clone $orders)->whereNotIn('status', ['Cancelled'])->sum('grand_total'),
             'customers' => Customer::where('business_id', $b->id)->count(),
         ];
     }
@@ -149,15 +167,28 @@ class PlatformController extends Controller
                 return [
                     'id' => $c->id, 'name' => $c->name, 'phone' => $c->phone, 'address' => $c->address,
                     'orders' => $total, 'delivered' => $delivered,
-                    'spent' => (float) (clone $orders)->where('status', 'Delivered')->sum('grand_total'),
+                    'spent' => (float) (clone $orders)->whereNotIn('status', ['Cancelled'])->sum('grand_total'),
                     'last_order' => (clone $orders)->latest('id')->first()?->created_at?->format('d M Y'),
                 ];
             })->all();
 
         return Inertia::render('Platform/SellerDetail', [
             'seller' => $row,
-            'subscriptions' => SellerSubscription::where('business_id', $business->id)->with('package')->orderByDesc('id')->get()
-                ->map(fn ($s) => ['id' => $s->id, 'package' => $s->package?->name ?? 'Custom', 'amount' => (float) $s->amount, 'starts_at' => $s->starts_at?->format('d M Y'), 'expires_at' => $s->expires_at?->format('d M Y'), 'status' => $s->isLive() ? 'active' : $s->status])->all(),
+            // M19: the "Package history" is the points purchase history —
+            // pack purchases and the one-time onboarding fee (plus their
+            // refunds), read from the SellerPayment money records.
+            'purchaseHistory' => SellerPayment::where('business_id', $business->id)
+                ->where(fn ($q) => $q->where('note', 'like', '%pack purchase%')
+                    ->orWhere('note', 'like', 'Onboarding fee%')
+                    ->orWhere('note', 'like', 'Refund — %'))
+                ->latest('paid_at')->latest('id')->get()
+                ->map(fn ($p) => [
+                    'id' => $p->id,
+                    'label' => $this->purchaseLabel($p),
+                    'amount' => (float) $p->amount,
+                    'method' => $p->method,
+                    'when' => $p->paid_at?->format('d M Y, h:i A'),
+                ])->all(),
             'payments' => SellerPayment::where('business_id', $business->id)->latest('paid_at')->get()
                 ->map(fn ($p) => ['id' => $p->id, 'amount' => (float) $p->amount, 'method' => $p->method, 'note' => $p->note, 'when' => $p->paid_at?->format('d M Y, h:i A')])->all(),
             'packages' => \App\Models\PointPack::where('is_active', true)->orderBy('sort')->get()
@@ -183,6 +214,17 @@ class PlatformController extends Controller
                 ->map(fn ($c) => $this->claimRow($c))->all(),
             'customers' => $customers,
         ]);
+    }
+
+    /** Display label for one purchase-history money row. */
+    private function purchaseLabel(SellerPayment $p): string
+    {
+        $note = trim((string) $p->note);
+        if (preg_match('/^(.+?)\s+pack purchase$/', $note, $m)) {
+            return $m[1].' pack';
+        }
+
+        return $note !== '' ? $note : 'Pack purchase';
     }
 
     /** Record a point-pack purchase for a seller (M19 v1: paid offline). */
@@ -237,6 +279,10 @@ class PlatformController extends Controller
             'trx_id' => $c->trx_id,
             'status' => $c->status,
             'admin_note' => $c->admin_note,
+            // The claim records what was CREDITED; the wallet may already
+            // have spent some of it — show the live balance alongside so
+            // "330 credited" and a "329" balance never look contradictory.
+            'current_balance' => (int) (\App\Models\BusinessWallet::where('business_id', $c->business_id)->value('balance') ?? 0),
             'seller_pending' => $c->business?->status === 'pending',
             'when' => $c->created_at?->format('d M Y, h:i A'),
             'decided_at' => $c->decided_at?->format('d M Y, h:i A'),

@@ -15,7 +15,7 @@ export default function Employee({ preset, rows }) {
                         {rows.map((r) => (
                             <tr key={r.name}>
                                 <td>{r.name}</td>
-                                <td>{r.processed > 0 ? t(':count pcs', { count: fmtNum(r.processed) }) : '—'}</td>
+                                <td>{r.processed > 0 ? fmtNum(r.processed) : '—'}</td>
                                 <td>{r.delivered_pct !== null ? `${r.delivered_pct}%` : '—'}</td>
                                 <td>{r.return_pct !== null ? `${r.return_pct}%` : '—'}</td>
                                 <td>—</td>

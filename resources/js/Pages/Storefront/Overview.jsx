@@ -30,7 +30,9 @@ export default function Overview({ sf, orderCount, openReports, hasAddress }) {
                 <span className={`pill ${tone}`}>{t(label)}</span>
                 {sf.status === 'published'
                     ? <button className="btn" onClick={() => router.post('/storefront/unpublish')}>{t('Unpublish')}</button>
-                    : <button className="btn pri" onClick={() => router.post('/storefront/publish')}>{t('Publish storefront')}</button>}
+                    : (hasAddress && sf.phoneVerified && !sf.domainLocked)
+                        ? <button className="btn pri" onClick={() => router.post('/storefront/publish')}>{t('Publish storefront')}</button>
+                        : <button className="btn pri" disabled style={{ opacity: 0.45, cursor: 'not-allowed' }} title={t('Finish the checklist below first — your shop address and mobile verification are needed')}>{t('Publish storefront')}</button>}
                 {sf.subdomainUrl && <a className="btn" href={sf.subdomainUrl} target="_blank" rel="noreferrer">{t('View shop')}</a>}
             </div>
 
@@ -89,7 +91,7 @@ export default function Overview({ sf, orderCount, openReports, hasAddress }) {
                             <form onSubmit={(e) => { e.preventDefault(); otpVerify.post('/storefront/otp/verify', { preserveScroll: true }); }} style={{ marginTop: 12 }}>
                                 <label className="lbl">{t('6-digit code from the SMS')}</label>
                                 <div style={{ display: 'flex', gap: 8 }}>
-                                    <input className="fld" style={{ flex: 1 }} placeholder="123456" inputMode="numeric" value={otpVerify.data.code} onChange={(e) => otpVerify.setData('code', e.target.value)} required />
+                                    <input className="fld" style={{ flex: 1 }} placeholder={t('6-digit code')} inputMode="numeric" value={otpVerify.data.code} onChange={(e) => otpVerify.setData('code', e.target.value)} required />
                                     <button className="btn" disabled={otpVerify.processing}>{t('Verify')}</button>
                                 </div>
                             </form>

@@ -72,8 +72,8 @@ export default function Index({ rows, counts, filters, pagination, pendingCount,
                     <div className="tbl-wrap">
                         <table className="tbl ord-tbl">
                             <colgroup>
-                                <col style={{ width: 32 }} /><col style={{ width: 114 }} /><col style={{ width: 52 }} /><col style={{ width: 210 }} />
-                                <col style={{ width: 108 }} /><col style={{ width: 132 }} /><col style={{ width: 94 }} /><col style={{ width: 56 }} />
+                                <col style={{ width: 32 }} /><col style={{ width: 114 }} /><col style={{ width: 52 }} /><col style={{ width: 176 }} />
+                                <col style={{ width: 88 }} /><col style={{ width: 112 }} /><col style={{ width: 74 }} /><col style={{ width: 150 }} />
                                 <col style={{ width: 94 }} /><col style={{ width: 110 }} /><col style={{ width: 92 }} /><col style={{ width: 128 }} />
                             </colgroup>
                             <thead><tr>
@@ -103,7 +103,7 @@ export default function Index({ rows, counts, filters, pagination, pendingCount,
                                         </td>
                                         <td>{(o.items || []).slice(0, 3).map((it, i) => (
                                             <span key={i} style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 4 }}>
-                                                <span className="thumb" /><span className="iname">{it.name} {it.qty}x {fmt(it.price)}</span>
+                                                <span className="thumb" /><span className="iname" style={{ minWidth: 0 }}>{it.name}</span><span style={{ flexShrink: 0, whiteSpace: 'nowrap', fontSize: 12.5 }}>{it.qty}x {fmt(it.price)}</span>
                                             </span>
                                         ))}{(o.items || []).length > 3 && <span style={{ fontSize: 12, color: '#64748B' }}>+{o.items.length - 3} {t('more')}</span>}</td>
                                         <td><SuccessCell fraud={o.fraud} /></td>
@@ -113,7 +113,7 @@ export default function Index({ rows, counts, filters, pagination, pendingCount,
                                                 <Link className="mini-btn" title={t('Add Tag')} href={`/orders/${o.id}`}>{I.plus}</Link>
                                               </span>
                                             : <Link className="mini-btn" title={t('Add Tag')} href={`/orders/${o.id}`}>{I.plus}</Link>}</td>
-                                        <td>{o.site || o.source}</td>
+                                        <td><span className="site-cell">{o.site_label || o.site || o.source}</span></td>
                                         <td><StatusPill status={o.status} />{o.is_preorder && <div className="sm mut">{t('Preorder')}</div>}</td>
                                         <td>{o.pbx_calls > 0 ? o.pbx_calls : <span style={{ color: '#64748B' }}>—</span>}</td>
                                         <td>{o.processed_by || <span style={{ color: '#64748B' }}>—</span>}</td>

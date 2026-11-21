@@ -40,9 +40,18 @@ class OrderController extends Controller
         return $order;
     }
 
-    private function row(Order $o, ?array $liveFraud = null): array
+    private function row(Order $o, ?array $liveFraud = null, ?array $sourceLabels = null, ?array $fraudCounts = null): array
     {
         $fraud = $liveFraud ?? ['rate' => $o->fraud_rate, 'verdict' => $o->fraud_verdict, 'note' => $o->fraud_note];
+        // The Success cell prints "delivered / orders" for the phone — the
+        // stored snapshot never carried those counts, so every row used to
+        // render 0/0. The list passes one grouped count per page; the
+        // detail page's live check already includes them.
+        if ($fraudCounts !== null) {
+            $fraud['orders'] = $fraudCounts['orders'];
+            $fraud['delivered'] = $fraudCounts['delivered'];
+        }
+        $sourceLabel = $sourceLabels[$o->source] ?? $o->source;
         return [
             'id' => $o->id,
             'invoice' => $o->invoice_no,
@@ -57,7 +66,9 @@ class OrderController extends Controller
             'fraud' => $fraud,
             'tags' => $o->tags ?? [],
             'site' => $o->site,
+            'site_label' => $o->site ?: $sourceLabel,
             'source' => $o->source,
+            'source_label' => $sourceLabel,
             'status' => $o->status,
             'auto_call' => $o->auto_call_status,
             'pbx_calls' => (int) ($o->pbx_calls_count ?? 0),
@@ -94,9 +105,23 @@ class OrderController extends Controller
             $o->pbx_calls_count = (int) ($callCounts[$o->id] ?? 0);
         }
 
+        // One grouped query for the whole page: each phone's order history
+        // (the Success cell's delivered/total), mirroring SuccessRateService.
+        $pagePhones = collect($page->items())->pluck('customer_phone')->filter()->unique()->values();
+        $fraudCounts = [];
+        if ($pagePhones->isNotEmpty()) {
+            $fc = Order::where('business_id', $biz)->whereIn('customer_phone', $pagePhones)
+                ->selectRaw("customer_phone, count(*) as total, sum(case when status = 'Delivered' then 1 else 0 end) as delivered")
+                ->groupBy('customer_phone')->get();
+            foreach ($fc as $r) {
+                $fraudCounts[$r->customer_phone] = ['orders' => (int) $r->total, 'delivered' => (int) $r->delivered];
+            }
+        }
+        $sourceLabels = OrderSource::where('business_id', $biz)->pluck('label', 'code')->all();
+
         return Inertia::render('Orders/Index', [
             'orders' => $page->items(),
-            'rows' => collect($page->items())->map(fn ($o) => $this->row($o)),
+            'rows' => collect($page->items())->map(fn ($o) => $this->row($o, null, $sourceLabels, $fraudCounts[$o->customer_phone] ?? ['orders' => 0, 'delivered' => 0])),
             'counts' => $counts,
             'filters' => ['status' => $status, 'search' => $search, 'per_page' => $perPage,
                 'from' => $request->query('from', ''), 'to' => $request->query('to', ''),
@@ -193,7 +218,7 @@ class OrderController extends Controller
             'products' => Product::where('business_id', $biz)->where('is_active', true)->orderBy('name')
                 ->get()->map(fn ($p) => ['id' => $p->id, 'name' => $p->name, 'sku' => $p->sku,
                     'price' => (float) $p->price, 'stock' => $p->stock_qty - $p->reserved_qty]),
-            'couriers' => $this->settings->get('couriers.methods', []),
+            'couriers' => app(\App\Services\DeliveryMethodList::class)->forBusiness($biz),
             'allTags' => Order::where('business_id', $biz)->pluck('tags')->filter()
                 ->flatMap(fn ($t) => is_array($t) ? $t : [])->unique()->values(),
             'paymentMethods' => ['bKash', 'Nagad', 'Rocket', 'Bank', 'Cash on Delivery'],
@@ -325,7 +350,7 @@ class OrderController extends Controller
 
         return Inertia::render('Orders/Show', [
             'order' => [
-                ...$this->row($order, $rate),
+                ...$this->row($order, $rate, OrderSource::where('business_id', $biz)->pluck('label', 'code')->all()),
                 'email' => $order->customer_email,
                 'district' => $order->district,
                 'area' => $order->area,
@@ -373,13 +398,14 @@ class OrderController extends Controller
                 'headline' => $rate['headline'] ?? 'history',
                 'is_returning' => $rate['orders'] > 1,
             ],
-            'couriers' => $this->settings->get('couriers.methods', []),
+            'couriers' => app(\App\Services\DeliveryMethodList::class)->forBusiness($biz),
             'courierMethods' => \App\Models\CourierMethod::where('business_id', $biz)->where('is_active', true)->with('pickupStores')->orderBy('name')->get()->map(function ($m) use ($order, $suggestion) {
                 return ['id' => $m->id, 'name' => $m->name, 'label' => $m->label(), 'type' => $m->courier_type,
                     'class' => $m->courierClass(), 'booking_mode' => $m->bookingMode(),
                     'charge' => $m->chargeFor($order->effectiveDistrict()),
                     'is_default' => $m->is_default, 'is_preferred' => $m->is_preferred,
                     'suggested' => $suggestion && $suggestion['method']->id === $m->id,
+                    'has_store_id' => ! empty($m->credentials['store_id']),
                     'suggested_reason' => $suggestion && $suggestion['method']->id === $m->id ? $suggestion['reason'] : null,
                     'stores' => $m->pickupStores->map(fn ($st) => ['id' => $st->id, 'store_id' => $st->store_id, 'name' => $st->name, 'is_default' => $st->is_default])->all()];
             })->all(),

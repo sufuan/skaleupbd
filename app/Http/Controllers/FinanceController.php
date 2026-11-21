@@ -257,8 +257,12 @@ class FinanceController extends Controller
         $from = $today->copy()->startOfMonth()->toDateString();
         $to = $today->toDateString();
 
+        // whereDate, not whereBetween on the raw column: txn_date can carry
+        // a time part in storage, and a plain string between then drops the
+        // month's boundary days (the "No entries this month" bug).
         $base = FinanceTransaction::where('business_id', $biz)->whereIn('type', ['income', 'expense'])
-            ->whereNull('voided_at')->whereNull('reversal_of')->whereBetween('txn_date', [$from, $to]);
+            ->whereNull('voided_at')->whereNull('reversal_of')
+            ->whereDate('txn_date', '>=', $from)->whereDate('txn_date', '<=', $to);
         $byCategory = (clone $base)->with('category')->get()
             ->groupBy(fn ($t) => $t->category?->name ?? '—')
             ->map(fn ($rows, $name) => [
@@ -267,7 +271,10 @@ class FinanceController extends Controller
                 'expense' => round($rows->where('type', 'expense')->sum('amount'), 2),
             ])->values()->all();
 
+        // The list must cover the SAME month as the totals above it — it
+        // silently listed all time, so the page disagreed with itself.
         $list = FinanceTransaction::where('business_id', $biz)->whereIn('type', ['income', 'expense'])
+            ->whereDate('txn_date', '>=', $from)->whereDate('txn_date', '<=', $to)
             ->with(['account', 'category', 'creator'])
             ->when($tab === 'expense', fn ($q) => $q->where('type', 'expense'))
             ->when($tab === 'income', fn ($q) => $q->where('type', 'income'))

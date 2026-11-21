@@ -169,9 +169,9 @@ class FinanceService
         $rtoLoss = round($returned->sum(fn (Order $o) => $settlements->committedCharge($o)), 2);
 
         $expense = round((float) $this->liveTxns($businessId)->where('type', 'expense')
-            ->whereBetween('txn_date', [$from->toDateString(), $to->toDateString()])->sum('amount'), 2);
+            ->whereDate('txn_date', '>=', $from->toDateString())->whereDate('txn_date', '<=', $to->toDateString())->sum('amount'), 2);
         $otherIncome = round((float) $this->liveTxns($businessId)->where('type', 'income')
-            ->whereBetween('txn_date', [$from->toDateString(), $to->toDateString()])->sum('amount'), 2);
+            ->whereDate('txn_date', '>=', $from->toDateString())->whereDate('txn_date', '<=', $to->toDateString())->sum('amount'), 2);
 
         $profit = round($revenue + $otherIncome - $productCost - $courierCharges - $rtoLoss - $expense, 2);
 

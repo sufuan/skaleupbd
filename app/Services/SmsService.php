@@ -151,15 +151,18 @@ class SmsService
      * encrypted (sms_api_key_enc) with a plain 'set' marker (sms_api_key),
      * the same pattern the gateway key used before it became per-seller.
      *
-     * One-time fallback: before per-seller keys existed, the gateway key
-     * lived in the platform-global settings (marketing.gateway_api_key_enc).
-     * A shop that has not saved its own key yet keeps sending with the
-     * legacy global key until it saves one; new saves never write globally.
+     * OWNERSHIP BOUNDARY (owner rule): customer messages resolve ONLY the
+     * shop's own key — never another shop's and never the platform's.
+     * Before per-seller keys existed, one gateway key lived in the
+     * platform-global settings (marketing.gateway_api_key_enc); that key
+     * belongs to the PLATFORM, so it is consulted only when $platform is
+     * true — the platform's own sends (sendPlatform: verification codes),
+     * resolved against the platform business's configuration.
      */
-    public function providerConfig(int $biz): array
+    public function providerConfig(int $biz, bool $platform = false): array
     {
         $enc = (string) $this->setting($biz, 'sms_api_key_enc', '');
-        if ($enc === '') {
+        if ($enc === '' && $platform) {
             $enc = (string) $this->settings->get('marketing.gateway_api_key_enc', '');
         }
         $key = null;
@@ -181,9 +184,9 @@ class SmsService
     }
 
     /** The gateway driver for a shop; a typed key wins over the saved one. */
-    public function gateway(int $biz, ?string $typedKey = null): ?SmsGateway
+    public function gateway(int $biz, ?string $typedKey = null, bool $platform = false): ?SmsGateway
     {
-        $cfg = $this->providerConfig($biz);
+        $cfg = $this->providerConfig($biz, $platform);
         $key = $typedKey !== null && trim($typedKey) !== '' ? trim($typedKey) : (string) ($cfg['api_key'] ?? '');
 
         return match ($cfg['provider']) {
@@ -249,16 +252,16 @@ class SmsService
      *
      * @return array{ok: bool, provider: ?string, provider_message_id: ?string, error: ?string, response: ?string}
      */
-    private function dispatch(int $biz, string $phone, string $body): array
+    private function dispatch(int $biz, string $phone, string $body, bool $platform = false): array
     {
-        $cfg = $this->providerConfig($biz);
+        $cfg = $this->providerConfig($biz, $platform);
         if ($cfg['mode'] !== 'live') {
             return ['ok' => true, 'provider' => null, 'provider_message_id' => null, 'error' => null, 'response' => null];
         }
         if (! $cfg['has_key']) {
             return ['ok' => false, 'provider' => $cfg['provider'], 'provider_message_id' => null, 'error' => 'SMS gateway API key not saved', 'response' => null];
         }
-        $gateway = $this->gateway($biz);
+        $gateway = $this->gateway($biz, null, $platform);
         if (! $gateway) {
             return ['ok' => false, 'provider' => $cfg['provider'], 'provider_message_id' => null, 'error' => 'Unknown SMS provider', 'response' => null];
         }
@@ -272,6 +275,36 @@ class SmsService
             'error' => $result['error'] ?? null,
             'response' => $response === null || is_string($response) ? $response : json_encode($response),
         ];
+    }
+
+    /**
+     * Platform transactional send (verification codes and the like):
+     * dispatched through the given business's provider configuration,
+     * but NOT gated on — or charged to — that shop's prepaid marketing
+     * balance. The in-app balance is a marketing construct; a one-time
+     * code must never be blocked by it (a fresh shop has ৳0 and the
+     * platform fallback shop may too, while its gateway account is
+     * funded). The log row records the gateway's real answer, so the
+     * caller can report success/failure truthfully.
+     */
+    public function sendPlatform(int $biz, string $phone, string $body, array $source, ?int $logBiz = null): SmsLog
+    {
+        $phone = PhoneNormalizer::normalize($phone);
+        // Platform resolution: the platform business's own config, with the
+        // platform's legacy global key as ITS fallback — never a seller's.
+        $dispatch = $this->dispatch($biz, $phone, $body, platform: true);
+
+        return SmsLog::create([
+            'business_id' => $logBiz ?? $biz, 'phone' => $phone, 'customer_id' => null,
+            'source_type' => $source['type'], 'source_key' => (string) $source['key'],
+            'source_label' => $source['label'] ?? (string) $source['key'], 'ref' => $source['ref'] ?? null,
+            'body' => $body, 'parts' => $this->parts($body), 'cost' => 0,
+            'status' => $dispatch['ok'] ? 'sent' : 'failed',
+            'provider' => $dispatch['provider'],
+            'provider_message_id' => $dispatch['provider_message_id'],
+            'provider_response' => $dispatch['response'],
+            'error' => $dispatch['ok'] ? null : ($dispatch['error'] !== null ? mb_substr($dispatch['error'], 0, 250) : null),
+        ]);
     }
 
     /**

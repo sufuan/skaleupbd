@@ -1328,6 +1328,9 @@ BN.update([
     ('Unit Cost', 'একক ক্রয়মূল্য'),
     ('Units Purchased', 'কেনা ইউনিট'),
     ('Units Sold', 'বিক্রি হওয়া ইউনিট'),
+    ('Units shipped out', 'পাঠিয়ে দেওয়া ইউনিট'),
+    ('Shipped (30d)', 'পাঠানো হয়েছে (30 দিন)'),
+    ('Sold (delivered)', 'বিক্রি (ডেলিভারি হয়েছে)'),
     ('Update', 'আপডেট'),
     ('Updated By', 'যিনি আপডেট করেছেন'),
     ('Use + for stock in, − for stock out. Every adjustment is written to the Stock Ledger.', 'স্টক ঢোকাতে +, বের করতে − ব্যবহার করুন। প্রতিটি সমন্বয় স্টক লেজারে লেখা হয়।'),
@@ -1468,6 +1471,10 @@ BN.update([
     ('Pause all AI', 'সব AI থামাও'),
     ('Previous orders', 'আগের order'),
     ('Private reply sent', 'Private reply পাঠানো হয়েছে'),
+    ('Awaiting reply', 'Reply বাকি'),
+    ('No reply needed', 'Reply লাগবে না'),
+    ('Replied', 'রিপ্লাই হয়েছে'),
+    ('Hidden', 'লুকানো'),
     ('Resume AI', 'AI আবার চালু করো'),
     ('Rule name', 'নিয়মের নাম'),
     ('Search conversations...', 'কথোপকথন খুঁজুন...'),
@@ -1935,6 +1942,49 @@ BN.update([
     ('Used in: Automation — sleeping customer offer', 'ব্যবহার হয়: Automation — ঘুমন্ত customer offer'),
     ('Used in: Automation — call after a return', 'ব্যবহার হয়: Automation — return-এর পর আহ্বান'),
     ('Used in: SMS campaign', 'ব্যবহার হয়: SMS campaign'),
+    ("The supervisor screen — everyone's work in one place. Move stuck work to someone else.", 'Supervisor-এর পর্দা — সবার কাজ একসাথে। আটকে থাকা কাজ অন্য কাউকে সরিয়ে দাও।'),
+    ('Total open work', 'মোট খোলা কাজ'),
+    ('Not assigned to anyone', 'কাউকে দেওয়া হয়নি'),
+    ('Finished today', 'আজ শেষ হয়েছে'),
+    ('Not assigned to anyone — pick these up first', 'কাউকে দেওয়া হয়নি — এগুলো আগে ধরো'),
+    ('Work sitting in the pool can be picked up by whoever is free, or you can give it to someone.', 'পুলে পড়ে থাকা কাজ যে ফ্রি সে তুলে নিতে পারে, অথবা তুমি কাউকে দিয়ে দাও।'),
+    ("Everyone's open work", 'সবার খোলা কাজ'),
+    ('Search by invoice, customer or phone', 'Invoice, customer বা phone দিয়ে খোঁজো'),
+    ('In progress', 'চলছে'),
+    ('Pool (Unassigned)', 'পুল (Unassigned)'),
+    ('Any time', 'সব সময়'),
+    ('Due today', 'আজকের মধ্যে'),
+    ('Task', 'কাজ'),
+    ('Assigned to', 'দায়িত্বে'),
+    ('Time', 'সময়'),
+    ('Give to someone else', 'অন্য কাউকে দাও'),
+    ('Resolved on its own', 'নিজে থেকে মিটে গেছে'),
+    ('Created:', 'তৈরি:'),
+    ('Assigned to:', 'দায়িত্বে:'),
+    ('Finished:', 'শেষ:'),
+    ('Closed:', 'বন্ধ:'),
+    ('Manual task', 'হাতে বানানো task (Manual)'),
+    ('How it was resolved:', 'কীভাবে মিটলো:'),
+    ('Task done — how was it resolved?', 'কাজটা শেষ — কীভাবে মিটলো?'),
+    ('A note is required for this task — write one line.', 'এই কাজটায় note লেখা বাধ্যতামূলক — এক লাইন লিখে দাও।'),
+    ('Write one line so anyone can understand it later.', 'এক লাইনে লিখে রাখো, পরে যে কেউ দেখলে বুঝবে।'),
+    ('It did not work — try again', 'হয়নি, আবার চেষ্টা করো'),
+    ('e.g. sent it to the courier, CN number ...', 'যেমন: courier-এ পাঠিয়ে দিয়েছি, CN নম্বর ...'),
+    ('Done — finish it', 'Done — শেষ করো'),
+    ('New task (manual)', 'নতুন Task (হাতে বানানো)'),
+    ('What needs doing', 'কী করতে হবে'),
+    ('e.g. call the supplier tomorrow morning', 'যেমন: কাল সকালে supplier-কে phone করতে হবে'),
+    ('Who should do it', 'কাকে দেবে'),
+    ('Myself', 'নিজেকে'),
+    ('Pool (whoever is free takes it)', 'পুল (যে ফ্রি সে নেবে)'),
+    ('Normal', 'সাধারণ'),
+    ('Urgent', 'জরুরি'),
+    ('Very urgent', 'খুব জরুরি'),
+    ('Create task', 'Task বানাও'),
+    ('No staff added yet — Admin logins are not counted as staff.', 'এখনো কোনো staff যোগ হয়নি — Admin login staff হিসেবে গণনা হয় না।'),
+    ('Change the beep volume with the Low / Med / High buttons under the summary.', 'সারসংক্ষেপের নিচে Low / Med / High বাটন দিয়ে beep-এর volume বদলান।'),
+    ('How ready this product is for the AI to sell it — photo, price, description, other names and stock', 'AI এই পণ্যটা বিক্রির জন্য কতটা তৈরি — ছবি, দাম, বর্ণনা, অন্য নাম আর স্টক মিলিয়ে'),
+    ('Used in: SMS Marketing campaigns', 'ব্যবহার হয়: SMS Marketing campaign-এ'),
     ('Set the time yourself:', 'সময় নিজে ঠিক করো:'),
     ('the first one', 'প্রথমটা'),
     ('hours later', 'ঘণ্টা পর'),
@@ -2813,9 +2863,54 @@ BN.update([
     ('Account pending', 'অ্যাকাউন্ট অপেক্ষমাণ'),
     ('Sellers pay by bKash / Nagad and submit the payment here. Approving credits the pack points to their shop — and when the account is still pending, the same approval activates the seller.', 'সেলাররা bKash / Nagad-এ টাকা পাঠিয়ে এখানে পেমেন্ট জমা দেয়। অনুমোদন করলে প্যাকের পয়েন্ট দোকানে জমা হয় — আর অ্যাকাউন্ট অপেক্ষমাণ থাকলে একই অনুমোদনে সেলার চালু হয়ে যায়।'),
     ('Payment approved — points credited and the seller is now active', 'পেমেন্ট অনুমোদিত — পয়েন্ট জমা হয়েছে এবং সেলার এখন চালু'),
+    ('No purchases yet', 'এখনো কোনো কেনাকাটা হয়নি'),
+    ('Balance now', 'ব্যালান্স এখন'),
+    ('Per order, cancelled excluded', 'প্রতি অর্ডারে, বাতিল বাদে'),
 ])
 
 EN = {k: k for k in BN}
+
+
+BN.update([
+    ('Save — your shop', 'সেভ করুন — আপনার দোকান'),
+    ('Save — platform', 'সেভ করুন — প্ল্যাটফর্ম'),
+    ('API endpoint', 'API এন্ডপয়েন্ট'),
+    ('No key yet', 'এখনও কোনো কী নেই'),
+    ('A key is active for this shop', 'এই দোকানের জন্য একটি কী সক্রিয় আছে'),
+    ('Last used', 'শেষ ব্যবহার'),
+    ('A key is shown in full only once, when it is created.', 'কী তৈরি করার সময় শুধু একবারই পুরোটা দেখানো হয়।'),
+    ('No API key has been issued for this shop yet. Ask the platform team to issue one.', 'এই দোকানের জন্য এখনও কোনো API কী দেওয়া হয়নি। প্ল্যাটফর্ম টিমকে একটি কী দিতে বলুন।'),
+    ('Order endpoint', 'অর্ডার এন্ডপয়েন্ট'),
+    ('Your shop API key is active — the plugin can send orders to the endpoint above', 'আপনার দোকানের API কী সক্রিয় — প্লাগইন উপরের এন্ডপয়েন্টে অর্ডার পাঠাতে পারবে'),
+    ('No API key yet — the plugin cannot send orders until a key is issued', 'এখনও API কী নেই — কী না দেওয়া পর্যন্ত প্লাগইন অর্ডার পাঠাতে পারবে না'),
+    ('Key active', 'কী সক্রিয়'),
+    ('System type', 'সিস্টেম টাইপ'),
+    ('Auto reply on', 'অটো রিপ্লাই চালু'),
+    ('Auto reply off', 'অটো রিপ্লাই বন্ধ'),
+    ('Two-factor on', 'টু-ফ্যাক্টর চালু'),
+    ('Two-factor off', 'টু-ফ্যাক্টর বন্ধ'),
+])
+
+
+BN.update([
+    ('Finish the checklist below first — your shop address and mobile verification are needed', 'আগে নিচের চেকলিস্ট শেষ করুন — দোকানের ঠিকানা আর মোবাইল যাচাই দরকার'),
+    ('Coming soon', 'শীঘ্রই আসছে'),
+])
+
+
+BN.update([
+    ('point per order', 'পয়েন্ট প্রতি অর্ডারে'),
+    ('points per order', 'পয়েন্ট প্রতি অর্ডারে'),
+    ('Monthly pack points reset every 30 days — unused points do not carry over. Yearly wallet points carry for the full 12 months — better if your sales go up and down.', 'মাসিক প্যাকের পয়েন্ট প্রতি ৩০ দিনে রিসেট হয় — অব্যবহৃত পয়েন্ট জমে থাকে না। বার্ষিক ওয়ালেটের পয়েন্ট পুরো ১২ মাস থাকে — বিক্রি ওঠানামা করলে এটি সুবিধাজনক।'),
+])
+
+
+BN.update([
+    ("This report is loaded only when you ask for it. Press the button to load this year's earnings.", 'এই রিপোর্ট শুধু আপনি চাইলেই লোড হয়। এই বছরের আয় দেখতে বোতাম চাপুন।'),
+    ('SMS campaigns, automation flows and templates live in the Marketing module.', 'SMS ক্যাম্পেইন, অটোমেশন ফ্লো আর টেমপ্লেট মার্কেটিং মডিউলে আছে।'),
+    ('Open Marketing', 'মার্কেটিং খুলুন'),
+    ('Today so far', 'আজ এখন পর্যন্ত'),
+])
 
 with open('lang/en.json', 'w', encoding='utf-8') as f:
     json.dump(EN, f, ensure_ascii=False, indent=1)

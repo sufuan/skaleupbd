@@ -21,7 +21,7 @@ export default function Customer({ preset, kpis, rows }) {
                     <thead><tr><th>{t('Best customer')}</th><th>{t('Order')}</th><th>{t('Total bought')}</th></tr></thead>
                     <tbody>
                         {rows.map((r) => (
-                            <tr key={r.name}><td>{r.name}</td><td>{t(':count pcs', { count: fmtNum(r.orders) })}</td><td>{fmt(r.spent)}</td></tr>
+                            <tr key={r.name}><td>{r.name}</td><td>{fmtNum(r.orders)}</td><td>{fmt(r.spent)}</td></tr>
                         ))}
                         {rows.length === 0 && <tr><td colSpan="3" style={{ color: '#94A3B8' }}>{t('No order in this period.')}</td></tr>}
                     </tbody>

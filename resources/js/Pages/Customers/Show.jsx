@@ -12,6 +12,10 @@ export default function CustomerShow({ customer, orders }) {
     return (
         <AppLayout>
             <Head title={customer.name || t('Customer')} />
+            <style>{`.cust-pg .lbl { display:block; font-size:13px; font-weight:600; margin-top:12px; }
+.cust-pg .fld { display:block; width:100%; height:40px; border-radius:8px; font-size:14px; border:1px solid #D9CDE4; background:#fff; padding:0 12px; margin-top:5px; font-family:inherit; color:var(--ink); box-sizing:border-box; }
+.cust-pg textarea.fld { height:auto; padding:8px 12px; }`}</style>
+            <div className="cust-pg">
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                 <Link href="/customers" className="btn-ghost">← {t('Customer List')}</Link>
                 <h3 style={{ fontSize: 19 }}>{customer.name || '—'}{customer.blacklisted ? <span className="pill red" style={{ marginLeft: 8 }}>{t('Blocked')}</span> : null}</h3>
@@ -62,6 +66,7 @@ export default function CustomerShow({ customer, orders }) {
                         </table>
                     </div>
                 </div>
+            </div>
             </div>
         </AppLayout>
     );

@@ -11,8 +11,8 @@ export default function Call({ preset, kpis, best_slot }) {
                 <RepHead title={t('Call Center Report')} sub={t('How much work is happening on calls — answered, talked, and orders from them.')} preset={preset} base="/reports/call" exportKey="call" />
                 <div className="x-kpis">
                     <div className="x-kpi"><b>{fmtNum(kpis.total)}</b><span>{t('Total calls in this period')}</span></div>
-                    <div className="x-kpi green"><b>{kpis.answered_pct}%</b><span>{t('Calls answered')}</span></div>
-                    <div className="x-kpi"><b>{t(':count pcs', { count: fmtNum(kpis.orders) })}</b><span>{t('Orders from calls')}</span></div>
+                    <div className={`x-kpi${kpis.answered_pct >= 50 ? ' green' : ''}`}><b>{kpis.answered_pct}%</b><span>{t('Calls answered')}</span></div>
+                    <div className="x-kpi"><b>{fmtNum(kpis.orders)}</b><span>{t('Orders from calls')}</span></div>
                     <div className="x-kpi"><b>{kpis.avg}</b><span>{t('Average talk time (minutes)')}</span></div>
                 </div>
                 {best_slot ? (

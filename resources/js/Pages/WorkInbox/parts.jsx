@@ -20,21 +20,21 @@ export function TaskCard({ task, onDone, selectable = false, checked = false, on
                 <div className="tk-title">{task.title}</div>
                 <div className="tk-meta">
                     {done && <span className="chip chip-green">{t('Done')}</span>}
-                    {auto && <span className="chip chip-grey">নিজে থেকে মিটে গেছে</span>}
+                    {auto && <span className="chip chip-grey">{t('Resolved on its own')}</span>}
                     {!closed && <span className={`chip ${PRIORITY_CHIP[task.priority] || 'chip-grey'}`}>{task.priority_label}</span>}
                     {!closed && task.due && <span className={`chip ${task.due.chip}`}>{task.due.text}</span>}
-                    {task.status === 'in_progress' && <span className="chip chip-purple">চলছে</span>}
+                    {task.status === 'in_progress' && <span className="chip chip-purple">{t('In progress')}</span>}
                     {task.source_label && <span>{task.source_label}</span>}
-                    {!closed && <span>তৈরি: {task.created_label}</span>}
-                    {!closed && <span>দায়িত্বে: {task.assignee_label}</span>}
-                    {done && task.done_label && <span>শেষ: {task.done_label}{task.done_by_label ? ` · ${task.done_by_label}` : ''}</span>}
-                    {auto && task.closed_label && <span>বন্ধ: {task.closed_label}</span>}
+                    {!closed && <span>{t('Created:')} {task.created_label}</span>}
+                    {!closed && <span>{t('Assigned to:')} {task.assignee_label}</span>}
+                    {done && task.done_label && <span>{t('Finished:')} {task.done_label}{task.done_by_label ? ` · ${task.done_by_label}` : ''}</span>}
+                    {auto && task.closed_label && <span>{t('Closed:')} {task.closed_label}</span>}
                 </div>
                 <div className="tk-cap">
                     {task.rule_num
-                        ? <>নিয়ম {task.rule_num}: {task.rule_name} · <Link href="/work-inbox/settings">Settings-এ নিয়মটা দেখো</Link></>
-                        : <>হাতে বানানো task (Manual)</>}
-                    {done && task.done_note && <> · <b>কীভাবে মিটলো:</b> {task.done_note}</>}
+                        ? <>{t('Rule')} {task.rule_num}: {task.rule_name} · <Link href="/work-inbox/settings">{t('See the rule in Settings')}</Link></>
+                        : <>{t('Manual task')}</>}
+                    {done && task.done_note && <> · <b>{t('How it was resolved:')}</b> {task.done_note}</>}
                     {auto && task.auto_close_reason && <> · {task.auto_close_reason}</>}
                 </div>
             </div>
@@ -42,7 +42,7 @@ export function TaskCard({ task, onDone, selectable = false, checked = false, on
                 <div className="tk-actions">
                     {task.link && <a className="btn-p" href={task.link}>{task.link_label}</a>}
                     {task.status === 'open' && (
-                        <button className="btn-s" onClick={() => router.post(`/work-inbox/tasks/${task.id}/start`, {}, { preserveScroll: true })}>শুরু করো</button>
+                        <button className="btn-s" onClick={() => router.post(`/work-inbox/tasks/${task.id}/start`, {}, { preserveScroll: true })}>{t('Start')}</button>
                     )}
                     <button className="btn-s" onClick={() => onDone && onDone(task)}>{t('Done')}</button>
                 </div>
@@ -57,27 +57,27 @@ export function DoneModal({ task, onClose }) {
     if (!task) return null;
     const save = () => {
         if (task.note_required && note.trim() === '') {
-            setErr('এই কাজটায় note লেখা বাধ্যতামূলক — এক লাইন লিখে দাও।');
+            setErr(t('A note is required for this task — write one line.'));
             return;
         }
         router.post(`/work-inbox/tasks/${task.id}/done`, { note }, {
             preserveScroll: true,
             onSuccess: () => onClose(),
-            onError: (e) => setErr(e.note || 'হয়নি, আবার চেষ্টা করো'),
+            onError: (e) => setErr(e.note || t('It did not work — try again')),
         });
     };
     return (
         <div className="wi-modal open">
             <div className="wi-modal-box">
-                <h4 style={{ fontSize: 17, marginBottom: 4 }}>কাজটা শেষ — কীভাবে মিটলো?</h4>
+                <h4 style={{ fontSize: 17, marginBottom: 4 }}>{t('Task done — how was it resolved?')}</h4>
                 <p style={{ fontSize: 13, color: '#64748B' }}>
-                    {task.note_required ? 'এই কাজটায় note লেখা বাধ্যতামূলক — এক লাইনে লিখে দাও।' : 'এক লাইনে লিখে রাখো, পরে যে কেউ দেখলে বুঝবে।'}
+                    {task.note_required ? t('A note is required for this task — write one line.') : t('Write one line so anyone can understand it later.')}
                 </p>
-                <textarea rows="3" value={note} onChange={(e) => setNote(e.target.value)} placeholder="যেমন: courier-এ পাঠিয়ে দিয়েছি, CN নম্বর ..."></textarea>
+                <textarea rows="3" value={note} onChange={(e) => setNote(e.target.value)} placeholder={t('e.g. sent it to the courier, CN number ...')}></textarea>
                 {err && <div style={{ color: '#DC2626', fontSize: 13, marginBottom: 8 }}>{err}</div>}
                 <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-                    <button className="btn-s" onClick={onClose}>বাদ দাও</button>
-                    <button className="btn-p" onClick={save}>Done — শেষ করো</button>
+                    <button className="btn-s" onClick={onClose}>{t('Discard')}</button>
+                    <button className="btn-p" onClick={save}>{t('Done — finish it')}</button>
                 </div>
             </div>
         </div>
@@ -99,24 +99,24 @@ export function NewTaskModal({ staff, onClose }) {
     return (
         <div className="wi-modal open">
             <div className="wi-modal-box">
-                <h4 style={{ fontSize: 17, marginBottom: 4 }}>নতুন Task (হাতে বানানো)</h4>
-                <label style={{ fontSize: 13, color: '#64748B' }}>কী করতে হবে</label>
-                <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="যেমন: কাল সকালে Zeotexbd-কে phone করতে হবে" />
-                <label style={{ fontSize: 13, color: '#64748B' }}>কাকে দেবে</label>
+                <h4 style={{ fontSize: 17, marginBottom: 4 }}>{t('New task (manual)')}</h4>
+                <label style={{ fontSize: 13, color: '#64748B' }}>{t('What needs doing')}</label>
+                <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t('e.g. call the supplier tomorrow morning')} />
+                <label style={{ fontSize: 13, color: '#64748B' }}>{t('Who should do it')}</label>
                 <select value={who} onChange={(e) => setWho(e.target.value)}>
-                    <option value="self">নিজেকে</option>
+                    <option value="self">{t('Myself')}</option>
                     {(staff || []).map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-                    <option value="pool">পুল (যে ফ্রি সে নেবে)</option>
+                    <option value="pool">{t('Pool (whoever is free takes it)')}</option>
                 </select>
-                <label style={{ fontSize: 13, color: '#64748B' }}>গুরুত্ব</label>
+                <label style={{ fontSize: 13, color: '#64748B' }}>{t('Priority')}</label>
                 <select value={priority} onChange={(e) => setPriority(e.target.value)}>
-                    <option value="normal">সাধারণ</option>
-                    <option value="urgent">জরুরি</option>
-                    <option value="critical">খুব জরুরি</option>
+                    <option value="normal">{t('Normal')}</option>
+                    <option value="urgent">{t('Urgent')}</option>
+                    <option value="critical">{t('Very urgent')}</option>
                 </select>
                 <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-                    <button className="btn-s" onClick={onClose}>বাদ দাও</button>
-                    <button className="btn-p" onClick={save}>Task বানাও</button>
+                    <button className="btn-s" onClick={onClose}>{t('Discard')}</button>
+                    <button className="btn-p" onClick={save}>{t('Create task')}</button>
                 </div>
             </div>
         </div>

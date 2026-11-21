@@ -280,14 +280,19 @@ class MessagesController extends Controller
             'stats' => [
                 'ai_replies_today' => ChatMessage::where('business_id', $biz)->where('sender', 'ai')->whereDate('created_at', today())->count()
                     + \App\Models\CommentReply::where('business_id', $biz)->where('sender', 'ai')->whereDate('created_at', today())->count(),
-                'sent_by_ai' => AiActivity::where('business_id', $biz)->where('action', 'auto_sent')->count(),
+                // Same TODAY window as the card beside it (it was all-time,
+                // which read as a contradiction next to today's count).
+                'sent_by_ai' => ChatMessage::where('business_id', $biz)->where('sender', 'ai')->where('status', 'sent')->whereDate('created_at', today())->count()
+                    + \App\Models\CommentReply::where('business_id', $biz)->where('sender', 'ai')->where('status', 'sent')->whereDate('created_at', today())->count(),
                 'drafts_waiting' => count($drafts) + count($commentDrafts),
                 'handed' => count($handed),
             ],
             'draftQueue' => array_merge($drafts, $commentDrafts),
             'handed' => $handed,
             'ruleStats' => \App\Models\AiRule::where('business_id', $biz)->get()->map(function ($r) use ($biz) {
-                $acts = AiActivity::where('business_id', $biz)->where('ai_rule_id', $r->id);
+                // The section heading says "today" — scope the counts to
+                // today too (they were all-time, contradicting the cards).
+                $acts = AiActivity::where('business_id', $biz)->where('ai_rule_id', $r->id)->whereDate('created_at', today());
 
                 return ['name' => $r->name, 'count' => $acts->count(), 'last' => $acts->latest('id')->first()?->created_at?->diffForHumans(null, true) ?? '—'];
             })->all(),

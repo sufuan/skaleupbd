@@ -339,8 +339,8 @@ export default function AppLayout({ children }) {
             {sbOpen && <div className="sb-overlay" onClick={() => setSbOpen(false)} />}
             <aside className={`sb ${sbOpen ? 'open' : ''}`}>
                 <div className="sb-ws">
-                    <div className="sb-ava">D</div>
-                    <div><div className="nm">Demo Shop</div><div className="rl">{t('Workspace')}</div></div>
+                    <div className="sb-ava">{(props.auth?.business?.name || userName).trim().charAt(0).toUpperCase()}</div>
+                    <div><div className="nm">{props.auth?.business?.name || userName}</div><div className="rl">{t('Workspace')}</div></div>
                     <span className="chev" style={{ marginLeft: 'auto', color: '#b3a6cc' }}>⌄</span>
                 </div>
                 <button type="button" className="sb-search" style={{ width: 'calc(100% - 28px)', textAlign: 'left' }} onClick={() => setSearchOpen(true)}>
@@ -381,13 +381,13 @@ export default function AppLayout({ children }) {
                         <div className="tb-ava" title={userName}>{initials}</div>
                     </div>
                 </header>
-                {props.tokenGate?.blocked && (
+                {props.tokenGate?.blocked && !props.tokenGate?.pending && (
                     <div style={{ background: '#FDECEC', borderBottom: '1px solid #F3B4B4', color: '#8B1E1E', padding: '10px 18px', fontSize: 13.5, display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
                         <span><b>{t('Points finished — your shop is view-only.')}</b> {t('New orders and changes are paused until you top up.')}</span>
                         <Link href="/billing" style={{ fontWeight: 700, color: '#8B1E1E', textDecoration: 'underline' }}>{t('See Points & Billing')}</Link>
                     </div>
                 )}
-                {props.tokenGate && !props.tokenGate.blocked && props.tokenGate.low && (
+                {props.tokenGate && !props.tokenGate.blocked && !props.tokenGate.pending && props.tokenGate.low && (
                     <div style={{ background: '#FFF6E0', borderBottom: '1px solid #F0D48A', color: '#7A5200', padding: '10px 18px', fontSize: 13.5, display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
                         <span><b>{t('Points are running low')}</b> ({props.tokenGate.balance} {t('left')}). {t('Top up soon so your orders never stop.')}</span>
                         <Link href="/billing" style={{ fontWeight: 700, color: '#7A5200', textDecoration: 'underline' }}>{t('See Points & Billing')}</Link>

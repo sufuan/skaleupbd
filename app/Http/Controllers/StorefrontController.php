@@ -111,7 +111,9 @@ class StorefrontController extends Controller
         $data = $request->validate(['phone' => ['required', 'string', 'max:20']]);
         $res = $this->svc->sendOtp($sf, $data['phone']);
         if (! $res['sent']) {
-            return back()->with('error', 'The SMS could not be sent. Check your SMS settings balance and try again.');
+            $reason = ! empty($res['error']) ? ' Reason: '.$res['error'].'.' : '';
+
+            return back()->with('error', 'The SMS could not be sent.'.$reason.' Please try again.');
         }
 
         return back()->with('success', 'A 6-digit code was sent to '.$res['phone'].'. It is valid for 10 minutes.');

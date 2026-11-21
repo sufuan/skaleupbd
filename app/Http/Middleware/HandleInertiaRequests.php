@@ -60,6 +60,12 @@ class HandleInertiaRequests extends Middleware
             ...parent::share($request),
             'auth' => [
                 'user' => $request->user(),
+                // The signed-in user's OWN shop — the workspace label in
+                // the shell must name their business, never another one.
+                'business' => ($request->user() && $request->user()->business_id && Schema::hasTable('businesses'))
+                    ? \App\Models\Business::whereKey($request->user()->business_id)
+                        ->first(['id', 'name', 'public_id'])?->only(['id', 'name', 'public_id'])
+                    : null,
                 'permissions' => ($request->user() && Schema::hasColumn('users', 'role'))
                     ? $request->user()->effectivePermissions()
                     : \App\Support\Permissions::ALL,
@@ -86,6 +92,14 @@ class HandleInertiaRequests extends Middleware
                         'balance' => $tokens->balance($biz),
                         'blocked' => $tokens->blocked($biz),
                         'low' => $tokens->isLow($biz),
+                        // A shop still waiting for platform approval is
+                        // explained by its status page, not by the points
+                        // banner — suppress the banner for it entirely.
+                        'pending' => in_array(
+                            \App\Models\Business::whereKey($biz)->value('status') ?: 'approved',
+                            ['pending', 'rejected'],
+                            true
+                        ),
                     ];
                 })()
                 : null,

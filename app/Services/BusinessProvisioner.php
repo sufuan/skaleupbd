@@ -17,7 +17,7 @@ class BusinessProvisioner
      * standard SMS template library, finance categories and a Cash account).
      * Mirrors what the seeders create for the demo shops.
      */
-    public function provision(User $user): Business
+    public function provision(User $user, ?string $shopName = null): Business
     {
         if ($user->business_id) {
             $existing = Business::find($user->business_id);
@@ -26,7 +26,10 @@ class BusinessProvisioner
             }
         }
 
-        $base = Str::slug((string) $user->name) ?: 'shop';
+        // The shop's name is what the seller typed on the register form;
+        // the owner's personal name is only the fallback.
+        $name = trim((string) $shopName) !== '' ? trim((string) $shopName) : (string) $user->name;
+        $base = Str::slug($name) ?: 'shop';
         $publicId = $base;
         $n = 1;
         while (Business::where('public_id', $publicId)->exists()) {
@@ -34,7 +37,7 @@ class BusinessProvisioner
         }
 
         $biz = Business::create([
-            'name' => $user->name,
+            'name' => $name,
             'public_id' => $publicId,
             'owner_name' => $user->name,
             'email' => $user->email,

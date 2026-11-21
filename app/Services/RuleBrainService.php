@@ -1138,6 +1138,11 @@ class RuleBrainService
         ]);
         if ($status === 'sent') {
             $conversation->last_message_at = now();
+            // One message, one outcome: the AI just answered this
+            // customer itself, so a needs-human flag left over from an
+            // earlier message must not keep the thread flagged — the
+            // inbox would show "AI replied" and "Needs a human" at once.
+            $conversation->needs_human = false;
             $conversation->save();
         }
 

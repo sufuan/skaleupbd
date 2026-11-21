@@ -56,6 +56,11 @@ class OrdersSeeder extends Seeder
         if ($settings->get('couriers.methods') === null) {
             $settings->set('couriers.methods', ['Steadfast — Inside Dhaka', 'Pathao — Inside Dhaka', 'RedX — Dhaka', 'Carrybee', 'Manual', 'Steadfast — Outside Dhaka', 'Pathao — Outside Dhaka', 'Sundarban']);
         }
+        // The demo shop's own per-business list (order forms read this
+        // now — the global key above is the legacy copy).
+        if ($settings->get('couriers.'.$biz->id.'.methods') === null) {
+            $settings->set('couriers.'.$biz->id.'.methods', ['Steadfast — Inside Dhaka', 'Pathao — Inside Dhaka', 'RedX — Dhaka', 'Carrybee', 'Manual', 'Steadfast — Outside Dhaka', 'Pathao — Outside Dhaka', 'Sundarban']);
+        }
 
         $sources = [
             ['FB', 'Facebook'], ['WEB', 'Website'], ['DIRECT', 'Direct'], ['UNKNOWN', 'Unknown'],

@@ -13,7 +13,10 @@ export default function Sms({ balance, rate, success_rate, audiences, dnd_count,
     const chars = useMemo(() => [...message].length, [message]);
     const total = aud.sendable * parts * rate;
     const after = balance - total;
-    const warn = message.length > 0 && after < 0;
+    // Warn as soon as the numbers say the balance will not cover the send —
+    // not only after the seller starts typing (an empty composer used to
+    // show "Balance left ৳-9" with no warning at all).
+    const warn = after < 0;
 
     const pickTemplate = (id) => {
         const tpl = templates.find((x) => String(x.id) === String(id));
@@ -32,7 +35,7 @@ export default function Sms({ balance, rate, success_rate, audiences, dnd_count,
                 <div className="mk-strip">
                     <div className="mk-kpi"><b>{fmt(balance)}</b><span>{t('SMS balance (you have)')}</span></div>
                     <div className="mk-kpi"><b>{fmt(rate)}</b><span>{t('The price of each SMS part starts from')}</span></div>
-                    <div className="mk-kpi"><b>{success_rate}%</b><span>{t('of SMS sent last month went successfully')}</span></div>
+                    <div className="mk-kpi"><b>{success_rate === null ? '—' : success_rate + '%'}</b><span>{t('of SMS sent last month went successfully')}</span></div>
                 </div>
 
                 <div className="step-card">
@@ -80,7 +83,7 @@ export default function Sms({ balance, rate, success_rate, audiences, dnd_count,
                         <div><div style={{ fontSize: 13, color: '#64748B' }}>{t('Recipients')}</div><b style={{ fontSize: 22 }}>{t(':count people', { count: fmtNum(aud.sendable) })}</b></div>
                         <div><div style={{ fontSize: 13, color: '#64748B' }}>{t('Per person')}</div><b style={{ fontSize: 22 }}>{parts} part</b></div>
                         <div><div style={{ fontSize: 13, color: '#64748B' }}>{t('Total cost')}</div><b style={{ fontSize: 22, color: '#411550' }}>{fmt(total)}</b></div>
-                        <div><div style={{ fontSize: 13, color: '#64748B' }}>{t('Balance left after sending')}</div><b style={{ fontSize: 22 }}>{fmt(after)}</b></div>
+                        <div><div style={{ fontSize: 13, color: '#64748B' }}>{t('Balance left after sending')}</div><b style={{ fontSize: 22, color: warn ? '#DC2626' : undefined }}>{fmt(after)}</b></div>
                         <button className="btn-p" style={{ marginLeft: 'auto' }} disabled={!message || aud.sendable === 0 || warn} onClick={send}>{t('Send Campaign')}</button>
                     </div>
                     {warn && <div style={{ color: '#DC2626', fontSize: 13.5, marginTop: 10 }}>{t('The balance will not cover it — either shrink the audience, or shorten the text, or fill the balance.')}</div>}
@@ -95,7 +98,7 @@ export default function Sms({ balance, rate, success_rate, audiences, dnd_count,
                                 <td style={{ fontWeight: 600 }}>{c.name}<div style={{ fontWeight: 400, color: '#94A3B8', fontSize: 12 }}>{c.date}</div></td>
                                 <td>{t(':count people', { count: fmtNum(c.recipients) })} ({c.audience_label})</td>
                                 <td>{fmt(c.total_cost)}</td>
-                                <td>{t(':count pcs', { count: fmtNum(c.orders) })} · {fmt(c.sales)}</td>
+                                <td>{fmtNum(c.orders)} · {fmt(c.sales)}</td>
                                 <td><Verdict profit={c.profit} /></td>
                             </tr>
                         ))}

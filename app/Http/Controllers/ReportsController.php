@@ -193,7 +193,9 @@ class ReportsController extends Controller
                     'avg_days' => $days ? round(array_sum($days) / count($days), 1) : null];
             })->sortByDesc('sent')->values()->all();
 
-        $best = collect($rows)->filter(fn ($r) => $r['sent'] >= 3)
+        // No "best" courier while nothing has been delivered yet — the old
+        // rule crowned the only courier at 0% delivered.
+        $best = collect($rows)->filter(fn ($r) => $r['sent'] >= 3 && $r['delivered_pct'] > 0)
             ->sortBy([['delivered_pct', 'desc'], ['avg_days', 'asc']])->first();
 
         return ['rows' => $rows, 'best' => $best['courier'] ?? null];
@@ -246,7 +248,11 @@ class ReportsController extends Controller
 
     private function employeeData(int $biz, Carbon $from, Carbon $to): array
     {
-        $users = User::where('business_id', $biz)->orderBy('name')->get();
+        // One staff universe everywhere (the HRM definition): active staff
+        // accounts, Admin-role logins excluded. This report used to list
+        // every login — including the owner — as an "employee", which
+        // contradicted HRM's Total staff of 0 for the same shop.
+        $users = User::where('business_id', $biz)->where('staff_active', true)->where('role', '!=', 'admin')->orderBy('name')->get();
         $orders = Order::where('business_id', $biz)->whereNotNull('processed_by')
             ->whereBetween('updated_at', [$from, $to])->get()->groupBy('processed_by');
         $rows = $users->map(function (User $u) use ($orders) {
@@ -306,10 +312,12 @@ class ReportsController extends Controller
         $withOrders = $byPhone->count();
         $repeat = $byPhone->filter(fn ($g) => $g->count() >= 2)->count();
         $periodOrders = $orders->whereBetween('created_at', [$from, $to]);
+        // All customers with orders in the period, best first — the list
+        // silently stopped at 5, which read as "only 5 customers exist".
         $top = $periodOrders->groupBy('customer_phone')->map(function ($g) {
             return ['name' => $g->first()->customer_name, 'orders' => $g->count(),
                 'spent' => round($g->sum('grand_total'), 2)];
-        })->sortByDesc('spent')->take(5)->values()->all();
+        })->sortByDesc('spent')->values()->all();
 
         return ['kpis' => [
             'total' => Customer::where('business_id', $biz)->count(),

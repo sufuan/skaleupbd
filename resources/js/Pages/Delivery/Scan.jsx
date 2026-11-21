@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
+import { usePage } from '@inertiajs/react';
 import AppLayout from '@/Layouts/AppLayout';
 import { t } from '@/lib/i18n';
 
@@ -23,6 +24,9 @@ const I = {
 };
 
 export default function Scan({ todayEvents }) {
+    // Cross-business search is a platform-admin tool — sellers must never
+    // see the toggle (their scans only ever search their own shop).
+    const isPlatformAdmin = !!usePage().props.auth?.user?.is_platform_admin;
     const [mode, setMode] = useState('shipping');
     const [inputMode, setInputMode] = useState('keyboard');
     const [code, setCode] = useState('');
@@ -61,7 +65,7 @@ export default function Scan({ todayEvents }) {
             const res = await fetch('/delivery/scan', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf(), 'X-Requested-With': 'XMLHttpRequest' },
-                body: JSON.stringify({ code: scanCode, type: scanType, return_tag: scanType === 'return' ? returnTag : null }),
+                body: JSON.stringify({ code: scanCode, type: scanType, return_tag: scanType === 'return' ? returnTag : null, all_biz: isPlatformAdmin && allBiz }),
             });
             const data = await res.json();
             const kind = data.ok ? 'success' : data.duplicate ? 'duplicate' : 'failed';
@@ -194,7 +198,7 @@ export default function Scan({ todayEvents }) {
                     <div>
                         <div className="card" style={{ padding: 24 }}>
                             <h3 style={{ fontSize: 16, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8, borderBottom: '1px solid var(--line)', paddingBottom: 12 }}>
-                                {I.frame} {t(modeLabel)} {t('Scanner Input')}
+                                {I.frame} {t(modeLabel)}
                             </h3>
                             <div className="seg" style={{ margin: '14px 0' }}>
                                 <button className={inputMode === 'keyboard' ? 'on' : ''} onClick={() => setInputMode('keyboard')}>{t('Keyboard scanner')}</button>
@@ -231,7 +235,7 @@ export default function Scan({ todayEvents }) {
                             <ul className="muted-sm" style={{ margin: '8px 0 0', paddingLeft: 18, lineHeight: 1.7, listStyle: 'disc' }}>
                                 <li>{t('For barcode hardware scanners, keep this page open and focused. No input click is necessary.')}</li>
                                 <li>{t('Toggle between camera scan and keyboard scan modes using the selector buttons above.')}</li>
-                                <li>{t('Adjust beep sounds, volume, and manual override fields inside the toolbar.')}</li>
+                                <li>{t('Change the beep volume with the Low / Med / High buttons under the summary.')}</li>
                             </ul>
                         </div>
                     </div>
@@ -248,10 +252,12 @@ export default function Scan({ todayEvents }) {
                 </div>
 
                 <div style={{ marginTop: 16, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-                    <span className="pill-box">
-                        {t('Search all businesses')}
-                        <button className={`switch ${allBiz ? 'on' : ''}`} onClick={() => setAllBiz(!allBiz)} aria-label={t('Search all businesses')} />
-                    </span>
+                    {isPlatformAdmin && (
+                        <span className="pill-box">
+                            {t('Search all businesses')}
+                            <button className={`switch ${allBiz ? 'on' : ''}`} onClick={() => setAllBiz(!allBiz)} aria-label={t('Search all businesses')} />
+                        </span>
+                    )}
                     <span className="pill-box">
                         {I.speaker}
                         <span className="seg">

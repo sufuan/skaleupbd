@@ -48,8 +48,13 @@ class MarketingController extends Controller
             ->map(fn ($t) => ['id' => $t->id, 'key' => $t->key, 'name' => $t->name, 'body' => $t->body,
                 'standard' => in_array($t->key, AutomationService::TEMPLATE_KEYS, true) || in_array($t->key, ['offer'], true)]);
 
-        $month = $this->attr->report($biz, Carbon::now()->startOfMonth(), Carbon::now()->endOfDay());
-        $sentMonth = SmsLog::where('business_id', $biz)->where('status', 'sent')
+        // This page is about AUTOMATION — its strip must count automation
+        // sends only. It counted every SMS (campaigns, order SMS, settings
+        // tests), so the strip said "1 sent, ৳0" while every flow card
+        // truthfully said "run 0 times".
+        $month = collect($this->attr->report($biz, Carbon::now()->startOfMonth(), Carbon::now()->endOfDay()))
+            ->where('type', 'automation');
+        $sentMonth = SmsLog::where('business_id', $biz)->where('status', 'sent')->where('source_type', 'automation')
             ->whereBetween('created_at', [Carbon::now()->startOfMonth(), Carbon::now()])->get();
 
         return Inertia::render('Marketing/Automation', [
@@ -58,8 +63,8 @@ class MarketingController extends Controller
             'strip' => [
                 'sent' => $sentMonth->count(),
                 'cost' => round($sentMonth->sum('cost'), 2),
-                'orders' => collect($month)->sum('orders'),
-                'sales' => round(collect($month)->sum('sales'), 2),
+                'orders' => $month->sum('orders'),
+                'sales' => round($month->sum('sales'), 2),
             ],
         ]);
     }
@@ -144,14 +149,19 @@ class MarketingController extends Controller
                 'date' => $c->created_at->format('d M')];
         });
 
-        $lastMonth = SmsLog::where('business_id', $biz)->where('created_at', '>=', Carbon::now()->subDays(30))->get();
+        // Success rate over messages that actually reached a gateway
+        // (provider set). Blocked attempts — no balance, no gateway, caps,
+        // DND — were never "sent", and counting them produced nonsense like
+        // 6%. Settings test sends are not customer messaging either.
+        $lastMonth = SmsLog::where('business_id', $biz)->where('created_at', '>=', Carbon::now()->subDays(30))
+            ->whereNotNull('provider')->where('source_type', '!=', 'test')->get();
         $sentOk = $lastMonth->where('status', 'sent')->count();
         $attempts = $lastMonth->whereIn('status', ['sent', 'failed'])->count();
 
         return Inertia::render('Marketing/Sms', [
             'balance' => $this->sms->balance($biz),
             'rate' => $this->sms->rate($biz),
-            'success_rate' => $attempts > 0 ? (int) round($sentOk / $attempts * 100) : 100,
+            'success_rate' => $attempts > 0 ? (int) round($sentOk / $attempts * 100) : null,
             'audiences' => $audiences,
             'dnd_count' => $this->sms->doNotSendCount($biz),
             'templates' => $templates,

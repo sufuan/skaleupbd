@@ -81,10 +81,10 @@ const CSS = `
 }
 `;
 
-function PackCard({ p, best, loggedIn }) {
+function PackCard({ p, best, bestValue, loggedIn }) {
     return (
         <div className={`pp-pack ${best ? 'best' : ''}`}>
-            <div className="pp-pack-name">{p.name}{best && <span className="pp-best-tag">{t('Best for you')}</span>}</div>
+            <div className="pp-pack-name">{p.name}{best && <span className="pp-best-tag">{t('Best for you')}</span>}{bestValue && <span className="pp-best-tag">{t('Best value per point')}</span>}</div>
             <div className="pp-pack-price">{tk(p.price_bdt)}<span> {p.validity_type === 'monthly' ? t('/ month') : t('/ year')}</span></div>
             <div className="pp-pack-line"><b>{num(p.credits)}</b> {t('points')}</div>
             <div className="pp-pack-line">{t('Covers about')} <b>{num(p.orders)}</b> {t('orders')}</div>
@@ -106,11 +106,15 @@ export default function Pricing({ monthly, wallets, pointsPerOrder, onboardingFe
     const fit = useMemo(() => monthly.filter((p) => p.credits >= need).sort((a, b) => a.price_bdt - b.price_bdt)[0] || null, [monthly, need]);
     const biggest = useMemo(() => [...monthly].sort((a, b) => b.credits - a.credits)[0] || null, [monthly]);
     const walletFit = useMemo(() => wallets.filter((p) => p.credits >= need * 12).sort((a, b) => a.price_bdt - b.price_bdt)[0] || null, [wallets, need]);
+    // "Best value per point" is COMPUTED from the packs' real prices —
+    // packs are editable in Settings, so a hardcoded claim would go stale.
+    const bestRate = useMemo(() => Math.min(...[...monthly, ...wallets].map((p) => p.price_bdt / Math.max(1, p.credits))), [monthly, wallets]);
+    const isBestValue = (p) => Math.abs(p.price_bdt / Math.max(1, p.credits) - bestRate) < 0.001;
 
     const faqs = [
         { q: t('When is a point used?'), a: t('A point is spent the moment a new order enters your shop — from Facebook, WhatsApp, your website or typed in by hand. Status changes never cost extra points.') },
         { q: t('What if an order is cancelled or returned?'), a: t('The point is not given back. A point pays for the order entering your system, not for its final result — the same simple rule for everyone.') },
-        { q: t('Monthly pack or yearly wallet — what is the difference?'), a: t('Monthly packs are cheaper per point, but unused points reset every 30 days. A yearly wallet costs a little more per point and its points carry for the full 12 months — better if your sales go up and down.') },
+        { q: t('Monthly pack or yearly wallet — what is the difference?'), a: t('Monthly pack points reset every 30 days — unused points do not carry over. Yearly wallet points carry for the full 12 months — better if your sales go up and down.') },
         { q: t('What happens when my points finish?'), a: t('Your shop becomes view-only: you can still log in and see everything, but new orders and changes pause until you top up. Nothing is deleted.') },
         { q: t('Is there a free trial?'), a: t('No trial — instead, your first purchase can be refunded within 7 days if the platform is not right for you.') },
         { q: t('What is the onboarding fee?'), a: `${t('A one-time')} ${tk(onboardingFee)} ${t('setup fee, charged only on your very first purchase — never again.')}` },
@@ -140,8 +144,8 @@ export default function Pricing({ monthly, wallets, pointsPerOrder, onboardingFe
 
             <section className="pp-hero">
                 <div className="pp-wrap">
-                    <h1>{t('Simple pricing:')} <span>{t('pay per order, nothing else')}</span></h1>
-                    <p>{t('Buy a pack of points. Every feature is in every pack — packs differ only in points and price. No hidden charges, no per-user fees.')}</p>
+                    <h1>{t('Simple pricing:')} <span>{t('pay per order')}</span></h1>
+                    <p>{t('Buy a pack of points. Every feature is in every pack — packs differ only in points and price. No hidden charges, no per-user fees.')} {t('A one-time onboarding fee of')} {tk(onboardingFee)} {t('applies to your first purchase only.')}</p>
                 </div>
             </section>
 
@@ -168,20 +172,20 @@ export default function Pricing({ monthly, wallets, pointsPerOrder, onboardingFe
             <section className="pp-section" style={{ paddingTop: 6 }}>
                 <div className="pp-wrap">
                     <h2 className="pp-h2">{t('Monthly packs')}</h2>
-                    <p className="pp-sub">{t('Best value per point. Points reset every 30 days.')}</p>
+                    <p className="pp-sub">{t('Points reset every 30 days.')}</p>
                     <div className="pp-grid">
-                        {monthly.map((p) => <PackCard key={p.id} p={p} best={fit && fit.id === p.id} loggedIn={loggedIn} />)}
+                        {monthly.map((p) => <PackCard key={p.id} p={p} best={fit && fit.id === p.id} bestValue={isBestValue(p)} loggedIn={loggedIn} />)}
                     </div>
                     {wallets.length > 0 && (
                         <>
                             <h2 className="pp-h2" style={{ marginTop: 48 }}>{t('Yearly wallets')}</h2>
                             <p className="pp-sub">{t('One payment — points stay valid for 12 months.')}</p>
                             <div className="pp-grid">
-                                {wallets.map((p) => <PackCard key={p.id} p={p} best={walletFit && walletFit.id === p.id} loggedIn={loggedIn} />)}
+                                {wallets.map((p) => <PackCard key={p.id} p={p} best={!fit && walletFit && walletFit.id === p.id} bestValue={isBestValue(p)} loggedIn={loggedIn} />)}
                             </div>
                         </>
                     )}
-                    <p className="pp-sub" style={{ marginTop: 30, marginBottom: 0 }}>{t('Every order currently costs')} {num(pointsPerOrder)} {t('point(s). A one-time onboarding fee of')} {tk(onboardingFee)} {t('applies to your first purchase only.')}</p>
+                    <p className="pp-sub" style={{ marginTop: 30, marginBottom: 0 }}>{t('Every order currently costs')} {num(pointsPerOrder)} {pointsPerOrder === 1 ? t('point') : t('points')}. {t('A one-time onboarding fee of')} {tk(onboardingFee)} {t('applies to your first purchase only.')}</p>
                 </div>
             </section>
 

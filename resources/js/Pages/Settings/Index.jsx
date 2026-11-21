@@ -38,17 +38,10 @@ function ConnRow({ name, desc, status, pillCls }) {
     );
 }
 
-function Home() {
-    const checks = [
-        ['Business profile filled', true], ['At least one courier connected', true],
-        ['Facebook Page connected', true], ['WhatsApp connected', true],
-        ['Order sources set up', false], ['AI reply level chosen', false],
-    ];
-    const cards = [
-        ['Business Settings', 'Profile complete', 'green'], ['API Connection', '4 of 6 connected', 'amber'],
-        ['Calls & Orders', '3 sources active', 'green'], ['AI & Auto Reply', 'Draft only', 'amber'],
-        ['Security & Records', '2 devices pending', 'amber'],
-    ];
+function Home({ home }) {
+    // Computed server-side from the shop's real state (SettingsController).
+    const checks = (home?.checks || []).map((c) => [c.label, c.done]);
+    const cards = (home?.cards || []).map((c) => [c.label, c.value, c.pill]);
     return (
         <>
             <div className="frow"><input className="inp" placeholder={t('Search settings…')} /></div>
@@ -96,7 +89,7 @@ function BusinessProfileForm({ m2 }) {
     );
 }
 
-function Api({ tab, couriers, channels, paymentGateway, platformPaymentGateway }) {
+function Api({ tab, couriers, channels, paymentGateway, platformPaymentGateway, integration }) {
     if (tab === 'channels') return <ChannelsForm channels={channels} />;
     if (tab === 'gateway') return (
         <>
@@ -106,6 +99,7 @@ function Api({ tab, couriers, channels, paymentGateway, platformPaymentGateway }
                     subtitle={t('Your own merchant accounts. Your customers pay YOU here — for example the advance-payment numbers shown on your storefront. Only your shop sees these.')}
                     data={paymentGateway}
                     action="/settings/payment-gateway"
+                    saveLabel={t('Save — your shop')}
                 />
             )}
             {platformPaymentGateway && (
@@ -115,6 +109,7 @@ function Api({ tab, couriers, channels, paymentGateway, platformPaymentGateway }
                         subtitle={t('The platform\'s own merchant accounts. Sellers pay US for points packs with these numbers — they appear on every seller\'s Billing page. Sellers never see or change these.')}
                         data={platformPaymentGateway}
                         action="/settings/payment-gateway/platform"
+                        saveLabel={t('Save — platform')}
                     />
                 </div>
             )}
@@ -122,13 +117,18 @@ function Api({ tab, couriers, channels, paymentGateway, platformPaymentGateway }
     );
     if (tab === 'app') return (
         <div className="card"><h3>{t('App Integration')}</h3><div className="card-sub">{t('External API for outside apps and AI systems')}</div>
-            <Field label="API Key (sk_…)" value="sk_••••••••••••••••••48" /><Field label="Webhook URL" value="https://demoshop.com.bd/hooks/skaleup" />
-            <div className="sm mut">{t('Making a new key closes the old one right away. A key is shown in full only once, when it is created.')}</div><SaveBar /></div>
+            <Field label="API endpoint" value={integration?.endpoint || ''} />
+            <Field label="API Key (sk_…)" value={integration?.api_key ? `sk_••••••••${integration.api_key.last4}` : t('No key yet')} />
+            <div className="sm mut">{integration?.api_key
+                ? `${t('A key is active for this shop')}${integration.api_key.last_used_at ? ` · ${t('Last used')} ${integration.api_key.last_used_at}` : ''}. ${t('A key is shown in full only once, when it is created.')}`
+                : t('No API key has been issued for this shop yet. Ask the platform team to issue one.')}</div></div>
     );
     if (tab === 'website') return (
         <div className="card"><h3>{t('Website Integration')}</h3><div className="card-sub">{t('Orders will come in from your own website / WooCommerce')}</div>
-            <Field label="Website URL" value="https://demoshop.com.bd" /><Field label="Platform" value="WooCommerce" />
-            <ConnRow name="WooCommerce" desc="Plugin connected — order sync is on" status="Connected" pillCls="green" /><SaveBar /></div>
+            <Field label="Order endpoint" value={integration?.endpoint || ''} />
+            <Field label="Platform" value="WooCommerce / WordPress" />
+            <ConnRow name="WooCommerce" desc={integration?.api_key ? t('Your shop API key is active — the plugin can send orders to the endpoint above') : t('No API key yet — the plugin cannot send orders until a key is issued')}
+                status={integration?.api_key ? (integration.api_key.last_used_at ? t('Connected') : t('Key active')) : t('Not connected')} pillCls={integration?.api_key ? 'green' : 'amber'} /></div>
     );
     return <CourierSettings couriers={couriers} />;
 }
@@ -236,7 +236,7 @@ function SourcesForm({ m2 }) {
                 <div className="conn-row" key={r.id}>
                     <div style={{ flex: 1 }}><input className="inp" style={{ maxWidth: 260 }} value={r.label}
                         onChange={(e) => setRows(rows.map((x, j) => j === i ? { ...x, label: e.target.value } : x))} />
-                        <div className="sm mut">{r.code}</div></div>
+                        <div className="sm mut">{r.code}{['INCOMPLETE_ORDER', 'UPSALE'].includes(r.code) && <span className="chip chip-grey" style={{ marginLeft: 6 }}>{t('System type')}</span>}</div></div>
                     <button className={`switch ${r.is_visible ? 'on' : ''}`} aria-label="toggle source"
                         onClick={() => setRows(rows.map((x, j) => j === i ? { ...x, is_visible: !x.is_visible } : x))} />
                 </div>
@@ -401,7 +401,7 @@ function RuleRow({ rule }) {
     return (
         <div className="rule-card">
             <div className="flex"><div style={{ flex: 1 }}><div className="b">{rule.name}</div>
-                <div className="sm mut">{rule.trigger_type === 'intent' ? `${t('Intent')}: ${rule.match_text}` : `${t('Keywords')}: ${rule.match_text}`} · {rule.action}{rule.reply_template ? ` — ${rule.reply_template.slice(0, 70)}` : ''}</div></div>
+                <div className="sm mut">{rule.trigger_type === 'intent' ? `${t('Intent')}: ${rule.match_text}` : `${t('Keywords')}: ${rule.match_text}`} · {rule.action}{rule.reply_template ? ` — ${rule.reply_template}` : ''}</div></div>
                 <button type="button" className={`switch ${form.data.active ? 'on' : ''}`} aria-label="toggle" onClick={() => { const next = !form.data.active; form.setData('active', next); router.patch(`/settings/ai-rules/${rule.id}`, { ...form.data, active: next }, { preserveScroll: true }); }} />
             </div>
             <div className="flex mt8" style={{ gap: 8 }}>
@@ -869,7 +869,7 @@ function PricingSettingsForm({ pricing }) {
     );
 }
 
-export default function SettingsIndex({ group: initial = 'home', totpEnabled = false, totpEnrolled = false, m2, couriers, ai, isPlatform = false, packagesData = null, channels = null, paymentGateway = null, platformPaymentGateway = null }) {
+export default function SettingsIndex({ group: initial = 'home', totpEnabled = false, totpEnrolled = false, m2, couriers, ai, isPlatform = false, packagesData = null, channels = null, paymentGateway = null, platformPaymentGateway = null, home = null, integration = null }) {
     const groups = isPlatform ? [...GROUPS, { id: 'packages', label: 'Seller Packages', tabs: [] }] : GROUPS;
     const [group, setGroup] = useState(initial);
     const g = groups.find((x) => x.id === group) || groups[0];
@@ -893,9 +893,9 @@ export default function SettingsIndex({ group: initial = 'home', totpEnabled = f
                             {g.tabs.map(([id, label]) => <span key={id} className={`ptab ${tab === id ? 'act' : ''}`} onClick={() => setTab(id)}>{t(label)}</span>)}
                         </div>
                     )}
-                    {group === 'home' && <Home />}
+                    {group === 'home' && <Home home={home} />}
                     {group === 'business' && <Business tab={tab} m2={m2} />}
-                    {group === 'api' && <Api tab={tab} couriers={couriers} channels={channels} paymentGateway={paymentGateway} platformPaymentGateway={platformPaymentGateway} />}
+                    {group === 'api' && <Api tab={tab} couriers={couriers} channels={channels} paymentGateway={paymentGateway} platformPaymentGateway={platformPaymentGateway} integration={integration} />}
                     {group === 'calls' && <Calls tab={tab} m2={m2} />}
                     {group === 'ai' && <Ai tab={tab} ai={ai} />}
                     {group === 'security' && <Security tab={tab} totpEnabled={totpEnabled} totpEnrolled={totpEnrolled} m2={m2} />}

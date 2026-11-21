@@ -67,7 +67,7 @@ function ApprovalCard({ seller }) {
     );
 }
 
-export default function SellerDetail({ seller, subscriptions, payments, packages, customers, wallet, tokenLedger, claims }) {
+export default function SellerDetail({ seller, purchaseHistory = [], payments, packages, customers, wallet, tokenLedger, claims }) {
     const profile = useForm({ name: seller.name, owner_name: seller.owner_name || '', phone: seller.phone || '', email: seller.email || '', address: seller.address || '' });
     const sub = useForm({ package_id: packages[0]?.id || '', amount: '', method: 'bKash', note: '' });
     const pay = useForm({ amount: '', method: 'bKash', note: '' });
@@ -81,6 +81,10 @@ export default function SellerDetail({ seller, subscriptions, payments, packages
     return (
         <AppLayout>
             <Head title={seller.name} />
+            <style>{`.sd-pg .lbl { display:block; font-size:13px; font-weight:600; margin-top:12px; }
+.sd-pg .fld { display:block; width:100%; height:40px; border-radius:8px; font-size:14px; border:1px solid #D9CDE4; background:#fff; padding:0 12px; margin-top:5px; font-family:inherit; color:var(--ink); box-sizing:border-box; }
+.sd-pg textarea.fld { height:auto; padding:8px 12px; }`}</style>
+            <div className="sd-pg">
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                 <Link href="/admin/sellers" className="btn-ghost">← {t('Sellers')}</Link>
                 <h3 style={{ fontSize: 19 }}>{seller.name}</h3>
@@ -161,10 +165,10 @@ export default function SellerDetail({ seller, subscriptions, payments, packages
                 <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
                     <h4 style={{ fontSize: 15, padding: '14px 14px 6px' }}>{t('Package history')}</h4>
                     <div className="tbl-wrap"><table className="tbl">
-                        <thead><tr><th>{t('Package')}</th><th>{t('Amount')}</th><th>{t('From')}</th><th>{t('To')}</th><th>{t('Status')}</th></tr></thead>
+                        <thead><tr><th>{t('Package')}</th><th>{t('Amount')}</th><th>{t('Method')}</th><th>{t('When')}</th></tr></thead>
                         <tbody>
-                            {subscriptions.map((s) => <tr key={s.id}><td style={{ fontWeight: 600 }}>{s.package}</td><td>{tk(s.amount)}</td><td>{s.starts_at}</td><td>{s.expires_at}</td><td>{s.status === 'active' ? <span className="pill green">{t('Active')}</span> : <span className="pill">{s.status}</span>}</td></tr>)}
-                            {subscriptions.length === 0 && <tr><td colSpan={5} style={{ textAlign: 'center', padding: 20, color: 'var(--muted)' }}>{t('No packages yet')}</td></tr>}
+                            {purchaseHistory.map((p) => <tr key={p.id}><td style={{ fontWeight: 600 }}>{p.label}</td><td>{tk(p.amount)}</td><td>{p.method || ''}</td><td style={{ whiteSpace: 'nowrap' }}>{p.when}</td></tr>)}
+                            {purchaseHistory.length === 0 && <tr><td colSpan={4} style={{ textAlign: 'center', padding: 20, color: 'var(--muted)' }}>{t('No purchases yet')}</td></tr>}
                         </tbody>
                     </table></div>
                 </div>
@@ -226,6 +230,7 @@ export default function SellerDetail({ seller, subscriptions, payments, packages
                         {customers.length === 0 && <tr><td colSpan={5} style={{ textAlign: 'center', padding: 24, color: 'var(--muted)' }}>{t('This seller has no customers yet')}</td></tr>}
                     </tbody>
                 </table></div>
+            </div>
             </div>
         </AppLayout>
     );

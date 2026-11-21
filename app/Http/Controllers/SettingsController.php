@@ -24,7 +24,48 @@ class SettingsController extends Controller
     {
         $biz = (int) ($request->user()?->business_id ?? 0);
 
+        // Settings Home is computed from the shop's REAL state — the
+        // checklist and cards must never show hardcoded prototype copy.
+        $profileFilled = trim((string) $this->settings->get('business.name', '')) !== ''
+            && trim((string) $this->settings->get('business.mobile', '')) !== ''
+            && trim((string) $this->settings->get('business.address', '')) !== '';
+        $courierOn = \App\Models\CourierMethod::where('business_id', $biz)->where('is_active', true)->exists();
+        $fbOn = ! empty(((array) $this->settings->get('channels.facebook', []))['token_enc']);
+        $waOn = ! empty(((array) $this->settings->get('channels.whatsapp', []))['token_enc']);
+        $igOn = ! empty(((array) $this->settings->get('channels.instagram', []))['token_enc']);
+        $apiKey = \App\Models\ApiKey::where('business_id', $biz)->latest('id')->first();
+        $gw = app(\App\Services\PaymentGatewayService::class)->view($biz);
+        $gatewayOn = ($gw['bkash_enabled'] && $gw['bkash_number'] !== '') || ($gw['nagad_enabled'] && $gw['nagad_number'] !== '')
+            || ($gw['rocket_enabled'] && $gw['rocket_number'] !== '') || $gw['ssl_enabled'] || $gw['shurjo_enabled'];
+        $connCount = (int) $courierOn + (int) $fbOn + (int) $waOn + (int) $igOn + (int) ($apiKey !== null) + (int) $gatewayOn;
+        $visibleSources = OrderSource::where('business_id', $biz)->where('is_visible', true)->count();
+        $autonomy = app(\App\Services\RuleBrainService::class)->autonomy();
+        $aiModeLabel = ['auto' => 'Auto reply on', 'draft' => 'Draft only', 'off' => 'Auto reply off'][$autonomy['facebook'] ?? 'draft'] ?? 'Draft only';
+        $totpOn = $this->totp->enabled();
+        $homeStats = [
+            'checks' => [
+                ['label' => 'Business profile filled', 'done' => $profileFilled],
+                ['label' => 'At least one courier connected', 'done' => $courierOn],
+                ['label' => 'Facebook Page connected', 'done' => $fbOn],
+                ['label' => 'WhatsApp connected', 'done' => $waOn],
+                ['label' => 'Order sources set up', 'done' => $visibleSources > 0],
+                ['label' => 'AI reply level chosen', 'done' => ! empty((array) $this->settings->get('ai.autonomy', []))],
+            ],
+            'cards' => [
+                ['label' => 'Business Settings', 'value' => $profileFilled ? 'Profile complete' : 'Profile incomplete', 'pill' => $profileFilled ? 'green' : 'amber'],
+                ['label' => 'API Connection', 'value' => $connCount . ' of 6 connected', 'pill' => $connCount >= 6 ? 'green' : 'amber'],
+                ['label' => 'Calls & Orders', 'value' => $visibleSources . ' sources active', 'pill' => $visibleSources > 0 ? 'green' : 'amber'],
+                ['label' => 'AI & Auto Reply', 'value' => $aiModeLabel, 'pill' => ($autonomy['facebook'] ?? 'draft') === 'auto' ? 'green' : 'amber'],
+                ['label' => 'Security & Records', 'value' => $totpOn ? 'Two-factor on' : 'Two-factor off', 'pill' => $totpOn ? 'green' : 'amber'],
+            ],
+        ];
+
         return Inertia::render('Settings/Index', [
+            'home' => $homeStats,
+            'integration' => [
+                'endpoint' => url('/api/external/v1/orders'),
+                'api_key' => $apiKey ? ['last4' => (string) $apiKey->last4, 'label' => (string) $apiKey->label, 'last_used_at' => $apiKey->last_used_at?->format('d M Y, h:i A')] : null,
+            ],
             'group' => $request->query('group', 'home'),
             'couriers' => [
                 'methods' => \App\Models\CourierMethod::where('business_id', $biz)->with('pickupStores')->orderBy('name')->get()
@@ -112,8 +153,9 @@ class SettingsController extends Controller
                     'provider' => (string) $this->settings->get('marketing.' . $biz . '.sms_provider', 'nishchit'),
                     'mode' => (string) $this->settings->get('marketing.' . $biz . '.sms_mode', 'demo'),
                     'sender_id' => (string) $this->settings->get('marketing.' . $biz . '.sms_sender_id', ''),
-                    'has_key' => (bool) ($this->settings->get('marketing.' . $biz . '.sms_api_key_enc')
-                        || $this->settings->get('marketing.gateway_api_key_enc')),
+                    // Only the seller's OWN key counts — the platform's
+                    // legacy global key is not the seller's configuration.
+                    'has_key' => (bool) $this->settings->get('marketing.' . $biz . '.sms_api_key_enc'),
                     'has_webhook_secret' => (bool) $this->settings->get('marketing.' . $biz . '.sms_webhook_secret_enc'),
                 ],
                 'toggles' => [
@@ -128,10 +170,46 @@ class SettingsController extends Controller
                     ->map(fn ($l) => ['ref' => $l->order_ref, 'by' => $l->deleted_by, 'reason' => $l->reason,
                         'when' => $l->created_at?->format('d M Y, h:i A')]),
                 'changeHistory' => DB::table('settings_changes')->latest('created_at')->limit(30)->get()
-                    ->map(fn ($c) => ['key' => $c->key, 'old' => $c->old_value, 'new' => $c->new_value,
+                    ->map(fn ($c) => ['key' => $c->key, 'old' => $this->maskHistoryValue((string) $c->key, $c->old_value), 'new' => $this->maskHistoryValue((string) $c->key, $c->new_value),
                         'by' => $c->changed_by, 'when' => \Illuminate\Support\Carbon::parse($c->created_at)->format('d M Y, h:i A')]),
             ],
         ]);
+    }
+
+    /**
+     * Change History must never expose secrets: values stored for keys that
+     * hold encrypted material (*_enc), tokens, secrets or passwords are
+     * masked, and JSON values are scrubbed key by key (channel configs are
+     * arrays that carry token_enc inside).
+     */
+    private function maskHistoryValue(string $key, mixed $value): string
+    {
+        $sensitive = (bool) preg_match('/(_enc|secret|token|password|api_key)/i', $key);
+        $raw = (string) ($value ?? '');
+        // A bare Laravel ciphertext (base64 of {"iv":...}) is masked
+        // wherever it appears, even under an innocent-looking key.
+        if ($sensitive || preg_match('/^eyJ[A-Za-z0-9+\/=]{12,}$/', $raw)) {
+            return $raw === '' ? '' : '•••••• (hidden)';
+        }
+        $decoded = json_decode($raw, true);
+        if (is_array($decoded)) {
+            $scrub = function ($v) use (&$scrub) {
+                if (! is_array($v)) {
+                    return $v;
+                }
+                foreach ($v as $k => $item) {
+                    $v[$k] = preg_match('/(_enc|secret|token|password|api_key)/i', (string) $k)
+                        ? '•••••• (hidden)'
+                        : $scrub($item);
+                }
+
+                return $v;
+            };
+
+            return (string) json_encode($scrub($decoded));
+        }
+
+        return $raw;
     }
 
     private function logChange(Request $request, string $key, mixed $old, mixed $new): void
@@ -353,11 +431,14 @@ class SettingsController extends Controller
     public function addCourierMethod(Request $request): RedirectResponse
     {
         $data = $request->validate(['name' => ['required', 'string', 'max:120']]);
-        $methods = $this->settings->get('couriers.methods', []);
+        // Delivery-method names are per shop — never one global list.
+        $biz = (int) ($request->user()?->business_id ?? 0);
+        $list = app(\App\Services\DeliveryMethodList::class);
+        $methods = $list->forBusiness($biz);
         $exists = collect($methods)->contains(fn ($m) => strtolower((string) $m) === strtolower($data['name']));
         if (! $exists) {
             $methods[] = $data['name'];
-            $this->setLogged($request, 'couriers.methods', array_values($methods));
+            $this->setLogged($request, $list->key($biz), array_values($methods));
         }
 
         return back()->with('success', 'Delivery method added');

@@ -10,7 +10,7 @@ import { t } from '@/lib/i18n';
  * The server resolves the scope from the signed-in user — the form
  * itself never names a scope.
  */
-export default function PaymentGatewayForm({ title, subtitle, data, action }) {
+export default function PaymentGatewayForm({ title, subtitle, data, action, saveLabel }) {
     const form = useForm({
         bkash_number: data?.bkash_number || '', bkash_enabled: !!data?.bkash_enabled,
         nagad_number: data?.nagad_number || '', nagad_enabled: !!data?.nagad_enabled,
@@ -73,7 +73,7 @@ export default function PaymentGatewayForm({ title, subtitle, data, action }) {
 
                 <label className="lbl" style={{ marginTop: 12 }}>{t('Payment instructions (shown to the payer)')}</label>
                 <textarea className="fld" rows={2} placeholder={t('e.g. Send money, then share the TrxID')} value={form.data.instructions} onChange={(e) => form.setData('instructions', e.target.value)} />
-                <button className="btn-primary" disabled={form.processing} style={{ marginTop: 14 }}>{t('Save payment gateway')}</button>
+                <button className="btn-primary" disabled={form.processing} style={{ marginTop: 14 }}>{saveLabel || t('Save payment gateway')}</button>
             </form>
         </div>
     );

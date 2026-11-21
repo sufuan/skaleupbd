@@ -35,6 +35,10 @@ class DeliveryController extends Controller
                 'charge' => $order ? $m->chargeFor($order->effectiveDistrict()) : null,
                 'charge_inside' => (float) $m->charge_inside_dhaka, 'charge_outside' => (float) $m->charge_outside_dhaka,
                 'is_default' => $m->is_default, 'is_preferred' => $m->is_preferred,
+                // A store id saved on the connection itself (credentials)
+                // is a working pickup store — the modal must not warn
+                // "no store synced" when one is saved there.
+                'has_store_id' => ! empty($m->credentials['store_id']),
                 'stores' => $m->pickupStores->map(fn ($s) => ['id' => $s->id, 'store_id' => $s->store_id, 'name' => $s->name, 'is_default' => $s->is_default])->all(),
             ];
         })->all();
@@ -304,12 +308,21 @@ class DeliveryController extends Controller
             'code' => 'required|string|max:120',
             'type' => 'required|in:shipping,return,rts',
             'return_tag' => 'nullable|string|max:120',
+            'all_biz' => 'nullable|boolean',
         ]);
         $biz = $this->biz($request);
         $code = trim($data['code']);
-        $order = Order::where('business_id', $biz)
+        // Cross-business search exists only for platform admins (the Scan
+        // page hides the toggle from everyone else, and it is re-checked
+        // here — a seller sending all_biz=1 by hand gains nothing).
+        $allBiz = ! empty($data['all_biz']) && (bool) ($request->user()->is_platform_admin ?? false);
+        $order = Order::when(! $allBiz, fn ($q) => $q->where('business_id', $biz))
             ->where(fn ($q) => $q->where('invoice_no', $code)->orWhere('tracking_id', $code)->orWhere('consignment_id', $code))
             ->first();
+        if ($order && $allBiz) {
+            // Events and stock moves belong to the order's own business.
+            $biz = (int) $order->business_id;
+        }
         $fail = function (string $note) use ($biz, $data, $code, $request) {
             ScanEvent::create(['business_id' => $biz, 'scan_type' => $data['type'], 'result' => 'failed', 'code' => $code, 'note' => $note, 'actor_id' => $request->user()->id]);
 

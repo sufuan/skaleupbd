@@ -11,7 +11,7 @@ export default function Product({ preset, rows, worst }) {
             <div className="rep">
                 <RepHead title={t('Product Report')} sub={t('Which product has more profit, which has less — for buying decisions.')} preset={preset} base="/reports/product" exportKey="product" />
                 <table className="x-table">
-                    <thead><tr><th>{t('Product')}</th><th>{t('Sold')}</th><th>{t('Income')}</th><th>{t('Profit')}</th><th>{t('Margin')}</th></tr></thead>
+                    <thead><tr><th>{t('Product')}</th><th>{t('Sold (delivered)')}</th><th>{t('Income')}</th><th>{t('Profit')}</th><th>{t('Margin')}</th></tr></thead>
                     <tbody>
                         {rows.map((r) => (
                             <tr key={r.product}>

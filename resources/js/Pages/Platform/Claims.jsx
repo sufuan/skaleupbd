@@ -36,6 +36,7 @@ function ClaimRow({ c }) {
             <td>
                 <div style={{ fontWeight: 600 }}>{c.pack_name}</div>
                 <div style={{ fontSize: 12, color: 'var(--muted)' }}>{num(c.pack_credits)} {t('points')} · {c.validity_type === 'monthly' ? t('Monthly') : t('Yearly wallet')}</div>
+                {c.status === 'approved' && <div style={{ fontSize: 12, color: 'var(--muted)' }}>{t('Balance now')} {num(c.current_balance)} {t('points')}</div>}
             </td>
             <td>
                 <div style={{ fontWeight: 700 }}>{tk(c.total_bdt)}</div>

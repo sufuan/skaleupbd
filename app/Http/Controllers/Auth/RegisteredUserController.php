@@ -57,6 +57,7 @@ class RegisteredUserController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
+            'shop_name' => 'required|string|max:120',
             'email' => 'required|string|lowercase|email|max:255|unique:'.User::class,
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
             'pack_id' => ['nullable'], // validated softly below — a bad pack never blocks signup
@@ -71,7 +72,7 @@ class RegisteredUserController extends Controller
 
         // Every account owns a shop: create its Business and the default
         // per-business data, and link the user to it.
-        app(\App\Services\BusinessProvisioner::class)->provision($user);
+        app(\App\Services\BusinessProvisioner::class)->provision($user, $request->input('shop_name'));
 
         // M19 purchase flow: a pack picked on the pricing page becomes a
         // pending payment claim, so Billing shows exactly what to pay.
