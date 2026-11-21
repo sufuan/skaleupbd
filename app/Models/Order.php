@@ -85,6 +85,16 @@ class Order extends Model
         return $this->invoice_no;
     }
 
+    /** Orders store the street address in customer_address; courier drivers
+     *  and delivery screens read $order->address. Without this accessor the
+     *  drivers composed the recipient address from the district alone and
+     *  Pathao rejected bookings ("recipient_address must be at least 10
+     *  characters") for every district shorter than 10 characters. */
+    public function getAddressAttribute(): ?string
+    {
+        return $this->customer_address;
+    }
+
     public function getDueAttribute(): float
     {
         return max(0, (float) $this->grand_total - (float) $this->advance);
