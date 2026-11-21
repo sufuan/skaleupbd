@@ -83,8 +83,10 @@ class OrderController extends Controller
         $this->applyListFilters($query, $request, $status, $search);
         $page = $query->paginate($perPage)->withQueryString();
 
-        $fraudByPhone = collect($page->items())->pluck('customer_phone')->unique()
-            ->mapWithKeys(fn ($phone) => [$phone => $this->fraud->forPhone($biz, $phone)]);
+        // The list must never block on live courier APIs: rows render the
+        // fraud snapshot stored on each order (refreshed at intake, on the
+        // detail page and at approve). A live network check per phone made
+        // this page time out whenever a courier API answered slowly.
         $callCounts = CallLog::where('business_id', $biz)
             ->whereIn('order_id', collect($page->items())->pluck('id'))
             ->selectRaw('order_id, count(*) as c')->groupBy('order_id')->pluck('c', 'order_id');
@@ -94,7 +96,7 @@ class OrderController extends Controller
 
         return Inertia::render('Orders/Index', [
             'orders' => $page->items(),
-            'rows' => collect($page->items())->map(fn ($o) => $this->row($o, $fraudByPhone[$o->customer_phone] ?? null)),
+            'rows' => collect($page->items())->map(fn ($o) => $this->row($o)),
             'counts' => $counts,
             'filters' => ['status' => $status, 'search' => $search, 'per_page' => $perPage,
                 'from' => $request->query('from', ''), 'to' => $request->query('to', ''),

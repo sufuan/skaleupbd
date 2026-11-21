@@ -115,7 +115,18 @@ class PathaoDriver implements CourierDriver
                 return ['ok' => true, 'tracking_id' => (string) $data['consignment_id'], 'consignment_id' => (string) $data['consignment_id'], 'raw' => $body];
             }
 
-            return ['ok' => false, 'error' => (string) ($body['message'] ?? 'Pathao rejected the booking (HTTP ' . $res->status() . ')'), 'raw' => $body];
+            $message = (string) ($body['message'] ?? 'Pathao rejected the booking (HTTP ' . $res->status() . ')');
+            if (! empty($body['errors']) && is_array($body['errors'])) {
+                $details = [];
+                foreach ($body['errors'] as $field => $messages) {
+                    $details[] = $field . ': ' . implode(', ', (array) $messages);
+                }
+                if ($details) {
+                    $message .= ' — ' . implode('; ', $details);
+                }
+            }
+
+            return ['ok' => false, 'error' => $message, 'raw' => $body];
         } catch (\Throwable $e) {
             return ['ok' => false, 'error' => 'Could not reach Pathao: ' . $e->getMessage()];
         }

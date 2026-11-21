@@ -26,6 +26,7 @@ export default function GuestLayout({ children }) {
                     <div className="brand-point"><Tick />{t('AI replies and price bargaining inside your rules')}</div>
                 </div>
                 <div className="brand-foot">SkaleUp BD · {t('Made for sellers in Bangladesh')}</div>
+                <div className="brand-foot" style={{ marginTop: 6 }}>Operated by Sylhet Online Service · Jainpur Bazar, Dakshin Surma, Sylhet</div>
             </div>
             <div className="auth-side">
                 <div className="auth-top"><LanguageSwitcher /></div>
