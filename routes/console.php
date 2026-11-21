@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
 
 Schedule::command('ai:process-pending')->everyMinute();
+Schedule::command('workinbox:run')->everyFiveMinutes();
 
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
@@ -14,6 +15,11 @@ Artisan::command('marketing:run', function () {
     $stats = app(\App\Services\AutomationService::class)->runDue();
     $this->comment('Marketing automation: '.json_encode($stats));
 })->purpose('Run due marketing automation SMS (reminders, win-back, post-return, back-in-stock)');
+
+Artisan::command('workinbox:run', function () {
+    $stats = app(\App\Services\WorkInboxService::class)->evaluateAll();
+    $this->comment('Work Inbox: '.json_encode($stats));
+})->purpose('Run the Work Inbox rules: create problem tasks, auto-close resolved ones, escalate overdue ones');
 
 Artisan::command('ai:process-pending', function () {
     $brain = app(\App\Services\RuleBrainService::class);

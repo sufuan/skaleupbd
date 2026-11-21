@@ -2286,5 +2286,14 @@
  "Download template": "Download template",
  "Name your product photos by SKU (like SP-001.jpg) and upload them all at once to the import-images folder on your server. Then either paste the photo link in the sheet, or leave it blank — the photo is matched by SKU on its own. Extra photos: SP-001_1.jpg, SP-001_2.jpg.": "Name your product photos by SKU (like SP-001.jpg) and upload them all at once to the import-images folder on your server. Then either paste the photo link in the sheet, or leave it blank — the photo is matched by SKU on its own. Extra photos: SP-001_1.jpg, SP-001_2.jpg.",
  "Sandbox / Test mode": "Sandbox / Test mode",
- "Uses the courier's test server. Bookings in test mode are not real parcels.": "Uses the courier's test server. Bookings in test mode are not real parcels."
+ "Uses the courier's test server. Bookings in test mode are not real parcels.": "Uses the courier's test server. Bookings in test mode are not real parcels.",
+ "Auto — from the customer name": "Auto — from the customer name",
+ "Everyone: আপু": "Everyone: আপু",
+ "Everyone: ভাইয়া": "Everyone: ভাইয়া",
+ "No honorific": "No honorific",
+ "Work Inbox Settings": "Work Inbox Settings",
+ "My Work": "My Work",
+ "New Task": "New Task",
+ "+ New Task": "+ New Task",
+ "Complete selected": "Complete selected"
 }

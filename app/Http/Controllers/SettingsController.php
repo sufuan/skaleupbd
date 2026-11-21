@@ -495,7 +495,7 @@ class SettingsController extends Controller
     {
         $data = $request->validate([
             'angry_holding' => ['required', 'boolean'],
-            'honorific' => ['required', 'string', 'in:apu,bhaiya,none'],
+            'honorific' => ['required', 'string', 'in:auto,apu,bhaiya,none'],
             'daily_llm_cap' => ['required', 'integer', 'min:0', 'max:100000'],
             'debounce_seconds' => ['required', 'integer', 'min:0', 'max:60'],
         ]);

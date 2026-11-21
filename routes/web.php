@@ -48,6 +48,9 @@ Route::middleware(['auth', 'verified', 'totp'])->group(function () {
                 ? (int) \App\Models\Conversation::where('business_id', $biz)->sum('unread_count')
                     + \App\Models\ChatMessage::where('business_id', $biz)->whereIn('status', ['draft', 'flagged'])->count()
                 : 0,
+            'workinbox_open' => $biz && \Illuminate\Support\Facades\Schema::hasTable('work_tasks')
+                ? \App\Models\WorkTask::where('business_id', $biz)->whereIn('status', ['open', 'in_progress'])->count()
+                : 0,
         ]);
     })->name('sidebar.counts');
 
@@ -190,6 +193,19 @@ Route::middleware(['auth', 'verified', 'totp'])->group(function () {
     Route::post('/marketing/sms/send', [\App\Http\Controllers\MarketingController::class, 'sendCampaign'])->name('marketing.sms.send');
     Route::get('/marketing/report', [\App\Http\Controllers\MarketingController::class, 'report'])->name('marketing.report');
     Route::post('/marketing/report/window', [\App\Http\Controllers\MarketingController::class, 'saveWindow'])->name('marketing.report.window');
+
+    // Work Inbox (M10) — system-made problem tasks; My Work page is built
+    // but stays OFF unless the shop turns it on in Work Inbox Settings.
+    Route::get('/work-inbox', fn () => redirect('/work-inbox/control'))->name('workinbox.home');
+    Route::get('/work-inbox/control', [\App\Http\Controllers\WorkInboxController::class, 'control'])->name('workinbox.control');
+    Route::get('/work-inbox/my', [\App\Http\Controllers\WorkInboxController::class, 'my'])->name('workinbox.my');
+    Route::get('/work-inbox/settings', [\App\Http\Controllers\WorkInboxController::class, 'settings'])->name('workinbox.settings');
+    Route::post('/work-inbox/settings', [\App\Http\Controllers\WorkInboxController::class, 'saveSettings'])->name('workinbox.settings.save');
+    Route::post('/work-inbox/tasks', [\App\Http\Controllers\WorkInboxController::class, 'store'])->name('workinbox.tasks.store');
+    Route::post('/work-inbox/tasks/bulk-done', [\App\Http\Controllers\WorkInboxController::class, 'bulkDone'])->name('workinbox.tasks.bulkDone');
+    Route::post('/work-inbox/tasks/{task}/start', [\App\Http\Controllers\WorkInboxController::class, 'start'])->name('workinbox.tasks.start');
+    Route::post('/work-inbox/tasks/{task}/done', [\App\Http\Controllers\WorkInboxController::class, 'done'])->name('workinbox.tasks.done');
+    Route::post('/work-inbox/tasks/{task}/reassign', [\App\Http\Controllers\WorkInboxController::class, 'reassign'])->name('workinbox.tasks.reassign');
 
     // Reports (M15)
     Route::get('/reports', [\App\Http\Controllers\ReportsController::class, 'pl'])->name('reports.pl');

@@ -80,6 +80,9 @@ class BusinessProvisioner
             ['business_id' => $biz->id, 'name' => 'Cash'],
             ['type' => 'cash', 'opening_balance' => 0, 'sort' => 0]
         );
+
+        // M10 Work Inbox: install the 36-rule defaults for the new shop.
+        app(WorkInboxService::class)->seedDefaults($biz->id);
     }
 
     /** The standard template library (same texts MarketingSeeder installs). */

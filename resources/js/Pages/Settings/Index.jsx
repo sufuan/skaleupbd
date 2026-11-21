@@ -523,7 +523,7 @@ function BehaviorForm({ ai }) {
     const b = ai?.behavior || {};
     const form = useForm({
         angry_holding: !!b.angry_holding,
-        honorific: b.honorific || 'apu',
+        honorific: b.honorific || 'auto',
         daily_llm_cap: b.daily_llm_cap ?? 0,
         debounce_seconds: b.debounce_seconds ?? 0,
     });
@@ -536,9 +536,10 @@ function BehaviorForm({ ai }) {
                 <div className="sm mut">{t('One short line — "our admin has been told" — then a human takes over. Off = fully silent handover.')}</div>
                 <div className="frow"><label className="fl">{t('How replies address the customer')}</label>
                     <select className="inp" value={form.data.honorific} onChange={(e) => form.setData('honorific', e.target.value)}>
-                        <option value="apu">{t('Apu')}</option>
-                        <option value="bhaiya">{t('Bhaiya')}</option>
-                        <option value="none">{t('No word — just Apni')}</option>
+                        <option value="auto">{t('Auto — from the customer name')}</option>
+                        <option value="apu">{t('Everyone: আপু')}</option>
+                        <option value="bhaiya">{t('Everyone: ভাইয়া')}</option>
+                        <option value="none">{t('No honorific')}</option>
                     </select></div>
                 <div className="frow"><label className="fl">{t('Daily AI model call limit (0 = no limit)')}</label><input className="inp" type="number" min="0" value={form.data.daily_llm_cap} onChange={(e) => form.setData('daily_llm_cap', e.target.value)} /></div>
                 <div className="frow"><label className="fl">{t('Wait seconds before answering a burst of messages (0 = off)')}</label><input className="inp" type="number" min="0" max="60" value={form.data.debounce_seconds} onChange={(e) => form.setData('debounce_seconds', e.target.value)} /></div>

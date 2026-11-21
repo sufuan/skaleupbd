@@ -54,7 +54,7 @@ const NAV = [
         { label: 'Purchase', icon: 'cart', children: ['Purchase Dashboard', 'Purchase List', 'New Purchase', 'Receive Purchase', 'Supplier Ledger', 'Suppliers', 'Ask for Quotation'], href: mod('purchase') },
         { label: 'Task & Follow-up', icon: 'check', children: ['Task Board', 'Agent Cockpit', 'Follow-up Management', 'My Follow-ups', 'Follow-up Performance'], href: mod('task') },
         { label: 'Call Center', icon: 'phone', children: ['Call Dashboard', 'Call Reports', 'Contacts'], href: mod('call-center') },
-        { label: 'Work Inbox', icon: 'inbox', children: ['Work Control', 'Rule Settings', 'My Work (off)'], href: mod('work-inbox') },
+        { label: 'Work Inbox', icon: 'inbox', badgeKey: 'workinbox_open', children: [{ label: 'Work Control', href: '/work-inbox/control' }, { label: 'Settings', href: '/work-inbox/settings' }], href: '/work-inbox/control' },
     ]},
     { sec: 'Growth', items: [
         { label: 'Ads', icon: 'chart', children: ['Ads Dashboard', 'Meta Ads', 'TikTok Ads'], href: mod('ads') },

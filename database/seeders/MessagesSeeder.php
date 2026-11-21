@@ -38,10 +38,10 @@ class MessagesSeeder extends Seeder
         // ---- Rule Brain defaults ----
         $ruleDefs = [
             ['name' => 'Default First Reply', 'match_text' => 'greeting', 'action' => 'answer', 'reply_template' => 'আসসালামু আলাইকুম! কিভাবে সাহায্য করতে পারি? কোন পণ্যটা সম্পর্কে জানতে চান?'],
-            ['name' => 'Price answer', 'match_text' => 'price', 'action' => 'answer', 'reply_template' => 'আপু, {product}-এর দাম {price} টাকা। অর্ডার করতে চাইলে নাম, ঠিকানা আর ফোন নম্বরটা পাঠিয়ে দিন।'],
-            ['name' => 'Delivery charge answer', 'match_text' => 'delivery', 'action' => 'answer', 'reply_template' => 'ঢাকার ভিতরে ডেলিভারি চার্জ {delivery_inside} টাকা, ঢাকার বাইরে {delivery_outside} টাকা আপু। কোন এলাকায় ডেলিভারি চান?'],
+            ['name' => 'Price answer', 'match_text' => 'price', 'action' => 'answer', 'reply_template' => '{honorific}, {product}-এর দাম {price} টাকা। অর্ডার করতে চাইলে নাম, ঠিকানা আর ফোন নম্বরটা পাঠিয়ে দিন।'],
+            ['name' => 'Delivery charge answer', 'match_text' => 'delivery', 'action' => 'answer', 'reply_template' => 'ঢাকার ভিতরে ডেলিভারি চার্জ {delivery_inside} টাকা, ঢাকার বাইরে {delivery_outside} টাকা {honorific}। কোন এলাকায় ডেলিভারি চান?'],
             ['name' => 'Reaction reply', 'match_text' => 'reaction', 'action' => 'answer', 'reply_template' => 'ধন্যবাদ! আর কিছু জানতে চাইলে বলুন।'],
-            ['name' => 'Stock answer', 'match_text' => 'stock', 'action' => 'answer', 'reply_template' => 'আপু, {product} এখন স্টকে আছে ({stock}টা)। অর্ডার করতে চাইলে ঠিকানাটা দিন।'],
+            ['name' => 'Stock answer', 'match_text' => 'stock', 'action' => 'answer', 'reply_template' => '{honorific}, {product} এখন স্টকে আছে ({stock}টা)। অর্ডার করতে চাইলে ঠিকানাটা দিন।'],
             ['name' => 'Price negotiation (ladder)', 'match_text' => 'bargain', 'action' => 'draft', 'reply_template' => null],
             ['name' => 'Order intake', 'match_text' => 'order_intent', 'action' => 'draft', 'reply_template' => null],
             ['name' => 'Spam hide', 'match_text' => 'spam', 'action' => 'hide', 'reply_template' => null],
@@ -129,7 +129,7 @@ class MessagesSeeder extends Seeder
 
         // ---- Learning-loop proposals waiting for a human ----
         foreach ([
-            ['title' => 'New rule: Cash on Delivery প্রশ্ন', 'detail' => 'গত সপ্তাহে ১৪টা conversation-এ staff হাতে লিখেছে "Cash on Delivery হবে আপু" — এই উত্তরটা rule হিসেবে যোগ করার প্রস্তাব।', 'rule_data' => ['new_rule' => ['name' => 'Cash on Delivery answer', 'trigger_type' => 'keyword', 'match_text' => 'cash on delivery,ক্যাশ অন ডেলিভারি,cod hobe,সিওডি', 'action' => 'answer', 'reply_template' => 'জি আপু, Cash on Delivery হবে। অর্ডার করতে নাম, ঠিকানা আর ফোন নম্বরটা দিন।']]],
+            ['title' => 'New rule: Cash on Delivery প্রশ্ন', 'detail' => 'গত সপ্তাহে ১৪টা conversation-এ staff হাতে লিখেছে "Cash on Delivery হবে আপু" — এই উত্তরটা rule হিসেবে যোগ করার প্রস্তাব।', 'rule_data' => ['new_rule' => ['name' => 'Cash on Delivery answer', 'trigger_type' => 'keyword', 'match_text' => 'cash on delivery,ক্যাশ অন ডেলিভারি,cod hobe,সিওডি', 'action' => 'answer', 'reply_template' => 'জি {honorific}, Cash on Delivery হবে। অর্ডার করতে নাম, ঠিকানা আর ফোন নম্বরটা দিন।']]],
             ['title' => 'Rule বদল: Delivery charge answer', 'detail' => 'Staff ৩ বার draft edit করে "ঢাকার বাইরে ৳120" এর সাথে "২–৩ দিন লাগবে" যোগ করেছে — template-এ যোগ করার প্রস্তাব।', 'rule_data' => ['edit_rule_match' => 'delivery', 'append_template' => ' পৌঁছাতে ২–৩ দিন লাগবে।']],
         ] as $p) {
             AiRuleProposal::updateOrCreate(['business_id' => $biz->id, 'title' => $p['title']], ['detail' => $p['detail'], 'status' => 'pending', 'rule_data' => $p['rule_data']]);

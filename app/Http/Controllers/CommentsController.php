@@ -80,9 +80,11 @@ class CommentsController extends Controller
         $body = trim((string) $request->input('body', ''));
         if ($body === '') {
             $product = $comment->product_id ? \App\Models\Product::find($comment->product_id) : null;
+            $prefix = app(\App\Services\HonorificService::class)->forName((int) $comment->business_id, $comment->author_name ?? null);
+            $prefix = $prefix !== '' ? $prefix . ', ' : '';
             $body = $product
-                ? 'আপু, ' . $product->name . '-এর দাম ৳' . number_format((float) $product->price) . '। অর্ডার করতে চাইলে নাম, ঠিকানা আর ফোন নম্বরটা এখানে পাঠিয়ে দিন।'
-                : 'আপু, বিস্তারিত এখানে পাঠিয়ে দিলাম। অর্ডার করতে চাইলে নাম, ঠিকানা আর ফোন নম্বরটা পাঠিয়ে দিন।';
+                ? $prefix . $product->name . '-এর দাম ৳' . number_format((float) $product->price) . '। অর্ডার করতে চাইলে নাম, ঠিকানা আর ফোন নম্বরটা এখানে পাঠিয়ে দিন।'
+                : $prefix . 'বিস্তারিত এখানে পাঠিয়ে দিলাম। অর্ডার করতে চাইলে নাম, ঠিকানা আর ফোন নম্বরটা পাঠিয়ে দিন।';
         }
         $comment->private_reply_body = $body;
         $comment->private_reply_at = now();

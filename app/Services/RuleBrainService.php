@@ -42,6 +42,7 @@ class RuleBrainService
         private AiTalkerService $talker,
         private AiGuardService $guard,
         private AiClassifierService $classifier,
+        private HonorificService $honorifics,
     ) {
     }
 
@@ -272,7 +273,7 @@ class RuleBrainService
         return null;
     }
 
-    public function buildReply(AiRule $rule, ?Product $product, int $businessId, bool $slots = false): string
+    public function buildReply(AiRule $rule, ?Product $product, int $businessId, bool $slots = false, ?string $honorific = null): string
     {
         $tpl = (string) ($rule->reply_template ?? '');
         $inside = (float) $this->settings->get('business.default_delivery_cost', 60);
@@ -285,15 +286,28 @@ class RuleBrainService
             '{stock}' => '⟦stock⟧',
             '{delivery_inside}' => '⟦delivery_inside⟧',
             '{delivery_outside}' => '⟦delivery_outside⟧',
+            '{honorific}' => $honorific ?? '',
         ] : [
             '{product}' => $product?->name ?? 'পণ্যটা',
             '{price}' => $product ? number_format($product->effectivePrice()) : '',
             '{stock}' => $product ? (string) max(0, (int) $product->stock_qty - (int) $product->reserved_qty) : '',
             '{delivery_inside}' => number_format($inside),
             '{delivery_outside}' => number_format(120),
+            '{honorific}' => $honorific ?? '',
         ];
 
-        return trim(strtr($tpl, $replace));
+        $rendered = (string) preg_replace('/ {2,}/', ' ', strtr($tpl, $replace));
+        if ($honorific === null || $honorific === '') {
+            // No address word this time — tidy the gaps its placeholder
+            // leaves behind so the sentence still reads naturally.
+            $rendered = (string) preg_replace('/^, /', '', $rendered);
+            $rendered = str_replace(' ,', ',', $rendered);
+            $rendered = str_replace(' ।', '।', $rendered);
+            $rendered = str_replace(',,', ',', $rendered);
+            $rendered = (string) preg_replace('/ {2,}/', ' ', $rendered);
+        }
+
+        return trim($rendered);
     }
 
     /** Fill ⟦slot⟧ tokens with the real figures from the database. */
@@ -343,22 +357,19 @@ class RuleBrainService
         ];
     }
 
-    /** How code-written replies address the customer (Settings: apu | bhaiya | none). Default keeps today's আপু. */
-    private function honorific(int $businessId): string
+    /**
+     * How code-written replies address this customer — আপু, ভাইয়া or no
+     * word at all. The mode comes from Settings (auto | apu | bhaiya |
+     * none); auto reads the customer's name (see HonorificService).
+     */
+    private function honorific(int $businessId, ?string $customerName = null): string
     {
-        $behavior = $this->settings->get('ai.behavior', []);
-        $h = is_array($behavior) ? (string) ($behavior['honorific'] ?? 'apu') : 'apu';
-
-        return match ($h) {
-            'bhaiya' => 'ভাইয়া',
-            'none' => '',
-            default => 'আপু',
-        };
+        return $this->honorifics->forName($businessId, $customerName);
     }
 
-    private function honorificPrefix(int $businessId): string
+    private function honorificPrefix(int $businessId, ?string $customerName = null): string
     {
-        $h = $this->honorific($businessId);
+        $h = $this->honorific($businessId, $customerName);
 
         return $h !== '' ? $h . ', ' : '';
     }
@@ -481,9 +492,9 @@ class RuleBrainService
         return ['body' => $body, 'meta' => ['product_id' => $product->id, 'total' => $total, 'unit_price' => $unit, 'variant_name' => $variant?->name]];
     }
 
-    private function collectQuestion(int $businessId, string $step): string
+    private function collectQuestion(int $businessId, string $step, ?string $customerName = null): string
     {
-        $prefix = $this->honorificPrefix($businessId);
+        $prefix = $this->honorificPrefix($businessId, $customerName);
 
         return $step === 'phone'
             ? $prefix . 'অর্ডারের জন্য আপনার মোবাইল নম্বরটা দিন — যে নম্বরে কুরিয়ার কল করবে।'
@@ -570,7 +581,7 @@ class RuleBrainService
                 $conversation->state_data = $state;
                 $conversation->save();
 
-                return $this->simpleOutgoing($conversation, $this->honorificPrefix($biz) . 'ঠিক আছে, অর্ডারটা রাখা হলো না।', 'collect_cancel', $mode);
+                return $this->simpleOutgoing($conversation, $this->honorificPrefix($biz, $conversation->customer_name) . 'ঠিক আছে, অর্ডারটা রাখা হলো না।', 'collect_cancel', $mode);
             }
         }
 
@@ -653,7 +664,7 @@ class RuleBrainService
         $conversation->state_data = $state;
         $conversation->save();
 
-        return $this->simpleOutgoing($conversation, $this->collectQuestion($biz, $next), 'collect_question', $mode, ['collect' => $next]);
+        return $this->simpleOutgoing($conversation, $this->collectQuestion($biz, $next, $conversation->customer_name), 'collect_question', $mode, ['collect' => $next]);
     }
 
     /** Every figure the business could honestly state right now. */
@@ -944,7 +955,7 @@ class RuleBrainService
             // Never quote stock or build an order for "the product" when
             // only some variants exist — ask ONE short question first.
             $names = $product->activeVariants()->pluck('name')->implode(', ');
-            $slottedBody = $this->honorificPrefix($biz) . $product->name . '-এর কোনটা চাইছেন? আছে: ' . $names . '। কোনটা নেবেন, বলুন।';
+            $slottedBody = $this->honorificPrefix($biz, $conversation->customer_name) . $product->name . '-এর কোনটা চাইছেন? আছে: ' . $names . '। কোনটা নেবেন, বলুন।';
             $kind = 'variant_question';
             $meta = ['variant_question' => true];
             $state = (array) ($conversation->state_data ?? []);
@@ -965,7 +976,7 @@ class RuleBrainService
             }
             $offer = $quote['offer'];
             $total = $offer + (float) $this->settings->get('business.default_delivery_cost', 60);
-            $h = $this->honorific($biz);
+            $h = $this->honorific($biz, $conversation->customer_name);
             $first = match ($quote['kind']) {
                 'accept' => 'ঠিক আছে' . ($h !== '' ? ' ' . $h : '') . ', আপনার কথামতোই ⟦offer⟧ টাকায় দিচ্ছি।',
                 'floor_repeat' => ($h !== '' ? $h . ', ' : '') . '⟦offer⟧ টাকাই শেষ দাম — এর কমে আর হচ্ছে না।',
@@ -993,7 +1004,7 @@ class RuleBrainService
                 $conversation->state = 'collecting';
                 $conversation->state_data = $state;
                 $conversation->save();
-                $slottedBody = $this->collectQuestion($biz, $missing[0]);
+                $slottedBody = $this->collectQuestion($biz, $missing[0], $conversation->customer_name);
                 $kind = 'collect_question';
                 $meta = ['collect' => $missing[0]];
             } else {
@@ -1012,12 +1023,12 @@ class RuleBrainService
                     $product = $all->first();
                 }
             }
-            $slottedBody = $this->buildReply($rule, $product, $biz, true);
+            $slottedBody = $this->buildReply($rule, $product, $biz, true, $this->honorific($biz, $conversation->customer_name));
             if (trim($slottedBody) === '') {
                 return null;
             }
             if ($this->hasBrokenFigure($this->renderSlots($slottedBody, $product, $biz))) {
-                $slottedBody = $this->honorificPrefix($biz) . 'কোন পণ্যটার কথা বলছেন? পণ্যের নামটা বললে দাম আর স্টক জানিয়ে দিচ্ছি।';
+                $slottedBody = $this->honorificPrefix($biz, $conversation->customer_name) . 'কোন পণ্যটার কথা বলছেন? পণ্যের নামটা বললে দাম আর স্টক জানিয়ে দিচ্ছি।';
                 $meta = ['clarify' => true];
             } else {
                 $meta = [];
@@ -1031,11 +1042,11 @@ class RuleBrainService
                     ->latest('id')->first();
             }
             if ($order) {
-                $slottedBody = $this->honorificPrefix($biz) . 'আপনার অর্ডার (⟦invoice⟧) এখন ⟦status⟧ অবস্থায় আছে।';
+                $slottedBody = $this->honorificPrefix($biz, $conversation->customer_name) . 'আপনার অর্ডার (⟦invoice⟧) এখন ⟦status⟧ অবস্থায় আছে।';
                 $slotValues = ['invoice' => $order->invoice_no, 'status' => (string) $order->status];
                 $meta = ['order_status' => $order->id];
             } else {
-                $slottedBody = $this->honorificPrefix($biz) . 'আপনার নামে কোনো অর্ডার খুঁজে পাইনি। অর্ডারের নম্বরটা দিলে দেখে দিচ্ছি।';
+                $slottedBody = $this->honorificPrefix($biz, $conversation->customer_name) . 'আপনার নামে কোনো অর্ডার খুঁজে পাইনি। অর্ডারের নম্বরটা দিলে দেখে দিচ্ছি।';
                 $meta = ['order_status' => null];
             }
             $kind = 'order_status';
@@ -1053,8 +1064,8 @@ class RuleBrainService
                 // a no-rule draft before it goes out (mode decides below).
                 $desc = trim((string) ($product->short_description ?? ''));
                 $slottedBody = $desc !== ''
-                    ? $this->honorificPrefix($biz) . $desc
-                    : $this->honorificPrefix($biz) . $product->name . '-এর দাম ⟦price⟧ টাকা। আর কিছু জানতে চাইলে বলুন।';
+                    ? $this->honorificPrefix($biz, $conversation->customer_name) . $desc
+                    : $this->honorificPrefix($biz, $conversation->customer_name) . $product->name . '-এর দাম ⟦price⟧ টাকা। আর কিছু জানতে চাইলে বলুন।';
                 $meta = ['no_rule' => true];
             }
         }
@@ -1187,7 +1198,7 @@ class RuleBrainService
             return null;
         }
         $product = $comment->product_id ? Product::where('business_id', $biz)->find($comment->product_id) : $this->productFor($biz, $comment->body);
-        $slottedBody = $this->buildReply($rule, $product, $biz, true);
+        $slottedBody = $this->buildReply($rule, $product, $biz, true, $this->honorific($biz, $comment->author_name ?? null));
         $draftRendered = $this->renderSlots($slottedBody, $product, $biz);
         if (trim($slottedBody) === '' || $this->hasBrokenFigure($draftRendered)) {
             // Never post a public reply with a blank figure in it.

@@ -2390,6 +2390,21 @@ BN.update([
     ("Uses the courier's test server. Bookings in test mode are not real parcels.", 'কুরিয়ারের টেস্ট সার্ভার ব্যবহার করে। টেস্ট মোডের বুকিং আসল পার্সেল নয়।'),
 ])
 
+BN.update([
+    ('Auto — from the customer name', 'অটো — কাস্টমারের নাম দেখে'),
+    ('Everyone: আপু', 'সবাইকে: আপু'),
+    ('Everyone: ভাইয়া', 'সবাইকে: ভাইয়া'),
+    ('No honorific', 'কোনো সম্বোধন নয়'),
+])
+
+BN.update([
+    ('Work Inbox Settings', 'ওয়ার্ক ইনবক্স সেটিংস'),
+    ('My Work', 'আমার কাজ'),
+    ('New Task', 'নতুন টাস্ক'),
+    ('+ New Task', '+ নতুন টাস্ক'),
+    ('Complete selected', 'বাছাই করা কাজগুলো শেষ করো'),
+])
+
 EN = {k: k for k in BN}
 
 with open('lang/en.json', 'w', encoding='utf-8') as f:
