@@ -13,7 +13,14 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 Route::get('/', function () {
-    return redirect()->route('dashboard');
+    // Signed-in users keep the old behaviour (straight to the dashboard);
+    // guests get the small public front page (legal name/address for
+    // Meta Business Verification + a login button).
+    if (auth()->check()) {
+        return redirect()->route('dashboard');
+    }
+
+    return Inertia::render('Landing');
 });
 
 // Public: language switch (en|bn), same pattern as TPDA e-Sheba.
