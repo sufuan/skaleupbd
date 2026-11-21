@@ -1,4 +1,4 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import { useMemo, useState } from 'react';
 import { t } from '@/lib/i18n';
 
@@ -41,7 +41,9 @@ const CSS = `
 .pp-pack-price span { font-size:14px; font-weight:500; color:#5d5266; }
 .pp-pack-line { font-size:14.5px; color:#241a2b; margin-top:6px; }
 .pp-pack-line b { color:${ACCENT}; }
-.pp-pack-note { font-size:13px; color:#5d5266; margin-top:4px; line-height:1.55; }
+.pp-pack-note { font-size:13px; color:#5d5266; margin-top:4px; margin-bottom:16px; line-height:1.55; }
+.pp-pack-btn { margin-top:auto; display:block; text-align:center; background:${ACCENT}; color:#fff; padding:11px 14px; border-radius:9px; font-size:15px; font-weight:600; text-decoration:none; }
+.pp-pack-btn:hover { background:#341040; }
 .pp-helper { background:#fff; border:1px solid #e6ddea; border-radius:14px; padding:26px 24px; max-width:720px; margin:0 auto; }
 .pp-helper-row { display:flex; gap:12px; align-items:center; flex-wrap:wrap; justify-content:center; }
 .pp-helper input { width:170px; padding:11px 14px; border:1px solid #d9cde4; border-radius:9px; font-size:16px; text-align:center; }
@@ -79,7 +81,7 @@ const CSS = `
 }
 `;
 
-function PackCard({ p, best }) {
+function PackCard({ p, best, loggedIn }) {
     return (
         <div className={`pp-pack ${best ? 'best' : ''}`}>
             <div className="pp-pack-name">{p.name}{best && <span className="pp-best-tag">{t('Best for you')}</span>}</div>
@@ -90,11 +92,15 @@ function PackCard({ p, best }) {
             <div className="pp-pack-note">{p.validity_type === 'monthly'
                 ? t('Points reset every 30 days — unused points do not carry over.')
                 : t('A wallet: points carry for the full 12 months.')}</div>
+            {loggedIn
+                ? <Link className="pp-pack-btn" href={`/billing?pack=${p.id}`}>{t('Buy this pack')}</Link>
+                : <Link className="pp-pack-btn" href={`/register?pack=${p.id}`}>{t('Create your store with this pack')}</Link>}
         </div>
     );
 }
 
 export default function Pricing({ monthly, wallets, pointsPerOrder, onboardingFee }) {
+    const loggedIn = !!usePage().props.auth?.user;
     const [orders, setOrders] = useState(300);
     const need = Math.max(0, Number(orders) || 0) * Math.max(1, pointsPerOrder);
     const fit = useMemo(() => monthly.filter((p) => p.credits >= need).sort((a, b) => a.price_bdt - b.price_bdt)[0] || null, [monthly, need]);
@@ -164,14 +170,14 @@ export default function Pricing({ monthly, wallets, pointsPerOrder, onboardingFe
                     <h2 className="pp-h2">{t('Monthly packs')}</h2>
                     <p className="pp-sub">{t('Best value per point. Points reset every 30 days.')}</p>
                     <div className="pp-grid">
-                        {monthly.map((p) => <PackCard key={p.id} p={p} best={fit && fit.id === p.id} />)}
+                        {monthly.map((p) => <PackCard key={p.id} p={p} best={fit && fit.id === p.id} loggedIn={loggedIn} />)}
                     </div>
                     {wallets.length > 0 && (
                         <>
                             <h2 className="pp-h2" style={{ marginTop: 48 }}>{t('Yearly wallets')}</h2>
                             <p className="pp-sub">{t('One payment — points stay valid for 12 months.')}</p>
                             <div className="pp-grid">
-                                {wallets.map((p) => <PackCard key={p.id} p={p} best={walletFit && walletFit.id === p.id} />)}
+                                {wallets.map((p) => <PackCard key={p.id} p={p} best={walletFit && walletFit.id === p.id} loggedIn={loggedIn} />)}
                             </div>
                         </>
                     )}

@@ -318,6 +318,9 @@ Route::middleware(['auth', 'verified', 'totp'])->group(function () {
     Route::post('/admin/sellers/{business}/refund-first-purchase', [\App\Http\Controllers\PlatformController::class, 'refundFirstPurchase'])->name('platform.seller.refund');
     Route::post('/admin/sellers/{business}/payments', [\App\Http\Controllers\PlatformController::class, 'storePayment'])->name('platform.seller.payment');
     Route::get('/admin/packages', fn () => redirect('/settings?group=packages'))->name('platform.packages');
+    Route::get('/admin/claims', [\App\Http\Controllers\PlatformController::class, 'claims'])->name('platform.claims');
+    Route::post('/admin/claims/{claim}/approve', [\App\Http\Controllers\PlatformController::class, 'approveClaim'])->name('platform.claims.approve');
+    Route::post('/admin/claims/{claim}/reject', [\App\Http\Controllers\PlatformController::class, 'rejectClaim'])->name('platform.claims.reject');
     Route::post('/settings/packages', [SettingsController::class, 'storePackage'])->name('settings.packages.store');
     Route::post('/settings/channels', [SettingsController::class, 'updateChannels'])->name('settings.channels');
     Route::post('/settings/channels/check', [SettingsController::class, 'checkChannel'])->name('settings.channels.check');
@@ -325,8 +328,10 @@ Route::middleware(['auth', 'verified', 'totp'])->group(function () {
     Route::delete('/settings/packages/{package}', [SettingsController::class, 'deletePackage'])->name('settings.packages.destroy');
     Route::post('/settings/pricing', [SettingsController::class, 'updatePricing'])->name('settings.pricing');
 
-    // M19 Pricing — the seller's points page
+    // M19 Pricing — the seller's points page + self-serve purchase flow
     Route::get('/billing', [\App\Http\Controllers\BillingController::class, 'index'])->name('billing');
+    Route::post('/billing/claims', [\App\Http\Controllers\BillingController::class, 'storeClaim'])->name('billing.claims.store');
+    Route::post('/billing/claims/{claim}/submit', [\App\Http\Controllers\BillingController::class, 'submitClaim'])->name('billing.claims.submit');
 
     Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead'])->name('notifications.readAll');
     Route::post('/notifications/{notification}/read', [NotificationController::class, 'markRead'])->name('notifications.read');

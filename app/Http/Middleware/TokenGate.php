@@ -13,7 +13,9 @@ use Symfony\Component\HttpFoundation\Response;
  * but every mutating request is refused with the plain top-up message
  * until a pack purchase lands. Platform admins are never gated, and
  * account-keeping routes (logout, TOTP, language, email verification)
- * stay open so a blocked seller can still manage their sign-in.
+ * stay open so a blocked seller can still manage their sign-in. The
+ * billing claim routes stay open too — paying is how a blocked seller
+ * gets unblocked.
  */
 class TokenGate
 {
@@ -25,6 +27,7 @@ class TokenGate
         if ($user && ! $request->isMethod('GET') && ! $user->is_platform_admin && $user->business_id) {
             $name = (string) ($request->route()?->getName() ?? '');
             $exempt = $name === 'logout' || $name === 'locale.switch' || $name === 'verification.send'
+                || $name === 'billing.claims.store' || $name === 'billing.claims.submit'
                 || str_starts_with($name, 'totp.');
             if (! $exempt && $this->tokens->blocked((int) $user->business_id)) {
                 if ($request->expectsJson() || $request->is('api/*')) {

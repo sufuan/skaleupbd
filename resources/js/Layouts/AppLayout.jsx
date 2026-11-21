@@ -291,6 +291,7 @@ export default function AppLayout({ children }) {
     const navGroups = isPlatform ? [...baseNav, { sec: 'Platform', items: [
         { label: 'Seller Dashboard', icon: 'grid', href: '/admin' },
         { label: 'Sellers', icon: 'users', children: [{ label: 'All Sellers', href: '/admin/sellers' }, { label: 'Packages', href: '/settings?group=packages' }], href: '/admin/sellers' },
+        { label: 'Payment Claims', icon: 'wallet', href: '/admin/claims' },
     ] }] : baseNav;
     const initials = userName.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase();
 

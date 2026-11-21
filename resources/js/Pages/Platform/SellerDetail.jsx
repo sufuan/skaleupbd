@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import AppLayout from '@/Layouts/AppLayout';
 import { confirmDialog } from '@/lib/confirm';
@@ -6,7 +7,30 @@ import { t } from '@/lib/i18n';
 const tk = (n) => `৳${Number(n || 0).toLocaleString('en-IN')}`;
 const num = (n) => Number(n || 0).toLocaleString('en-IN');
 
-export default function SellerDetail({ seller, subscriptions, payments, packages, customers, wallet, tokenLedger }) {
+function ClaimActions({ c }) {
+    const reject = useForm({ admin_note: '' });
+    const [showReject, setShowReject] = useState(false);
+    const approve = async () => {
+        if (await confirmDialog(`${t('Approve this payment and credit')} ${num(c.pack_credits)} ${t('points to this seller?')}`)) {
+            router.post(`/admin/claims/${c.id}/approve`, {}, { preserveScroll: true });
+        }
+    };
+    const doReject = (e) => { e.preventDefault(); reject.post(`/admin/claims/${c.id}/reject`, { preserveScroll: true }); };
+    return (
+        <span style={{ display: 'inline-flex', gap: 6, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+            <button className="btn pri" onClick={approve}>{t('Approve')}</button>
+            <button className="btn" style={{ color: '#B91C1C' }} onClick={() => setShowReject((s) => !s)}>{t('Reject')}</button>
+            {showReject && (
+                <form onSubmit={doReject} style={{ display: 'flex', gap: 6 }}>
+                    <input style={{ height: 38, border: '1px solid #D9CDE4', borderRadius: 8, padding: '0 10px', fontSize: 13.5, fontFamily: 'inherit', width: 200 }} placeholder={t('Why? The seller sees this note')} value={reject.data.admin_note} onChange={(e) => reject.setData('admin_note', e.target.value)} required />
+                    <button className="btn" style={{ color: '#B91C1C' }} disabled={reject.processing}>{t('Confirm reject')}</button>
+                </form>
+            )}
+        </span>
+    );
+}
+
+export default function SellerDetail({ seller, subscriptions, payments, packages, customers, wallet, tokenLedger, claims }) {
     const profile = useForm({ name: seller.name, owner_name: seller.owner_name || '', phone: seller.phone || '', email: seller.email || '', address: seller.address || '' });
     const sub = useForm({ package_id: packages[0]?.id || '', amount: '', method: 'bKash', note: '' });
     const pay = useForm({ amount: '', method: 'bKash', note: '' });
@@ -117,6 +141,31 @@ export default function SellerDetail({ seller, subscriptions, payments, packages
                     </table></div>
                 </div>
             </div>
+
+            {(claims || []).length > 0 && (
+                <div className="card" style={{ padding: 0, overflow: 'hidden', marginTop: 12 }}>
+                    <h4 style={{ fontSize: 15, padding: '14px 14px 6px' }}>{t('Payment claims')}</h4>
+                    <div className="tbl-wrap"><table className="tbl">
+                        <thead><tr><th>{t('When')}</th><th>{t('Pack')}</th><th>{t('Total')}</th><th>{t('Payment')}</th><th>{t('Status')}</th><th></th></tr></thead>
+                        <tbody>
+                            {claims.map((c) => (
+                                <tr key={c.id}>
+                                    <td style={{ whiteSpace: 'nowrap' }}>{c.when}</td>
+                                    <td><div style={{ fontWeight: 600 }}>{c.pack_name}</div><div style={{ fontSize: 12, color: 'var(--muted)' }}>{num(c.pack_credits)} {t('points')}</div></td>
+                                    <td style={{ fontWeight: 700 }}>{tk(c.total_bdt)}</td>
+                                    <td>{c.method ? <><div>{c.method}</div><div style={{ fontSize: 12, color: 'var(--muted)' }}>{c.sender_number} · TrxID {c.trx_id}</div></> : '—'}</td>
+                                    <td>{c.status === 'approved' ? <span className="pill green">{t('Approved')}</span> : c.status === 'rejected' ? <span className="pill red">{t('Rejected')}</span> : c.status === 'pending_review' ? <span className="pill amber">{t('Waiting for review')}</span> : <span className="pill amber">{t('Waiting for payment')}</span>}
+                                        {c.status === 'rejected' && c.admin_note && <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 4 }}>{c.admin_note}</div>}
+                                    </td>
+                                    <td style={{ whiteSpace: 'nowrap' }}>
+                                        {c.status === 'pending_review' && <ClaimActions c={c} />}
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table></div>
+                </div>
+            )}
 
             <div className="card" style={{ padding: 0, overflow: 'hidden', marginTop: 12 }}>
                 <h4 style={{ fontSize: 15, padding: '14px 14px 6px' }}>{t('Points history')}</h4>

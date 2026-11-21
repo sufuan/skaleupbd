@@ -143,6 +143,8 @@ class PlatformController extends Controller
             'tokenLedger' => \App\Models\TokenLedger::where('business_id', $business->id)->latest('id')->limit(15)->get()
                 ->map(fn ($r) => ['id' => $r->id, 'kind' => $r->kind, 'amount' => (int) $r->amount, 'balance_after' => (int) $r->balance_after,
                     'note' => $r->note, 'when' => $r->created_at?->format('d M Y, h:i A')])->all(),
+            'claims' => \App\Models\SellerPaymentClaim::where('business_id', $business->id)->latest('id')->limit(10)->get()
+                ->map(fn ($c) => $this->claimRow($c))->all(),
             'customers' => $customers,
         ]);
     }
@@ -178,6 +180,75 @@ class PlatformController extends Controller
         }
 
         return back()->with('success', 'Refund done — points removed');
+    }
+
+    // ---------- M19 purchase flow: seller payment claims ----------
+
+    private function claimRow(\App\Models\SellerPaymentClaim $c): array
+    {
+        return [
+            'id' => $c->id,
+            'business_id' => (int) $c->business_id,
+            'shop' => $c->business?->name,
+            'pack_name' => $c->pack_name,
+            'pack_credits' => (int) $c->pack_credits,
+            'validity_type' => $c->validity_type,
+            'amount_bdt' => (float) $c->amount_bdt,
+            'onboarding_fee_bdt' => (float) $c->onboarding_fee_bdt,
+            'total_bdt' => (float) $c->total_bdt,
+            'method' => $c->method,
+            'sender_number' => $c->sender_number,
+            'trx_id' => $c->trx_id,
+            'status' => $c->status,
+            'admin_note' => $c->admin_note,
+            'when' => $c->created_at?->format('d M Y, h:i A'),
+            'decided_at' => $c->decided_at?->format('d M Y, h:i A'),
+        ];
+    }
+
+    /** Payment claims inbox — submitted payments wait here for a decision. */
+    public function claims(): Response
+    {
+        $claims = \App\Models\SellerPaymentClaim::with('business')
+            ->orderByRaw("CASE WHEN status = 'pending_review' THEN 0 WHEN status = 'pending_payment' THEN 1 ELSE 2 END")
+            ->orderByDesc('id')->get();
+
+        return Inertia::render('Platform/Claims', [
+            'claims' => $claims->map(fn ($c) => $this->claimRow($c))->all(),
+            'counts' => [
+                'pending_review' => $claims->where('status', 'pending_review')->count(),
+                'pending_payment' => $claims->where('status', 'pending_payment')->count(),
+                'approved' => $claims->where('status', 'approved')->count(),
+                'rejected' => $claims->where('status', 'rejected')->count(),
+            ],
+        ]);
+    }
+
+    /** Approve a submitted claim — credits the pack's points (once only). */
+    public function approveClaim(Request $request, \App\Models\SellerPaymentClaim $claim): RedirectResponse
+    {
+        try {
+            app(\App\Services\PaymentClaimService::class)->approve($claim, $request->user()?->id);
+        } catch (\DomainException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        return back()->with('success', 'Payment approved — points credited');
+    }
+
+    /** Reject a claim with a note the seller will see. */
+    public function rejectClaim(Request $request, \App\Models\SellerPaymentClaim $claim): RedirectResponse
+    {
+        $data = $request->validate([
+            'admin_note' => ['required', 'string', 'max:300'],
+        ]);
+        try {
+            app(\App\Services\PaymentClaimService::class)->reject($claim, $request->user()?->id, $data['admin_note']);
+        } catch (\DomainException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        return back()->with('success', 'Payment claim rejected');
     }
 
     public function storePayment(Request $request, Business $business): RedirectResponse
