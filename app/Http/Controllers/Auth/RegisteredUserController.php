@@ -84,6 +84,20 @@ class RegisteredUserController extends Controller
             }
         }
 
+        // The new shop is pending approval — tell the platform admins.
+        if ($user->business_id) {
+            try {
+                \App\Models\AppNotification::create([
+                    'kind' => 'seller',
+                    'title' => 'New seller waiting for approval',
+                    'body' => "{$user->name} ({$user->email}) just registered. Approve or reject the shop in Sellers.",
+                    'link' => '/admin/sellers',
+                ]);
+            } catch (\Throwable $e) {
+                report($e); // a notification hiccup must never break registration
+            }
+        }
+
         event(new Registered($user));
 
         Auth::login($user);

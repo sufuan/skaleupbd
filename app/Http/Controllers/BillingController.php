@@ -92,6 +92,9 @@ class BillingController extends Controller
             'onboardingFee' => $this->tokens->onboardingFee(),
             'firstPurchase' => $wallet->first_purchase_at !== null,
             'paymentInstructions' => $this->tokens->paymentInstructions(),
+            // The PLATFORM's own payment numbers (Settings → Payment
+            // Gateway, platform scope) — how this seller pays US.
+            'platformPayment' => app(\App\Services\PaymentGatewayService::class)->enabledNumbers(null),
             'openClaim' => $openClaim ? $this->claimView($openClaim) : null,
             'pastClaims' => $pastClaims->map(fn ($c) => $this->claimView($c))->all(),
             'preselectedPackId' => $preselected,

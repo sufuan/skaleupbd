@@ -18,7 +18,10 @@ function ClaimRow({ c }) {
     const reject = useForm({ admin_note: '' });
     const [showReject, setShowReject] = useState(false);
     const approve = async () => {
-        if (await confirmDialog(`${t('Approve this payment and credit')} ${num(c.pack_credits)} ${t('points to')} ${c.shop}?`)) {
+        const msg = c.seller_pending
+            ? `${t('Approve this payment, credit')} ${num(c.pack_credits)} ${t('points and activate')} ${c.shop}? ${t('Their account is still pending — this one approval opens it.')}`
+            : `${t('Approve this payment and credit')} ${num(c.pack_credits)} ${t('points to')} ${c.shop}?`;
+        if (await confirmDialog(msg)) {
             router.post(`/admin/claims/${c.id}/approve`, {}, { preserveScroll: true });
         }
     };
@@ -42,6 +45,7 @@ function ClaimRow({ c }) {
                 {c.method ? <><div>{c.method}</div><div style={{ fontSize: 12, color: 'var(--muted)' }}>{c.sender_number}</div><div style={{ fontSize: 12, color: 'var(--muted)' }}>TrxID {c.trx_id}</div></> : '—'}
             </td>
             <td><span className={`pill ${(STATUS[c.status] || ['', ''])[1]}`}>{t((STATUS[c.status] || [c.status])[0])}</span>
+                {c.seller_pending && <div style={{ marginTop: 4 }}><span className="pill amber">{t('Account pending')}</span></div>}
                 {c.status === 'rejected' && c.admin_note && <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 4 }}>{c.admin_note}</div>}
             </td>
             <td style={{ whiteSpace: 'nowrap' }}>
@@ -49,7 +53,7 @@ function ClaimRow({ c }) {
                     <Link className="btn-ghost" href={`/admin/sellers/${c.business_id}`}>{t('Seller')}</Link>
                     {c.status === 'pending_review' && (
                         <>
-                            <button className="btn pri" onClick={approve}>{t('Approve')}</button>
+                            <button className="btn pri" onClick={approve}>{c.seller_pending ? t('Approve payment & activate seller') : t('Approve')}</button>
                             <button className="btn" style={{ color: '#B91C1C' }} onClick={() => setShowReject((s) => !s)}>{t('Reject')}</button>
                         </>
                     )}
@@ -76,7 +80,7 @@ export default function Claims({ claims, counts }) {
                 <span className="pill green">{counts.approved} {t('approved')}</span>
                 <span className="pill red">{counts.rejected} {t('rejected')}</span>
             </div>
-            <div style={{ fontSize: 13, color: 'var(--muted)', margin: '6px 0 12px' }}>{t('Sellers pay by bKash / Nagad and submit the payment here. Approving credits the pack points to their shop.')}</div>
+            <div style={{ fontSize: 13, color: 'var(--muted)', margin: '6px 0 12px' }}>{t('Sellers pay by bKash / Nagad and submit the payment here. Approving credits the pack points to their shop — and when the account is still pending, the same approval activates the seller.')}</div>
 
             <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
                 <div className="tbl-wrap">

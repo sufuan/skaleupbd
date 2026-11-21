@@ -1,5 +1,6 @@
 import { Head, router, useForm } from '@inertiajs/react';
 import AppLayout from '@/Layouts/AppLayout';
+import DomainLocked from './DomainLocked';
 import { t } from '@/lib/i18n';
 
 const DSTATUS = {
@@ -26,6 +27,7 @@ export default function Domains({ sf }) {
         <AppLayout>
             <Head title={t('Domains')} />
             <h3 style={{ fontSize: 19, margin: '0 0 14px' }}>{t('Domains')}</h3>
+            {sf.domainLocked && <DomainLocked />}
 
             <div className="card" style={{ maxWidth: 720, marginBottom: 12 }}>
                 <h4 style={{ fontSize: 15.5, margin: '2px 0 8px' }}>{t('Free subdomain')}</h4>
@@ -39,7 +41,11 @@ export default function Domains({ sf }) {
                     <h4 style={{ fontSize: 15.5, margin: '2px 0', flex: 1 }}>{t('Your own domain')}</h4>
                     <span className={`pill ${tone}`}>{t(label)}</span>
                 </div>
-                {!sf.customDomain ? (
+                {sf.domainLocked && !sf.customDomain ? (
+                    <p style={{ fontSize: 14, color: 'var(--muted)' }}>
+                        {t('Custom domains unlock together with your free shop address — after your first pack payment is confirmed.')}
+                    </p>
+                ) : !sf.customDomain ? (
                     <form onSubmit={(e) => { e.preventDefault(); form.post('/storefront/domains', { preserveScroll: true }); }}>
                         <p style={{ fontSize: 14, color: 'var(--muted)' }}>
                             {t('Connect a domain you own (e.g. yourshop.com). You keep your nameservers and email as they are — you only add three DNS records.')}

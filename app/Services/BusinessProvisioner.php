@@ -38,6 +38,9 @@ class BusinessProvisioner
             'public_id' => $publicId,
             'owner_name' => $user->name,
             'email' => $user->email,
+            // Self-registered shops start pending platform approval;
+            // seeded shops take the DB default ('approved').
+            'status' => 'pending',
         ]);
 
         $user->forceFill(['business_id' => $biz->id])->save();

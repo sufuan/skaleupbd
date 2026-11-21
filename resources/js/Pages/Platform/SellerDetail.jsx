@@ -11,14 +11,17 @@ function ClaimActions({ c }) {
     const reject = useForm({ admin_note: '' });
     const [showReject, setShowReject] = useState(false);
     const approve = async () => {
-        if (await confirmDialog(`${t('Approve this payment and credit')} ${num(c.pack_credits)} ${t('points to this seller?')}`)) {
+        const msg = c.seller_pending
+            ? `${t('Approve this payment, credit')} ${num(c.pack_credits)} ${t('points and activate this seller? Their account is still pending — this one approval opens it.')}`
+            : `${t('Approve this payment and credit')} ${num(c.pack_credits)} ${t('points to this seller?')}`;
+        if (await confirmDialog(msg)) {
             router.post(`/admin/claims/${c.id}/approve`, {}, { preserveScroll: true });
         }
     };
     const doReject = (e) => { e.preventDefault(); reject.post(`/admin/claims/${c.id}/reject`, { preserveScroll: true }); };
     return (
         <span style={{ display: 'inline-flex', gap: 6, alignItems: 'flex-start', flexWrap: 'wrap' }}>
-            <button className="btn pri" onClick={approve}>{t('Approve')}</button>
+            <button className="btn pri" onClick={approve}>{c.seller_pending ? t('Approve payment & activate seller') : t('Approve')}</button>
             <button className="btn" style={{ color: '#B91C1C' }} onClick={() => setShowReject((s) => !s)}>{t('Reject')}</button>
             {showReject && (
                 <form onSubmit={doReject} style={{ display: 'flex', gap: 6 }}>
@@ -27,6 +30,40 @@ function ClaimActions({ c }) {
                 </form>
             )}
         </span>
+    );
+}
+
+function ApprovalCard({ seller }) {
+    const reject = useForm({ status_note: '' });
+    const [showReject, setShowReject] = useState(false);
+    const approve = async () => {
+        if (await confirmDialog(`${t('Approve this seller? Their full dashboard opens right away.')}`)) {
+            router.post(`/admin/sellers/${seller.id}/approve`, {}, { preserveScroll: true });
+        }
+    };
+    const doReject = (e) => { e.preventDefault(); reject.post(`/admin/sellers/${seller.id}/reject`, { preserveScroll: true }); };
+    const st = seller.approval_status || 'approved';
+    return (
+        <div className="card" style={{ marginTop: 12, borderColor: st === 'pending' ? '#F0D9A8' : undefined }}>
+            <h4 style={{ fontSize: 15, marginBottom: 8 }}>{t('Account approval')}</h4>
+            <div style={{ fontSize: 14 }}>
+                {st === 'approved' && <><span className="pill green">{t('Approved')}</span>{seller.approved_at && <span style={{ color: 'var(--muted)', marginLeft: 8 }}>{seller.approved_at}</span>}</>}
+                {st === 'pending' && <span className="pill amber">{t('Pending approval')}</span>}
+                {st === 'rejected' && <><span className="pill red">{t('Rejected')}</span>{seller.status_note && <div style={{ color: 'var(--muted)', marginTop: 6 }}>{seller.status_note}</div>}</>}
+            </div>
+            {st !== 'approved' && (
+                <div style={{ marginTop: 12, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+                    <button className="btn pri" onClick={approve}>{t('Approve seller')}</button>
+                    <button className="btn" style={{ color: '#B91C1C' }} onClick={() => setShowReject((s) => !s)}>{t('Reject')}</button>
+                    {showReject && (
+                        <form onSubmit={doReject} style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                            <input style={{ height: 38, border: '1px solid #D9CDE4', borderRadius: 8, padding: '0 10px', fontSize: 13.5, fontFamily: 'inherit', width: 260 }} placeholder={t('Why? The seller sees this note')} value={reject.data.status_note} onChange={(e) => reject.setData('status_note', e.target.value)} required />
+                            <button className="btn" style={{ color: '#B91C1C' }} disabled={reject.processing}>{t('Confirm reject')}</button>
+                        </form>
+                    )}
+                </div>
+            )}
+        </div>
     );
 }
 
@@ -57,7 +94,9 @@ export default function SellerDetail({ seller, subscriptions, payments, packages
                 <div className="card"><div style={{ fontSize: 11, letterSpacing: '.06em', color: 'var(--muted)' }}>{t('SHOP CUSTOMERS')}</div><div style={{ fontSize: 22, fontWeight: 700, marginTop: 4 }}>{seller.customers}</div><div style={{ fontSize: 12, color: 'var(--muted)' }}>{t('People who buy from this shop')}</div></div>
             </div>
 
-            <div className="plat-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, alignItems: 'start' }}>
+            <ApprovalCard seller={seller} />
+
+            <div className="plat-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, alignItems: 'start', marginTop: 12 }}>
                 <div className="card">
                     <h4 style={{ fontSize: 15, marginBottom: 10 }}>{t('Seller details')}</h4>
                     <form onSubmit={saveProfile}>

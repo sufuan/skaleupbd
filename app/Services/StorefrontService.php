@@ -136,6 +136,33 @@ class StorefrontService
 
     // ---------------------------------------------------------------- record
 
+    /**
+     * Rule 2: a shop address (subdomain / custom domain / publish)
+     * unlocks only after the first pack payment succeeds — the
+     * wallet's first_purchase_at, set by an approved claim or an
+     * admin-recorded purchase. A manual points grant does NOT count.
+     */
+    public function hasPaid(int $businessId): bool
+    {
+        $wallet = BusinessWallet::where('business_id', $businessId)->first();
+
+        return $wallet !== null && $wallet->first_purchase_at !== null;
+    }
+
+    /**
+     * The address lock applies only while the shop has no address yet:
+     * a shop that already saved a subdomain (or has an active custom
+     * domain) keeps working even before its first purchase.
+     */
+    public function addressLocked(Storefront $sf): bool
+    {
+        if ($this->hasPaid((int) $sf->business_id)) {
+            return false;
+        }
+
+        return empty($sf->subdomain) && $sf->domain_status !== 'active';
+    }
+
     public function ensureFor(int $businessId): Storefront
     {
         return Storefront::firstOrCreate(

@@ -42,6 +42,9 @@ class PlatformController extends Controller
             'id' => $b->id,
             'name' => $b->name,
             'public_id' => $b->public_id,
+            'approval_status' => $b->status ?: 'approved',
+            'status_note' => $b->status_note,
+            'approved_at' => $b->approved_at?->format('d M Y, h:i A'),
             'owner_name' => $b->owner_name,
             'phone' => $b->phone,
             'email' => $b->email,
@@ -98,7 +101,40 @@ class PlatformController extends Controller
             ->when($q !== '', fn ($x) => $x->where(fn ($w) => $w->where('name', 'like', "%{$q}%")->orWhere('phone', 'like', "%{$q}%")->orWhere('owner_name', 'like', "%{$q}%")))
             ->get()->map(fn ($b) => $this->sellerRow($b));
 
-        return Inertia::render('Platform/Sellers', ['sellers' => $sellers->all(), 'q' => $q]);
+        return Inertia::render('Platform/Sellers', [
+            'sellers' => $sellers->all(),
+            'q' => $q,
+            'pendingApprovals' => Business::where('status', 'pending')->count(),
+        ]);
+    }
+
+    /** Approve a pending (or rejected) seller shop: full access opens. */
+    public function approveSeller(Request $request, Business $business): RedirectResponse
+    {
+        $business->update([
+            'status' => 'approved',
+            'approved_by' => $request->user()->id,
+            'approved_at' => now(),
+            'status_note' => null,
+        ]);
+
+        return back()->with('success', 'Seller approved. Their full dashboard is now open.');
+    }
+
+    /** Reject a seller shop; the note is shown to the seller. */
+    public function rejectSeller(Request $request, Business $business): RedirectResponse
+    {
+        $data = $request->validate([
+            'status_note' => ['required', 'string', 'max:500'],
+        ]);
+        $business->update([
+            'status' => 'rejected',
+            'status_note' => $data['status_note'],
+            'approved_by' => null,
+            'approved_at' => null,
+        ]);
+
+        return back()->with('success', 'Seller rejected. They will see your note on their status page.');
     }
 
     public function sellerShow(Business $business): Response
@@ -201,6 +237,7 @@ class PlatformController extends Controller
             'trx_id' => $c->trx_id,
             'status' => $c->status,
             'admin_note' => $c->admin_note,
+            'seller_pending' => $c->business?->status === 'pending',
             'when' => $c->created_at?->format('d M Y, h:i A'),
             'decided_at' => $c->decided_at?->format('d M Y, h:i A'),
         ];
@@ -224,16 +261,23 @@ class PlatformController extends Controller
         ]);
     }
 
-    /** Approve a submitted claim — credits the pack's points (once only). */
+    /**
+     * Approve a submitted claim — credits the pack's points (once
+     * only). When the seller's business is still pending, this one
+     * action also activates the account (see PaymentClaimService).
+     */
     public function approveClaim(Request $request, \App\Models\SellerPaymentClaim $claim): RedirectResponse
     {
+        $activatesSeller = $claim->business?->status === 'pending';
         try {
             app(\App\Services\PaymentClaimService::class)->approve($claim, $request->user()?->id);
         } catch (\DomainException $e) {
             return back()->with('error', $e->getMessage());
         }
 
-        return back()->with('success', 'Payment approved — points credited');
+        return back()->with('success', $activatesSeller
+            ? 'Payment approved — points credited and the seller is now active'
+            : 'Payment approved — points credited');
     }
 
     /** Reject a claim with a note the seller will see. */

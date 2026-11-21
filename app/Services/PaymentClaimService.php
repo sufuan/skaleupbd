@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\AppNotification;
+use App\Models\Business;
 use App\Models\PointPack;
 use App\Models\SellerPaymentClaim;
 use DomainException;
@@ -123,6 +124,21 @@ class PaymentClaimService
                 'decided_by' => $adminId,
                 'decided_at' => now(),
             ]);
+
+            // Combined admin action (owner's workflow): the payment
+            // approval IS the account approval. If this seller's
+            // business is still pending, the same click activates
+            // it — points credited above set first_purchase_at, so
+            // the shop address unlocks at the same moment.
+            $business = Business::find((int) $claim->business_id);
+            if ($business && $business->status === 'pending') {
+                $business->update([
+                    'status' => 'approved',
+                    'approved_by' => $adminId,
+                    'approved_at' => now(),
+                    'status_note' => null,
+                ]);
+            }
 
             return $claim;
         });

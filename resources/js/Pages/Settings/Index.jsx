@@ -1,4 +1,5 @@
 import CourierSettings from './CourierSettings';
+import PaymentGatewayForm from './PaymentGatewayForm';
 import AppLayout from '@/Layouts/AppLayout';
 import { t } from '@/lib/i18n';
 import { Head, Link, router, useForm } from '@inertiajs/react';
@@ -8,7 +9,7 @@ import { confirmDialog } from '@/lib/confirm';
 const GROUPS = [
     { id: 'home', label: 'Settings Dashboard', tabs: [] },
     { id: 'business', label: 'Business Settings', tabs: [['profile', 'Business Profile'], ['merchant', 'Merchant Profile']] },
-    { id: 'api', label: 'API Connection', tabs: [['courier', 'Courier Integration'], ['channels', 'Messaging Channels'], ['app', 'App Integration'], ['website', 'Website Integration']] },
+    { id: 'api', label: 'API Connection', tabs: [['courier', 'Courier Integration'], ['channels', 'Messaging Channels'], ['app', 'App Integration'], ['website', 'Website Integration'], ['gateway', 'Payment Gateway']] },
     { id: 'calls', label: 'Calls & Orders', tabs: [['sources', 'Order Sources'], ['templates', 'Templates'], ['pbx', 'PBX & Auto Call']] },
     { id: 'ai', label: 'AI & Auto Reply', tabs: [['brain', 'Rule Brain'], ['ailvl', 'AI Reply'], ['negotiation', 'Price & Negotiation'], ['knowledge', 'Knowledge']] },
     { id: 'security', label: 'Security & Records', tabs: [['devices', 'Device Approvals'], ['records', 'Deletion Logs & History'], ['advanced', 'Advanced Settings']] },
@@ -95,8 +96,30 @@ function BusinessProfileForm({ m2 }) {
     );
 }
 
-function Api({ tab, couriers, channels }) {
+function Api({ tab, couriers, channels, paymentGateway, platformPaymentGateway }) {
     if (tab === 'channels') return <ChannelsForm channels={channels} />;
+    if (tab === 'gateway') return (
+        <>
+            {paymentGateway && (
+                <PaymentGatewayForm
+                    title={t('Payment Gateway — your shop')}
+                    subtitle={t('Your own merchant accounts. Your customers pay YOU here — for example the advance-payment numbers shown on your storefront. Only your shop sees these.')}
+                    data={paymentGateway}
+                    action="/settings/payment-gateway"
+                />
+            )}
+            {platformPaymentGateway && (
+                <div style={{ marginTop: paymentGateway ? 12 : 0 }}>
+                    <PaymentGatewayForm
+                        title={t('Payment Gateway — platform (SkaleUp)')}
+                        subtitle={t('The platform\'s own merchant accounts. Sellers pay US for points packs with these numbers — they appear on every seller\'s Billing page. Sellers never see or change these.')}
+                        data={platformPaymentGateway}
+                        action="/settings/payment-gateway/platform"
+                    />
+                </div>
+            )}
+        </>
+    );
     if (tab === 'app') return (
         <div className="card"><h3>{t('App Integration')}</h3><div className="card-sub">{t('External API for outside apps and AI systems')}</div>
             <Field label="API Key (sk_…)" value="sk_••••••••••••••••••48" /><Field label="Webhook URL" value="https://demoshop.com.bd/hooks/skaleup" />
@@ -846,7 +869,7 @@ function PricingSettingsForm({ pricing }) {
     );
 }
 
-export default function SettingsIndex({ group: initial = 'home', totpEnabled = false, totpEnrolled = false, m2, couriers, ai, isPlatform = false, packagesData = null, channels = null }) {
+export default function SettingsIndex({ group: initial = 'home', totpEnabled = false, totpEnrolled = false, m2, couriers, ai, isPlatform = false, packagesData = null, channels = null, paymentGateway = null, platformPaymentGateway = null }) {
     const groups = isPlatform ? [...GROUPS, { id: 'packages', label: 'Seller Packages', tabs: [] }] : GROUPS;
     const [group, setGroup] = useState(initial);
     const g = groups.find((x) => x.id === group) || groups[0];
@@ -872,7 +895,7 @@ export default function SettingsIndex({ group: initial = 'home', totpEnabled = f
                     )}
                     {group === 'home' && <Home />}
                     {group === 'business' && <Business tab={tab} m2={m2} />}
-                    {group === 'api' && <Api tab={tab} couriers={couriers} channels={channels} />}
+                    {group === 'api' && <Api tab={tab} couriers={couriers} channels={channels} paymentGateway={paymentGateway} platformPaymentGateway={platformPaymentGateway} />}
                     {group === 'calls' && <Calls tab={tab} m2={m2} />}
                     {group === 'ai' && <Ai tab={tab} ai={ai} />}
                     {group === 'security' && <Security tab={tab} totpEnabled={totpEnabled} totpEnrolled={totpEnrolled} m2={m2} />}

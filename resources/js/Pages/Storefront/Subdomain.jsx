@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Head, useForm } from '@inertiajs/react';
 import AppLayout from '@/Layouts/AppLayout';
+import DomainLocked from './DomainLocked';
 import { t } from '@/lib/i18n';
 
 const STATE_STYLE = {
@@ -37,6 +38,16 @@ export default function Subdomain({ sf }) {
         <AppLayout>
             <Head title={t('Subdomain')} />
             <h3 style={{ fontSize: 19, margin: '0 0 14px' }}>{t('Shop address')}</h3>
+            {sf.domainLocked ? (
+                <>
+                    <DomainLocked />
+                    <div className="card" style={{ maxWidth: 620 }}>
+                        <p style={{ fontSize: 14.5, color: 'var(--muted)', margin: 0 }}>
+                            {t('Once your first pack payment is confirmed, you can choose your free shop address here — yourname.')}{sf.platformDomain}{t(' — and connect your own domain too.')}
+                        </p>
+                    </div>
+                </>
+            ) : (
             <div className="card" style={{ maxWidth: 620 }}>
                 <p style={{ fontSize: 14.5, color: 'var(--muted)', marginTop: 0 }}>
                     {t('This is your free shop address. Customers open it to see your storefront and order. It keeps working even after you connect your own domain.')}
@@ -68,6 +79,7 @@ export default function Subdomain({ sf }) {
                     </div>
                 )}
             </div>
+            )}
         </AppLayout>
     );
 }

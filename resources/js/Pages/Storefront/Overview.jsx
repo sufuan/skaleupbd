@@ -1,5 +1,6 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import AppLayout from '@/Layouts/AppLayout';
+import DomainLocked from './DomainLocked';
 import { t } from '@/lib/i18n';
 
 const STATUS = {
@@ -33,6 +34,7 @@ export default function Overview({ sf, orderCount, openReports, hasAddress }) {
                 {sf.subdomainUrl && <a className="btn" href={sf.subdomainUrl} target="_blank" rel="noreferrer">{t('View shop')}</a>}
             </div>
 
+            {sf.domainLocked && <DomainLocked />}
             {sf.status === 'taken_down' && (
                 <div style={{ background: '#FEF2F2', border: '1px solid #F3C2BF', color: '#8B1E1E', borderRadius: 10, padding: '12px 15px', marginBottom: 14, fontSize: 14.5 }}>
                     {t('This storefront was taken down by the platform team. Contact support to restore it.')}

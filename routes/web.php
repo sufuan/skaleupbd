@@ -85,6 +85,8 @@ Route::middleware(['auth', 'verified', 'totp'])->group(function () {
     Route::post('/settings/marketing-sms', [SettingsController::class, 'updateMarketingSms'])->name('settings.marketingSms');
     Route::post('/settings/sms-check', [SettingsController::class, 'checkSmsConnection'])->name('settings.smsCheck');
     Route::post('/settings/sms-test', [SettingsController::class, 'sendTestSms'])->name('settings.smsTest');
+    Route::post('/settings/payment-gateway', [\App\Http\Controllers\PaymentGatewayController::class, 'updateSeller'])->name('settings.paymentGateway');
+    Route::post('/settings/payment-gateway/platform', [\App\Http\Controllers\PaymentGatewayController::class, 'updatePlatform'])->name('settings.paymentGateway.platform');
     Route::post('/settings/courier-methods', [SettingsController::class, 'addCourierMethod'])->name('settings.courierMethods');
 
     // M2 Orders
@@ -326,6 +328,8 @@ Route::middleware(['auth', 'verified', 'totp'])->group(function () {
     Route::post('/admin/sellers/{business}/subscribe', [\App\Http\Controllers\PlatformController::class, 'subscribe'])->name('platform.seller.subscribe');
     Route::post('/admin/sellers/{business}/refund-first-purchase', [\App\Http\Controllers\PlatformController::class, 'refundFirstPurchase'])->name('platform.seller.refund');
     Route::post('/admin/sellers/{business}/payments', [\App\Http\Controllers\PlatformController::class, 'storePayment'])->name('platform.seller.payment');
+    Route::post('/admin/sellers/{business}/approve', [\App\Http\Controllers\PlatformController::class, 'approveSeller'])->name('platform.seller.approve');
+    Route::post('/admin/sellers/{business}/reject', [\App\Http\Controllers\PlatformController::class, 'rejectSeller'])->name('platform.seller.reject');
     Route::get('/admin/packages', fn () => redirect('/settings?group=packages'))->name('platform.packages');
     Route::get('/admin/claims', [\App\Http\Controllers\PlatformController::class, 'claims'])->name('platform.claims');
     Route::post('/admin/claims/{claim}/approve', [\App\Http\Controllers\PlatformController::class, 'approveClaim'])->name('platform.claims.approve');
@@ -338,6 +342,7 @@ Route::middleware(['auth', 'verified', 'totp'])->group(function () {
     Route::post('/settings/pricing', [SettingsController::class, 'updatePricing'])->name('settings.pricing');
 
     // M19 Pricing — the seller's points page + self-serve purchase flow
+    Route::get('/account/status', [\App\Http\Controllers\AccountStatusController::class, 'index'])->name('account.status');
     Route::get('/billing', [\App\Http\Controllers\BillingController::class, 'index'])->name('billing');
     Route::post('/billing/claims', [\App\Http\Controllers\BillingController::class, 'storeClaim'])->name('billing.claims.store');
     Route::post('/billing/claims/{claim}/submit', [\App\Http\Controllers\BillingController::class, 'submitClaim'])->name('billing.claims.submit');

@@ -36,7 +36,7 @@ function ClaimBreakdown({ claim }) {
     );
 }
 
-function PendingClaimCard({ claim, paymentInstructions }) {
+function PendingClaimCard({ claim, paymentInstructions, platformPayment }) {
     const form = useForm({ method: 'bKash', sender_number: '', trx_id: '' });
     const submit = (e) => { e.preventDefault(); form.post(`/billing/claims/${claim.id}/submit`, { preserveScroll: true }); };
 
@@ -57,6 +57,14 @@ function PendingClaimCard({ claim, paymentInstructions }) {
         <div style={{ background: '#FFF8E6', border: '1px solid #F0D48A', color: '#5F4700', borderRadius: 10, padding: '14px 16px', marginBottom: 14 }}>
             <div style={{ fontSize: 15.5, fontWeight: 700, marginBottom: 6 }}>{t('Your pending payment')}</div>
             <ClaimBreakdown claim={claim} />
+            {platformPayment && platformPayment.length > 0 && (
+                <div style={{ background: '#fff', border: '1px solid #F0D48A', borderRadius: 8, padding: '10px 12px', marginTop: 12 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4 }}>{t('Pay to these numbers (Personal)')}</div>
+                    {platformPayment.map((n) => (
+                        <div key={n.method} style={{ fontSize: 15, display: 'flex', gap: 10 }}><span style={{ minWidth: 60, fontWeight: 600 }}>{n.label}</span><b>{n.number}</b></div>
+                    ))}
+                </div>
+            )}
             {paymentInstructions
                 ? <div style={{ fontSize: 14, whiteSpace: 'pre-wrap', background: '#fff', border: '1px solid #F0D48A', borderRadius: 8, padding: '10px 12px', marginTop: 12 }}>{paymentInstructions}</div>
                 : <div style={{ fontSize: 13.5, marginTop: 10 }}>{t('Payment details are being set up — please contact us to top up.')}</div>}
@@ -79,7 +87,7 @@ function PendingClaimCard({ claim, paymentInstructions }) {
     );
 }
 
-export default function Index({ balance, pointsPerOrder, threshold, blocked, low, pack, packs, onboardingFee, firstPurchase, paymentInstructions, openClaim, pastClaims, preselectedPackId, ledger }) {
+export default function Index({ balance, pointsPerOrder, threshold, blocked, low, pack, packs, onboardingFee, firstPurchase, paymentInstructions, platformPayment, openClaim, pastClaims, preselectedPackId, ledger }) {
     const pages = [];
     for (let p = 1; p <= (ledger.last_page || 1); p++) pages.push(p);
     const lastRejected = !openClaim && pastClaims && pastClaims.length > 0 && pastClaims[0].status === 'rejected' ? pastClaims[0] : null;
@@ -112,7 +120,7 @@ export default function Index({ balance, pointsPerOrder, threshold, blocked, low
                 </div>
             )}
 
-            {openClaim && <PendingClaimCard claim={openClaim} paymentInstructions={paymentInstructions} />}
+            {openClaim && <PendingClaimCard claim={openClaim} paymentInstructions={paymentInstructions} platformPayment={platformPayment} />}
 
             {lastRejected && (
                 <div style={{ background: '#FDECEC', border: '1px solid #F3B4B4', color: '#8B1E1E', borderRadius: 10, padding: '12px 14px', marginBottom: 14, fontSize: 14 }}>

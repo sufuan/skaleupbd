@@ -84,6 +84,9 @@ class StorefrontPublicController extends Controller
             'brand' => $this->brand($sf),
             'order' => $order,
             'purchaseEventId' => (string) $request->query('pe', ''),
+            // This shop's OWN payment numbers (seller scope) — never
+            // another shop's, never the platform's.
+            'advanceNumbers' => app(\App\Services\PaymentGatewayService::class)->enabledNumbers((int) $sf->business_id),
         ]);
     }
 

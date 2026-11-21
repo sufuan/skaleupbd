@@ -47,8 +47,12 @@ class StorefrontController extends Controller
             'platformDomain' => $this->svc->platformDomain(),
             'serverIp' => (string) config('storefront.server_ip'),
             'cnameTarget' => (string) config('storefront.cname_target'),
+            'domainLocked' => $this->svc->addressLocked($sf),
+            'hasPaid' => $this->svc->hasPaid((int) $sf->business_id),
         ];
     }
+
+    private const LOCK_MESSAGE = 'Your shop address unlocks after your first pack payment is confirmed. Buy a points pack to unlock it.';
 
     // ------------------------------------------------------------- overview
 
@@ -67,6 +71,9 @@ class StorefrontController extends Controller
     public function publish(Request $request)
     {
         $sf = $this->sf($request);
+        if ($this->svc->addressLocked($sf)) {
+            return back()->with('error', self::LOCK_MESSAGE);
+        }
         if (! $sf->subdomain && $sf->domain_status !== 'active') {
             return back()->with('error', 'Choose your free subdomain first (Storefront → Subdomain).');
         }
@@ -141,6 +148,9 @@ class StorefrontController extends Controller
     public function saveSubdomain(Request $request)
     {
         $sf = $this->sf($request);
+        if ($this->svc->addressLocked($sf)) {
+            return back()->with('error', self::LOCK_MESSAGE);
+        }
         $data = $request->validate(['subdomain' => ['required', 'string', 'max:30']]);
         $slug = strtolower(trim($data['subdomain']));
         $res = $this->svc->availability($slug, $sf->business_id);
@@ -276,6 +286,9 @@ class StorefrontController extends Controller
     public function requestDomain(Request $request)
     {
         $sf = $this->sf($request);
+        if ($this->svc->addressLocked($sf)) {
+            return back()->with('error', self::LOCK_MESSAGE);
+        }
         $data = $request->validate(['custom_domain' => ['required', 'string', 'max:120']]);
         $domain = strtolower(trim($data['custom_domain']));
         $domain = preg_replace('#^https?://#', '', $domain) ?? $domain;

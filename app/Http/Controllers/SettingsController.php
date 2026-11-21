@@ -48,6 +48,11 @@ class SettingsController extends Controller
             'totpEnabled' => $this->totp->enabled(),
             'totpEnrolled' => (bool) $request->user()?->hasTotpEnabled(),
             'isPlatform' => (bool) ($request->user()?->is_platform_admin),
+            // Payment Gateway: seller scope for the caller's own shop;
+            // platform scope only for platform admins. Same form, both.
+            'paymentGateway' => $biz ? app(\App\Services\PaymentGatewayService::class)->view($biz) : null,
+            'platformPaymentGateway' => ($request->user()?->is_platform_admin)
+                ? app(\App\Services\PaymentGatewayService::class)->view(null) : null,
             'channels' => [
                 'webhook_url' => url('/api/webhooks/meta'),
                 'verify_token' => (string) $this->settings->get('meta.verify_token', ''),
