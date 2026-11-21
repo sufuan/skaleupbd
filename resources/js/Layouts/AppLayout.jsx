@@ -65,6 +65,7 @@ const NAV = [
         { label: 'HRM', icon: 'briefcase', children: [{ label: 'HR Dashboard', href: '/hrm' }, { label: 'Attendance', href: '/hrm/attendance' }, { label: 'Departments & SOP', href: '/hrm/departments' }, { label: 'User & Role', href: '/hrm/users' }, { label: 'HR Settings', href: '/hrm/settings' }], href: '/hrm' },
         { label: 'Finance', icon: 'wallet', children: [{ label: 'Finance Dashboard', href: '/finance' }, { label: 'Accounts & Bank', href: '/finance/accounts' }, { label: 'Income & Expense', href: '/finance/income-expense' }, { label: 'Cash Flow', href: '/finance/cash-flow' }], href: '/finance' },
         { label: 'Reports', icon: 'report', children: [{ label: 'Profit & Loss', href: '/reports' }, { label: 'Order Report', href: '/reports/order' }, { label: 'Courier Report', href: '/reports/courier' }, { label: 'Product Report', href: '/reports/product' }, { label: 'Employee Report', href: '/reports/employee' }, { label: 'Call Center Report', href: '/reports/call' }, { label: 'Customer Report', href: '/reports/customer' }], href: '/reports' },
+        { label: 'Points & Billing', icon: 'wallet', href: '/billing' },
         { label: 'Settings', icon: 'gear', settings: true, children: [
             { label: 'Settings Dashboard', g: 'home' }, { label: 'Business Settings', g: 'business' },
             { label: 'API Connection', g: 'api' }, { label: 'Calls & Orders', g: 'calls' },
@@ -272,7 +273,7 @@ export default function AppLayout({ children }) {
     const userName = props.auth?.user?.name || 'User';
     const isPlatform = !!props.auth?.user?.is_platform_admin;
     // M13 User & Role: hide modules the user has no permission for.
-    const MODKEY = { Dashboard: 'dashboard', Orders: 'orders', Delivery: 'delivery', Inventory: 'inventory', Messages: 'messages', Purchase: 'purchase', 'Task & Follow-up': 'tasks', 'Call Center': 'callcenter', 'Work Inbox': 'workinbox', Ads: 'ads', Marketing: 'marketing', Customers: 'customers', HRM: 'hrm', Finance: 'finance', Reports: 'reports', Settings: 'settings' };
+    const MODKEY = { Dashboard: 'dashboard', Orders: 'orders', Delivery: 'delivery', Inventory: 'inventory', Messages: 'messages', Purchase: 'purchase', 'Task & Follow-up': 'tasks', 'Call Center': 'callcenter', 'Work Inbox': 'workinbox', Ads: 'ads', Marketing: 'marketing', Customers: 'customers', HRM: 'hrm', Finance: 'finance', Reports: 'reports', Settings: 'settings', 'Points & Billing': 'billing' };
     const perms = props.auth?.permissions || [];
     const payrollOn = !!props.auth?.payroll_enabled;
     const baseNav = NAV.map((sec) => ({ ...sec, items: sec.items
@@ -376,6 +377,18 @@ export default function AppLayout({ children }) {
                         <div className="tb-ava" title={userName}>{initials}</div>
                     </div>
                 </header>
+                {props.tokenGate?.blocked && (
+                    <div style={{ background: '#FDECEC', borderBottom: '1px solid #F3B4B4', color: '#8B1E1E', padding: '10px 18px', fontSize: 13.5, display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+                        <span><b>{t('Points finished — your shop is view-only.')}</b> {t('New orders and changes are paused until you top up.')}</span>
+                        <Link href="/billing" style={{ fontWeight: 700, color: '#8B1E1E', textDecoration: 'underline' }}>{t('See Points & Billing')}</Link>
+                    </div>
+                )}
+                {props.tokenGate && !props.tokenGate.blocked && props.tokenGate.low && (
+                    <div style={{ background: '#FFF6E0', borderBottom: '1px solid #F0D48A', color: '#7A5200', padding: '10px 18px', fontSize: 13.5, display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+                        <span><b>{t('Points are running low')}</b> ({props.tokenGate.balance} {t('left')}). {t('Top up soon so your orders never stop.')}</span>
+                        <Link href="/billing" style={{ fontWeight: 700, color: '#7A5200', textDecoration: 'underline' }}>{t('See Points & Billing')}</Link>
+                    </div>
+                )}
                 <main className="content">{children}</main>
             </div>
             {searchOpen && <SearchModal close={() => setSearchOpen(false)} />}

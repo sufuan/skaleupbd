@@ -28,6 +28,9 @@ Route::post('/locale/{locale}', [LocaleController::class, 'switch'])
     ->whereIn('locale', ['en', 'bn'])
     ->name('locale.switch');
 
+// Public pricing page (M19) — renders live from the point packs.
+Route::get('/pricing', [\App\Http\Controllers\PricingController::class, 'index'])->name('pricing');
+
 // TOTP enrollment + challenge (reachable while signed in; the totp
 // middleware exempts these routes itself).
 Route::middleware('auth')->group(function () {
@@ -312,6 +315,7 @@ Route::middleware(['auth', 'verified', 'totp'])->group(function () {
     Route::get('/admin/sellers/{business}', [\App\Http\Controllers\PlatformController::class, 'sellerShow'])->name('platform.seller');
     Route::patch('/admin/sellers/{business}', [\App\Http\Controllers\PlatformController::class, 'updateSeller'])->name('platform.seller.update');
     Route::post('/admin/sellers/{business}/subscribe', [\App\Http\Controllers\PlatformController::class, 'subscribe'])->name('platform.seller.subscribe');
+    Route::post('/admin/sellers/{business}/refund-first-purchase', [\App\Http\Controllers\PlatformController::class, 'refundFirstPurchase'])->name('platform.seller.refund');
     Route::post('/admin/sellers/{business}/payments', [\App\Http\Controllers\PlatformController::class, 'storePayment'])->name('platform.seller.payment');
     Route::get('/admin/packages', fn () => redirect('/settings?group=packages'))->name('platform.packages');
     Route::post('/settings/packages', [SettingsController::class, 'storePackage'])->name('settings.packages.store');
@@ -319,6 +323,10 @@ Route::middleware(['auth', 'verified', 'totp'])->group(function () {
     Route::post('/settings/channels/check', [SettingsController::class, 'checkChannel'])->name('settings.channels.check');
     Route::patch('/settings/packages/{package}', [SettingsController::class, 'updatePackage'])->name('settings.packages.update');
     Route::delete('/settings/packages/{package}', [SettingsController::class, 'deletePackage'])->name('settings.packages.destroy');
+    Route::post('/settings/pricing', [SettingsController::class, 'updatePricing'])->name('settings.pricing');
+
+    // M19 Pricing — the seller's points page
+    Route::get('/billing', [\App\Http\Controllers\BillingController::class, 'index'])->name('billing');
 
     Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead'])->name('notifications.readAll');
     Route::post('/notifications/{notification}/read', [NotificationController::class, 'markRead'])->name('notifications.read');

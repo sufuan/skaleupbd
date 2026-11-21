@@ -3,9 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\Business;
-use App\Models\Package;
-use App\Models\SellerPayment;
-use App\Models\SellerSubscription;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 
@@ -35,47 +32,29 @@ class PlatformSeeder extends Seeder
             ['name' => 'Abu Sufian (Platform)', 'password' => 'password', 'email_verified_at' => now(), 'business_id' => null, 'is_admin' => true, 'is_platform_admin' => true],
         );
 
-        $starter = Package::updateOrCreate(['name' => 'Starter'], [
-            'price' => 999, 'duration_days' => 30, 'sort' => 1, 'active' => true,
-            'description' => 'For new shops starting online',
-            'features' => ['orders', 'delivery', 'customers', 'reports'],
-        ]);
-        $growth = Package::updateOrCreate(['name' => 'Growth'], [
-            'price' => 1999, 'duration_days' => 30, 'sort' => 2, 'active' => true,
-            'description' => 'For growing F-commerce sellers',
-            'features' => ['orders', 'delivery', 'inventory', 'messages', 'ai_reply', 'fraud_check', 'work_inbox', 'customers', 'reports'],
-        ]);
-        Package::updateOrCreate(['name' => 'Business Pro'], [
-            'price' => 3999, 'duration_days' => 30, 'sort' => 3, 'active' => true,
-            'description' => 'For teams with high order volume',
-            'features' => \App\Support\FeatureCatalog::keys(),
-        ]);
+        // M19: the old time-tier packages are retired as a sales model.
+        // The demo shops get points wallets with a local demo grant so
+        // the seeded order flow works under the token gate (test data
+        // only — live grants happen through the migration / purchases).
+        $tokens = app(\App\Services\TokenService::class);
 
         $demo = Business::where('public_id', 'demo-shop')->first();
         $other = Business::where('public_id', 'other-shop')->first();
 
         if ($demo) {
             $demo->update(['owner_name' => 'Abu Sufian', 'phone' => '01712445566', 'email' => 'demo@shop.test', 'address' => 'Dhanmondi, Dhaka']);
-            $sub = SellerSubscription::updateOrCreate(
-                ['business_id' => $demo->id, 'package_id' => $growth->id],
-                ['amount' => 1999, 'starts_at' => today()->subDays(9), 'expires_at' => today()->addDays(20), 'status' => 'active'],
-            );
-            SellerPayment::updateOrCreate(
-                ['business_id' => $demo->id, 'subscription_id' => $sub->id],
-                ['amount' => 1999, 'method' => 'bKash', 'note' => 'Growth package', 'paid_at' => today()->subDays(9)],
-            );
+            $tokens->ensureWallet($demo->id);
+            if (! \App\Models\TokenLedger::where('business_id', $demo->id)->exists()) {
+                $tokens->manualCredit($demo->id, 100000, 'Local demo grant', null);
+            }
         }
 
         if ($other) {
             $other->update(['owner_name' => 'Tanvir Hasan', 'phone' => '01811223344', 'email' => 'other@shop.test', 'address' => 'Khulna']);
-            $sub = SellerSubscription::updateOrCreate(
-                ['business_id' => $other->id, 'package_id' => $starter->id],
-                ['amount' => 999, 'starts_at' => today()->subDays(35), 'expires_at' => today()->subDays(6), 'status' => 'expired'],
-            );
-            SellerPayment::updateOrCreate(
-                ['business_id' => $other->id, 'subscription_id' => $sub->id],
-                ['amount' => 999, 'method' => 'Nagad', 'note' => 'Starter package', 'paid_at' => today()->subDays(35)],
-            );
+            $tokens->ensureWallet($other->id);
+            if (! \App\Models\TokenLedger::where('business_id', $other->id)->exists()) {
+                $tokens->manualCredit($other->id, 50000, 'Local demo grant', null);
+            }
         }
     }
 }

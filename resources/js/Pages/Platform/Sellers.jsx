@@ -26,13 +26,14 @@ export default function Sellers({ sellers, q }) {
             <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
                 <div className="tbl-wrap">
                     <table className="tbl">
-                        <thead><tr><th>{t('Seller (Shop)')}</th><th>{t('Owner / Contact')}</th><th>{t('Package')}</th><th>{t('Status')}</th><th>{t('Paid to us')}</th><th>{t('Orders')}</th><th>{t('Sales')}</th><th>{t('Customers')}</th><th></th></tr></thead>
+                        <thead><tr><th>{t('Seller (Shop)')}</th><th>{t('Owner / Contact')}</th><th>{t('Package')}</th><th>{t('Points')}</th><th>{t('Status')}</th><th>{t('Paid to us')}</th><th>{t('Orders')}</th><th>{t('Sales')}</th><th>{t('Customers')}</th><th></th></tr></thead>
                         <tbody>
                             {sellers.map((s) => (
                                 <tr key={s.id}>
                                     <td><div style={{ fontWeight: 600 }}>{s.name}</div><div style={{ fontSize: 12, color: 'var(--muted)' }}>{t('Joined')} {s.joined}</div></td>
                                     <td><div>{s.owner_name || '—'}</div><div style={{ fontSize: 12, color: 'var(--muted)' }}>{s.phone || ''}</div></td>
-                                    <td>{s.package ? <><div style={{ fontWeight: 600 }}>{s.package}</div><div style={{ fontSize: 12, color: 'var(--muted)' }}>{t('until')} {s.expires_at}</div></> : '—'}</td>
+                                    <td>{s.token_pack ? <><div style={{ fontWeight: 600 }}>{s.token_pack}</div><div style={{ fontSize: 12, color: 'var(--muted)' }}>{s.token_until ? `${t('until')} ${s.token_until}` : ''}</div></> : '—'}</td>
+                                    <td style={{ fontWeight: 700 }}>{Number(s.token_balance || 0).toLocaleString('en-IN')}</td>
                                     <td>{pill(s)}</td>
                                     <td style={{ fontWeight: 600 }}>{tk(s.paid_total)}</td>
                                     <td>{s.orders}</td>
@@ -41,7 +42,7 @@ export default function Sellers({ sellers, q }) {
                                     <td><Link className="btn-ghost" href={`/admin/sellers/${s.id}`}>{t('View')}</Link></td>
                                 </tr>
                             ))}
-                            {sellers.length === 0 && <tr><td colSpan={9} style={{ textAlign: 'center', padding: 24, color: 'var(--muted)' }}>{t('No sellers found')}</td></tr>}
+                            {sellers.length === 0 && <tr><td colSpan={10} style={{ textAlign: 'center', padding: 24, color: 'var(--muted)' }}>{t('No sellers found')}</td></tr>}
                         </tbody>
                     </table>
                 </div>

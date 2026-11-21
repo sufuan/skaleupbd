@@ -11,7 +11,7 @@ class Permissions
     public const ALL = [
         'dashboard', 'orders', 'delivery', 'inventory', 'messages', 'purchase',
         'callcenter', 'tasks', 'workinbox', 'ads', 'marketing', 'customers',
-        'hrm', 'finance', 'reports', 'settings',
+        'hrm', 'finance', 'reports', 'settings', 'billing',
     ];
 
     /** Key => sidebar label, for the User & Role checkbox list. */
@@ -32,6 +32,7 @@ class Permissions
         'finance' => 'Finance',
         'reports' => 'Reports',
         'settings' => 'Settings',
+        'billing' => 'Points & Billing',
     ];
 
     public static function preset(string $role): array

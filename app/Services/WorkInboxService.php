@@ -84,10 +84,11 @@ class WorkInboxService
         'warranty_overdue' => 'claim বন্ধ হয়ে যাওয়ায় task নিজে থেকে বন্ধ হয়েছে',
         'negative_stock' => 'stock ঠিক হয়ে যাওয়ায় task নিজে থেকে বন্ধ হয়েছে',
         'sms_balance_low' => 'balance recharge করায় task নিজে থেকে বন্ধ হয়েছে',
+        'token_balance_low' => 'points recharge করায় task নিজে থেকে বন্ধ হয়েছে',
     ];
 
     /**
-     * The 36-rule catalog. 'value'/'unit' = the rule's time window
+     * The 37-rule catalog. 'value'/'unit' = the rule's time window
      * (trigger delay for state rules, fix-it window for event rules).
      * 'dedupe': open = one open task per fingerprint, may recur after
      * resolution; ever = one task per fingerprint for good.
@@ -159,6 +160,7 @@ class WorkInboxService
         $add(34, 'device_approval', 'system', 'নতুন device approval অপেক্ষায়', 'নতুন device এলেই সাথে সাথে', true, 0, 'immediate', 'normal', 'admin');
         $add(35, 'sms_balance_low', 'system', 'SMS / Auto Call balance কম', 'Balance থ্রেশহোল্ডের নিচে গেলেই', true, 0, 'immediate', 'urgent', 'admin');
         $add(36, 'channel_data_expiry', 'system', 'Channel-এর data access-এর মেয়াদ শেষের পথে', 'মেয়াদ শেষ হওয়ার এই কদিন আগে', true, 7, 'days', 'urgent', 'admin');
+        $add(37, 'token_balance_low', 'system', 'Points / token balance কম', 'Points balance থ্রেশহোল্ডের নিচে গেলেই', true, 0, 'immediate', 'urgent', 'admin');
 
         return $r;
     }
@@ -1039,6 +1041,28 @@ class WorkInboxService
             'title' => 'SMS balance কমে গেছে — মাত্র ৳' . number_format($balance) . ' আছে, recharge করো',
             'source_type' => 'system', 'source_id' => null,
             'source_label' => 'SMS Balance', 'link' => '/marketing/sms',
+        ]];
+    }
+
+    private function ruleTokenBalanceLow(int $biz, array $def, array $c): array
+    {
+        $tokens = app(TokenService::class);
+        if (! $tokens->enforcementOn() || ! $tokens->wallet($biz)) {
+            return [];
+        }
+        $balance = $tokens->balance($biz);
+        if ($balance > $tokens->lowThreshold()) {
+            return [];
+        }
+        $empty = $balance < $tokens->pointsPerOrder();
+
+        return [[
+            'fingerprint' => 'token_balance',
+            'title' => $empty
+                ? 'Points শেষ হয়ে গেছে — নতুন order বন্ধ আছে, pack কিনে আবার চালু করো'
+                : 'Points balance কমে গেছে — মাত্র ' . number_format($balance) . ' points আছে, pack কিনে নাও',
+            'source_type' => 'system', 'source_id' => null,
+            'source_label' => 'Points Balance', 'link' => '/billing',
         ]];
     }
 }

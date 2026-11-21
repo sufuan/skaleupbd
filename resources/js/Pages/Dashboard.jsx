@@ -370,7 +370,7 @@ function Overview({ stats }) {
     );
 }
 
-export default function Dashboard({ stats, my }) {
+export default function Dashboard({ stats, my, billing }) {
     const [view, setView] = useState('My Dashboard');
     const [clock, setClock] = useState('--:--:--');
     useEffect(() => {
@@ -383,6 +383,16 @@ export default function Dashboard({ stats, my }) {
     return (
         <AppLayout>
             <Head title={t('Dashboard')} />
+            {billing && billing.blocked && (
+                <div style={{ background: '#FDECEC', border: '1px solid #F3B4B4', color: '#8B1E1E', borderRadius: 10, padding: '12px 14px', marginBottom: 12, fontSize: 14 }}>
+                    <b>{t('Your points are finished — the shop is view-only.')}</b> {t('New orders are paused until you buy a points pack.')} <a href="/billing" style={{ fontWeight: 700, color: '#8B1E1E', textDecoration: 'underline' }}>{t('Go to Points & Billing')}</a>
+                </div>
+            )}
+            {billing && !billing.blocked && (billing.low || billing.ending_soon) && (
+                <div style={{ background: '#FFF6E0', border: '1px solid #F0D48A', color: '#7A5200', borderRadius: 10, padding: '12px 14px', marginBottom: 12, fontSize: 14 }}>
+                    <b>{t('Points are running low')}</b> — {billing.balance} {t('points left')}{billing.cycle_end ? ` · ${t('pack resets')} ${billing.cycle_end}` : ''}{billing.wallet_expires_at ? ` · ${t('wallet ends')} ${billing.wallet_expires_at}` : ''}. <a href="/billing" style={{ fontWeight: 700, color: '#7A5200', textDecoration: 'underline' }}>{t('Top up')}</a>
+                </div>
+            )}
             <div className="dash-pg">
                 <div className="dash-head">
                     <div className="ptabs" style={{ flex: 1, minWidth: 420, marginBottom: 0 }}>

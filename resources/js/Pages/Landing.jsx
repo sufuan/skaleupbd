@@ -191,6 +191,7 @@ export default function Landing() {
                     <nav className="lp-nav">
                         <a href="#features">Features</a>
                         <a href="#how">How it works</a>
+                        <Link href="/pricing">Pricing</Link>
                         <a href="#contact">Contact</a>
                     </nav>
                     <Link className="lp-login" href="/admin/login">Log in</Link>
@@ -270,6 +271,7 @@ export default function Landing() {
                             <span className="lp-brand-name">Scalenow Bd</span>
                         </a>
                         <div className="lp-footer-links">
+                            <Link href="/pricing">Pricing</Link>
                             <Link href="/admin/login">Log in</Link>
                             <Link href={route('register')}>Create an account</Link>
                         </div>

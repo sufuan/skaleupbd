@@ -269,13 +269,17 @@ class OrderController extends Controller
             }
         }
 
-        $order = $this->orders->create($this->businessId($request), [
-            ...$data,
-            'status' => $data['mode'] === 'approved' ? 'Processing' : 'Pending',
-            'is_preorder' => $data['mode'] === 'preorder',
-            'attachments' => $attachments,
-            'ip' => $request->ip(),
-        ], $request->user(), 'New Order form');
+        try {
+            $order = $this->orders->create($this->businessId($request), [
+                ...$data,
+                'status' => $data['mode'] === 'approved' ? 'Processing' : 'Pending',
+                'is_preorder' => $data['mode'] === 'preorder',
+                'attachments' => $attachments,
+                'ip' => $request->ip(),
+            ], $request->user(), 'New Order form');
+        } catch (\App\Exceptions\InsufficientTokensException $e) {
+            return back()->with('error', $e->getMessage())->withInput();
+        }
 
         if ($data['mode'] === 'approved') {
             // Created in Approved mode: run the same approve transaction.

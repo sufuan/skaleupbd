@@ -170,15 +170,19 @@ class MessagesController extends Controller
                 if (str_starts_with($name, '+')) {
                     $name = 'Karim Sheikh';
                 }
-                $orders->create((int) $message->business_id, [
-                    'customer_name' => $name,
-                    'customer_phone' => $c->customer_phone ?: '01712345678',
-                    'customer_address' => $c->customer_address,
-                    'source' => $source,
-                    'status' => 'Pending',
-                    'delivery_charge' => 60,
-                    'items' => [['product_id' => $product->id, 'qty' => 1, 'price' => isset($message->meta['unit_price']) ? (float) $message->meta['unit_price'] : null, 'variant_name' => $message->meta['variant_name'] ?? null]],
-                ], $request->user(), 'Chat order intake');
+                try {
+                    $orders->create((int) $message->business_id, [
+                        'customer_name' => $name,
+                        'customer_phone' => $c->customer_phone ?: '01712345678',
+                        'customer_address' => $c->customer_address,
+                        'source' => $source,
+                        'status' => 'Pending',
+                        'delivery_charge' => 60,
+                        'items' => [['product_id' => $product->id, 'qty' => 1, 'price' => isset($message->meta['unit_price']) ? (float) $message->meta['unit_price'] : null, 'variant_name' => $message->meta['variant_name'] ?? null]],
+                    ], $request->user(), 'Chat order intake');
+                } catch (\App\Exceptions\InsufficientTokensException $e) {
+                    return back()->with('error', $e->getMessage());
+                }
 
                 return back()->with('success', 'Order created from chat');
             }

@@ -36,6 +36,7 @@ class PlatformController extends Controller
         $sub = $this->currentSub($b->id);
         $orders = Order::where('business_id', $b->id);
         $live = $sub && $sub->isLive();
+        $wallet = \App\Models\BusinessWallet::where('business_id', $b->id)->first();
 
         return [
             'id' => $b->id,
@@ -52,6 +53,9 @@ class PlatformController extends Controller
             'expires_at' => $sub?->expires_at?->format('d M Y'),
             'days_left' => $sub ? (int) today()->diffInDays($sub->expires_at, false) : null,
             'paid_total' => (float) SellerPayment::where('business_id', $b->id)->sum('amount'),
+            'token_balance' => $wallet ? (int) $wallet->balance : 0,
+            'token_pack' => $wallet?->packName(),
+            'token_until' => ($wallet?->cycle_end ?? $wallet?->wallet_expires_at)?->format('d M Y'),
             'orders' => (clone $orders)->count(),
             'revenue' => (float) (clone $orders)->where('status', 'Delivered')->sum('grand_total'),
             'customers' => Customer::where('business_id', $b->id)->count(),
@@ -80,9 +84,9 @@ class PlatformController extends Controller
             ])->all(),
             'topSellers' => $sellers->sortByDesc('revenue')->take(5)->values()->all(),
             'expiring' => $sellers->filter(fn ($s) => $s['status'] === 'active' && $s['days_left'] !== null && $s['days_left'] <= 7)->values()->all(),
-            'packages' => Package::where('active', true)->orderBy('sort')->get()->map(fn ($p) => [
-                'name' => $p->name, 'price' => (float) $p->price,
-                'sellers' => SellerSubscription::where('package_id', $p->id)->where('status', 'active')->distinct('business_id')->count('business_id'),
+            'packages' => \App\Models\PointPack::where('is_active', true)->orderBy('sort')->get()->map(fn ($p) => [
+                'name' => $p->name, 'price' => (float) $p->price_bdt,
+                'sellers' => \App\Models\BusinessWallet::where('pack_id', $p->id)->count(),
             ])->all(),
         ]);
     }
@@ -120,35 +124,60 @@ class PlatformController extends Controller
                 ->map(fn ($s) => ['id' => $s->id, 'package' => $s->package?->name ?? 'Custom', 'amount' => (float) $s->amount, 'starts_at' => $s->starts_at?->format('d M Y'), 'expires_at' => $s->expires_at?->format('d M Y'), 'status' => $s->isLive() ? 'active' : $s->status])->all(),
             'payments' => SellerPayment::where('business_id', $business->id)->latest('paid_at')->get()
                 ->map(fn ($p) => ['id' => $p->id, 'amount' => (float) $p->amount, 'method' => $p->method, 'note' => $p->note, 'when' => $p->paid_at?->format('d M Y, h:i A')])->all(),
-            'packages' => Package::where('active', true)->orderBy('sort')->get(['id', 'name', 'price', 'duration_days'])->all(),
+            'packages' => \App\Models\PointPack::where('is_active', true)->orderBy('sort')->get()
+                ->map(fn ($p) => ['id' => $p->id, 'name' => $p->name, 'price' => (float) $p->price_bdt, 'credits' => (int) $p->credits, 'validity_type' => $p->validity_type])->all(),
+            'wallet' => (function () use ($business) {
+                $w = \App\Models\BusinessWallet::where('business_id', $business->id)->first();
+                if (! $w) {
+                    return null;
+                }
+
+                return [
+                    'balance' => (int) $w->balance, 'pack' => $w->packName(),
+                    'cycle_end' => $w->cycle_end?->format('d M Y'), 'wallet_expires_at' => $w->wallet_expires_at?->format('d M Y'),
+                    'first_purchase_at' => $w->first_purchase_at?->format('d M Y'),
+                    'refunded_at' => $w->refunded_at?->format('d M Y'),
+                    'refund_eligible' => app(\App\Services\TokenService::class)->refundEligible($business->id),
+                ];
+            })(),
+            'tokenLedger' => \App\Models\TokenLedger::where('business_id', $business->id)->latest('id')->limit(15)->get()
+                ->map(fn ($r) => ['id' => $r->id, 'kind' => $r->kind, 'amount' => (int) $r->amount, 'balance_after' => (int) $r->balance_after,
+                    'note' => $r->note, 'when' => $r->created_at?->format('d M Y, h:i A')])->all(),
             'customers' => $customers,
         ]);
     }
 
+    /** Record a point-pack purchase for a seller (M19 v1: paid offline). */
     public function subscribe(Request $request, Business $business): RedirectResponse
     {
         $data = $request->validate([
-            'package_id' => ['required', 'exists:packages,id'],
+            'package_id' => ['required', 'exists:point_packs,id'],
             'amount' => ['nullable', 'numeric', 'min:0'],
             'method' => ['required', 'string', 'max:40'],
             'note' => ['nullable', 'string', 'max:200'],
         ]);
-        $package = Package::findOrFail($data['package_id']);
-        $amount = $data['amount'] ?? (float) $package->price;
-        $current = $this->currentSub($business->id);
-        $start = ($current && $current->isLive()) ? $current->expires_at->copy()->addDay() : today();
-        $sub = SellerSubscription::create([
-            'business_id' => $business->id, 'package_id' => $package->id, 'amount' => $amount,
-            'starts_at' => $start, 'expires_at' => $start->copy()->addDays((int) $package->duration_days - 1), 'status' => 'active',
-        ]);
-        if ($amount > 0) {
-            SellerPayment::create([
-                'business_id' => $business->id, 'subscription_id' => $sub->id, 'amount' => $amount,
-                'method' => $data['method'], 'note' => $data['note'] ?? ($package->name . ' package'), 'paid_at' => now(),
-            ]);
+        try {
+            app(\App\Services\TokenService::class)->purchase(
+                $business->id, (int) $data['package_id'], $data['amount'] ?? null,
+                $data['method'], $data['note'] ?? null, $request->user()?->id,
+            );
+        } catch (\DomainException $e) {
+            return back()->with('error', $e->getMessage());
         }
 
-        return back()->with('success', 'Package assigned and payment recorded');
+        return back()->with('success', 'Purchase recorded — points credited');
+    }
+
+    /** The 7-day refund of a seller's first purchase (M19, once only). */
+    public function refundFirstPurchase(Request $request, Business $business): RedirectResponse
+    {
+        try {
+            app(\App\Services\TokenService::class)->refundFirstPurchase($business->id, $request->user()?->id);
+        } catch (\DomainException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        return back()->with('success', 'Refund done — points removed');
     }
 
     public function storePayment(Request $request, Business $business): RedirectResponse

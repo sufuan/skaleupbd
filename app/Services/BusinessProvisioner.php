@@ -83,6 +83,10 @@ class BusinessProvisioner
 
         // M10 Work Inbox: install the 36-rule defaults for the new shop.
         app(WorkInboxService::class)->seedDefaults($biz->id);
+
+        // M19 Pricing: every business gets a points wallet (0 balance —
+        // view-only until the first pack purchase; that IS the model).
+        app(TokenService::class)->ensureWallet($biz->id);
     }
 
     /** The standard template library (same texts MarketingSeeder installs). */

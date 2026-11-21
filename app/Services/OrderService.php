@@ -17,6 +17,7 @@ class OrderService
     public function __construct(
         private readonly SettingsService $settings,
         private readonly SuccessRateService $fraud,
+        private readonly TokenService $tokens,
     ) {}
 
     public function nextInvoice(int $businessId, ?string $prefix = null): string
@@ -60,6 +61,12 @@ class OrderService
     public function create(int $businessId, array $data, ?User $actor = null, string $createdVia = 'Manual entry'): Order
     {
         return DB::transaction(function () use ($businessId, $data, $actor, $createdVia) {
+            // M19 points gate: an order may only ENTER when the business
+            // can afford it. The deduction itself happens below, inside
+            // this same transaction, exactly once per order.
+            if (! $this->tokens->canAfford($businessId)) {
+                throw new \App\Exceptions\InsufficientTokensException(TokenService::BLOCK_MESSAGE);
+            }
             // The New Order form has no district field (prototype layout): when
             // the caller did not supply one, read it out of the address text.
             if (empty($data['district'])) {
@@ -141,6 +148,9 @@ class OrderService
                     'cost' => $i['cost'],
                 ]);
             }
+
+            // M19: spend the order's tokens now (idempotent per order).
+            $this->tokens->deductForOrder($order);
 
             $order->logHistory(null, $order->status, $actor, 'Order created');
             $order->logActivity('system', "Order created via {$createdVia}", $actor);

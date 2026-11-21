@@ -77,6 +77,18 @@ class HandleInertiaRequests extends Middleware
             'orders_pending' => ($request->user() && $request->user()->business_id && Schema::hasTable('orders'))
                 ? \App\Models\Order::where('business_id', $request->user()->business_id)->where('status', 'Pending')->count()
                 : 0,
+            'tokenGate' => ($request->user() && $request->user()->business_id && Schema::hasTable('business_wallets'))
+                ? (function () use ($request) {
+                    $tokens = app(\App\Services\TokenService::class);
+                    $biz = (int) $request->user()->business_id;
+
+                    return [
+                        'balance' => $tokens->balance($biz),
+                        'blocked' => $tokens->blocked($biz),
+                        'low' => $tokens->isLow($biz),
+                    ];
+                })()
+                : null,
             'flash' => [
                 'success' => $request->session()->get('success'),
                 'error' => $request->session()->get('error'),

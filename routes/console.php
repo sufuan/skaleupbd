@@ -6,6 +6,12 @@ use Illuminate\Support\Facades\Schedule;
 
 Schedule::command('ai:process-pending')->everyMinute();
 Schedule::command('workinbox:run')->everyFiveMinutes();
+Schedule::command('pricing:expire-cycles')->daily();
+
+Artisan::command('pricing:expire-cycles', function () {
+    $stats = app(\App\Services\TokenService::class)->expireCycles();
+    $this->comment('Pricing cycles: '.json_encode($stats));
+})->purpose('Expire M19 monthly point buckets and yearly wallets whose time has run out');
 
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());

@@ -728,57 +728,46 @@ function OrderTogglesForm({ m2 }) {
 const pkgTk = (n) => `৳${Number(n || 0).toLocaleString('en-IN')}`;
 
 function PackagesSettings({ data }) {
-    const catalog = data?.catalog || [];
-    const packages = data?.packages || [];
-    const labelOf = (k) => catalog.find((c) => c.key === k)?.label || k;
+    const packs = data?.packs || [];
+    const pricing0 = data?.pricing || {};
     const [editing, setEditing] = useState(null);
-    const addForm = useForm({ name: '', price: '', duration_days: 30, description: '', features: [] });
-    const editForm = useForm({ name: '', price: '', duration_days: 30, description: '', features: [], active: true });
+    const addForm = useForm({ name: '', price_bdt: '', credits: '', validity_type: 'monthly' });
+    const editForm = useForm({ name: '', price_bdt: '', credits: '', validity_type: 'monthly', active: true });
     const add = (e) => { e.preventDefault(); addForm.post('/settings/packages', { preserveScroll: true, onSuccess: () => addForm.reset() }); };
-    const openEdit = (p) => { setEditing(p); editForm.setData({ name: p.name, price: p.price, duration_days: p.duration_days, description: p.description || '', features: p.features || [], active: p.active }); };
+    const openEdit = (p) => { setEditing(p); editForm.setData({ name: p.name, price_bdt: p.price_bdt, credits: p.credits, validity_type: p.validity_type, active: p.active }); };
     const saveEdit = (e) => { e.preventDefault(); editForm.patch(`/settings/packages/${editing.id}`, { preserveScroll: true, onSuccess: () => setEditing(null) }); };
-    const remove = async (p) => { if (await confirmDialog(`${t('Delete package')} ${p.name}?`)) router.delete(`/settings/packages/${p.id}`, { preserveScroll: true }); };
-    const featPicker = (form) => (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: '6px 14px', margin: '6px 0 4px' }}>
-            {catalog.map((c) => {
-                const on = (form.data.features || []).includes(c.key);
-                return (
-                    <label key={c.key} style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 13.5, cursor: 'pointer' }}>
-                        <input type="checkbox" checked={on} onChange={() => { const cur = form.data.features || []; form.setData('features', on ? cur.filter((x) => x !== c.key) : [...cur, c.key]); }} />
-                        {t(c.label)}
-                    </label>
-                );
-            })}
-        </div>
-    );
+    const remove = async (p) => { if (await confirmDialog(`${t('Delete pack')} ${p.name}?`)) router.delete(`/settings/packages/${p.id}`, { preserveScroll: true }); };
     const fields = (form) => (
         <>
-            <div className="frow"><label className="fl">{t('Package name')}</label><input className="inp" value={form.data.name} onChange={(e) => form.setData('name', e.target.value)} required /></div>
-            <div className="frow"><label className="fl">{t('Price (৳)')}</label><input className="inp" type="number" min="0" value={form.data.price} onChange={(e) => form.setData('price', e.target.value)} required /></div>
-            <div className="frow"><label className="fl">{t('Duration (days)')}</label><input className="inp" type="number" min="1" value={form.data.duration_days} onChange={(e) => form.setData('duration_days', e.target.value)} required /></div>
-            <div className="frow"><label className="fl">{t('Short description')}</label><input className="inp" value={form.data.description} onChange={(e) => form.setData('description', e.target.value)} /></div>
-            <div style={{ fontSize: 13, fontWeight: 600, marginTop: 10 }}>{t('Features in this package')}</div>
-            <div style={{ fontSize: 12, color: 'var(--muted)' }}>{t('Only features that exist in the software can be chosen — nothing outside it.')}</div>
-            {featPicker(form)}
+            <div className="frow"><label className="fl">{t('Pack name')}</label><input className="inp" value={form.data.name} onChange={(e) => form.setData('name', e.target.value)} required /></div>
+            <div className="frow"><label className="fl">{t('Price (৳)')}</label><input className="inp" type="number" min="0" value={form.data.price_bdt} onChange={(e) => form.setData('price_bdt', e.target.value)} required /></div>
+            <div className="frow"><label className="fl">{t('Points (credits)')}</label><input className="inp" type="number" min="1" value={form.data.credits} onChange={(e) => form.setData('credits', e.target.value)} required /></div>
+            <div className="frow"><label className="fl">{t('Validity')}</label>
+                <select className="inp" value={form.data.validity_type} onChange={(e) => form.setData('validity_type', e.target.value)}>
+                    <option value="monthly">{t('Monthly — points reset every 30 days')}</option>
+                    <option value="yearly_wallet">{t('Yearly wallet — points carry for 12 months')}</option>
+                </select>
+            </div>
+            {Number(form.data.credits) > 0 && Number(form.data.price_bdt) >= 0 && form.data.price_bdt !== '' && (
+                <div style={{ fontSize: 12.5, color: 'var(--muted)' }}>{t('Per-order rate')}: {pkgTk((Number(form.data.price_bdt) / Number(form.data.credits)).toFixed(2))} / {t('order')}</div>
+            )}
         </>
     );
 
     return (
         <div>
-            <div style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 14 }}>{t('The service packages sellers buy from us. Price and features are set here — everywhere else just shows them.')}</div>
+            <div style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 14 }}>{t('Sellers buy points with these packs. One point is spent when an order enters — the packs differ only in points and price; every feature is in every pack.')}</div>
             <div className="plat-pkgs" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12, marginBottom: 14 }}>
-                {packages.map((p) => (
+                {packs.map((p) => (
                     <div key={p.id} className="card" style={{ display: 'flex', flexDirection: 'column' }}>
                         <div style={{ display: 'flex', alignItems: 'center' }}>
                             <div style={{ fontSize: 16, fontWeight: 700 }}>{p.name}</div>
                             <span style={{ marginLeft: 'auto' }}>{p.active ? <span className="pill green">{t('Active')}</span> : <span className="pill">{t('Off')}</span>}</span>
                         </div>
-                        <div style={{ fontSize: 26, fontWeight: 700, margin: '8px 0 2px' }}>{pkgTk(p.price)}<span style={{ fontSize: 13, fontWeight: 400, color: 'var(--muted)' }}> / {p.duration_days} {t('days')}</span></div>
-                        <div style={{ fontSize: 12.5, color: 'var(--muted)' }}>{p.description || ''}</div>
-                        <ul style={{ fontSize: 13, margin: '10px 0', paddingLeft: 16, lineHeight: 1.9 }}>
-                            {(p.features || []).map((f) => <li key={f}>{t(labelOf(f))}</li>)}
-                        </ul>
-                        <div style={{ marginTop: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
+                        <div style={{ fontSize: 26, fontWeight: 700, margin: '8px 0 2px' }}>{pkgTk(p.price_bdt)}</div>
+                        <div style={{ fontSize: 13.5 }}>{Number(p.credits).toLocaleString('en-IN')} {t('points')} · {pkgTk(p.rate)} / {t('order')}</div>
+                        <div style={{ fontSize: 12.5, color: 'var(--muted)', marginTop: 2 }}>{p.validity_type === 'monthly' ? t('Monthly — points reset every 30 days') : t('Yearly wallet — points carry for 12 months')}</div>
+                        <div style={{ marginTop: 'auto', display: 'flex', gap: 8, alignItems: 'center', paddingTop: 10 }}>
                             <span style={{ fontSize: 12.5, color: 'var(--muted)' }}>{p.sellers} {t('sellers')}</span>
                             <button className="btn" style={{ marginLeft: 'auto' }} onClick={() => openEdit(p)}>{t('Edit')}</button>
                             <button className="btn" style={{ color: '#B91C1C' }} onClick={() => remove(p)}>{t('Delete')}</button>
@@ -787,22 +776,25 @@ function PackagesSettings({ data }) {
                 ))}
             </div>
 
-            <div className="card" style={{ maxWidth: 640 }}>
-                <h4 style={{ fontSize: 15, marginBottom: 10 }}>{t('Add a package')}</h4>
-                <form onSubmit={add}>
-                    {fields(addForm)}
-                    <div className="flex mt16"><span className="spacer" /><button className="btn pri" disabled={addForm.processing}>{t('Create package')}</button></div>
-                </form>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, alignItems: 'start' }}>
+                <div className="card">
+                    <h4 style={{ fontSize: 15, marginBottom: 10 }}>{t('Add a pack')}</h4>
+                    <form onSubmit={add}>
+                        {fields(addForm)}
+                        <div className="flex mt16"><span className="spacer" /><button className="btn pri" disabled={addForm.processing}>{t('Create pack')}</button></div>
+                    </form>
+                </div>
+                <PricingSettingsForm pricing={pricing0} />
             </div>
 
             {editing && (
                 <div className="modal-overlay" onClick={() => setEditing(null)}>
                     <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 560, maxHeight: '88vh', overflowY: 'auto' }}>
-                        <h3 style={{ fontSize: 17, marginBottom: 14 }}>{t('Edit package')} — {editing.name}</h3>
+                        <h3 style={{ fontSize: 17, marginBottom: 14 }}>{t('Edit pack')} — {editing.name}</h3>
                         <form onSubmit={saveEdit}>
                             {fields(editForm)}
                             <label style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 10, fontSize: 13.5 }}>
-                                <input type="checkbox" checked={!!editForm.data.active} onChange={(e) => editForm.setData('active', e.target.checked)} /> {t('Package is active (sellers can be put on it)')}
+                                <input type="checkbox" checked={!!editForm.data.active} onChange={(e) => editForm.setData('active', e.target.checked)} /> {t('Pack is active (sellers can buy it)')}
                             </label>
                             <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
                                 <button type="button" className="btn" onClick={() => setEditing(null)}>{t('Cancel')}</button>
@@ -812,6 +804,44 @@ function PackagesSettings({ data }) {
                     </div>
                 </div>
             )}
+        </div>
+    );
+}
+
+function PricingSettingsForm({ pricing }) {
+    const form = useForm({
+        points_per_order: pricing.points_per_order ?? 1,
+        onboarding_fee_bdt: pricing.onboarding_fee_bdt ?? 1000,
+        low_balance_threshold: pricing.low_balance_threshold ?? 20,
+        payment_instructions: pricing.payment_instructions ?? '',
+        enforcement_enabled: pricing.enforcement_enabled ?? true,
+    });
+    useEffect(() => {
+        form.setData({
+            points_per_order: pricing.points_per_order ?? 1,
+            onboarding_fee_bdt: pricing.onboarding_fee_bdt ?? 1000,
+            low_balance_threshold: pricing.low_balance_threshold ?? 20,
+            payment_instructions: pricing.payment_instructions ?? '',
+            enforcement_enabled: pricing.enforcement_enabled ?? true,
+        });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [pricing.points_per_order, pricing.onboarding_fee_bdt, pricing.low_balance_threshold, pricing.payment_instructions, pricing.enforcement_enabled]);
+    const save = (e) => { e.preventDefault(); form.post('/settings/pricing', { preserveScroll: true }); };
+    return (
+        <div className="card">
+            <h4 style={{ fontSize: 15, marginBottom: 4 }}>{t('Pricing settings')}</h4>
+            <div style={{ fontSize: 12.5, color: 'var(--muted)', marginBottom: 10 }}>{t('These numbers drive the whole points system — change one here and it applies everywhere at once.')}</div>
+            <form onSubmit={save}>
+                <div className="frow"><label className="fl">{t('Points per order')}</label><input className="inp" type="number" min="1" max="100" value={form.data.points_per_order} onChange={(e) => form.setData('points_per_order', e.target.value)} required /></div>
+                <div className="frow"><label className="fl">{t('Onboarding fee (৳, one-time)')}</label><input className="inp" type="number" min="0" value={form.data.onboarding_fee_bdt} onChange={(e) => form.setData('onboarding_fee_bdt', e.target.value)} required /></div>
+                <div className="frow"><label className="fl">{t('Low-balance warning at (points)')}</label><input className="inp" type="number" min="0" value={form.data.low_balance_threshold} onChange={(e) => form.setData('low_balance_threshold', e.target.value)} required /></div>
+                <div className="frow"><label className="fl">{t('How to pay (shown to sellers)')}</label><textarea className="inp" rows={3} value={form.data.payment_instructions} onChange={(e) => form.setData('payment_instructions', e.target.value)} placeholder={t('e.g. Send money to bKash 01XXXXXXXXX, then tell us the transaction ID')} /></div>
+                <div className="conn-row">
+                    <div style={{ flex: 1 }}><div className="b">{t('Points system on')}</div><div className="sm mut">{t('When off, orders are never blocked and no points are spent. Turn off only in an emergency.')}</div></div>
+                    <button type="button" className={`switch ${form.data.enforcement_enabled ? 'on' : ''}`} aria-label={t('Points system on')} onClick={() => form.setData('enforcement_enabled', !form.data.enforcement_enabled)} />
+                </div>
+                <div className="flex mt16"><span className="spacer" /><button className="btn pri" disabled={form.processing}>{t('Save pricing settings')}</button></div>
+            </form>
         </div>
     );
 }

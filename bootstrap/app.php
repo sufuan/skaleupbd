@@ -18,6 +18,7 @@ return Application::configure(basePath: dirname(__DIR__))
             \App\Http\Middleware\HandleInertiaRequests::class,
             \App\Http\Middleware\ModuleAccess::class,
             \App\Http\Middleware\CheckInGate::class,
+            \App\Http\Middleware\TokenGate::class,
             \Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets::class,
         ]);
 

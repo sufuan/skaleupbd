@@ -84,7 +84,8 @@ class ExternalOrderController extends Controller
             return $this->envelope(false, 422, 'customerNumber is not a valid mobile number');
         }
 
-        $order = $this->orders->create($business->id, [
+        try {
+            $order = $this->orders->create($business->id, [
             'customer_name' => $data['customerName'],
             'customer_phone' => $data['customerNumber'],
             'customer_address' => $data['customerAddress'] ?? null,
@@ -108,7 +109,10 @@ class ExternalOrderController extends Controller
                 'qty' => $p['quantity'],
                 'price' => $p['price'],
             ])->all(),
-        ], null, 'External API');
+            ], null, 'External API');
+        } catch (\App\Exceptions\InsufficientTokensException $e) {
+            return $this->envelope(false, 402, $e->getMessage());
+        }
 
         AppNotification::create(['kind' => 'order', 'title' => "New order {$order->invoice_no}",
             'body' => "{$order->customer_name} · ৳".number_format((float) $order->grand_total), 'link' => "/orders/{$order->id}"]);

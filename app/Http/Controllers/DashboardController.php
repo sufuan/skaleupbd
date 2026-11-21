@@ -98,6 +98,24 @@ class DashboardController extends Controller
         ])->all();
 
         return Inertia::render('Dashboard', [
+            'billing' => (function () use ($biz) {
+                if (! $biz || ! \Illuminate\Support\Facades\Schema::hasTable('business_wallets')) {
+                    return null;
+                }
+                $tokens = app(\App\Services\TokenService::class);
+                $wallet = $tokens->wallet($biz);
+                $endingSoon = ($wallet?->cycle_end && $wallet->cycle_end->isFuture() && $wallet->cycle_end->lte(now()->addDays(3)))
+                    || ($wallet?->wallet_expires_at && $wallet->wallet_expires_at->isFuture() && $wallet->wallet_expires_at->lte(now()->addDays(3)));
+
+                return [
+                    'balance' => $tokens->balance($biz),
+                    'blocked' => $tokens->blocked($biz),
+                    'low' => $tokens->isLow($biz),
+                    'ending_soon' => (bool) $endingSoon,
+                    'cycle_end' => $wallet?->cycle_end?->format('d M Y'),
+                    'wallet_expires_at' => $wallet?->wallet_expires_at?->format('d M Y'),
+                ];
+            })(),
             'my' => [
                 'day' => $day->format('Y-m-d'),
                 'is_today' => $day->isToday(),

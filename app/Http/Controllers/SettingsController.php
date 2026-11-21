@@ -58,12 +58,18 @@ class SettingsController extends Controller
                 'instagram' => $this->channelView('instagram', ['username']),
             ],
             'packagesData' => ($request->user()?->is_platform_admin) ? [
-                'catalog' => collect(\App\Support\FeatureCatalog::all())->map(fn ($label, $key) => ['key' => $key, 'label' => $label])->values()->all(),
-                'packages' => \App\Models\Package::orderBy('sort')->orderBy('id')->get()->map(fn ($p) => [
-                    'id' => $p->id, 'name' => $p->name, 'price' => (float) $p->price, 'duration_days' => (int) $p->duration_days,
-                    'description' => $p->description, 'features' => $p->features ?? [], 'active' => (bool) $p->active,
-                    'sellers' => \App\Models\SellerSubscription::where('package_id', $p->id)->distinct('business_id')->count('business_id'),
+                'packs' => \App\Models\PointPack::orderBy('sort')->orderBy('id')->get()->map(fn ($p) => [
+                    'id' => $p->id, 'name' => $p->name, 'price_bdt' => (float) $p->price_bdt, 'credits' => (int) $p->credits,
+                    'validity_type' => $p->validity_type, 'rate' => round($p->rate(), 2), 'active' => (bool) $p->is_active,
+                    'sellers' => \App\Models\BusinessWallet::where('pack_id', $p->id)->count(),
                 ])->all(),
+                'pricing' => [
+                    'points_per_order' => app(\App\Services\TokenService::class)->pointsPerOrder(),
+                    'onboarding_fee_bdt' => app(\App\Services\TokenService::class)->onboardingFee(),
+                    'low_balance_threshold' => app(\App\Services\TokenService::class)->lowThreshold(),
+                    'payment_instructions' => app(\App\Services\TokenService::class)->paymentInstructions(),
+                    'enforcement_enabled' => app(\App\Services\TokenService::class)->enforcementOn(),
+                ],
             ] : null,
             'm2' => [
                 'business' => [
@@ -631,55 +637,73 @@ class SettingsController extends Controller
         return response()->json(app(\App\Services\MetaGraphService::class)->check($channel));
     }
 
-    // ---------- Seller Packages (platform admin only; lives in Settings) ----------
+    // ---------- Seller Packages → Point Packs (M19; platform admin only) ----------
 
-    private function packageData(Request $request): array
+    private function packData(Request $request): array
     {
         abort_unless((bool) ($request->user()?->is_platform_admin), 403);
 
         return $request->validate([
             'name' => ['required', 'string', 'max:80'],
-            'price' => ['required', 'numeric', 'min:0'],
-            'duration_days' => ['required', 'integer', 'min:1', 'max:3650'],
-            'description' => ['nullable', 'string', 'max:200'],
-            'features' => ['nullable', 'array'],
-            'features.*' => ['string', \Illuminate\Validation\Rule::in(\App\Support\FeatureCatalog::keys())],
+            'price_bdt' => ['required', 'numeric', 'min:0'],
+            'credits' => ['required', 'integer', 'min:1', 'max:100000000'],
+            'validity_type' => ['required', \Illuminate\Validation\Rule::in(['monthly', 'yearly_wallet'])],
             'active' => ['sometimes', 'boolean'],
         ]);
     }
 
     public function storePackage(Request $request): RedirectResponse
     {
-        $data = $this->packageData($request);
-        \App\Models\Package::create([
-            'name' => $data['name'], 'price' => $data['price'], 'duration_days' => $data['duration_days'],
-            'description' => $data['description'] ?? null, 'features' => array_values($data['features'] ?? []),
-            'active' => true, 'sort' => (int) (\App\Models\Package::max('sort') ?? 0) + 1,
+        $data = $this->packData($request);
+        \App\Models\PointPack::create([
+            'name' => $data['name'], 'price_bdt' => $data['price_bdt'], 'credits' => $data['credits'],
+            'validity_type' => $data['validity_type'],
+            'is_active' => true, 'sort' => (int) (\App\Models\PointPack::max('sort') ?? 0) + 1,
         ]);
 
-        return back()->with('success', 'Package created');
+        return back()->with('success', 'Pack created');
     }
 
-    public function updatePackage(Request $request, \App\Models\Package $package): RedirectResponse
+    public function updatePackage(Request $request, \App\Models\PointPack $package): RedirectResponse
     {
-        $data = $this->packageData($request);
+        $data = $this->packData($request);
         $package->update([
-            'name' => $data['name'], 'price' => $data['price'], 'duration_days' => $data['duration_days'],
-            'description' => $data['description'] ?? null, 'features' => array_values($data['features'] ?? []),
-            'active' => (bool) ($data['active'] ?? $package->active),
+            'name' => $data['name'], 'price_bdt' => $data['price_bdt'], 'credits' => $data['credits'],
+            'validity_type' => $data['validity_type'],
+            'is_active' => (bool) ($data['active'] ?? $package->is_active),
         ]);
 
-        return back()->with('success', 'Package saved');
+        return back()->with('success', 'Pack saved');
     }
 
-    public function deletePackage(Request $request, \App\Models\Package $package): RedirectResponse
+    public function deletePackage(Request $request, \App\Models\PointPack $package): RedirectResponse
     {
         abort_unless((bool) ($request->user()?->is_platform_admin), 403);
-        if (\App\Models\SellerSubscription::where('package_id', $package->id)->exists()) {
-            return back()->with('error', 'This package has sellers on it — deactivate it instead of deleting');
+        if (\App\Models\BusinessWallet::where('pack_id', $package->id)->exists()) {
+            return back()->with('error', 'A seller is on this pack — deactivate it instead of deleting');
         }
         $package->delete();
 
-        return back()->with('success', 'Package deleted');
+        return back()->with('success', 'Pack deleted');
+    }
+
+    /** M19 pricing switches — everything about points is set here. */
+    public function updatePricing(Request $request): RedirectResponse
+    {
+        abort_unless((bool) ($request->user()?->is_platform_admin), 403);
+        $data = $request->validate([
+            'points_per_order' => ['required', 'integer', 'min:1', 'max:100'],
+            'onboarding_fee_bdt' => ['required', 'numeric', 'min:0'],
+            'low_balance_threshold' => ['required', 'integer', 'min:0', 'max:100000'],
+            'payment_instructions' => ['nullable', 'string', 'max:1000'],
+            'enforcement_enabled' => ['required', 'boolean'],
+        ]);
+        $this->settings->set('pricing.points_per_order', (int) $data['points_per_order']);
+        $this->settings->set('pricing.onboarding_fee_bdt', (float) $data['onboarding_fee_bdt']);
+        $this->settings->set('pricing.low_balance_threshold', (int) $data['low_balance_threshold']);
+        $this->settings->set('pricing.payment_instructions', (string) ($data['payment_instructions'] ?? ''));
+        $this->settings->set('pricing.enforcement_enabled', (bool) $data['enforcement_enabled']);
+
+        return back()->with('success', 'Pricing settings saved');
     }
 }

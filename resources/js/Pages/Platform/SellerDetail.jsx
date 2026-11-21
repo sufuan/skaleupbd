@@ -1,10 +1,12 @@
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, router, useForm } from '@inertiajs/react';
 import AppLayout from '@/Layouts/AppLayout';
+import { confirmDialog } from '@/lib/confirm';
 import { t } from '@/lib/i18n';
 
 const tk = (n) => `৳${Number(n || 0).toLocaleString('en-IN')}`;
+const num = (n) => Number(n || 0).toLocaleString('en-IN');
 
-export default function SellerDetail({ seller, subscriptions, payments, packages, customers }) {
+export default function SellerDetail({ seller, subscriptions, payments, packages, customers, wallet, tokenLedger }) {
     const profile = useForm({ name: seller.name, owner_name: seller.owner_name || '', phone: seller.phone || '', email: seller.email || '', address: seller.address || '' });
     const sub = useForm({ package_id: packages[0]?.id || '', amount: '', method: 'bKash', note: '' });
     const pay = useForm({ amount: '', method: 'bKash', note: '' });
@@ -12,6 +14,7 @@ export default function SellerDetail({ seller, subscriptions, payments, packages
     const saveProfile = (e) => { e.preventDefault(); profile.patch(`/admin/sellers/${seller.id}`, { preserveScroll: true }); };
     const doSubscribe = (e) => { e.preventDefault(); sub.post(`/admin/sellers/${seller.id}/subscribe`, { preserveScroll: true, onSuccess: () => sub.reset('amount', 'note') }); };
     const doPay = (e) => { e.preventDefault(); pay.post(`/admin/sellers/${seller.id}/payments`, { preserveScroll: true, onSuccess: () => pay.reset() }); };
+    const doRefund = async () => { if (await confirmDialog(t('Refund this seller\'s first purchase? Their points go to zero and the money rows are reversed. This can be done only once.'))) router.post(`/admin/sellers/${seller.id}/refund-first-purchase`, {}, { preserveScroll: true }); };
     const pkgPrice = packages.find((p) => String(p.id) === String(sub.data.package_id))?.price;
 
     return (
@@ -24,7 +27,7 @@ export default function SellerDetail({ seller, subscriptions, payments, packages
             </div>
 
             <div className="plat-kpis" style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12, margin: '14px 0' }}>
-                <div className="card"><div style={{ fontSize: 11, letterSpacing: '.06em', color: 'var(--muted)' }}>{t('CURRENT PACKAGE')}</div><div style={{ fontSize: 22, fontWeight: 700, marginTop: 4 }}>{seller.package || '—'}</div><div style={{ fontSize: 12, color: 'var(--muted)' }}>{seller.expires_at ? `${t('Expires')} ${seller.expires_at} (${seller.days_left} ${t('days left')})` : ''}</div></div>
+                <div className="card"><div style={{ fontSize: 11, letterSpacing: '.06em', color: 'var(--muted)' }}>{t('POINTS BALANCE')}</div><div style={{ fontSize: 22, fontWeight: 700, marginTop: 4 }}>{num(wallet?.balance ?? 0)}</div><div style={{ fontSize: 12, color: 'var(--muted)' }}>{wallet?.pack ? `${wallet.pack} · ${wallet.cycle_end ? `${t('resets')} ${wallet.cycle_end}` : wallet.wallet_expires_at ? `${t('until')} ${wallet.wallet_expires_at}` : ''}` : t('No pack yet')}</div></div>
                 <div className="card"><div style={{ fontSize: 11, letterSpacing: '.06em', color: 'var(--muted)' }}>{t('PAID TO US')}</div><div style={{ fontSize: 22, fontWeight: 700, marginTop: 4 }}>{tk(seller.paid_total)}</div><div style={{ fontSize: 12, color: 'var(--muted)' }}>{t('All time')}</div></div>
                 <div className="card"><div style={{ fontSize: 11, letterSpacing: '.06em', color: 'var(--muted)' }}>{t('SHOP SALES')}</div><div style={{ fontSize: 22, fontWeight: 700, marginTop: 4 }}>{tk(seller.revenue)}</div><div style={{ fontSize: 12, color: 'var(--muted)' }}>{seller.orders} {t('orders')}</div></div>
                 <div className="card"><div style={{ fontSize: 11, letterSpacing: '.06em', color: 'var(--muted)' }}>{t('SHOP CUSTOMERS')}</div><div style={{ fontSize: 22, fontWeight: 700, marginTop: 4 }}>{seller.customers}</div><div style={{ fontSize: 12, color: 'var(--muted)' }}>{t('People who buy from this shop')}</div></div>
@@ -50,13 +53,13 @@ export default function SellerDetail({ seller, subscriptions, payments, packages
 
                 <div>
                     <div className="card" style={{ marginBottom: 12 }}>
-                        <h4 style={{ fontSize: 15, marginBottom: 10 }}>{t('Give / renew package')}</h4>
+                        <h4 style={{ fontSize: 15, marginBottom: 10 }}>{t('Record a pack purchase')}</h4>
                         <form onSubmit={doSubscribe}>
-                            <label className="lbl">{t('Package')}</label>
+                            <label className="lbl">{t('Pack')}</label>
                             <select className="fld" value={sub.data.package_id} onChange={(e) => sub.setData('package_id', e.target.value)}>
-                                {packages.map((p) => <option key={p.id} value={p.id}>{p.name} — {tk(p.price)} / {p.duration_days} {t('days')}</option>)}
+                                {packages.map((p) => <option key={p.id} value={p.id}>{p.name} — {tk(p.price)} · {num(p.credits)} {t('points')} · {p.validity_type === 'monthly' ? t('Monthly') : t('Yearly wallet')}</option>)}
                             </select>
-                            <label className="lbl">{t('Amount received')} ({t('blank = package price')}{pkgPrice ? ` ${tk(pkgPrice)}` : ''})</label>
+                            <label className="lbl">{t('Amount received')} ({t('blank = pack price')}{pkgPrice ? ` ${tk(pkgPrice)}` : ''})</label>
                             <input className="fld" type="number" min="0" value={sub.data.amount} onChange={(e) => sub.setData('amount', e.target.value)} placeholder={pkgPrice || ''} />
                             <label className="lbl">{t('Payment method')}</label>
                             <select className="fld" value={sub.data.method} onChange={(e) => sub.setData('method', e.target.value)}>
@@ -64,8 +67,17 @@ export default function SellerDetail({ seller, subscriptions, payments, packages
                             </select>
                             <label className="lbl">{t('Note')}</label>
                             <input className="fld" value={sub.data.note} onChange={(e) => sub.setData('note', e.target.value)} />
-                            <button className="btn-primary" disabled={sub.processing} style={{ marginTop: 14 }}>{t('Assign package + record payment')}</button>
+                            <button className="btn-primary" disabled={sub.processing} style={{ marginTop: 14 }}>{t('Credit points + record payment')}</button>
                         </form>
+                        {wallet?.first_purchase_at && (
+                            <div style={{ marginTop: 12, fontSize: 12.5, color: 'var(--muted)' }}>
+                                {t('First purchase')}: {wallet.first_purchase_at}
+                                {wallet.refunded_at && <> · {t('Refunded')}: {wallet.refunded_at}</>}
+                            </div>
+                        )}
+                        {wallet?.refund_eligible && (
+                            <button className="btn" style={{ color: '#B91C1C', marginTop: 10 }} onClick={doRefund}>{t('Refund first purchase (7-day)')}</button>
+                        )}
                     </div>
                     <div className="card">
                         <h4 style={{ fontSize: 15, marginBottom: 10 }}>{t('Record a payment')}</h4>
@@ -104,6 +116,17 @@ export default function SellerDetail({ seller, subscriptions, payments, packages
                         </tbody>
                     </table></div>
                 </div>
+            </div>
+
+            <div className="card" style={{ padding: 0, overflow: 'hidden', marginTop: 12 }}>
+                <h4 style={{ fontSize: 15, padding: '14px 14px 6px' }}>{t('Points history')}</h4>
+                <div className="tbl-wrap"><table className="tbl">
+                    <thead><tr><th>{t('When')}</th><th>{t('Kind')}</th><th>{t('Points')}</th><th>{t('Balance')}</th><th>{t('Note')}</th></tr></thead>
+                    <tbody>
+                        {(tokenLedger || []).map((r) => <tr key={r.id}><td style={{ whiteSpace: 'nowrap' }}>{r.when}</td><td>{t(r.kind)}</td><td style={{ fontWeight: 700, color: r.amount < 0 ? '#B91C1C' : '#15803D' }}>{r.amount > 0 ? '+' : ''}{num(r.amount)}</td><td>{num(r.balance_after)}</td><td>{r.invoice ? `${t('Order')} ${r.invoice}` : (r.note || '')}</td></tr>)}
+                        {(!tokenLedger || tokenLedger.length === 0) && <tr><td colSpan={5} style={{ textAlign: 'center', padding: 20, color: 'var(--muted)' }}>{t('No points activity yet')}</td></tr>}
+                    </tbody>
+                </table></div>
             </div>
 
             <div className="card" style={{ padding: 0, overflow: 'hidden', marginTop: 12 }}>
