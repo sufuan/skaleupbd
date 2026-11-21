@@ -8,7 +8,6 @@ use App\Http\Controllers\OrderToolsController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\PasswordSyncController;
 use App\Http\Controllers\SettingsController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -312,8 +311,6 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-    Route::get('/admin/password-sync', [PasswordSyncController::class, 'show']);
-    Route::post('/admin/password-sync', [PasswordSyncController::class, 'update']);
 });
 
 // External API intake for sellers' websites (API-key auth, no session).
