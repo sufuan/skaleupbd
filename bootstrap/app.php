@@ -14,6 +14,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->validateCsrfTokens(except: ['api/external/*', 'api/webhooks/*']);
         $middleware->web(append: [
+            \App\Http\Middleware\ResolveStorefrontHost::class,
             \App\Http\Middleware\SetLocale::class,
             \App\Http\Middleware\HandleInertiaRequests::class,
             \App\Http\Middleware\ModuleAccess::class,
@@ -25,6 +26,14 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'totp' => \App\Http\Middleware\EnsureTotpVerified::class,
         ]);
+
+        // M18: tenant host resolution must run after the session starts
+        // but before Authenticate can bounce shop visitors to the login
+        // page — pin it into the priority list ahead of Authenticate.
+        $middleware->prependToPriorityList(
+            \Illuminate\Contracts\Auth\Middleware\AuthenticatesRequests::class,
+            \App\Http\Middleware\ResolveStorefrontHost::class,
+        );
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

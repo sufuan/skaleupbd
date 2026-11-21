@@ -128,6 +128,12 @@ class OrderService
                 'notify_date' => $data['notify_date'] ?? null,
                 'external_ref' => $data['external_ref'] ?? null,
                 'idempotency_key' => $data['idempotency_key'] ?? null,
+                // M18 storefront attribution (saved on every storefront order).
+                'storefront_id' => $data['storefront_id'] ?? null,
+                'utm_source' => $data['utm_source'] ?? null,
+                'utm_medium' => $data['utm_medium'] ?? null,
+                'utm_campaign' => $data['utm_campaign'] ?? null,
+                'fbclid' => $data['fbclid'] ?? null,
                 'ip' => $data['ip'] ?? null,
                 'device' => $data['device'] ?? null,
                 'fraud_verdict' => $check['verdict'],

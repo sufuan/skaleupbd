@@ -30,6 +30,7 @@ class ModuleAccess
         'ads' => 'ads',
         'marketing' => 'marketing',
         'reports' => 'reports',
+        'storefront' => 'storefront',
     ];
 
     /** Self-service attendance: any staff member can always open their own attendance page and check in/out, whatever their module permissions. */

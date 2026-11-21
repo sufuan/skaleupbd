@@ -26,6 +26,7 @@ const P = {
     users: 'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM23 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8',
     briefcase: 'M20 7H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2zM16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2',
     wallet: 'M21 12V7H5a2 2 0 0 1 0-4h14v4M3 5v14a2 2 0 0 0 2 2h16v-5M18 12a2 2 0 0 0 0 4h4v-4z',
+    store: 'M4 7l1.5-4h13L20 7M4 7h16M4 7v13a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V7M9.5 21v-6h5v6M2.5 7a2.5 2.5 0 0 0 5 0 2.5 2.5 0 0 0 5 0 2.5 2.5 0 0 0 5 0 2.5 2.5 0 0 0 4-1.5',
     report: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M9 15l2-2 2 2 3-4',
     gear: 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1-1.55 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.09a1.7 1.7 0 0 0 1.55-1 1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.87.34h0a1.7 1.7 0 0 0 1-1.55V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.55h0a1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87v0a1.7 1.7 0 0 0 1.55 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.55 1z',
     help: 'M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3M12 17h.01M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0z',
@@ -60,6 +61,7 @@ const NAV = [
         { label: 'Ads', icon: 'chart', children: ['Ads Dashboard', 'Meta Ads', 'TikTok Ads'], href: mod('ads') },
         { label: 'Marketing', icon: 'megaphone', children: [{ label: 'Automation', href: '/marketing' }, { label: 'SMS Marketing', href: '/marketing/sms' }, { label: 'SMS Report', href: '/marketing/report' }], href: '/marketing' },
         { label: 'Customers', icon: 'users', children: [{ label: 'Customer List', href: '/customers' }, { label: 'Bulk Upload', href: '/customers/upload' }], href: '/customers' },
+        { label: 'Storefront', icon: 'store', children: [{ label: 'Overview', href: '/storefront' }, { label: 'Subdomain', href: '/storefront/subdomain' }, { label: 'Branding & Tracking', href: '/storefront/branding' }, { label: 'Page Builder', href: '/storefront/builder' }, { label: 'Domains', href: '/storefront/domains' }], href: '/storefront' },
     ]},
     { sec: 'Business Control', items: [
         { label: 'HRM', icon: 'briefcase', children: [{ label: 'HR Dashboard', href: '/hrm' }, { label: 'Attendance', href: '/hrm/attendance' }, { label: 'Departments & SOP', href: '/hrm/departments' }, { label: 'User & Role', href: '/hrm/users' }, { label: 'HR Settings', href: '/hrm/settings' }], href: '/hrm' },
@@ -273,7 +275,7 @@ export default function AppLayout({ children }) {
     const userName = props.auth?.user?.name || 'User';
     const isPlatform = !!props.auth?.user?.is_platform_admin;
     // M13 User & Role: hide modules the user has no permission for.
-    const MODKEY = { Dashboard: 'dashboard', Orders: 'orders', Delivery: 'delivery', Inventory: 'inventory', Messages: 'messages', Purchase: 'purchase', 'Task & Follow-up': 'tasks', 'Call Center': 'callcenter', 'Work Inbox': 'workinbox', Ads: 'ads', Marketing: 'marketing', Customers: 'customers', HRM: 'hrm', Finance: 'finance', Reports: 'reports', Settings: 'settings', 'Points & Billing': 'billing' };
+    const MODKEY = { Dashboard: 'dashboard', Orders: 'orders', Delivery: 'delivery', Inventory: 'inventory', Messages: 'messages', Purchase: 'purchase', 'Task & Follow-up': 'tasks', 'Call Center': 'callcenter', 'Work Inbox': 'workinbox', Ads: 'ads', Marketing: 'marketing', Customers: 'customers', HRM: 'hrm', Finance: 'finance', Reports: 'reports', Settings: 'settings', 'Points & Billing': 'billing', Storefront: 'storefront' };
     const perms = props.auth?.permissions || [];
     const payrollOn = !!props.auth?.payroll_enabled;
     const baseNav = NAV.map((sec) => ({ ...sec, items: sec.items
@@ -292,6 +294,7 @@ export default function AppLayout({ children }) {
         { label: 'Seller Dashboard', icon: 'grid', href: '/admin' },
         { label: 'Sellers', icon: 'users', children: [{ label: 'All Sellers', href: '/admin/sellers' }, { label: 'Packages', href: '/settings?group=packages' }], href: '/admin/sellers' },
         { label: 'Payment Claims', icon: 'wallet', href: '/admin/claims' },
+        { label: 'Storefronts', icon: 'store', href: '/admin/storefronts' },
     ] }] : baseNav;
     const initials = userName.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase();
 

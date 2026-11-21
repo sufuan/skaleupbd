@@ -7,6 +7,12 @@ use Illuminate\Support\Facades\Schedule;
 Schedule::command('ai:process-pending')->everyMinute();
 Schedule::command('workinbox:run')->everyFiveMinutes();
 Schedule::command('pricing:expire-cycles')->daily();
+Schedule::command('storefront:lapse-sweep')->daily();
+
+Artisan::command('storefront:lapse-sweep', function () {
+    $stats = app(\App\Services\StorefrontService::class)->lapseSweep();
+    $this->comment('Storefront lapse sweep: '.json_encode($stats));
+})->purpose('Unpublish storefronts whose points pack ended beyond the grace window');
 
 Artisan::command('pricing:expire-cycles', function () {
     $stats = app(\App\Services\TokenService::class)->expireCycles();

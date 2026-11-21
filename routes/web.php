@@ -31,6 +31,15 @@ Route::post('/locale/{locale}', [LocaleController::class, 'switch'])
 // Public pricing page (M19) — renders live from the point packs.
 Route::get('/pricing', [\App\Http\Controllers\PricingController::class, 'index'])->name('pricing');
 
+// M18 Storefront — public shop endpoints. These only work on a tenant
+// host (ResolveStorefrontHost attaches the storefront); on the platform
+// host they 404 in the controller.
+Route::get('/p/{product}', [\App\Http\Controllers\StorefrontPublicController::class, 'product'])->whereNumber('product')->name('sf.product');
+Route::post('/order', [\App\Http\Controllers\StorefrontPublicController::class, 'order'])->name('sf.order');
+Route::get('/order-success/{invoice}', [\App\Http\Controllers\StorefrontPublicController::class, 'success'])->name('sf.success');
+Route::get('/report', [\App\Http\Controllers\StorefrontPublicController::class, 'reportForm'])->name('sf.report');
+Route::post('/report', [\App\Http\Controllers\StorefrontPublicController::class, 'reportStore'])->name('sf.report.store');
+
 // TOTP enrollment + challenge (reachable while signed in; the totp
 // middleware exempts these routes itself).
 Route::middleware('auth')->group(function () {
@@ -332,6 +341,32 @@ Route::middleware(['auth', 'verified', 'totp'])->group(function () {
     Route::get('/billing', [\App\Http\Controllers\BillingController::class, 'index'])->name('billing');
     Route::post('/billing/claims', [\App\Http\Controllers\BillingController::class, 'storeClaim'])->name('billing.claims.store');
     Route::post('/billing/claims/{claim}/submit', [\App\Http\Controllers\BillingController::class, 'submitClaim'])->name('billing.claims.submit');
+
+    // M18 Storefront — seller section
+    Route::get('/storefront', [\App\Http\Controllers\StorefrontController::class, 'overview'])->name('storefront.overview');
+    Route::post('/storefront/publish', [\App\Http\Controllers\StorefrontController::class, 'publish'])->name('storefront.publish');
+    Route::post('/storefront/unpublish', [\App\Http\Controllers\StorefrontController::class, 'unpublish'])->name('storefront.unpublish');
+    Route::post('/storefront/otp/send', [\App\Http\Controllers\StorefrontController::class, 'sendOtp'])->name('storefront.otp.send');
+    Route::post('/storefront/otp/verify', [\App\Http\Controllers\StorefrontController::class, 'verifyOtp'])->name('storefront.otp.verify');
+    Route::get('/storefront/subdomain', [\App\Http\Controllers\StorefrontController::class, 'subdomain'])->name('storefront.subdomain');
+    Route::get('/storefront/availability', [\App\Http\Controllers\StorefrontController::class, 'availability'])->name('storefront.availability');
+    Route::post('/storefront/subdomain', [\App\Http\Controllers\StorefrontController::class, 'saveSubdomain'])->name('storefront.subdomain.save');
+    Route::get('/storefront/branding', [\App\Http\Controllers\StorefrontController::class, 'branding'])->name('storefront.branding');
+    Route::post('/storefront/branding', [\App\Http\Controllers\StorefrontController::class, 'saveBranding'])->name('storefront.branding.save');
+    Route::get('/storefront/builder', [\App\Http\Controllers\StorefrontController::class, 'builder'])->name('storefront.builder');
+    Route::post('/storefront/builder', [\App\Http\Controllers\StorefrontController::class, 'saveBlocks'])->name('storefront.builder.save');
+    Route::post('/storefront/images', [\App\Http\Controllers\StorefrontController::class, 'uploadImage'])->name('storefront.images');
+    Route::get('/storefront/domains', [\App\Http\Controllers\StorefrontController::class, 'domains'])->name('storefront.domains');
+    Route::post('/storefront/domains', [\App\Http\Controllers\StorefrontController::class, 'requestDomain'])->name('storefront.domains.request');
+    Route::post('/storefront/domains/verify', [\App\Http\Controllers\StorefrontController::class, 'verifyDomain'])->name('storefront.domains.verify');
+    Route::delete('/storefront/domains', [\App\Http\Controllers\StorefrontController::class, 'removeDomain'])->name('storefront.domains.remove');
+
+    // M18 Storefront — platform admin
+    Route::get('/admin/storefronts', [\App\Http\Controllers\PlatformStorefrontController::class, 'index'])->name('platform.storefronts');
+    Route::post('/admin/storefronts/{storefront}/takedown', [\App\Http\Controllers\PlatformStorefrontController::class, 'takedown'])->name('platform.storefronts.takedown');
+    Route::post('/admin/storefronts/{storefront}/restore', [\App\Http\Controllers\PlatformStorefrontController::class, 'restore'])->name('platform.storefronts.restore');
+    Route::post('/admin/storefronts/{storefront}/domain-added', [\App\Http\Controllers\PlatformStorefrontController::class, 'markDomainAdded'])->name('platform.storefronts.domainAdded');
+    Route::post('/admin/storefronts/reports/{report}/resolve', [\App\Http\Controllers\PlatformStorefrontController::class, 'resolveReport'])->name('platform.storefronts.reports.resolve');
 
     Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead'])->name('notifications.readAll');
     Route::post('/notifications/{notification}/read', [NotificationController::class, 'markRead'])->name('notifications.read');

@@ -11,7 +11,7 @@ class Permissions
     public const ALL = [
         'dashboard', 'orders', 'delivery', 'inventory', 'messages', 'purchase',
         'callcenter', 'tasks', 'workinbox', 'ads', 'marketing', 'customers',
-        'hrm', 'finance', 'reports', 'settings', 'billing',
+        'hrm', 'finance', 'reports', 'settings', 'billing', 'storefront',
     ];
 
     /** Key => sidebar label, for the User & Role checkbox list. */
@@ -33,13 +33,14 @@ class Permissions
         'reports' => 'Reports',
         'settings' => 'Settings',
         'billing' => 'Points & Billing',
+        'storefront' => 'Storefront',
     ];
 
     public static function preset(string $role): array
     {
         return match ($role) {
             'admin' => self::ALL,
-            'manager' => ['dashboard', 'orders', 'delivery', 'inventory', 'messages', 'customers', 'workinbox', 'tasks', 'hrm', 'reports'],
+            'manager' => ['dashboard', 'orders', 'delivery', 'inventory', 'messages', 'customers', 'workinbox', 'tasks', 'hrm', 'reports', 'storefront'],
             'accountant' => ['dashboard', 'finance', 'reports', 'customers'],
             default => ['dashboard'],
         };
