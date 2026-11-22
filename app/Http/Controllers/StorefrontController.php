@@ -409,12 +409,17 @@ class StorefrontController extends Controller
         ]);
     }
 
-    /** Logo upload for the wizard + settings (256px WebP, EXIF stripped). */
+    /** Logo upload for the wizard + settings (256px WebP, EXIF stripped). Persists to branding at once — both UIs treat the upload as final. */
     public function uploadLogo(Request $request)
     {
         $sf = $this->sf($request);
         $request->validate(['logo' => ['required', 'file', 'image', 'max:1024']]);
         $path = $this->svc->storeImage($sf->business_id, $request->file('logo'), 256);
+        $b = (array) $sf->branding;
+        $b['logo'] = $path;
+        $sf->branding = $b;
+        $sf->save();
+        $this->svc->forgetHostCache($sf);
 
         return response()->json(['path' => $path, 'url' => '/storage/'.$path]);
     }
