@@ -75,17 +75,17 @@ export default function Suppliers({ tab, q, stats, rows, reorderRows, reportRows
                     <div className="stat-card2">
                         <div className="lb">{t('Overdue suppliers')}</div>
                         <div className="vl red">{stats.overdueSuppliers}</div>
-                        <div className="sb">{fmt(stats.overdueAmount)} {t('overdue')}</div>
+                        <div className="sc-sub">{fmt(stats.overdueAmount)} {t('overdue')}</div>
                     </div>
                     <button type="button" className="stat-card2" style={{ textAlign: 'left', cursor: 'pointer', fontFamily: 'inherit' }} onClick={() => go({ tab: 'reorder' })}>
                         <div className="lb">{t('Products to reorder')}</div>
                         <div className="vl">{stats.reorderCount}</div>
-                        <div className="sb">{t('At or below reorder point')}</div>
+                        <div className="sc-sub">{t('At or below reorder point')}</div>
                     </button>
                     <div className="stat-card2">
                         <div className="lb">{t('Total due (bills)')}</div>
                         <div className="vl">{fmt(stats.totalDue)}</div>
-                        <div className="sb">{stats.suppliersWithDue} {t('suppliers with due')}</div>
+                        <div className="sc-sub">{stats.suppliersWithDue} {t('suppliers with due')}</div>
                     </div>
                 </div>
 

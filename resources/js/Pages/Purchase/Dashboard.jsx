@@ -30,12 +30,12 @@ export default function Dashboard({ rightNow, periodKey, supplierFilter, supplie
                     <Link href="/suppliers" className="stat-card2" style={{ textDecoration: 'none', color: 'inherit' }}>
                         <div className="lb">{t('Overdue')}</div>
                         <div className="vl red">{fmt(rightNow.overdue)}</div>
-                        <div className="sb">{rightNow.overdueSuppliers} {t('suppliers')}</div>
+                        <div className="sc-sub">{rightNow.overdueSuppliers} {t('suppliers')}</div>
                     </Link>
                     <Link href="/purchases?tab=receive" className="stat-card2" style={{ textDecoration: 'none', color: 'inherit' }}>
                         <div className="lb">{t('Goods not received')}</div>
                         <div className="vl">{rightNow.goodsNotReceived}</div>
-                        <div className="sb">{fmt(rightNow.goodsNotReceivedValue)} {t('of purchases')}</div>
+                        <div className="sc-sub">{fmt(rightNow.goodsNotReceivedValue)} {t('of purchases')}</div>
                     </Link>
                     <Link href="/suppliers?tab=reorder" className="stat-card2" style={{ textDecoration: 'none', color: 'inherit' }}>
                         <div className="lb">{t('Low stock on items you buy')}</div>
@@ -60,7 +60,7 @@ export default function Dashboard({ rightNow, periodKey, supplierFilter, supplie
                     <div className="stat-card2">
                         <div className="lb">{t('Purchased')}</div>
                         <div className="vl">{fmt(period.purchased)}</div>
-                        <div className="sb">{period.purchasesCount} {t('purchases')}</div>
+                        <div className="sc-sub">{period.purchasesCount} {t('purchases')}</div>
                     </div>
                     <div className="stat-card2">
                         <div className="lb">{t('Paid')}</div>
