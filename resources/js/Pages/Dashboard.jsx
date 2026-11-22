@@ -45,7 +45,7 @@ const TodayPill = ({ label }) => (
     <button type="button" className="today-pill"><span style={{ marginRight: 4, display: 'inline-flex' }}><CalSvg /></span>{label}</button>
 );
 
-function DashKpi({ label, k, money, pill }) {
+function DashKpi({ label, k, money, pill, hint }) {
     return (
         <div className="card kpi">
             <div className="kpi-top"><span className="kpi-lbl">{t(label)}</span>
@@ -54,6 +54,7 @@ function DashKpi({ label, k, money, pill }) {
             <div className="sub">{k.pct === null
                 ? <>{t('Previous')} {money ? fmt(k.prev) : String(Math.round(k.prev))}</>
                 : <><span className={k.pct >= 0 ? 'up' : 'down'}>{k.pct >= 0 ? '↗' : '↘'} {Math.abs(k.pct).toFixed(1)}%</span> &nbsp;{t('Previous')} {money ? fmt(k.prev) : String(Math.round(k.prev))}</>}</div>
+            {hint && <div className="sub" style={{ marginTop: 2 }}>{t(hint)}</div>}
         </div>
     );
 }
@@ -94,7 +95,7 @@ function MyDashboard({ my }) {
         <>
             <div className="kpi-grid">
                 <DashKpi label="Total Orders" k={my.kpis.orders} pill={pill} />
-                <DashKpi label="Revenue" k={my.kpis.revenue} money pill={pill} />
+                <DashKpi label="Revenue" k={my.kpis.revenue} money pill={pill} hint="Delivered orders only" />
                 <DashKpi label="Profit" k={my.kpis.profit} money pill={pill} />
                 <div className="card kpi">
                     <div className="kpi-top"><span className="kpi-lbl">{t('Pending Web Orders')}</span>

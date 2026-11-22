@@ -45,7 +45,7 @@ function CommentCard({ c }) {
 
                     {sent.map((r) => (
                         <div key={r.id} style={{ marginTop: 10, background: '#F4EDF7', borderRadius: 10, padding: '9px 12px', fontSize: 13.5 }}>
-                            <b>Demo Shop</b> <span style={{ color: '#64748B', fontSize: 12 }}>({t('your Page')})</span><br />{r.body}
+                            <b>{shop_name}</b> <span style={{ color: '#64748B', fontSize: 12 }}>({t('your Page')})</span><br />{r.body}
                             {r.rule && <div style={{ fontSize: 12, color: '#92400e', marginTop: 6 }}>{t('Rule')}: {r.rule} · <Link href="/settings?group=ai" style={{ color: '#92400e', fontWeight: 700 }}>{t('See the rule in Settings')}</Link></div>}
                         </div>
                     ))}
@@ -105,7 +105,7 @@ function DraftReply({ reply }) {
     );
 }
 
-export default function Comments({ comments, counts, posts }) {
+export default function Comments({ comments, counts, posts, shop_name }) {
     const [channel, setChannel] = useState('all');
     const [status, setStatus] = useState('all');
     const [post, setPost] = useState('all');

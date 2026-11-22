@@ -90,6 +90,28 @@ class MetaWebhookController extends Controller
     {
         $message = (array) ($event['message'] ?? []);
         $mid = (string) ($message['mid'] ?? '');
+        if ($mid !== '') {
+            // Meta redelivers an event when the first delivery is slow;
+            // two copies can be in flight at once and both pass the
+            // stored-mid check below before either commits. One delivery
+            // per message id, enforced with a lock keyed on the mid.
+            $lock = \Illuminate\Support\Facades\Cache::store('file')->lock('meta-mid-' . sha1($mid), 60);
+            if (! $lock->acquire()) {
+                return; // the twin delivery is processing this message now
+            }
+            try {
+                $this->handleMessagingEventLocked($channel, $event, $message, $mid);
+            } finally {
+                $lock->release();
+            }
+
+            return;
+        }
+        $this->handleMessagingEventLocked($channel, $event, $message, $mid);
+    }
+
+    private function handleMessagingEventLocked(string $channel, array $event, array $message, string $mid): void
+    {
         if (! empty($message['is_echo'])) {
             $this->handleEcho($channel, $event, $message, $mid);
 

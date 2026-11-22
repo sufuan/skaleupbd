@@ -11,6 +11,7 @@ use App\Models\StockTransfer;
 use App\Models\User;
 use App\Models\WarrantyClaim;
 use App\Services\StockService;
+use App\Support\DhakaTime;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -114,7 +115,7 @@ class InventoryOpsController extends Controller
         return Inertia::render('Inventory/Ledger', [
             'rows' => $rows->through(fn ($r) => [
                 'id' => $r->id,
-                'created_at' => $r->created_at?->format('d M Y, h:i A'),
+                'created_at' => DhakaTime::fmt($r->created_at, 'd M Y, h:i A'),
                 'product' => $r->product ? ['name' => $r->product->name, 'sku' => $r->product->sku, 'image' => $r->product->image] : null,
                 'type' => $r->type,
                 // A reserve is a hold, not an in/out — labelling it '—' made
@@ -146,7 +147,7 @@ class InventoryOpsController extends Controller
                 // adjustment row but is NOT a manual adjustment — exclude it.
                 'manual_today' => (clone $all)->whereIn('type', ['adjust_in', 'adjust_out'])
                     ->whereNotIn('reason', ['Initial Stock', 'Import'])
-                    ->whereDate('created_at', now()->toDateString())->count(),
+                    ->whereBetween('created_at', DhakaTime::dayBoundsUtc(DhakaTime::today()))->count(),
                 'accuracy' => $accuracy,
             ],
             'findings' => $findings,
@@ -197,7 +198,7 @@ class InventoryOpsController extends Controller
         $transfers = StockTransfer::where('business_id', $biz)->orderByDesc('id')->get()->map(fn ($t) => [
             'id' => $t->id, 'from_branch_id' => $t->from_branch_id, 'to_branch_id' => $t->to_branch_id,
             'product_id' => $t->product_id, 'qty' => $t->qty, 'cartons' => $t->cartons, 'status' => $t->status, 'note' => $t->note,
-            'created_at' => $t->created_at?->format('d M Y'),
+            'created_at' => DhakaTime::fmt($t->created_at, 'd M Y'),
         ]);
 
         return Inertia::render('Inventory/Branches', [
@@ -305,7 +306,7 @@ class InventoryOpsController extends Controller
         }
         if ($st = $request->query('status')) {
             if ($st === 'overdue') {
-                $q->whereNotIn('status', ['closed', 'rejected', 'cancelled'])->whereNotNull('due_date')->where('due_date', '<', now()->toDateString());
+                $q->whereNotIn('status', ['closed', 'rejected', 'cancelled'])->whereNotNull('due_date')->where('due_date', '<', DhakaTime::today());
             } elseif ($st !== 'everything') {
                 $q->where('status', $st);
             }
@@ -336,13 +337,13 @@ class InventoryOpsController extends Controller
                 'type' => $c->type, 'status' => $c->status, 'resolution' => $c->resolution,
                 'reject_reason' => $c->reject_reason, 'cancel_reason' => $c->cancel_reason,
                 'received_date' => $c->received_date, 'due_date' => $c->due_date, 'closed_date' => $c->closed_date,
-                'overdue' => $c->due_date && $c->due_date < now()->toDateString() && ! in_array($c->status, ['closed', 'rejected', 'cancelled'], true),
+                'overdue' => $c->due_date && $c->due_date < DhakaTime::today() && ! in_array($c->status, ['closed', 'rejected', 'cancelled'], true),
                 'note' => $c->note,
             ]),
             'counts' => [
                 'total' => WarrantyClaim::where('business_id', $biz)->count(),
                 'open' => WarrantyClaim::where('business_id', $biz)->whereNotIn('status', ['closed', 'rejected', 'cancelled'])->count(),
-                'overdue' => WarrantyClaim::where('business_id', $biz)->whereNotIn('status', ['closed', 'rejected', 'cancelled'])->whereNotNull('due_date')->where('due_date', '<', now()->toDateString())->count(),
+                'overdue' => WarrantyClaim::where('business_id', $biz)->whereNotIn('status', ['closed', 'rejected', 'cancelled'])->whereNotNull('due_date')->where('due_date', '<', DhakaTime::today())->count(),
                 'closed' => WarrantyClaim::where('business_id', $biz)->where('status', 'closed')->count(),
             ],
             'products' => Product::where('business_id', $biz)->orderBy('name')->get(['id', 'name', 'sku']),
@@ -365,7 +366,7 @@ class InventoryOpsController extends Controller
             'received_date' => ['nullable', 'date'],
         ]);
         $days = (int) $this->setting('warranty.turnaround_days', 7);
-        $received = $data['received_date'] ?? now()->toDateString();
+        $received = $data['received_date'] ?? DhakaTime::today();
         $count = WarrantyClaim::where('business_id', $biz)->count();
         WarrantyClaim::create(['business_id' => $biz,
             'claim_no' => 'WC-' . str_pad((string) ($count + 1), 4, '0', STR_PAD_LEFT),
@@ -387,7 +388,7 @@ class InventoryOpsController extends Controller
             'note' => ['nullable', 'string'],
         ]);
         if (in_array($data['status'], ['closed', 'rejected', 'cancelled'], true)) {
-            $data['closed_date'] = now()->toDateString();
+            $data['closed_date'] = DhakaTime::today();
         }
         $claim->update($data);
 

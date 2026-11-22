@@ -151,7 +151,7 @@ export default function Parcels({ parcels, counts, status, analysis, entries, fi
                                                 <td><b>{Number(p.cod).toLocaleString('en-IN')}</b></td>
                                                 <td>{p.courier || '—'}<br /><span className="muted-sm">{p.tracking_id || p.consignment_id || ''}</span></td>
                                                 <td><span className="pill green">{t('Courier age')} {p.age_days}d</span>
-                                                    {p.courier_status && <div className="muted-sm" style={{ marginTop: 4 }}>{p.courier_status}</div>}</td>
+                                                    {p.courier_status && <div className="muted-sm" style={{ marginTop: 4 }}>{t('Courier status')}: {p.courier_status}</div>}</td>
                                                 <td>—</td>
                                                 <td><span className="muted-sm">—</span></td>
                                                 <td>{(p.tags || []).length > 0
@@ -176,7 +176,7 @@ export default function Parcels({ parcels, counts, status, analysis, entries, fi
                 {tab === 'returns' && (
                     <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
                         <div className="tbl-wrap"><table className="tbl">
-                            <thead><tr><th>{t('Invoice')}</th><th>{t('Courier')}</th><th>{t('Status')}</th><th>{t('Return Tag')}</th><th>{t('Claim')}</th><th>{t('Compensation')}</th></tr></thead>
+                            <thead><tr><th>{t('Invoice')}</th><th>{t('Courier')}</th><th>{t('Courier status')}</th><th>{t('Return Tag')}</th><th>{t('Claim')}</th><th>{t('Compensation')}</th></tr></thead>
                             <tbody>
                                 {parcels.filter((p) => p.status === 'Returned' || p.return_tag || p.claim_status).map((p) => (
                                     <tr key={p.id}>

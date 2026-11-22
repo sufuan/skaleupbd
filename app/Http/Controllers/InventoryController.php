@@ -14,6 +14,7 @@ use App\Models\SharedInventoryGroup;
 use App\Models\StockLedger;
 use App\Models\StockLinkGroup;
 use App\Models\WarrantyClaim;
+use App\Support\DhakaTime;
 use App\Services\StockService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -115,7 +116,7 @@ class InventoryController extends Controller
         }
         $overdue = WarrantyClaim::where('business_id', $biz)
             ->whereNotIn('status', ['closed', 'rejected', 'cancelled'])
-            ->whereNotNull('due_date')->where('due_date', '<', now()->toDateString())->count();
+            ->whereNotNull('due_date')->where('due_date', '<', DhakaTime::today())->count();
         if ($overdue > 0) {
             $attention[] = ['kind' => 'warranty', 'text' => "{$overdue} warranty claim(s) overdue", 'product_id' => null];
         }
@@ -267,6 +268,14 @@ class InventoryController extends Controller
             'gallery' => ['nullable', 'array'],
             'image_url' => ['nullable', 'string', 'max:1024'],
         ]);
+        // These columns are NOT NULL in the schema: an emptied form field
+        // arrives as null and must fall back to the column default instead
+        // of failing the insert/update with a constraint error.
+        foreach (['cost' => 0, 'alert_qty' => 5, 'type' => 'single', 'weight_unit' => 'kg'] as $field => $fallback) {
+            if (array_key_exists($field, $data) && ($data[$field] === null || $data[$field] === '')) {
+                $data[$field] = $fallback;
+            }
+        }
         if ($request->hasFile('image')) {
             $data['image'] = $request->file('image')->store('products', 'public');
         } elseif (! empty($data['image_url'])) {
@@ -809,6 +818,9 @@ class InventoryController extends Controller
             'cost' => ['nullable', 'numeric', 'min:0'],
             'stock_qty' => ['nullable', 'integer'],
         ]);
+        // A cleared stock box arrives as null, but the column is NOT NULL
+        // (same family as the product cost fix) — an omitted stock is 0.
+        $data['stock_qty'] = $data['stock_qty'] ?? 0;
         ProductVariant::create(['business_id' => $product->business_id, 'product_id' => $product->id] + $data);
 
         return back()->with('success', 'Variant added');

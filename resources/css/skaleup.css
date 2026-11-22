@@ -886,8 +886,10 @@ label.fl{display:block;font-size:12.5px;font-weight:600;color:#55496e;margin:0 0
 .wi .wi-modal.open{display:flex}
 .wi .wi-modal-box{background:#fff;border-radius:16px;padding:22px;width:min(480px,92vw)}
 .wi .wi-modal-box textarea,.wi .wi-modal-box input[type=text],.wi .wi-modal-box select{width:100%;border:1px solid #E2E8F0;border-radius:9px;padding:9px 11px;font-family:inherit;font-size:14px;margin:6px 0 12px;box-sizing:border-box}
+.wi .wi-table-wrap{overflow-x:auto}
+.wi .wi-table-wrap table.wi-table{min-width:780px}
 .wi table.wi-table{width:100%;border-collapse:collapse;background:#fff;border:1px solid #E7EAF0;border-radius:12px;overflow:hidden}
 .wi table.wi-table th,.wi table.wi-table td{padding:10px 12px;font-size:13.5px;text-align:left;border-bottom:1px solid #F1F5F9}
 .wi table.wi-table th{background:#FAF8FC;color:#64748B;font-weight:600}
 .wi .pool-box{border:1.5px dashed #D97706;background:#FFFBEB;border-radius:14px;padding:14px 16px;margin-bottom:16px}
-@media (max-width: 760px){.wi .wi-kpis,.wi .wi-kpis.c4{grid-template-columns:repeat(2,1fr)}.wi .tk{flex-wrap:wrap}.wi .tk-actions{flex-direction:row;flex-wrap:wrap}.wi table.wi-table{display:block;overflow-x:auto}.wi .rule-main{min-width:180px}}
+@media (max-width: 760px){.wi .wi-kpis,.wi .wi-kpis.c4{grid-template-columns:repeat(2,1fr)}.wi .tk{flex-wrap:wrap}.wi .tk-actions{flex-direction:row;flex-wrap:wrap}.wi .rule-main{min-width:180px}}

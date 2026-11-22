@@ -12,6 +12,12 @@ export default function IncomeExpense(props) {
     const catForm = useForm({ name: '', kind: 'expense' });
     const [editCat, setEditCat] = useState(null);
     const editForm = useForm({ name: '' });
+    const [editTxn, setEditTxn] = useState(null);
+    const txnForm = useForm({ amount: '', txn_date: '', category_id: '', note: '' });
+    const openEditTxn = (x) => {
+        setEditTxn(x);
+        txnForm.setData({ amount: x.amount, txn_date: x.date_full, category_id: x.category_id || '', note: x.note_raw || '' });
+    };
 
     const go = (params) => router.get('/finance/income-expense', params, { preserveState: true, replace: true });
     const activeFilter = categoryFilter ? categories.find((c) => c.id === categoryFilter) : null;
@@ -73,7 +79,25 @@ export default function IncomeExpense(props) {
                             </select>
                             {activeFilter && <span className="chip chip-amber">{t('Filter: :name — the total below is for this filter', { name: activeFilter.name })}</span>}
                         </div>
-                        <TxnTable list={list} onVoid={voidTxn} />
+                        <TxnTable list={list} onVoid={voidTxn} onEdit={openEditTxn} />
+                        {editTxn && (
+                            <form onSubmit={(e) => { e.preventDefault(); txnForm.patch(`/finance/transactions/${editTxn.id}`, { preserveScroll: true, onSuccess: () => setEditTxn(null) }); }}
+                                style={{ display: 'flex', gap: 8, marginTop: 14, alignItems: 'end', flexWrap: 'wrap' }}>
+                                <div><label className="lbl">{t('Amount')}</label>
+                                    <input className="inp" type="number" min="0.01" step="any" style={{ width: 130 }} value={txnForm.data.amount} onChange={(e) => txnForm.setData('amount', e.target.value)} required /></div>
+                                <div><label className="lbl">{t('Date')}</label>
+                                    <input className="inp" type="date" value={txnForm.data.txn_date} onChange={(e) => txnForm.setData('txn_date', e.target.value)} required /></div>
+                                <div><label className="lbl">{t('Category')}</label>
+                                    <select className="inp" style={{ width: 180 }} value={txnForm.data.category_id} onChange={(e) => txnForm.setData('category_id', e.target.value)}>
+                                        <option value="">—</option>
+                                        {categories.filter((c) => c.kind === editTxn.type).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                                    </select></div>
+                                <div style={{ flex: 1, minWidth: 180 }}><label className="lbl">{t('Note')}</label>
+                                    <input className="inp" style={{ width: '100%' }} value={txnForm.data.note} onChange={(e) => txnForm.setData('note', e.target.value)} /></div>
+                                <button className="btn-p" type="submit" disabled={txnForm.processing}>{t('Save')}</button>
+                                <button className="btn-s" type="button" onClick={() => setEditTxn(null)}>{t('Discard')}</button>
+                            </form>
+                        )}
                     </>
                 )}
 
@@ -123,7 +147,7 @@ export default function IncomeExpense(props) {
     );
 }
 
-function TxnTable({ list, onVoid }) {
+function TxnTable({ list, onVoid, onEdit }) {
     if (!list.length) return <div className="x-note">{t('No entries.')}</div>;
     const total = list.filter((x) => !x.voided).reduce((s, x) => s + (x.direction === 'in' ? x.amount : -x.amount), 0);
     return (
@@ -136,7 +160,7 @@ function TxnTable({ list, onVoid }) {
                             <td>{x.date}</td><td>{x.note}{x.voided && <span className="chip chip-red" style={{ marginLeft: 6 }}>{t('Voided')}</span>}</td>
                             <td>{x.category || '—'}</td><td>{x.account}</td>
                             <td><b style={{ color: x.direction === 'in' ? '#16A34A' : '#DC2626' }}>{fmtSigned(x.amount, x.direction)}</b></td>
-                            <td>{!x.voided && !x.is_reversal && <button className="btn-s" onClick={() => onVoid(x)}>{t('Void')}</button>}</td>
+                            <td>{!x.voided && !x.is_reversal && <span style={{ display: 'inline-flex', gap: 6 }}><button className="btn-s" onClick={() => onEdit(x)}>{t('Edit')}</button><button className="btn-s" onClick={() => onVoid(x)}>{t('Void')}</button></span>}</td>
                         </tr>
                     ))}
                     <tr><td colSpan={4} style={{ textAlign: 'right', color: '#64748B' }}>{t('Total of this list')}</td>

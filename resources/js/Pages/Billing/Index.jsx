@@ -81,7 +81,7 @@ function PendingClaimCard({ claim, paymentInstructions, platformPayment }) {
                 <label className="lbl">{t('Transaction ID (TrxID)')}</label>
                 <input className="fld" value={form.data.trx_id} onChange={(e) => form.setData('trx_id', e.target.value)} required />
                 {form.errors.trx_id && <div style={{ color: '#B91C1C', fontSize: 12.5 }}>{form.errors.trx_id}</div>}
-                <button className="btn pri" disabled={form.processing} style={{ marginTop: 12 }}>{t('Submit payment details')}</button>
+                <button className="btn pri" disabled={form.processing || !form.data.sender_number.trim() || !form.data.trx_id.trim()} style={{ marginTop: 12 }}>{t('Submit payment details')}</button>
             </form>
         </div>
     );
@@ -195,7 +195,7 @@ export default function Index({ balance, pointsPerOrder, threshold, blocked, low
                                 {pastClaims.map((c) => (
                                     <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13.5 }}>
                                         <div>
-                                            <div style={{ fontWeight: 600 }}>{c.pack_name} — {tk(c.total_bdt)}</div>
+                                            <div style={{ fontWeight: 600 }}>{c.pack_name} — {tk(c.total_bdt)}{Number(c.onboarding_fee_bdt) > 0 && <span style={{ fontWeight: 400, fontSize: 12, color: 'var(--muted)' }}> ({t('pack')} {tk(c.amount_bdt)} + {t('onboarding')} {tk(c.onboarding_fee_bdt)})</span>}</div>
                                             <div style={{ fontSize: 12, color: 'var(--muted)' }}>{c.when}</div>
                                         </div>
                                         <span className={`pill ${(CLAIM_STATUS[c.status] || ['', ''])[1]}`} style={{ marginLeft: 'auto' }}>{t((CLAIM_STATUS[c.status] || [c.status])[0])}</span>

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Customer;
+use App\Support\DhakaTime;
 use App\Models\CustomerUpload;
 use App\Models\Order;
 use Illuminate\Http\RedirectResponse;
@@ -40,7 +41,7 @@ class CustomersController extends Controller
             // the Customer Report's "spent".
             'success_rate' => $outcomes > 0 ? (int) round($delivered / $outcomes * 100) : null,
             'spent' => (float) (clone $orders)->whereNotIn('status', ['Cancelled'])->sum('grand_total'),
-            'last_order' => (clone $orders)->latest('id')->first()?->created_at?->format('d M Y'),
+            'last_order' => DhakaTime::fmt((clone $orders)->latest('id')->first()?->created_at, 'd M Y'),
         ];
     }
 
@@ -80,7 +81,7 @@ class CustomersController extends Controller
             ->latest('id')->limit(50)->get()
             ->map(fn ($o) => [
                 'id' => $o->id, 'invoice' => $o->invoice_no, 'status' => $o->status,
-                'total' => (float) $o->grand_total, 'date' => $o->created_at?->format('d M Y'),
+                'total' => (float) $o->grand_total, 'date' => DhakaTime::fmt($o->created_at, 'd M Y'),
             ])->all();
 
         return Inertia::render('Customers/Show', [
@@ -88,7 +89,7 @@ class CustomersController extends Controller
                 'id' => $customer->id, 'name' => $customer->name, 'phone' => $customer->phone,
                 'email' => $customer->email, 'address' => $customer->address, 'district' => $customer->district,
                 'area' => $customer->area, 'blacklisted' => (bool) $customer->is_blacklisted,
-                'since' => $customer->created_at?->format('d M Y'),
+                'since' => DhakaTime::fmt($customer->created_at, 'd M Y'),
             ], $this->aggregates($customer->business_id, $customer)),
             'orders' => $orders,
         ]);
@@ -149,7 +150,7 @@ class CustomersController extends Controller
     {
         return Inertia::render('Customers/Upload', [
             'history' => CustomerUpload::where('business_id', $this->bizId($request))->latest('id')->limit(20)->get()
-                ->map(fn ($u) => ['id' => $u->id, 'file' => $u->file_name, 'imported' => (int) $u->imported, 'skipped' => (int) $u->skipped, 'status' => $u->status, 'date' => $u->created_at?->format('d M Y')])->all(),
+                ->map(fn ($u) => ['id' => $u->id, 'file' => $u->file_name, 'imported' => (int) $u->imported, 'skipped' => (int) $u->skipped, 'status' => $u->status, 'date' => DhakaTime::fmt($u->created_at, 'd M Y')])->all(),
         ]);
     }
 

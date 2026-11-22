@@ -12,6 +12,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
+use App\Support\DhakaTime;
 
 /**
  * Platform (Super Admin) — the sellers are the shops that buy SkaleUp's
@@ -64,7 +65,7 @@ class PlatformController extends Controller
             'phone' => $b->phone,
             'email' => $b->email,
             'address' => $b->address,
-            'joined' => $b->created_at?->format('d M Y'),
+            'joined' => DhakaTime::fmt($b->created_at, 'd M Y'),
             'package' => $packName,
             'package_price' => $sub ? (float) $sub->amount : null,
             'status' => $status,
@@ -168,7 +169,7 @@ class PlatformController extends Controller
                     'id' => $c->id, 'name' => $c->name, 'phone' => $c->phone, 'address' => $c->address,
                     'orders' => $total, 'delivered' => $delivered,
                     'spent' => (float) (clone $orders)->whereNotIn('status', ['Cancelled'])->sum('grand_total'),
-                    'last_order' => (clone $orders)->latest('id')->first()?->created_at?->format('d M Y'),
+                    'last_order' => DhakaTime::fmt((clone $orders)->latest('id')->first()?->created_at, 'd M Y'),
                 ];
             })->all();
 
@@ -284,8 +285,8 @@ class PlatformController extends Controller
             // "330 credited" and a "329" balance never look contradictory.
             'current_balance' => (int) (\App\Models\BusinessWallet::where('business_id', $c->business_id)->value('balance') ?? 0),
             'seller_pending' => $c->business?->status === 'pending',
-            'when' => $c->created_at?->format('d M Y, h:i A'),
-            'decided_at' => $c->decided_at?->format('d M Y, h:i A'),
+            'when' => DhakaTime::fmt($c->created_at, 'd M Y, h:i A'),
+            'decided_at' => DhakaTime::fmt($c->decided_at, 'd M Y, h:i A'),
         ];
     }
 

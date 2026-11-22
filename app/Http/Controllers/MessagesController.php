@@ -15,6 +15,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
+use App\Support\DhakaTime;
 
 class MessagesController extends Controller
 {
@@ -81,7 +82,7 @@ class MessagesController extends Controller
                     'attachment_path' => $m->attachment_path,
                     'transcript' => $m->meta['transcript'] ?? null,
                     'rule' => $m->ai_rule_id ? \App\Models\AiRule::find($m->ai_rule_id)?->name : null,
-                    'time' => $m->created_at?->format('h:i A'),
+                    'time' => DhakaTime::fmt($m->created_at, 'h:i A'),
                 ])->values()->all(),
                 'drafts' => $drafts->map(fn ($m) => [
                     'id' => $m->id, 'body' => $m->body, 'status' => $m->status,

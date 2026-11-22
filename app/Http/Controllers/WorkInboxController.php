@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use App\Models\WorkTask;
 use App\Services\WorkInboxService;
+use App\Support\DhakaTime;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -42,7 +43,7 @@ class WorkInboxController extends Controller
     private function createdLabel(WorkTask $t): string
     {
         $c = $t->created_at;
-        if ($c->isToday()) {
+        if (DhakaTime::fmt($c, 'Y-m-d') === DhakaTime::today()) {
             $mins = (int) $c->diffInMinutes(now());
             if ($mins < 60) {
                 return $mins . ' মিনিট আগে';
@@ -70,7 +71,7 @@ class WorkInboxController extends Controller
 
             return ['text' => 'Overdue · ' . WorkInboxService::bnAge($since) . ' পার', 'chip' => 'chip-red'];
         }
-        if ($t->due_at->isToday()) {
+        if (DhakaTime::fmt($t->due_at, 'Y-m-d') === DhakaTime::today()) {
             return ['text' => 'আজকের মধ্যে', 'chip' => 'chip-amber'];
         }
         if ($t->due_at->lte(now()->addDay())) {
@@ -154,16 +155,21 @@ class WorkInboxController extends Controller
         ];
 
         $open = WorkTask::where('business_id', $biz)->open();
+        // "Not assigned" means no PERSON holds the task — the same
+        // definition the assignee filter below uses (whereNull user).
+        // The old count also required assignee_mode='pool', so a task
+        // queued for a role (user still null) showed in the Pool filter
+        // while this counter read 0.
         $kpis = [
             'open_total' => (clone $open)->count(),
-            'unassigned' => (clone $open)->where('assignee_mode', 'pool')->whereNull('assignee_user_id')->count(),
+            'unassigned' => (clone $open)->whereNull('assignee_user_id')->count(),
             'overdue' => (clone $open)->whereNotNull('due_at')->where('due_at', '<', now())->count(),
             'done_today' => WorkTask::where('business_id', $biz)->where('status', 'done')
-                ->whereDate('done_at', now()->toDateString())->count(),
+                ->whereBetween('done_at', DhakaTime::dayBoundsUtc(DhakaTime::today()))->count(),
         ];
 
         $pool = WorkTask::where('business_id', $biz)->open()
-            ->where('assignee_mode', 'pool')->whereNull('assignee_user_id')
+            ->whereNull('assignee_user_id')
             ->with(['assignee', 'doneBy'])->orderByRaw("CASE priority WHEN 'critical' THEN 0 WHEN 'urgent' THEN 1 ELSE 2 END")
             ->oldest('due_at')->get();
 
@@ -186,7 +192,7 @@ class WorkInboxController extends Controller
         if ($filters['due'] === 'overdue') {
             $q->whereNotNull('due_at')->where('due_at', '<', now());
         } elseif ($filters['due'] === 'today') {
-            $q->whereDate('due_at', now()->toDateString());
+            $q->whereBetween('due_at', DhakaTime::dayBoundsUtc(DhakaTime::today()));
         }
         if ($filters['q'] !== '') {
             $needle = '%' . $filters['q'] . '%';
@@ -216,7 +222,7 @@ class WorkInboxController extends Controller
         $mine = WorkTask::where('business_id', $biz)
             ->where(fn ($q) => $q->where('assignee_user_id', $me)
                 ->orWhere(fn ($q2) => $q2->where('assignee_mode', 'pool')->whereNull('assignee_user_id')))
-            ->where(fn ($q) => $q->open()->orWhereDate('done_at', now()->toDateString()))
+            ->where(fn ($q) => $q->open()->orWhereBetween('done_at', DhakaTime::dayBoundsUtc(DhakaTime::today())))
             ->with(['assignee', 'doneBy'])
             ->orderByRaw("CASE WHEN status IN ('open','in_progress') THEN 0 ELSE 1 END")
             ->oldest('due_at')->latest('id')->limit(300)->get();
@@ -225,10 +231,10 @@ class WorkInboxController extends Controller
         $kpis = [
             'open' => $openMine->count(),
             'overdue' => $openMine->filter(fn (WorkTask $t) => $t->isOverdue())->count(),
-            'due_today' => $openMine->filter(fn (WorkTask $t) => $t->due_at && $t->due_at->isToday())->count(),
+            'due_today' => $openMine->filter(fn (WorkTask $t) => $t->due_at && DhakaTime::fmt($t->due_at, 'Y-m-d') === DhakaTime::today())->count(),
             'critical' => $openMine->filter(fn (WorkTask $t) => $t->priority === 'critical')->count(),
             'done_today' => WorkTask::where('business_id', $biz)->where('done_by', $me)
-                ->whereDate('done_at', now()->toDateString())->count(),
+                ->whereBetween('done_at', DhakaTime::dayBoundsUtc(DhakaTime::today()))->count(),
         ];
 
         return Inertia::render('WorkInbox/MyWork', [

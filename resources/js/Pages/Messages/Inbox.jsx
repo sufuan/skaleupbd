@@ -58,15 +58,19 @@ export default function Inbox({ conversations, selected, report, aiMode, aiPanic
 
     // Live thread: pull the fresh conversation list + open chat every few
     // seconds so a new customer message appears on its own — the same way
-    // the sidebar badges update — with no page refresh. Skips while the tab
-    // is hidden or a reply is being sent; typed text is kept (state is
-    // preserved across the partial reload).
+    // the sidebar badges update — with no page refresh. It must NOT skip
+    // while the tab reports hidden: the badge poll never checks that, and
+    // a seller who leaves the inbox open in a background tab (or a browser
+    // that reports the page occluded) would otherwise never see a new
+    // conversation arrive until a manual reload. Skips only while a reply
+    // is being sent or a poll is already in flight; typed text is kept
+    // (state is preserved across the partial reload).
     const sendingRef = useRef(false);
     sendingRef.current = reply.processing;
     const pollingRef = useRef(false);
     useEffect(() => {
         const id = setInterval(() => {
-            if (document.hidden || pollingRef.current || sendingRef.current) return;
+            if (pollingRef.current || sendingRef.current) return;
             pollingRef.current = true;
             router.reload({
                 only: ['conversations', 'selected', 'report'],

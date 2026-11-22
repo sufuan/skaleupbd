@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { router } from '@inertiajs/react';
 import { t } from '@/lib/i18n';
 
@@ -54,6 +54,23 @@ function Switch({ checked, onChange, label, hint }) {
 export default function ProductFields({ data, setData, categories = [], brands = [], businessName = '', forEdit = false, mode, setMode, variants, setVariants, readiness = null }) {
     const [galleryUrl, setGalleryUrl] = useState('');
     const [newCategory, setNewCategory] = useState('');
+    const catInputRef = useRef(null);
+    // The "+" beside the category select: with text it creates the
+    // category AND selects it (previously it posted silently and the
+    // select never changed, so the click looked dead); with an empty
+    // box it focuses the box so the click visibly does something.
+    const addCategory = () => {
+        const name = newCategory.trim();
+        if (!name) { catInputRef.current?.focus(); return; }
+        router.post('/inventory/categories', { name }, {
+            preserveScroll: true,
+            onSuccess: (page) => {
+                const created = (page.props.categories || []).find((c) => c.name === name);
+                if (created) setData('category_id', created.id);
+                setNewCategory('');
+            },
+        });
+    };
     const profit = (parseFloat(data.price) || 0) - (parseFloat(data.cost) || 0);
     const margin = parseFloat(data.price) > 0 ? Math.round((profit / parseFloat(data.price)) * 100) : 0;
 
@@ -191,8 +208,8 @@ export default function ProductFields({ data, setData, categories = [], brands =
                         </select>
                     </Field>
                     <div className="flex gap-2">
-                        <input className={INPUT} placeholder={t('Create Category')} value={newCategory} onChange={(e) => setNewCategory(e.target.value)} />
-                        <button type="button" className={BTN_OUTLINE + ' px-3'} onClick={() => { if (newCategory.trim()) { router.post('/inventory/categories', { name: newCategory.trim() }, { preserveScroll: true }); setNewCategory(''); } }}>+</button>
+                        <input ref={catInputRef} className={INPUT} placeholder={t('Create Category')} value={newCategory} onChange={(e) => setNewCategory(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addCategory(); } }} />
+                        <button type="button" className={BTN_OUTLINE + ' px-3'} onClick={addCategory}>+</button>
                     </div>
                     <Field label={t('Product Brand')}>
                         <select className={INPUT} value={data.brand_id || ''} onChange={(e) => setData('brand_id', e.target.value)}>

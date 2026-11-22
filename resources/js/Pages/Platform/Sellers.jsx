@@ -16,9 +16,9 @@ export default function Sellers({ sellers, q, pendingApprovals }) {
             <Head title={t('Sellers')} />
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
                 <h3 style={{ fontSize: 19 }}>{t('Sellers')}</h3>
-                <span style={{ marginLeft: 'auto' }}>
-                    <form onSubmit={submit}>
-                        <input className="fld" style={{ maxWidth: 240 }} placeholder={t('Search shop, owner or phone...')} value={search} onChange={(e) => setSearch(e.target.value)} />
+                <span style={{ marginLeft: 'auto', flex: '0 1 340px', width: '100%', maxWidth: 340 }}>
+                    <form onSubmit={submit} style={{ width: '100%' }}>
+                        <input className="fld" style={{ width: '100%' }} placeholder={t('Search shop, owner or phone...')} value={search} onChange={(e) => setSearch(e.target.value)} />
                     </form>
                 </span>
             </div>

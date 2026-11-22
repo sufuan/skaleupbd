@@ -2751,5 +2751,9 @@
  "This report is loaded only when you ask for it. Press the button to load this year's earnings.": "এই রিপোর্ট শুধু আপনি চাইলেই লোড হয়। এই বছরের আয় দেখতে বোতাম চাপুন।",
  "SMS campaigns, automation flows and templates live in the Marketing module.": "SMS ক্যাম্পেইন, অটোমেশন ফ্লো আর টেমপ্লেট মার্কেটিং মডিউলে আছে।",
  "Open Marketing": "মার্কেটিং খুলুন",
- "Today so far": "আজ এখন পর্যন্ত"
+ "Today so far": "আজ এখন পর্যন্ত",
+ "Delivered orders only": "শুধু ডেলিভারি হওয়া অর্ডার",
+ "Courier status": "কুরিয়ারের অবস্থা",
+ "Storefront orders": "স্টোরফ্রন্টের অর্ডার",
+ "order": "অর্ডার"
 }

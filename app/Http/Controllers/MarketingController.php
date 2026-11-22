@@ -14,6 +14,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response as InertiaResponse;
+use App\Support\DhakaTime;
 
 class MarketingController extends Controller
 {
@@ -146,7 +147,7 @@ class MarketingController extends Controller
             return ['id' => $c->id, 'name' => $c->name, 'audience_label' => $c->audience_label,
                 'recipients' => $c->recipients, 'total_cost' => (float) $c->total_cost,
                 'orders' => $a['orders'] ?? 0, 'sales' => $a['sales'] ?? 0.0, 'profit' => $a['profit'] ?? 0.0,
-                'date' => $c->created_at->format('d M')];
+                'date' => DhakaTime::fmt($c->created_at, 'd M')];
         });
 
         // Success rate over messages that actually reached a gateway
@@ -215,16 +216,22 @@ class MarketingController extends Controller
     {
         $biz = $this->biz($request);
         $preset = $request->query('preset', 'month');
-        $to = Carbon::now()->endOfDay();
-        $from = match ($preset) {
-            'today' => Carbon::today(),
-            '7d' => Carbon::now()->subDays(6)->startOfDay(),
-            'custom' => $request->query('from') ? Carbon::parse($request->query('from'))->startOfDay() : Carbon::now()->startOfMonth(),
-            default => Carbon::now()->startOfMonth(),
+        // Windows are Dhaka calendar days (the seller's days), converted
+        // to UTC instants for the stored timestamps — the old code used
+        // UTC days, so "today" was yesterday until 6 AM Dhaka time.
+        $todayDhaka = Carbon::now('Asia/Dhaka');
+        $toDate = $todayDhaka->toDateString();
+        $fromDate = match ($preset) {
+            'today' => $toDate,
+            '7d' => $todayDhaka->copy()->subDays(6)->toDateString(),
+            'custom' => $request->query('from') ?: $todayDhaka->copy()->startOfMonth()->toDateString(),
+            default => $todayDhaka->copy()->startOfMonth()->toDateString(),
         };
         if ($preset === 'custom' && $request->query('to')) {
-            $to = Carbon::parse($request->query('to'))->endOfDay();
+            $toDate = (string) $request->query('to');
         }
+        [$from] = \App\Support\DhakaTime::dayBoundsUtc($fromDate);
+        [, $to] = \App\Support\DhakaTime::dayBoundsUtc($toDate);
         $rows = $this->attr->report($biz, $from, $to);
 
         return Inertia::render('Marketing/Report', [
@@ -236,7 +243,7 @@ class MarketingController extends Controller
             ],
             'window_days' => $this->attr->windowDays($biz),
             'preset' => $preset,
-            'from' => $from->toDateString(), 'to' => $to->toDateString(),
+            'from' => $fromDate, 'to' => $toDate,
         ]);
     }
 

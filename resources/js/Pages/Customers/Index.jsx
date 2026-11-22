@@ -69,7 +69,7 @@ export default function CustomersIndex({ customers, stats, q }) {
                             <input className="fld" value={form.data.district} onChange={(e) => form.setData('district', e.target.value)} />
                             <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
                                 <button type="button" className="btn-ghost" onClick={() => setAddOpen(false)}>{t('Cancel')}</button>
-                                <button className="btn-primary" disabled={form.processing} style={{ marginLeft: 'auto' }}>{t('Save')}</button>
+                                <button className="btn-primary" disabled={form.processing || !form.data.name.trim() || !form.data.phone.trim()} style={{ marginLeft: 'auto' }}>{t('Save')}</button>
                             </div>
                         </form>
                     </div>

@@ -12,6 +12,7 @@ use App\Models\CommentReply;
 use App\Models\Conversation;
 use App\Models\KnowledgeEntry;
 use App\Models\Product;
+use Illuminate\Support\Facades\Cache;
 
 /**
  * Rule Brain — decides, the AI only phrases.
@@ -772,6 +773,24 @@ class RuleBrainService
      * after a quiet window — never three separate replies.
      */
     public function processPending(Conversation $conversation): ?ChatMessage
+    {
+        // One runner at a time per conversation: the queued job and the
+        // ai:process-pending sweep can overlap (both run every minute),
+        // and each used to see the same unprocessed burst — the customer
+        // got the same reply twice. Whoever holds the lock answers; the
+        // other run finds nothing to do.
+        $lock = Cache::store('file')->lock('ai-pending-' . $conversation->id, 60);
+        if (! $lock->acquire()) {
+            return null;
+        }
+        try {
+            return $this->processPendingLocked($conversation);
+        } finally {
+            $lock->release();
+        }
+    }
+
+    private function processPendingLocked(Conversation $conversation): ?ChatMessage
     {
         $lastOutId = (int) (ChatMessage::where('conversation_id', $conversation->id)->where('direction', 'out')->max('id') ?? 0);
         $pending = ChatMessage::where('conversation_id', $conversation->id)

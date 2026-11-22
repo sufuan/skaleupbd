@@ -307,13 +307,17 @@ export default function AppLayout({ children }) {
         return () => window.removeEventListener('keydown', onKey);
     }, []);
 
+    // Depend on the flash OBJECT, not the message string: every response
+    // rebuilds it, so two identical messages in a row ("Category created"
+    // twice) still toast twice. Depending on the string swallowed every
+    // repeat — the second action looked like it did nothing.
     useEffect(() => {
         if (props.flash?.success) {
             setToast(props.flash.success);
             const id = setTimeout(() => setToast(null), 4200);
             return () => clearTimeout(id);
         }
-    }, [props.flash?.success]);
+    }, [props.flash]);
 
     const [toastErr, setToastErr] = useState(null);
     useEffect(() => {
@@ -322,7 +326,7 @@ export default function AppLayout({ children }) {
             const id = setTimeout(() => setToastErr(null), 6000);
             return () => clearTimeout(id);
         }
-    }, [props.flash?.error]);
+    }, [props.flash]);
 
     useEffect(() => { setSbOpen(false); }, [current]);
 

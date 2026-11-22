@@ -40,11 +40,15 @@ class ReportsController extends Controller
         $now = Carbon::now('Asia/Dhaka');
         $to = $now->copy()->endOfDay();
 
-        return [$preset, match ($preset) {
+        // Convert to UTC before returning: these bounds are compared
+        // against stored UTC instants, and Laravel formats a DateTime
+        // binding in the object's own timezone — Dhaka bounds went in
+        // as wall-clock strings and silently shifted every window +6h.
+        return [$preset, (match ($preset) {
             'today' => $now->copy()->startOfDay(),
             '7d' => $now->copy()->subDays(6)->startOfDay(),
             default => $now->copy()->startOfMonth(),
-        }, $to];
+        })->utc(), $to->utc()];
     }
 
     private function periodWord(string $preset): string
@@ -64,7 +68,7 @@ class ReportsController extends Controller
         $f = $this->fin->figures($biz, $from, $to);
         $adExpense = round((float) FinanceTransaction::where('business_id', $biz)->where('type', 'expense')
             ->whereNull('voided_at')->whereNull('reversal_of')
-            ->whereBetween('txn_date', [$from->toDateString(), $to->toDateString()])
+            ->whereBetween('txn_date', [$from->copy()->setTimezone('Asia/Dhaka')->toDateString(), $to->copy()->setTimezone('Asia/Dhaka')->toDateString()])
             ->whereHas('category', fn ($q) => $q->where('name', 'Ad'))->sum('amount'), 2);
         // figures() counts live rows only; mirror its rule via the service totals.
         $adExpense = min($adExpense, (float) $f['expense']);

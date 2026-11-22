@@ -13,6 +13,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
+use App\Support\DhakaTime;
 
 class OrderToolsController extends Controller
 {
@@ -91,7 +92,7 @@ class OrderToolsController extends Controller
             'waitingOrders' => Order::where('business_id', $biz)->where('status', 'Pending')->oldest()
                 ->get()->map(fn ($o) => ['id' => $o->id, 'invoice' => $o->invoice_no, 'name' => $o->customer_name, 'phone' => $o->customer_phone, 'total' => (float) $o->grand_total]),
             'logs' => CallLog::where('business_id', $biz)->latest('created_at')->limit(20)->get()
-                ->map(fn ($l) => ['phone' => $l->phone, 'staff' => $l->staff_name, 'outcome' => $l->outcome, 'minutes' => $l->minutes, 'time' => $l->created_at?->format('h:i A')]),
+                ->map(fn ($l) => ['phone' => $l->phone, 'staff' => $l->staff_name, 'outcome' => $l->outcome, 'minutes' => $l->minutes, 'time' => DhakaTime::fmt($l->created_at, 'h:i A')]),
         ]);
     }
 
@@ -127,7 +128,7 @@ class OrderToolsController extends Controller
         $biz = $this->biz($request);
         $blocks = IpPhoneBlock::where('business_id', $biz)->latest()->get()
             ->map(fn ($b) => ['id' => $b->id, 'type' => $b->type, 'value' => $b->value, 'reason' => $b->reason,
-                'added_by' => $b->added_by, 'blocked_at' => $b->created_at?->format('d M Y, h:i A'),
+                'added_by' => $b->added_by, 'blocked_at' => DhakaTime::fmt($b->created_at, 'd M Y, h:i A'),
                 'expires' => $b->expires_at?->format('d M Y'), 'expired' => $b->expires_at && $b->expires_at->isPast()]);
 
         return Inertia::render('Orders/BlockList', ['blocks' => $blocks]);
@@ -303,7 +304,7 @@ class OrderToolsController extends Controller
         $recent = OrderActivity::where('kind', 'super_edit')
             ->whereHas('order', fn ($q) => $q->where('business_id', $biz))
             ->latest('created_at')->limit(15)->get()
-            ->map(fn ($a) => ['text' => $a->text, 'time' => $a->created_at?->format('d M, h:i A'), 'by' => $a->actor_name]);
+            ->map(fn ($a) => ['text' => $a->text, 'time' => DhakaTime::fmt($a->created_at, 'd M, h:i A'), 'by' => $a->actor_name]);
 
         return Inertia::render('Orders/SuperEdit', [
             'order' => $order, 'searched' => $request->query('invoice'),

@@ -71,6 +71,7 @@ export default function Control({ kpis, poolTasks, tasks, staff, filters, source
                     </select>
                 </div>
 
+                <div className="wi-table-wrap">
                 <table className="wi-table">
                     <thead>
                         <tr><th>{t('Task')}</th><th>{t('Source')}</th><th>{t('Assigned to')}</th><th>{t('Time')}</th><th>{t('Priority')}</th><th>{t('Status')}</th><th>{t('Give to someone else')}</th></tr>
@@ -115,6 +116,7 @@ export default function Control({ kpis, poolTasks, tasks, staff, filters, source
                         )}
                     </tbody>
                 </table>
+                </div>
 
                 <DoneModal task={doneTask} onClose={() => setDoneTask(null)} />
                 {newOpen && <NewTaskModal staff={staff} onClose={() => setNewOpen(false)} />}

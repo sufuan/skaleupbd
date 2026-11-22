@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\StampsCreatedAt;
 use Illuminate\Database\Eloquent\Model;
 
 class StockLedger extends Model
 {
+    use StampsCreatedAt;
     protected $table = 'stock_ledger';
     public $timestamps = false;
     protected $guarded = [];

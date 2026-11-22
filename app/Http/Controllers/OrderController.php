@@ -12,6 +12,7 @@ use App\Models\Product;
 use App\Models\User;
 use App\Services\OrderService;
 use App\Services\PhoneNormalizer;
+use App\Support\DhakaTime;
 use App\Services\SettingsService;
 use App\Services\SuccessRateService;
 use Illuminate\Http\RedirectResponse;
@@ -55,8 +56,8 @@ class OrderController extends Controller
         return [
             'id' => $o->id,
             'invoice' => $o->invoice_no,
-            'created' => $o->created_at?->format('d M Y'),
-            'created_time' => $o->created_at?->format('h:i A'),
+            'created' => DhakaTime::fmt($o->created_at, 'd M Y'),
+            'created_time' => DhakaTime::fmt($o->created_at, 'h:i A'),
             'name' => $o->customer_name,
             'phone' => $o->customer_phone,
             'address' => $o->customer_address,
@@ -369,7 +370,7 @@ class OrderController extends Controller
                 'payment_method' => $order->payment_method,
                 'ip' => $order->ip,
                 'attachments' => $order->attachments ?? [],
-                'approved_at' => $order->approved_at?->format('d M Y, h:i A'),
+                'approved_at' => DhakaTime::fmt($order->approved_at, 'd M Y, h:i A'),
                 'courier_method_id' => $order->courier_method_id,
                 'courier_label' => $order->courierMethod?->label(),
                 'courier_status' => $order->courier_status,
@@ -377,17 +378,17 @@ class OrderController extends Controller
                 'consignment_id' => $order->consignment_id,
                 'booking_status' => $order->booking_status,
                 'pickup_store_name' => $order->pickupStore?->name,
-                'shipped_at' => $order->shipped_at?->format('d M Y, h:i A'),
+                'shipped_at' => DhakaTime::fmt($order->shipped_at, 'd M Y, h:i A'),
                 'history' => $order->history->map(fn ($h) => [
                     'text' => $h->note === 'Approved'
                         ? "Approved by {$h->actor_name} — {$h->from_status} → {$h->to_status}"
                         : ($h->from_status ? "Status: {$h->from_status} → {$h->to_status}" : "Order created").($h->note && $h->note !== 'Approved' ? " — {$h->note}" : ''),
-                    'time' => $h->created_at?->format('h:i A'),
-                    'date' => $h->created_at?->format('d M'),
+                    'time' => DhakaTime::fmt($h->created_at, 'h:i A'),
+                    'date' => DhakaTime::fmt($h->created_at, 'd M'),
                 ]),
                 'activities' => $order->activities->map(fn ($a) => [
                     'kind' => $a->kind, 'text' => $a->text,
-                    'time' => $a->created_at?->format('h:i A'), 'date' => $a->created_at?->format('d M'),
+                    'time' => DhakaTime::fmt($a->created_at, 'h:i A'), 'date' => DhakaTime::fmt($a->created_at, 'd M'),
                 ]),
             ],
             'customer' => [
@@ -540,7 +541,7 @@ class OrderController extends Controller
         $rendered = strtr($template?->body ?? '', [
             '{name}' => $order->customer_name, '{invoice}' => $order->invoice_no,
             '{amount}' => number_format((float) $order->grand_total), '{advance}' => number_format(max(100, (float) $order->due)),
-            '{shop}' => (string) $this->settings->get('business.name', 'Demo Shop'),
+            '{shop}' => $this->settings->shopName($biz),
         ]);
 
         // A real send through the one SMS service, under the same flow keys
@@ -620,9 +621,9 @@ class OrderController extends Controller
                 'delivery_charge' => (float) $order->delivery_charge, 'advance' => (float) $order->advance,
                 'due' => $order->due, 'payment_method' => $order->payment_method],
             'business' => [
-                'name' => (string) $this->settings->get('business.name', 'Demo Shop'),
-                'mobile' => (string) $this->settings->get('business.mobile', ''),
-                'address' => (string) $this->settings->get('business.address', ''),
+                'name' => $this->settings->shopName($order->business_id),
+                'mobile' => $this->settings->shopContact($order->business_id, 'mobile'),
+                'address' => $this->settings->shopContact($order->business_id, 'address'),
             ],
             'template' => (string) $this->settings->get('invoice.template', 'a4'),
         ]);

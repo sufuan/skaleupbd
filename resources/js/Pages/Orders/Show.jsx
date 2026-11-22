@@ -80,7 +80,7 @@ export default function Show({ order, customer, couriers, courierMethods = [], s
                             {order.alt_phone && <div className="sum-row"><span>{t('Alternative Number')}</span><b>{order.alt_phone}</b></div>}
                             {order.email && <div className="sum-row"><span>{t('Email')}</span><b>{order.email}</b></div>}
                             <div className="sum-row"><span>{t('Address')}</span><b style={{ textAlign: 'right' }}>{order.address}{order.district ? `, ${order.district}` : ''}</b></div>
-                            <div className="sum-row"><span>{t('Customer History')}</span><b>{customer.orders} {t('orders')} · {t('Success rate')} {customer.rate === null ? '—' : `${customer.rate}%`} · {t(verdictLabel)}</b></div>
+                            <div className="sum-row"><span>{t('Customer History')}</span><b style={{ textAlign: 'right', whiteSpace: 'normal' }}>{customer.orders} {customer.orders === 1 ? t('order') : t('orders')} · {t('Success rate')}: {customer.rate === null ? '—' : `${customer.rate}%`} · {t(verdictLabel)}</b></div>
                             <div className="sum-row"><span>{customer.is_returning ? t('Returning customer') : t('New customer')}</span><b>{customer.delivered} {t('delivered')} · {customer.returned} {t('returned')}</b></div>
                             <h3 style={{ fontSize: 13.5, margin: '14px 0 2px' }}>{t('Success Rate')}</h3>
                             {perCourierSorted.map(([c, v]) => (
@@ -241,7 +241,7 @@ export default function Show({ order, customer, couriers, courierMethods = [], s
                             )}
                             {(order.tracking_id || order.consignment_id) && (
                                 <>
-                                    <div className="sum-row"><span>{t('Courier')}</span><b>{order.courier_label || order.delivery_method}</b></div>
+                                    <div className="sum-row"><span>{t('Courier')}</span><b style={{ textAlign: 'right', whiteSpace: 'normal', wordBreak: 'break-word' }}>{order.courier_label || order.delivery_method}</b></div>
                                     <div className="sum-row"><span>{t('CN / Tracking')}</span><b>{order.consignment_id || order.tracking_id}</b></div>
                                     {order.courier_status && <div className="sum-row"><span>{t('Courier Status')}</span><b>{order.courier_status}</b></div>}
                                     {order.pickup_store_name && <div className="sum-row"><span>{t('Pickup Store')}</span><b>{order.pickup_store_name}</b></div>}

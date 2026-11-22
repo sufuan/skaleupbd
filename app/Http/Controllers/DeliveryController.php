@@ -7,6 +7,7 @@ use App\Models\CourierMethod;
 use App\Models\Order;
 use App\Models\ScanEvent;
 use App\Services\BookingService;
+use App\Support\DhakaTime;
 use App\Services\OrderService;
 use App\Services\SuggestCourierService;
 use Illuminate\Http\Request;
@@ -71,7 +72,7 @@ class DeliveryController extends Controller
             return [
                 'id' => $o->id, 'invoice' => $o->invoice, 'customer_name' => $o->customer_name,
                 'customer_phone' => $o->customer_phone, 'district' => $district, 'area' => $o->area,
-                'date' => $o->created_at?->format('j M, g:i a'),
+                'date' => DhakaTime::fmt($o->created_at, 'j M, g:i a'),
                 'zone' => strtolower((string) $district) === 'dhaka' ? 'Inside Dhaka' : 'Outside Dhaka',
                 'items_count' => (int) $o->items->sum('qty'),
                 'items_label' => $o->items->map(fn ($i) => $i->name . ' × ' . $i->qty)->implode(', '),
@@ -215,7 +216,7 @@ class DeliveryController extends Controller
             'status' => $o->status, 'courier_status' => $o->courier_status, 'cod' => $o->codAmount(),
             'call_slot' => $o->call_slot, 'call_status' => $o->call_status, 'in_charge' => $o->in_charge,
             'return_tag' => $o->return_tag, 'claim_status' => $o->claim_status, 'claim_amount' => $o->claim_amount ? (float) $o->claim_amount : null,
-            'shipped_at' => $o->shipped_at?->format('d M, h:i A'), 'district' => $o->district,
+            'shipped_at' => DhakaTime::fmt($o->shipped_at, 'd M, h:i A'), 'district' => $o->district,
             'age_days' => $o->shipped_at ? (int) $o->shipped_at->diffInDays(now()) : 0,
             'day_tag' => $o->shipped_at ? 'Day' . min(3, (int) $o->shipped_at->diffInDays(now()) + 1) : null,
         ])
@@ -240,7 +241,7 @@ class DeliveryController extends Controller
                 'id' => $l->id, 'invoice' => $l->order?->invoice, 'courier' => $l->method?->label(),
                 'mode' => $l->mode, 'booking_status' => $l->booking_status,
                 'tracking_id' => $l->tracking_id, 'error' => $l->error,
-                'at' => $l->created_at?->format('d M, h:i A'),
+                'at' => DhakaTime::fmt($l->created_at, 'd M, h:i A'),
             ])->all();
 
         $couriers = $methods->pluck('courier_type')->unique()
@@ -295,8 +296,8 @@ class DeliveryController extends Controller
     public function scanPage(Request $request)
     {
         $biz = $this->biz($request);
-        $events = ScanEvent::where('business_id', $biz)->whereDate('created_at', today())->latest('id')->limit(50)->get()
-            ->map(fn ($e) => ['id' => $e->id, 'type' => $e->scan_type, 'result' => $e->result, 'code' => $e->code, 'note' => $e->note, 'at' => $e->created_at?->format('h:i A')])->all();
+        $events = ScanEvent::where('business_id', $biz)->whereBetween('created_at', DhakaTime::dayBoundsUtc(DhakaTime::today()))->latest('id')->limit(50)->get()
+            ->map(fn ($e) => ['id' => $e->id, 'type' => $e->scan_type, 'result' => $e->result, 'code' => $e->code, 'note' => $e->note, 'at' => DhakaTime::fmt($e->created_at, 'h:i A')])->all();
 
         return Inertia::render('Delivery/Scan', ['todayEvents' => $events]);
     }
@@ -398,9 +399,9 @@ class DeliveryController extends Controller
                 'delivery_note' => $order->delivery_note,
             ],
             'shop' => [
-                'name' => $settings->get('business.name', 'Demo Shop'),
-                'mobile' => $settings->get('business.mobile', ''),
-                'address' => $settings->get('business.address', ''),
+                'name' => $settings->shopName($order->business_id),
+                'mobile' => $settings->shopContact($order->business_id, 'mobile'),
+                'address' => $settings->shopContact($order->business_id, 'address'),
             ],
         ]);
     }

@@ -20,7 +20,7 @@ export default function Storefronts({ storefronts, reports, activeDomains, domai
 
             <div className="card" style={{ padding: 0, overflow: 'hidden', marginBottom: 14 }}>
                 <div className="tbl-wrap"><table className="tbl">
-                    <thead><tr><th>{t('Shop')}</th><th>{t('Address')}</th><th>{t('Custom domain')}</th><th>{t('Status')}</th><th>{t('Orders')}</th><th>{t('Reports')}</th><th></th></tr></thead>
+                    <thead><tr><th>{t('Shop')}</th><th>{t('Address')}</th><th>{t('Custom domain')}</th><th>{t('Status')}</th><th>{t('Storefront orders')}</th><th>{t('Reports')}</th><th></th></tr></thead>
                     <tbody>
                         {storefronts.map((s) => (
                             <tr key={s.id}>

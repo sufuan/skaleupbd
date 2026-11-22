@@ -2912,6 +2912,14 @@ BN.update([
     ('Today so far', 'আজ এখন পর্যন্ত'),
 ])
 
+# ---- phase 4 honest labels ----
+BN.update([
+    ('Delivered orders only', 'শুধু ডেলিভারি হওয়া অর্ডার'),
+    ('Courier status', 'কুরিয়ারের অবস্থা'),
+    ('Storefront orders', 'স্টোরফ্রন্টের অর্ডার'),
+    ('order', 'অর্ডার'),
+])
+
 with open('lang/en.json', 'w', encoding='utf-8') as f:
     json.dump(EN, f, ensure_ascii=False, indent=1)
 with open('lang/bn.json', 'w', encoding='utf-8') as f:

@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Link, router, useForm } from '@inertiajs/react';
 import { confirmDialog } from '@/lib/confirm';
 import AppLayout from '@/Layouts/AppLayout';
@@ -40,11 +41,45 @@ function Switch({ checked, onClick, label }) {
 export default function Products({ products, summary, inactive, combos, wraps, sharedGroups, linkGroups, variants, categories, brands, filters }) {
     const [tab, setTab] = useState('Products');
     const [search, setSearch] = useState(filters.search || '');
-    const [menuFor, setMenuFor] = useState(null);
+    // Row action menu: rendered in a portal with fixed positioning — the
+    // table wrapper's overflow-x-auto clipped an in-table absolute menu.
+    const [menu, setMenu] = useState(null); // { p, right, top } | { p, right, bottom }
     const [editFor, setEditFor] = useState(null);
     const [adjustFor, setAdjustFor] = useState(null);
     const [ioOpen, setIoOpen] = useState(false);
     const allRows = products.data;
+
+    const openMenu = (e, p) => {
+        if (menu && menu.p.id === p.id) { setMenu(null); return; }
+        const r = e.currentTarget.getBoundingClientRect();
+        const MENU_H = 168; // 4 rows + padding, matches the menu markup below
+        const right = Math.max(8, window.innerWidth - r.right);
+        if (r.bottom + MENU_H + 8 > window.innerHeight) {
+            setMenu({ p, right, bottom: window.innerHeight - r.top + 4 });
+        } else {
+            setMenu({ p, right, top: r.bottom + 4 });
+        }
+    };
+
+    useEffect(() => {
+        if (!menu) return undefined;
+        const openedAt = Date.now();
+        // Ignore the focus-scroll the browser fires right as the button is
+        // clicked (it would close the menu the instant it opens).
+        const close = () => { if (Date.now() - openedAt > 300) setMenu(null); };
+        const onKey = (e) => { if (e.key === 'Escape') close(); };
+        const onDown = (e) => { if (!e.target.closest('[data-row-menu]') && !e.target.closest('[data-row-menu-btn]')) close(); };
+        window.addEventListener('scroll', close, true);
+        window.addEventListener('resize', close);
+        window.addEventListener('keydown', onKey);
+        document.addEventListener('pointerdown', onDown);
+        return () => {
+            window.removeEventListener('scroll', close, true);
+            window.removeEventListener('resize', close);
+            window.removeEventListener('keydown', onKey);
+            document.removeEventListener('pointerdown', onDown);
+        };
+    }, [menu]);
 
     const doSearch = (e) => { e.preventDefault(); router.get('/inventory/products', { search }, { preserveState: true }); };
     const toggle = (p, field) => router.post(`/inventory/products/${p.id}/toggle`, { field }, { preserveScroll: true });
@@ -92,17 +127,7 @@ export default function Products({ products, summary, inactive, combos, wraps, s
                             <td className={TD}><div className="font-medium">{Number(p.price || 0).toLocaleString('en-IN')}</div></td>
                             <td className={TD}><Switch checked={p.is_active} label={t('Active')} onClick={() => toggle(p, 'is_active')} /></td>
                             <td className={TD}>
-                                <div className="relative">
-                                    <button type="button" className={BTN_OUTLINE + ' h-8 px-2'} onClick={() => setMenuFor(menuFor === p.id ? null : p.id)}>•••</button>
-                                    {menuFor === p.id && (
-                                        <div className="absolute right-0 z-30 mt-1 w-44 rounded-md border bg-white p-1 shadow-md text-sm">
-                                            <button type="button" className="block w-full rounded px-2 py-1.5 text-left hover:bg-accent" onClick={() => { setEditFor(p); setMenuFor(null); }}>{t('Edit')}</button>
-                                            <button type="button" className="block w-full rounded px-2 py-1.5 text-left hover:bg-accent" onClick={() => { router.post(`/inventory/products/${p.id}/copy`, {}, { preserveScroll: true }); setMenuFor(null); }}>{t('Copy')}</button>
-                                            <button type="button" className="block w-full rounded px-2 py-1.5 text-left hover:bg-accent" onClick={() => { setTab('Variations'); setMenuFor(null); }}>{t('Variant')}</button>
-                                            <button type="button" className="block w-full rounded px-2 py-1.5 text-left text-red-600 hover:bg-red-50" onClick={async () => { if (await confirmDialog(t('Delete this product?'))) router.delete(`/inventory/products/${p.id}`, { preserveScroll: true }); setMenuFor(null); }}>{t('Delete')}</button>
-                                        </div>
-                                    )}
-                                </div>
+                                <button type="button" data-row-menu-btn className={BTN_OUTLINE + ' h-8 px-2'} onClick={(e) => openMenu(e, p)}>•••</button>
                             </td>
                         </tr>
                     ))}
@@ -198,6 +223,16 @@ export default function Products({ products, summary, inactive, combos, wraps, s
                     {tab === 'Categories & Brands' && <Taxonomy categories={categories} brands={brands} />}
                 </div>
             </div>
+
+            {menu && createPortal((
+                <div data-row-menu className="fixed z-50 w-44 rounded-md border bg-white p-1 shadow-md text-sm"
+                    style={{ right: menu.right, top: menu.top, bottom: menu.bottom }}>
+                    <button type="button" className="block w-full rounded px-2 py-1.5 text-left hover:bg-accent" onClick={() => { setEditFor(menu.p); setMenu(null); }}>{t('Edit')}</button>
+                    <button type="button" className="block w-full rounded px-2 py-1.5 text-left hover:bg-accent" onClick={() => { router.post(`/inventory/products/${menu.p.id}/copy`, {}, { preserveScroll: true }); setMenu(null); }}>{t('Copy')}</button>
+                    <button type="button" className="block w-full rounded px-2 py-1.5 text-left hover:bg-accent" onClick={() => { setTab('Variations'); setMenu(null); }}>{t('Variant')}</button>
+                    <button type="button" className="block w-full rounded px-2 py-1.5 text-left text-red-600 hover:bg-red-50" onClick={async () => { const p = menu.p; setMenu(null); if (await confirmDialog(t('Delete this product?'))) router.delete(`/inventory/products/${p.id}`, { preserveScroll: true }); }}>{t('Delete')}</button>
+                </div>
+            ), document.body)}
 
             {editFor && <EditModal product={editFor} categories={categories} brands={brands} close={() => setEditFor(null)} />}
             {adjustFor && <AdjustModal product={adjustFor} close={() => setAdjustFor(null)} />}

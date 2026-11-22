@@ -28,6 +28,7 @@ class CommentsController extends Controller
             ->orderByDesc('id')->get();
 
         return Inertia::render('Messages/Comments', [
+            'shop_name' => app(\App\Services\SettingsService::class)->shopName($biz),
             'comments' => $comments->map(fn ($c) => [
                 'id' => $c->id, 'channel' => $c->channel, 'post_label' => $c->post_label,
                 'author_name' => $c->author_name, 'body' => $c->body, 'status' => $c->status,

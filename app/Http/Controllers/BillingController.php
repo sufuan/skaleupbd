@@ -12,6 +12,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
+use App\Support\DhakaTime;
 
 /**
  * M19 — the seller's Points & Billing page: balance, active pack,
@@ -41,8 +42,8 @@ class BillingController extends Controller
             'sender_number' => $c->sender_number,
             'trx_id' => $c->trx_id,
             'admin_note' => $c->admin_note,
-            'when' => $c->created_at?->format('d M Y, h:i A'),
-            'decided_at' => $c->decided_at?->format('d M Y, h:i A'),
+            'when' => DhakaTime::fmt($c->created_at, 'd M Y, h:i A'),
+            'decided_at' => DhakaTime::fmt($c->decided_at, 'd M Y, h:i A'),
         ];
     }
 
@@ -79,9 +80,9 @@ class BillingController extends Controller
             'pack' => $wallet->pack_id ? [
                 'name' => $wallet->packName(),
                 'validity_type' => $wallet->pack_snapshot['validity_type'] ?? null,
-                'cycle_start' => $wallet->cycle_start?->format('d M Y'),
-                'cycle_end' => $wallet->cycle_end?->format('d M Y'),
-                'wallet_expires_at' => $wallet->wallet_expires_at?->format('d M Y'),
+                'cycle_start' => DhakaTime::fmt($wallet->cycle_start, 'd M Y'),
+                'cycle_end' => DhakaTime::fmt($wallet->cycle_end, 'd M Y'),
+                'wallet_expires_at' => DhakaTime::fmt($wallet->wallet_expires_at, 'd M Y'),
             ] : null,
             'packs' => PointPack::where('is_active', true)->orderBy('sort')->orderBy('id')->get()
                 ->map(fn ($p) => [
@@ -103,7 +104,7 @@ class BillingController extends Controller
                     'id' => $r->id, 'kind' => $r->kind, 'amount' => (int) $r->amount,
                     'balance_after' => (int) $r->balance_after, 'note' => $r->note,
                     'invoice' => $r->order_id ? ($orderInvoices[$r->order_id] ?? null) : null,
-                    'when' => $r->created_at?->format('d M Y, h:i A'),
+                    'when' => DhakaTime::fmt($r->created_at, 'd M Y, h:i A'),
                 ])->all(),
                 'current_page' => $ledger->currentPage(),
                 'last_page' => $ledger->lastPage(),

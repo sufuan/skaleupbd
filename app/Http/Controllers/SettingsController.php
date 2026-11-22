@@ -26,9 +26,9 @@ class SettingsController extends Controller
 
         // Settings Home is computed from the shop's REAL state — the
         // checklist and cards must never show hardcoded prototype copy.
-        $profileFilled = trim((string) $this->settings->get('business.name', '')) !== ''
-            && trim((string) $this->settings->get('business.mobile', '')) !== ''
-            && trim((string) $this->settings->get('business.address', '')) !== '';
+        $profileFilled = trim($this->settings->shopName($biz)) !== ''
+            && trim($this->settings->shopContact($biz, 'mobile')) !== ''
+            && trim($this->settings->shopContact($biz, 'address')) !== '';
         $courierOn = \App\Models\CourierMethod::where('business_id', $biz)->where('is_active', true)->exists();
         $fbOn = ! empty(((array) $this->settings->get('channels.facebook', []))['token_enc']);
         $waOn = ! empty(((array) $this->settings->get('channels.whatsapp', []))['token_enc']);
@@ -119,9 +119,9 @@ class SettingsController extends Controller
             ] : null,
             'm2' => [
                 'business' => [
-                    'name' => (string) $this->settings->get('business.name', 'Demo Shop'),
-                    'mobile' => (string) $this->settings->get('business.mobile', ''),
-                    'address' => (string) $this->settings->get('business.address', ''),
+                    'name' => $this->settings->shopName($biz),
+                    'mobile' => $this->settings->shopContact($biz, 'mobile'),
+                    'address' => $this->settings->shopContact($biz, 'address'),
                     'invoice_slug' => (string) $this->settings->get('business.invoice_slug', 'OB'),
                     'default_delivery_cost' => (float) $this->settings->get('business.default_delivery_cost', 60),
                 ],
@@ -251,9 +251,12 @@ class SettingsController extends Controller
             'invoice_slug' => ['required', 'string', 'max:10'],
             'default_delivery_cost' => ['required', 'numeric', 'min:0'],
         ]);
-        $this->setLogged($request, 'business.name', $data['name']);
-        $this->setLogged($request, 'business.mobile', $data['mobile'] ?? '');
-        $this->setLogged($request, 'business.address', $data['address'] ?? '');
+        // Saved per business: the old global keys made every seller share
+        // (and overwrite) one shop profile.
+        $biz = (int) $request->user()->business_id;
+        $this->setLogged($request, "business.{$biz}.profile_name", $data['name']);
+        $this->setLogged($request, "business.{$biz}.mobile", $data['mobile'] ?? '');
+        $this->setLogged($request, "business.{$biz}.address", $data['address'] ?? '');
         $this->setLogged($request, 'business.invoice_slug', strtoupper($data['invoice_slug']));
         $this->setLogged($request, 'business.default_delivery_cost', (float) $data['default_delivery_cost']);
 

@@ -16,7 +16,7 @@ class Product extends Model
         if ($this->offer_price === null) {
             return false;
         }
-        $today = now()->toDateString();
+        $today = \App\Support\DhakaTime::today();
         $started = $this->offer_starts_at === null || $this->offer_starts_at->toDateString() <= $today;
         $notEnded = $this->offer_ends_at === null || $this->offer_ends_at->toDateString() >= $today;
 

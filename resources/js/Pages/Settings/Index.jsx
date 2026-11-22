@@ -23,9 +23,11 @@ function SaveBar() {
     return <div className="flex mt16"><span className="spacer" /><button className="btn pri">{t('Save Changes')}</button></div>;
 }
 function Field({ label, value, type = 'text', area = false }) {
+    // Display-only values (issued keys, endpoints): readOnly so the box
+    // never pretends an edit here would save anywhere.
     return <div className="frow"><label className="fl">{t(label)}</label>{area
-        ? <textarea className="inp" rows="3" defaultValue={value} />
-        : <input className="inp" type={type} defaultValue={value} />}</div>;
+        ? <textarea className="inp" rows="3" defaultValue={value} readOnly />
+        : <input className="inp" type={type} defaultValue={value} readOnly />}</div>;
 }
 function ConnRow({ name, desc, status, pillCls }) {
     return (
@@ -33,12 +35,22 @@ function ConnRow({ name, desc, status, pillCls }) {
             <div className="conn-ic"><b>{name[0]}</b></div>
             <div style={{ flex: 1 }}><div className="b">{name}</div><div className="sm mut">{t(desc)}</div></div>
             <span className={`pill ${pillCls}`}>{t(status)}</span>
-            <button className="btn">{t('Configure')}</button>
         </div>
     );
 }
 
-function Home({ home }) {
+// Where each checklist item is completed — the "Set up" button takes
+// the seller straight there (it previously did nothing at all).
+const SETUP_TARGETS = {
+    'Business profile filled': ['business', 'profile'],
+    'At least one courier connected': ['api', 'courier'],
+    'Facebook Page connected': ['api', 'channels'],
+    'WhatsApp connected': ['api', 'channels'],
+    'Order sources set up': ['calls', 'sources'],
+    'AI reply level chosen': ['ai', 'ailvl'],
+};
+
+function Home({ home, onSetup }) {
     // Computed server-side from the shop's real state (SettingsController).
     const checks = (home?.checks || []).map((c) => [c.label, c.done]);
     const cards = (home?.cards || []).map((c) => [c.label, c.value, c.pill]);
@@ -50,7 +62,7 @@ function Home({ home }) {
                 {checks.map(([label, ok]) => (
                     <div className="check-row" key={label}>
                         <span className={`check-ic ${ok ? 'ok' : 'no'}`}>{ok ? '✓' : '!'}</span>{t(label)}
-                        {!ok && <><span className="spacer" /><button className="btn">{t('Set up')}</button></>}
+                        {!ok && SETUP_TARGETS[label] && <><span className="spacer" /><button className="btn" onClick={() => onSetup(label)}>{t('Set up')}</button></>}
                     </div>
                 ))}
             </div>
@@ -893,7 +905,7 @@ export default function SettingsIndex({ group: initial = 'home', totpEnabled = f
                             {g.tabs.map(([id, label]) => <span key={id} className={`ptab ${tab === id ? 'act' : ''}`} onClick={() => setTab(id)}>{t(label)}</span>)}
                         </div>
                     )}
-                    {group === 'home' && <Home home={home} />}
+                    {group === 'home' && <Home home={home} onSetup={(label) => { const [gid, tid] = SETUP_TARGETS[label] || []; if (gid) { setGroup(gid); setTab(tid); } }} />}
                     {group === 'business' && <Business tab={tab} m2={m2} />}
                     {group === 'api' && <Api tab={tab} couriers={couriers} channels={channels} paymentGateway={paymentGateway} platformPaymentGateway={platformPaymentGateway} integration={integration} />}
                     {group === 'calls' && <Calls tab={tab} m2={m2} />}

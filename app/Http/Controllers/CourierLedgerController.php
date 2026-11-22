@@ -9,6 +9,7 @@ use App\Models\CourierSettlementAllocation;
 use App\Services\SettlementService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use App\Support\DhakaTime;
 
 class CourierLedgerController extends Controller
 {
@@ -27,7 +28,7 @@ class CourierLedgerController extends Controller
                 'id' => $s->id, 'courier' => $s->courierMethod?->label(), 'payment_id' => $s->payment_id,
                 'amount' => (float) $s->amount, 'method' => $s->method, 'reference' => $s->reference,
                 'source' => $s->source, 'status_label' => $s->status_label,
-                'date' => ($s->paid_at ?? $s->created_at)?->format('d M Y'),
+                'date' => DhakaTime::fmt($s->paid_at ?? $s->created_at, 'd M Y'),
                 'parcels' => $s->allocations->map(fn ($a) => ['invoice' => $a->order?->invoice, 'amount' => (float) $a->amount, 'allocation_id' => $a->id, 'disputed' => $a->disputed])->all(),
             ])->all();
     }

@@ -564,7 +564,7 @@ class StorefrontService
                     'source' => 'storefront',
                     'title' => 'Storefront unpublished — your pack has ended',
                     'detail' => 'Your storefront was taken offline because your points pack ended and the grace period is over. Buy a pack and publish again from Storefront → Overview.',
-                    'priority' => 'high',
+                    'priority' => 'urgent',
                     'status' => 'open',
                     'assignee_mode' => 'pool',
                     'source_type' => 'storefront_lapse',

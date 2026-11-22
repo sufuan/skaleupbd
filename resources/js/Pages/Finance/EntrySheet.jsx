@@ -21,14 +21,19 @@ const KINDS = [
     { key: 'courier_payout', label: 'Courier payout' },
 ];
 
+// Today as a Dhaka calendar date (Y-m-d). toISOString() is the UTC date —
+// before 6 AM in Dhaka it still says yesterday, while every Finance
+// figure on the server is kept in Dhaka dates.
+const dhakaToday = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Dhaka' }).format(new Date());
+
 export default function EntrySheet({ open, kind, setKind, accounts = [], categories = [], onClose }) {
     const form = useForm({
         kind: kind || 'expense', amount: '', account_id: accounts[0]?.id || '',
         to_account_id: accounts[1]?.id || accounts[0]?.id || '', category_id: '', note: '',
-        txn_date: new Date().toISOString().slice(0, 10),
+        txn_date: dhakaToday(),
     });
 
-    useEffect(() => { if (open) { form.setData('kind', kind || 'expense'); } }, [open, kind]); // eslint-disable-line
+    useEffect(() => { if (open) { form.setData((d) => ({ ...d, kind: kind || 'expense', txn_date: dhakaToday() })); } }, [open, kind]); // eslint-disable-line
     useEffect(() => {
         if (!form.data.account_id && accounts[0]) form.setData('account_id', accounts[0].id);
     }, [accounts]); // eslint-disable-line
@@ -101,7 +106,7 @@ export default function EntrySheet({ open, kind, setKind, accounts = [], categor
                 {form.errors.amount && <div style={{ color: '#DC2626', fontSize: 13, marginTop: 6 }}>{form.errors.amount}</div>}
                 <div style={{ display: 'flex', gap: 8, marginTop: 16, justifyContent: 'flex-end' }}>
                     <button type="button" className="btn-s" onClick={onClose}>{t('Discard')}</button>
-                    <button type="submit" className="btn-p" disabled={form.processing}>{t('Save')}</button>
+                    <button type="submit" className="btn-p" disabled={form.processing || !(Number(form.data.amount) > 0)}>{t('Save')}</button>
                 </div>
             </form>
         </Modal>

@@ -41,6 +41,7 @@ class FinanceController extends Controller
             'category' => $t->category?->name,
             'category_id' => $t->category_id,
             'source' => $t->source,
+            'note_raw' => $t->note,
             'voided' => $t->voided_at !== null,
             'is_reversal' => $t->reversal_of !== null,
             'by' => $t->creator?->name,
@@ -245,6 +246,51 @@ class FinanceController extends Controller
         }
         $this->fin->void($transaction, $request->user());
         return back()->with('success', 'Entry বাতিল হয়েছে — উল্টো entry দিয়ে হিসাব ঠিক রাখা হয়েছে।');
+    }
+
+    /** In-place edit of a single income/expense entry (amount, date, category, note). */
+    public function updateTransaction(Request $request, FinanceTransaction $transaction): RedirectResponse
+    {
+        abort_unless($transaction->business_id === $this->biz($request), 404);
+        if ($transaction->voided_at) {
+            return back()->with('error', 'বাতিল করা entry বদলানো যায় না।');
+        }
+        if ($transaction->reversal_of !== null) {
+            return back()->with('error', 'উল্টো entry বদলানো যায় না।');
+        }
+        if ($transaction->transfer_pair_id !== null) {
+            return back()->with('error', 'Transfer entry সরাসরি বদলানো যায় না।');
+        }
+        if (! in_array($transaction->type, ['income', 'expense'], true)) {
+            return back()->with('error', 'এই ধরনের entry এখান থেকে বদলানো যায় না।');
+        }
+        $data = $request->validate([
+            'amount' => 'required|numeric|min:0.01',
+            'txn_date' => 'required|date',
+            'category_id' => 'nullable|integer',
+            'note' => 'nullable|string|max:300',
+        ]);
+        if ($this->fin->monthLocked($transaction->business_id, $transaction->txn_date->toDateString())
+            || $this->fin->monthLocked($transaction->business_id, $data['txn_date'])) {
+            return back()->with('error', 'এই মাস বন্ধ — বদলানো যাবে না।');
+        }
+        $categoryId = null;
+        if (! empty($data['category_id'])) {
+            $cat = FinanceCategory::where('business_id', $transaction->business_id)
+                ->where('kind', $transaction->type)->find((int) $data['category_id']);
+            if (! $cat) {
+                return back()->with('error', 'Category ঠিক নেই।');
+            }
+            $categoryId = $cat->id;
+        }
+        $transaction->update([
+            'amount' => $data['amount'],
+            'txn_date' => $data['txn_date'],
+            'category_id' => $categoryId,
+            'note' => $data['note'] ?? null,
+        ]);
+
+        return back()->with('success', 'Entry বদলানো হয়েছে।');
     }
 
     public function incomeExpense(Request $request): InertiaResponse

@@ -65,7 +65,7 @@ export default function Register({ pack, onboardingFee }) {
                     <input id="password_confirmation" type="password" name="password_confirmation" value={data.password_confirmation} className="inp" autoComplete="new-password" onChange={(e) => setData('password_confirmation', e.target.value)} />
                     {errors.password_confirmation && <div className="auth-err">{errors.password_confirmation}</div>}
                 </div>
-                <button type="submit" className="btn pri" style={{ width: '100%', justifyContent: 'center', padding: '11px 16px', marginTop: 6 }} disabled={processing}>
+                <button type="submit" className="btn pri" style={{ width: '100%', justifyContent: 'center', padding: '11px 16px', marginTop: 6 }} disabled={processing || !data.name.trim() || !data.shop_name.trim() || !data.email.trim() || !data.password || !data.password_confirmation}>
                     {t('Create an account')}
                 </button>
             </form>

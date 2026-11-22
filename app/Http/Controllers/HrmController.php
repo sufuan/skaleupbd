@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response as InertiaResponse;
+use App\Support\DhakaTime;
 
 class HrmController extends Controller
 {
@@ -72,8 +73,8 @@ class HrmController extends Controller
                 'user_id' => $u->id,
                 'name' => $u->name,
                 'department' => $dept?->name,
-                'check_in' => $r?->check_in_at?->format('h:i A'),
-                'check_out' => $r?->check_out_at?->format('h:i A'),
+                'check_in' => DhakaTime::fmt($r?->check_in_at, 'h:i A'),
+                'check_out' => DhakaTime::fmt($r?->check_out_at, 'h:i A'),
                 'status_key' => $key,
                 'status_label' => $label,
                 'late_minutes' => (int) ($r?->late_minutes ?? 0),
@@ -126,8 +127,8 @@ class HrmController extends Controller
 
         $mine = $this->att->recordFor($user, $this->att->todayDate());
         $myRecord = $mine ? [
-            'check_in' => $mine->check_in_at?->format('h:i A'),
-            'check_out' => $mine->check_out_at?->format('h:i A'),
+            'check_in' => DhakaTime::fmt($mine->check_in_at, 'h:i A'),
+            'check_out' => DhakaTime::fmt($mine->check_out_at, 'h:i A'),
             'break_minutes' => (int) $mine->break_minutes,
             'on_break' => $mine->break_started_at !== null,
             'work_minutes' => $mine->workMinutes(),

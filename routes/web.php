@@ -28,6 +28,12 @@ Route::post('/locale/{locale}', [LocaleController::class, 'switch'])
     ->whereIn('locale', ['en', 'bn'])
     ->name('locale.switch');
 
+// Friendly shortcuts: the login lives at /admin/login and the inbox at
+// /messages/inbox — the short forms people type should land there too
+// instead of 404ing.
+Route::redirect('/login', '/admin/login');
+Route::redirect('/messages', '/messages/inbox');
+
 // Public pricing page (M19) — renders live from the point packs.
 Route::get('/pricing', [\App\Http\Controllers\PricingController::class, 'index'])->name('pricing');
 
@@ -161,6 +167,7 @@ Route::middleware(['auth', 'verified', 'totp'])->group(function () {
     Route::patch('/finance/accounts/{account}', [\App\Http\Controllers\FinanceController::class, 'updateAccount'])->name('finance.accounts.update');
     Route::post('/finance/transactions', [\App\Http\Controllers\FinanceController::class, 'storeTransaction'])->name('finance.transactions.store');
     Route::post('/finance/transactions/{transaction}/void', [\App\Http\Controllers\FinanceController::class, 'voidTransaction'])->name('finance.transactions.void');
+    Route::patch('/finance/transactions/{transaction}', [\App\Http\Controllers\FinanceController::class, 'updateTransaction'])->name('finance.transactions.update');
     Route::get('/finance/income-expense', [\App\Http\Controllers\FinanceController::class, 'incomeExpense'])->name('finance.ie');
     Route::get('/finance/income-expense/export', [\App\Http\Controllers\FinanceController::class, 'exportCsv'])->name('finance.ie.export');
     Route::post('/finance/categories', [\App\Http\Controllers\FinanceController::class, 'storeCategory'])->name('finance.categories.store');

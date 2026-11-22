@@ -48,7 +48,7 @@ export default function AddProduct({ categories, brands, businessName }) {
                             variants={data.variants} setVariants={(v) => setData('variants', v)} />
                         <div className="flex items-center justify-end gap-2">
                             <Link href="/inventory/products" className={BTN_OUTLINE}>{t('Cancel')}</Link>
-                            <button type="submit" className={BTN_PRIMARY} disabled={processing}>{t('Create Product')}</button>
+                            <button type="submit" className={BTN_PRIMARY} disabled={processing || !data.name.trim() || data.price === ''}>{t('Create Product')}</button>
                         </div>
                     </form>
                 </div>

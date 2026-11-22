@@ -124,7 +124,7 @@ export default function Users({ users, modules, roles, can_manage }) {
                                     </select></div>
                                 <div className="fld"><label className="lbl">{t('Monthly salary (৳)')}</label>
                                     <input className="inp" type="number" min="0" step="any" value={form.data.monthly_salary} onChange={(e) => form.setData('monthly_salary', e.target.value)} placeholder="0" /></div>
-                                <button className="btn-p" type="submit" disabled={form.processing}>{t('Add User')}</button>
+                                <button className="btn-p" type="submit" disabled={form.processing || !form.data.name.trim() || !form.data.email.trim() || !form.data.password}>{t('Add User')}</button>
                             </div>
                             <p className="x-note">{t('A new User gets the default permissions of their Role — later they can be raised or lowered with Edit.')}</p>
                             {form.errors.email && <p style={{ color: '#DC2626', fontSize: 13 }}>{form.errors.email}</p>}
