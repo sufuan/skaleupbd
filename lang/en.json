@@ -3028,6 +3028,7 @@
  "An order was created for them.": "An order was created for them.",
  "Wrote to order": "Wrote to order",
  "Not much data in this period (:count people). Percentages would not be trustworthy — try 30 days.": "Not much data in this period (:count people). Percentages would not be trustworthy — try 30 days.",
+ "Not much data in this period (:count people). Percentages would not be trustworthy yet.": "Not much data in this period (:count people). Percentages would not be trustworthy yet.",
  "Stages of a sale": "Stages of a sale",
  "How many people reached each stage. Tap a stage to see what it means.": "How many people reached each stage. Tap a stage to see what it means.",
  ":pct% of the stage before": ":pct% of the stage before",

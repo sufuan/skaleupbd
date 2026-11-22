@@ -3028,6 +3028,7 @@
  "An order was created for them.": "তার নামে অর্ডার তৈরি হয়েছে।",
  "Wrote to order": "কথা থেকে অর্ডার",
  "Not much data in this period (:count people). Percentages would not be trustworthy — try 30 days.": "এই সময়ে তথ্য কম (:count জন)। শতকরা হার ভরসা করার মতো না — ৩০ দিন বেছে দেখুন।",
+ "Not much data in this period (:count people). Percentages would not be trustworthy yet.": "এই সময়ে তথ্য কম (:count জন)। শতকরা হার এখনো ভরসা করার মতো না।",
  "Stages of a sale": "বিক্রির ধাপ",
  "How many people reached each stage. Tap a stage to see what it means.": "কতজন কোন ধাপ পর্যন্ত পৌঁছেছে। ধাপে চাপ দিন, অর্থ দেখুন।",
  ":pct% of the stage before": "আগের ধাপের :pct%",

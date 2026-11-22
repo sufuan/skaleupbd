@@ -116,7 +116,7 @@ export default function Growth({ summary, tasks, can_revenue }) {
                         </div>
 
                         {s.low_data && (
-                            <div className="gw-note">{t('Not much data in this period (:count people). Percentages would not be trustworthy — try 30 days.', { count: fmtNum(s.wrote) })}</div>
+                            <div className="gw-note">{period === '30d' ? t('Not much data in this period (:count people). Percentages would not be trustworthy yet.', { count: fmtNum(s.wrote) }) : t('Not much data in this period (:count people). Percentages would not be trustworthy — try 30 days.', { count: fmtNum(s.wrote) })}</div>
                         )}
 
                         <div className="gw-cols">
