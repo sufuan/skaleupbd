@@ -284,12 +284,18 @@ class InsightService
     public function taskCustomers(InsightTask $task): array
     {
         $today = DhakaTime::today();
-        $acted = InsightAction::where('business_id', $task->business_id)
+        // "Drafted" means a draft was actually created for this
+        // customer today — it only gates the Draft button (no
+        // duplicate drafts). A logged call must NOT mark the
+        // customer as drafted, and nothing here may gate the Call
+        // button: calling is always available.
+        $drafted = InsightAction::where('business_id', $task->business_id)
+            ->where('type', 'draft_created')
             ->whereBetween('created_at', DhakaTime::dayBoundsUtc($today))
             ->distinct()->pluck('conversation_id')->all();
 
         return InsightTaskMember::where('task_id', $task->id)->with('conversation')->get()
-            ->map(function ($m) use ($acted) {
+            ->map(function ($m) use ($drafted) {
                 $c = $m->conversation;
                 if (! $c) {
                     return null;
@@ -307,7 +313,7 @@ class InsightService
                     'hours_since' => $c->last_inbound_at ? (int) $c->last_inbound_at->diffInHours(now()) : null,
                     'window_open' => (bool) $windowOpen,
                     'window_expires_at' => $c->window_expires_at?->toIso8601String(),
-                    'acted' => in_array($c->id, $acted, true),
+                    'drafted' => in_array($c->id, $drafted, true),
                 ];
             })->filter()->values()->all();
     }
@@ -382,7 +388,7 @@ class InsightService
         $created = 0;
         $skipped = 0;
         foreach ($this->taskCustomers($task) as $row) {
-            if ($row['acted'] || ! $row['window_open']) {
+            if ($row['drafted'] || ! $row['window_open']) {
                 $skipped++;
                 continue;
             }
@@ -563,6 +569,21 @@ class InsightService
                     if (! $row->classifier_version) {
                         $row->classifier_version = 'backfill-1';
                         $row->save();
+                    }
+                    // Repair pass: conversations from before the
+                    // universal contact capture may hold a phone (and
+                    // address) inside a message body that was never
+                    // copied onto the record. Fill what is missing so
+                    // the derivation below — and the order linking
+                    // after it — can match by phone. Idempotent: the
+                    // capture only ever sets empty fields.
+                    if (empty($conv->customer_phone) || empty($conv->customer_address)) {
+                        foreach ($inbound as $m) {
+                            $this->brain->captureContactFromText($conv, (string) $m->body);
+                            if (! empty($conv->customer_phone) && ! empty($conv->customer_address)) {
+                                break;
+                            }
+                        }
                     }
                     foreach ($inbound as $m) {
                         $this->stages->noteInbound($conv, $m);

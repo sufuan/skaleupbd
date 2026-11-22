@@ -55,25 +55,28 @@ export default function Growth({ summary, tasks, can_revenue }) {
         const data = await api(`/marketing/growth/tasks/${task.id}/status`, { method: 'POST', body: JSON.stringify({ status }) });
         if (data) setTaskList((l) => l.map((x) => (x.id === task.id ? { ...x, status } : x)));
     };
-    const markActed = (cid) => setDrawer((d) => d ? { ...d, customers: d.customers.map((c) => (c.conversation_id === cid ? { ...c, acted: true } : c)) } : d);
+    const markDrafted = (cid) => setDrawer((d) => d ? { ...d, customers: d.customers.map((c) => (c.conversation_id === cid ? { ...c, drafted: true } : c)) } : d);
     const draftOne = async (task, c) => {
         setBusy(true);
         const data = await api(`/marketing/growth/tasks/${task.id}/drafts`, { method: 'POST', body: JSON.stringify({ conversation_id: c.conversation_id }) });
         setBusy(false);
-        if (data && data.created) { markActed(c.conversation_id); showToast(t('Draft made — review and send it from the Inbox')); }
+        if (data && data.created) { markDrafted(c.conversation_id); showToast(t('Draft made — review and send it from the Inbox')); }
     };
     const draftAll = async (task) => {
         setBusy(true);
         const data = await api(`/marketing/growth/tasks/${task.id}/drafts`, { method: 'POST', body: JSON.stringify({}) });
         setBusy(false);
         if (data) {
-            setDrawer((d) => d ? { ...d, customers: d.customers.map((c) => (c.window_open ? { ...c, acted: true } : c)) } : d);
+            setDrawer((d) => d ? { ...d, customers: d.customers.map((c) => (c.window_open ? { ...c, drafted: true } : c)) } : d);
             showToast(t(':count drafts made in the Inbox', { count: fmtNum(data.created) }));
         }
     };
     const logCall = async (task, c) => {
+        // Logging a call never touches the draft state — and the Call
+        // button itself is never disabled: a call is always possible,
+        // inside or outside the 24h messaging window.
         const data = await api(`/marketing/growth/tasks/${task.id}/calls`, { method: 'POST', body: JSON.stringify({ conversation_id: c.conversation_id }) });
-        if (data) { markActed(c.conversation_id); showToast(t('Call logged')); }
+        if (data) { showToast(t('Call logged')); }
     };
     const loadWhy = async (c) => {
         if (why[c.conversation_id]) { setWhy((w) => ({ ...w, [c.conversation_id]: null })); return; }
@@ -229,8 +232,8 @@ export default function Growth({ summary, tasks, can_revenue }) {
                                     <span style={{ color: '#64748B', fontSize: 12.5 }}>{c.channel}{c.hours_since !== null ? ' · ' + t(':hours hours ago', { hours: fmtNum(c.hours_since) }) : ''}{c.phone ? ' · ' + c.phone : ''}</span>
                                     <span style={{ display: 'inline-flex', gap: 6 }}>
                                         <button type="button" className="btn-s" onClick={() => loadWhy(c)}>{t('Why this stage?')}</button>
-                                        <button type="button" className="btn-p" disabled={!c.window_open || c.acted || busy} onClick={() => draftOne(drawer.task, c)}>{c.acted ? t('Done') : t('Draft')}</button>
-                                        <button type="button" className="btn-s" disabled={c.acted} onClick={() => logCall(drawer.task, c)}>{t('Call')}</button>
+                                        <button type="button" className="btn-p" disabled={!c.window_open || c.drafted || busy} onClick={() => draftOne(drawer.task, c)}>{c.drafted ? t('Done') : t('Draft')}</button>
+                                        <button type="button" className="btn-s" onClick={() => logCall(drawer.task, c)}>{t('Call')}</button>
                                     </span>
                                 </div>
                                 {why[c.conversation_id] && (

@@ -513,6 +513,60 @@ class RuleBrainService
         return null;
     }
 
+    /**
+     * Universal contact capture: scan EVERY inbound customer message
+     * for contact details and persist what the conversation is still
+     * missing. Until now this only happened inside the guided
+     * collection flow, so a customer who sent their phone (and
+     * address) inside the very message that expressed order intent
+     * was asked for the number again, the details were never saved,
+     * and a later order with that phone could not be linked back to
+     * the conversation. A number already on the record is never
+     * overwritten. The address is read from the same message that
+     * carries the number (the collection flow's blob rule): when the
+     * message labels it ("ঠিকানা: ..."), only that part is kept.
+     */
+    public function captureContactFromText(Conversation $conversation, string $text): void
+    {
+        $phone = $this->extractPhone($text);
+        if ($phone === null) {
+            return;
+        }
+        $changed = false;
+        if (empty($conversation->customer_phone)) {
+            $conversation->customer_phone = $phone;
+            $changed = true;
+        }
+        if (empty($conversation->customer_address)) {
+            // Same digit-normalised strip as the collection flow: the
+            // customer may have typed the number in Bangla digits.
+            $rest = trim(str_replace($phone, '', $this->guard->normalizeDigits($text)));
+            if (preg_match('/(?:ঠিকানা|address)\s*[:：]\s*(.+)$/isu', $rest, $m)) {
+                $addr = trim($m[1]);
+            } else {
+                $addr = trim((string) preg_replace('/^(ঠিকানা|address)\s*[:：]?\s*/iu', '', $rest));
+            }
+            $looksAddress = str_contains($addr, ',')
+                || mb_strlen($addr) >= 15
+                || (bool) preg_match('/বাসা|রোড|হোল্ডিং|থানা|জেলা|সেক্টর|ব্লক|গ্রাম/u', $addr);
+            if ($looksAddress && mb_strlen($addr) >= 8) {
+                $conversation->customer_address = $addr;
+                $changed = true;
+            }
+        }
+        if (! $changed) {
+            return;
+        }
+        $conversation->save();
+
+        // Sales Growth: a captured phone/address is stage-2 evidence,
+        // wherever in the conversation it arrived.
+        try {
+            app(StageService::class)->noteContactShared($conversation);
+        } catch (\Throwable) {
+        }
+    }
+
     /** A short yes/no answer, or null when the message is neither. */
     private function yesNo(string $text): ?bool
     {
@@ -845,6 +899,15 @@ class RuleBrainService
             $attachment = ['type' => $incoming->attachment_type] + (array) ($opts['attachment'] ?? []);
         } else {
             $incoming = $this->storeIncoming($conversation, $text, $opts);
+        }
+
+        // Contact details can arrive in ANY message — most importantly
+        // in the same message that starts an order. Capture them onto
+        // the record before anything branches on what is still
+        // missing, so a collection flow that starts because of this
+        // message consumes what the message already carried.
+        if ($text !== '') {
+            $this->captureContactFromText($conversation, $text);
         }
 
         if ($text === '' && ! empty($attachment)) {
