@@ -42,6 +42,9 @@ class StorefrontController extends Controller
             'customDomainUrl' => $sf->customDomainUrl(),
             'phoneVerified' => $sf->phone_verified_at !== null,
             'phoneToVerify' => $sf->phone_to_verify,
+            // The shop's saved contact mobile (register form / business
+            // profile) — the wizard's phone step starts filled with it.
+            'contactMobile' => app(\App\Services\SettingsService::class)->shopContact((int) $sf->business_id, 'mobile'),
             'publishedAt' => $sf->published_at?->format('d M Y, h:i A'),
             'unpublishedReason' => $sf->unpublished_reason,
             'platformDomain' => $this->svc->platformDomain(),

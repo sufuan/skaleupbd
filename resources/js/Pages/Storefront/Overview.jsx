@@ -10,7 +10,7 @@ const STATUS = {
 };
 
 export default function Overview({ sf, state, pageCount, livePageCount, viewsTotal, orderCount, openReports, hasAddress }) {
-    const otpSend = useForm({ phone: '' });
+    const otpSend = useForm({ phone: sf.phoneToVerify || sf.contactMobile || '' });
     const otpVerify = useForm({ code: '' });
     const [label, tone] = STATUS[sf.status] || [sf.status, ''];
     const hasStore = !!(state && state.hasStore);

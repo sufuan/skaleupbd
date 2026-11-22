@@ -6,6 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\PointPack;
 use App\Models\User;
 use App\Services\PaymentClaimService;
+use App\Services\PhoneNormalizer;
+use App\Services\RegistrationVerificationService;
+use App\Services\SettingsService;
 use App\Services\TokenService;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
@@ -45,6 +48,11 @@ class RegisteredUserController extends Controller
                 'credits' => (int) $pack->credits, 'validity_type' => $pack->validity_type,
             ] : null,
             'onboardingFee' => $pack ? app(TokenService::class)->onboardingFee() : 0,
+            // Registration verification (Settings switch): the form
+            // marks the mobile field required when a code will be sent
+            // by SMS, and shows the "we will send a code" note.
+            'verifyEnabled' => app(RegistrationVerificationService::class)->enabled(),
+            'verifyChannel' => app(RegistrationVerificationService::class)->channel(),
         ]);
     }
 
@@ -55,10 +63,17 @@ class RegisteredUserController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
+        // The mobile is only strictly required when a verification
+        // code will actually be sent by SMS — with the switch OFF, or
+        // email-only, signup keeps working exactly as before.
+        $verify = app(RegistrationVerificationService::class);
+        $mobileRequired = $verify->enabled() && $verify->channel() !== 'email';
+
         $request->validate([
             'name' => 'required|string|max:255',
             'shop_name' => 'required|string|max:120',
             'email' => 'required|string|lowercase|email|max:255|unique:'.User::class,
+            'mobile' => [$mobileRequired ? 'required' : 'nullable', 'string', 'max:20'],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
             'pack_id' => ['nullable'], // validated softly below — a bad pack never blocks signup
         ]);
@@ -73,6 +88,14 @@ class RegisteredUserController extends Controller
         // Every account owns a shop: create its Business and the default
         // per-business data, and link the user to it.
         app(\App\Services\BusinessProvisioner::class)->provision($user, $request->input('shop_name'));
+
+        // The register form's mobile becomes the shop's contact number
+        // (the same per-business profile mobile Settings saves and the
+        // storefront wizard's phone step pre-fills from).
+        $mobile = PhoneNormalizer::normalize($request->input('mobile'));
+        if ($mobile !== '' && $user->business_id) {
+            app(SettingsService::class)->set("business.{$user->business_id}.mobile", $mobile);
+        }
 
         // M19 purchase flow: a pack picked on the pricing page becomes a
         // pending payment claim, so Billing shows exactly what to pay.
@@ -102,6 +125,19 @@ class RegisteredUserController extends Controller
         event(new Registered($user));
 
         Auth::login($user);
+
+        // Registration verification (Settings switch, default OFF):
+        // issue the code now; the gate keeps the seller on the code
+        // page until they enter it. With the switch OFF nothing is
+        // sent and signup lands on the dashboard as always.
+        if ($verify->enabled()) {
+            $sent = $verify->begin($user);
+
+            return redirect(route('registration.verify', absolute: false))
+                ->with($sent['sent'] ? 'success' : 'error', $sent['sent']
+                    ? __('Your account was created. Enter the code we sent to finish.')
+                    : __('Your account was created, but the code could not be sent. Please use the resend button.'));
+        }
 
         return redirect(route('dashboard', absolute: false));
     }

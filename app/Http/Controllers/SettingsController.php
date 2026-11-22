@@ -116,6 +116,10 @@ class SettingsController extends Controller
                     'payment_instructions' => app(\App\Services\TokenService::class)->paymentInstructions(),
                     'enforcement_enabled' => app(\App\Services\TokenService::class)->enforcementOn(),
                 ],
+                'registration' => [
+                    'verify_enabled' => app(\App\Services\RegistrationVerificationService::class)->enabled(),
+                    'verify_channel' => app(\App\Services\RegistrationVerificationService::class)->channel(),
+                ],
             ] : null,
             'm2' => [
                 'business' => [
@@ -794,5 +798,20 @@ class SettingsController extends Controller
         $this->settings->set('pricing.enforcement_enabled', (bool) $data['enforcement_enabled']);
 
         return back()->with('success', 'Pricing settings saved');
+    }
+
+    /** Registration verification switches — platform admin only. */
+    public function updateRegistration(Request $request): RedirectResponse
+    {
+        abort_unless((bool) ($request->user()?->is_platform_admin), 403);
+        $data = $request->validate([
+            'verify_enabled' => ['required', 'boolean'],
+            // Stored as a plain string — never let it become a number.
+            'verify_channel' => ['required', 'string', \Illuminate\Validation\Rule::in(['sms', 'email', 'both'])],
+        ]);
+        $this->settings->set('registration.verify_enabled', (bool) $data['verify_enabled']);
+        $this->settings->set('registration.verify_channel', (string) $data['verify_channel']);
+
+        return back()->with('success', 'Registration verification settings saved');
     }
 }

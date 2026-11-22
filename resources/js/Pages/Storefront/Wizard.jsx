@@ -28,7 +28,7 @@ export default function Wizard({ sf, onboarding, presetColors }) {
     const [pubError, setPubError] = useState(null);
     const [suggestions, setSuggestions] = useState([]);
 
-    const otpSend = useForm({ phone: '' });
+    const otpSend = useForm({ phone: sf.phoneToVerify || sf.contactMobile || '' });
     const otpVerify = useForm({ code: '' });
     const [verified, setVerified] = useState(!!phoneVerified);
     const flash = usePage().props.flash || {};

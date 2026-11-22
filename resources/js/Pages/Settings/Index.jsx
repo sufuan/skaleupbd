@@ -820,6 +820,7 @@ function PackagesSettings({ data }) {
                     </form>
                 </div>
                 <PricingSettingsForm pricing={pricing0} />
+                <RegistrationVerificationForm registration={data?.registration || {}} />
             </div>
 
             {editing && (
@@ -876,6 +877,43 @@ function PricingSettingsForm({ pricing }) {
                     <button type="button" className={`switch ${form.data.enforcement_enabled ? 'on' : ''}`} aria-label={t('Points system on')} onClick={() => form.setData('enforcement_enabled', !form.data.enforcement_enabled)} />
                 </div>
                 <div className="flex mt16"><span className="spacer" /><button className="btn pri" disabled={form.processing}>{t('Save pricing settings')}</button></div>
+            </form>
+        </div>
+    );
+}
+
+function RegistrationVerificationForm({ registration }) {
+    const form = useForm({
+        verify_enabled: registration.verify_enabled ?? false,
+        verify_channel: registration.verify_channel ?? 'email',
+    });
+    useEffect(() => {
+        form.setData({
+            verify_enabled: registration.verify_enabled ?? false,
+            verify_channel: registration.verify_channel ?? 'email',
+        });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [registration.verify_enabled, registration.verify_channel]);
+    const save = (e) => { e.preventDefault(); form.post('/settings/registration', { preserveScroll: true }); };
+    return (
+        <div className="card">
+            <h4 style={{ fontSize: 15, marginBottom: 4 }}>{t('Registration verification')}</h4>
+            <div style={{ fontSize: 12.5, color: 'var(--muted)', marginBottom: 10 }}>{t('Controls the code a brand-new seller must enter right after signup, before their account opens. Sellers who already signed up are not affected.')}</div>
+            <form onSubmit={save}>
+                <div className="conn-row">
+                    <div style={{ flex: 1 }}><div className="b">{t('Verify new sellers with a code')}</div><div className="sm mut">{t('When on, a new seller gets one 6-digit code after signup and must enter it to continue. When off, nothing is sent and signup works exactly as before.')}</div></div>
+                    <button type="button" className={`switch ${form.data.verify_enabled ? 'on' : ''}`} aria-label={t('Verify new sellers with a code')} onClick={() => form.setData('verify_enabled', !form.data.verify_enabled)} />
+                </div>
+                <div className="frow" style={{ marginTop: 12 }}>
+                    <label className="fl">{t('Send the code by')}</label>
+                    <select className="inp" value={form.data.verify_channel} onChange={(e) => form.setData('verify_channel', e.target.value)} disabled={!form.data.verify_enabled}>
+                        <option value="email">{t('Email only')}</option>
+                        <option value="sms">{t('SMS only (to the mobile number)')}</option>
+                        <option value="both">{t('Both SMS and email')}</option>
+                    </select>
+                </div>
+                <div style={{ fontSize: 12.5, color: 'var(--muted)' }}>{t('SMS codes are sent from the platform gateway and paid by the platform — never from a seller balance.')}</div>
+                <div className="flex mt16"><span className="spacer" /><button className="btn pri" disabled={form.processing}>{t('Save verification settings')}</button></div>
             </form>
         </div>
     );

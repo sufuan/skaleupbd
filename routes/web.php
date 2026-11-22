@@ -46,6 +46,14 @@ Route::get('/order-success/{invoice}', [\App\Http\Controllers\StorefrontPublicCo
 Route::get('/report', [\App\Http\Controllers\StorefrontPublicController::class, 'reportForm'])->name('sf.report');
 Route::post('/report', [\App\Http\Controllers\StorefrontPublicController::class, 'reportStore'])->name('sf.report.store');
 
+// Registration verification (reachable while signed in but not yet
+// verified; SellerApprovalGate exempts these routes itself).
+Route::middleware('auth')->group(function () {
+    Route::get('/register/verify', [\App\Http\Controllers\Auth\RegistrationVerificationController::class, 'show'])->name('registration.verify');
+    Route::post('/register/verify', [\App\Http\Controllers\Auth\RegistrationVerificationController::class, 'store'])->name('registration.verify.store');
+    Route::post('/register/verify/resend', [\App\Http\Controllers\Auth\RegistrationVerificationController::class, 'resend'])->name('registration.verify.resend');
+});
+
 // TOTP enrollment + challenge (reachable while signed in; the totp
 // middleware exempts these routes itself).
 Route::middleware('auth')->group(function () {
@@ -347,6 +355,7 @@ Route::middleware(['auth', 'verified', 'totp'])->group(function () {
     Route::patch('/settings/packages/{package}', [SettingsController::class, 'updatePackage'])->name('settings.packages.update');
     Route::delete('/settings/packages/{package}', [SettingsController::class, 'deletePackage'])->name('settings.packages.destroy');
     Route::post('/settings/pricing', [SettingsController::class, 'updatePricing'])->name('settings.pricing');
+    Route::post('/settings/registration', [SettingsController::class, 'updateRegistration'])->name('settings.registration');
 
     // M19 Pricing — the seller's points page + self-serve purchase flow
     Route::get('/account/status', [\App\Http\Controllers\AccountStatusController::class, 'index'])->name('account.status');

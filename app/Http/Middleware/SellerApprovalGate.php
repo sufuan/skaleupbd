@@ -17,6 +17,10 @@ use Symfony\Component\HttpFoundation\Response;
  * users without a business pass, tenant (storefront) hosts are public
  * shop space and are never gated, and a business with no status value
  * (legacy row) counts as approved.
+ *
+ * Ahead of the approval check sits registration verification: while
+ * its Settings switch is ON, a seller holding an unverified code is
+ * held on the code page before even the pending flow opens.
  */
 class SellerApprovalGate
 {
@@ -28,7 +32,19 @@ class SellerApprovalGate
         'logout',
         'locale.switch',
         'verification.send',
+        'registration.verify',
+        'registration.verify.store',
+        'registration.verify.resend',
         'sidebar.counts',
+    ];
+
+    /** The only routes an unverified seller may touch. */
+    private const VERIFY_EXEMPT = [
+        'registration.verify',
+        'registration.verify.store',
+        'registration.verify.resend',
+        'logout',
+        'locale.switch',
     ];
 
     public function handle(Request $request, Closure $next): Response
@@ -41,6 +57,19 @@ class SellerApprovalGate
             return $next($request);
         }
         $name = (string) ($request->route()?->getName() ?? '');
+        // Registration verification comes before everything else: while
+        // the platform switch is ON, a seller who still holds an
+        // unverified code may reach ONLY the code page (+ resend,
+        // logout, language) until they enter it — then this gate's
+        // normal pending/claim flow below resumes.
+        if (! in_array($name, self::VERIFY_EXEMPT, true) && ! str_starts_with($name, 'totp.')
+            && app(\App\Services\RegistrationVerificationService::class)->needsVerification($user)) {
+            if ($request->expectsJson() || $request->is('api/*')) {
+                return response()->json(['message' => 'Please verify your account first.'], 403);
+            }
+
+            return redirect()->route('registration.verify');
+        }
         if (in_array($name, self::EXEMPT, true) || str_starts_with($name, 'totp.')) {
             return $next($request);
         }

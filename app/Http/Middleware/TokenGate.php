@@ -27,6 +27,7 @@ class TokenGate
         if ($user && ! $request->isMethod('GET') && ! $user->is_platform_admin && $user->business_id) {
             $name = (string) ($request->route()?->getName() ?? '');
             $exempt = $name === 'logout' || $name === 'locale.switch' || $name === 'verification.send'
+                || $name === 'registration.verify.store' || $name === 'registration.verify.resend'
                 || $name === 'billing.claims.store' || $name === 'billing.claims.submit'
                 || str_starts_with($name, 'totp.');
             if (! $exempt && $this->tokens->blocked((int) $user->business_id)) {
