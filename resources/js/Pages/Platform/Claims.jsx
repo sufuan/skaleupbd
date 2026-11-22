@@ -73,9 +73,9 @@ function ClaimRow({ c }) {
 export default function Claims({ claims, counts }) {
     return (
         <AppLayout>
-            <Head title={t('Payment claims')} />
+            <Head title={t('Seller Verification')} />
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-                <h3 style={{ fontSize: 19 }}>{t('Payment claims')}</h3>
+                <h3 style={{ fontSize: 19 }}>{t('Seller Verification')}</h3>
                 {counts.pending_review > 0 && <span className="pill amber">{counts.pending_review} {t('waiting for review')}</span>}
                 <span className="pill">{counts.pending_payment} {t('waiting for payment')}</span>
                 <span className="pill green">{counts.approved} {t('approved')}</span>

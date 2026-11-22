@@ -291,7 +291,7 @@ export default function AppLayout({ children }) {
             return item;
         }) })).filter((sec) => sec.items.length > 0);
     const navGroups = isPlatform ? [...baseNav, { sec: 'Platform', items: [
-        { label: 'Sellers', icon: 'users', children: [{ label: 'Seller Dashboard', href: '/admin' }, { label: 'All Sellers', href: '/admin/sellers' }, { label: 'Payment Claims', href: '/admin/claims' }], href: '/admin' },
+        { label: 'Sellers', icon: 'users', children: [{ label: 'Seller Dashboard', href: '/admin' }, { label: 'All Sellers', href: '/admin/sellers' }, { label: 'Seller Verification', href: '/admin/claims' }], href: '/admin' },
         { label: 'Storefronts', icon: 'store', href: '/admin/storefronts' },
     ] }] : baseNav;
     const initials = userName.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase();
