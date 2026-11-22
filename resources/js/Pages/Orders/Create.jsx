@@ -6,11 +6,10 @@ import { fmt } from './ui';
 
 const LAYOUTS = [
     ['v2', 'V2 Default', 'Two columns with the calculation details pinned in a sticky rail on the right, so the total and the submit button stay on screen.'],
-    ['full', 'V2 Full Width', 'Stacked like V2 Default, but the product picker gets a full-width row with the ordered products below it, the way a phone shows them.'],
     ['classic', 'V1 Classic', 'The legacy arrangement: full width, ordered products beside the picker, and the money fields in a band across the bottom. Scroll down to submit.'],
 ];
-const TEMPLATES = [['default', 'Default Template'], ['compact', 'Compact Template'], ['wholesale', 'Wholesale Template'], ['preorder', 'Pre-Order Template'], ['fast', 'Call Center Fast Entry Template']];
-const DEFAULT_OPTS = { layout: 'v2', template: 'default', courier_order: ['Overall', 'Pathao', 'Steadfast', 'RedX', 'CarryBee'] };
+const TEMPLATES = [['default', 'Default Template'], ['compact', 'Compact Template'], ['wholesale', 'Wholesale Template']];
+const DEFAULT_OPTS = { layout: 'v2', template: 'default' };
 const PLUS = (
     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
 );
@@ -19,18 +18,16 @@ export default function Create({ sources, products, couriers, defaults, toggles,
     const [mode, setMode] = useState('approved');
     const [layoutOpen, setLayoutOpen] = useState(false);
     const [opts, setOpts] = useState(() => {
-        try { return { ...DEFAULT_OPTS, ...JSON.parse(localStorage.getItem('skaleup_order_form_options') || '{}') }; } catch (e) { return DEFAULT_OPTS; }
+        try {
+            const saved = { ...DEFAULT_OPTS, ...JSON.parse(localStorage.getItem('skaleup_order_form_options') || '{}') };
+            if (!LAYOUTS.some(([k]) => k === saved.layout)) saved.layout = 'v2';
+            if (!TEMPLATES.some(([k]) => k === saved.template)) saved.template = 'default';
+            return saved;
+        } catch (e) { return DEFAULT_OPTS; }
     });
     useEffect(() => { localStorage.setItem('skaleup_order_form_options', JSON.stringify(opts)); }, [opts]);
     const tpl = opts.template;
-    const hide = (name) => (tpl === 'compact' && ['email', 'shipnote', 'attachment', 'cross'].includes(name))
-        || (tpl === 'fast' && ['email', 'shipnote', 'attachment', 'cross'].includes(name));
-    const moveCourier = (ix, dir) => {
-        const arr = [...opts.courier_order]; const j = ix + dir;
-        if (j < 0 || j >= arr.length) return;
-        [arr[ix], arr[j]] = [arr[j], arr[ix]];
-        setOpts({ ...opts, courier_order: arr });
-    };
+    const hide = (name) => tpl === 'compact' && ['email', 'shipnote', 'attachment', 'cross'].includes(name);
 
     const [pop, setPop] = useState(null); // tag | ref | note | att | more
     const togglePop = (id) => setPop((p) => (p === id ? null : id));
@@ -151,12 +148,12 @@ export default function Create({ sources, products, couriers, defaults, toggles,
                                             {!hide('attachment') && <button type="button" className="ctl-btn" onClick={() => togglePop('att')}>{t('Attachment')}</button>}
                                             <button type="button" className="ctl-btn" onClick={() => togglePop('more')}>{t('More')}</button>
                                         </div>
-                                        {(mode === 'preorder' || tpl === 'preorder') && (
+                                        {(mode === 'preorder') && (
                                             <label className="fld-l frow">{t('Preorder Reason')}<select className="fld" value={form.data.preorder_reason} onChange={(e) => form.setData('preorder_reason', e.target.value)}>
                                                 <option value="">{t('Select reason')}</option><option>Out of Stock</option><option>Others</option>
                                             </select></label>
                                         )}
-                                        {(mode === 'preorder' || tpl === 'preorder') && (
+                                        {(mode === 'preorder') && (
                                             <label className="fld-l frow">{t('Notification Date')}<input className="fld" type="datetime-local" value={form.data.notify_date} onChange={(e) => form.setData('notify_date', e.target.value)} /></label>
                                         )}
                                     </div>
@@ -313,15 +310,6 @@ export default function Create({ sources, products, couriers, defaults, toggles,
                                     <input type="radio" name="tpl" checked={tpl === key} onChange={() => setOpts({ ...opts, template: key })} />
                                     <div style={{ flex: 1 }}><span className="b sm">{t(name)}</span> {tpl === key && <span className="pill green">{t('ACTIVE')}</span>}</div>
                                 </label>
-                            ))}
-                            <h3 className="mt16" style={{ fontSize: 14 }}>{t('Courier Cards Order')}</h3>
-                            <div className="sm mut">{t('The order of the courier cards on the order detail page.')}</div>
-                            {opts.courier_order.map((c, ix) => (
-                                <div key={c} className="conn-row">
-                                    <div style={{ flex: 1 }} className="b sm">{c}</div>
-                                    <button type="button" className="mini-link" onClick={() => moveCourier(ix, -1)}>↑</button>
-                                    <button type="button" className="mini-link" onClick={() => moveCourier(ix, 1)}>↓</button>
-                                </div>
                             ))}
                             <div className="flex mt16" style={{ justifyContent: 'flex-end' }}>
                                 <button type="button" className="btn pri" onClick={() => setLayoutOpen(false)}>{t('Close')}</button>
