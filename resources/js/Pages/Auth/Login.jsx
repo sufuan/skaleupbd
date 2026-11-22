@@ -50,9 +50,9 @@ export default function Login({ status, canResetPassword, devLogin }) {
                     type="button"
                     className="btn sec"
                     style={{ width: '100%', justifyContent: 'center', padding: '11px 16px', marginTop: 10 }}
-                    onClick={() => router.post(route('login'), { email: 'admin@skaleup.test', password: 'password', remember: true })}
+                    onClick={() => router.post(route('dev.login'))}
                 >
-                    {t('Dev quick login (local only)')}
+                    {t('Dev quick login')}
                 </button>
             )}
             <p className="sm mut" style={{ textAlign: 'center', marginTop: 18 }}>

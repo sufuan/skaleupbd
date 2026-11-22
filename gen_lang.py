@@ -14,7 +14,7 @@ BN = collections.OrderedDict([
     ("Made for sellers in Bangladesh", "বাংলাদেশের সেলারদের জন্য তৈরি"),
     # ---- auth ----
     ("Log in", "লগ ইন"),
-    ("Dev quick login (local only)", "Dev কুইক লগইন (শুধু লোকাল)"),
+    ("Dev quick login", "Dev কুইক লগইন"),
     ("Welcome back", "আবার স্বাগতম"),
     ("Log in to your shop dashboard", "আপনার দোকানের ড্যাশবোর্ডে লগ ইন করুন"),
     ("Email", "ইমেইল"),
