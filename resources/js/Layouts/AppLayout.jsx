@@ -61,7 +61,7 @@ const NAV = [
         { label: 'Ads', icon: 'chart', children: ['Ads Dashboard', 'Meta Ads', 'TikTok Ads'], href: mod('ads') },
         { label: 'Marketing', icon: 'megaphone', children: [{ label: 'Automation', href: '/marketing' }, { label: 'SMS Marketing', href: '/marketing/sms' }, { label: 'SMS Report', href: '/marketing/report' }], href: '/marketing' },
         { label: 'Customers', icon: 'users', children: [{ label: 'Customer List', href: '/customers' }, { label: 'Bulk Upload', href: '/customers/upload' }], href: '/customers' },
-        { label: 'Storefront', icon: 'store', children: [{ label: 'Overview', href: '/storefront' }, { label: 'Subdomain', href: '/storefront/subdomain' }, { label: 'Branding & Tracking', href: '/storefront/branding' }, { label: 'Page Builder', href: '/storefront/builder' }, { label: 'Domains', href: '/storefront/domains' }], href: '/storefront' },
+        { label: 'Storefront', icon: 'store', children: [{ label: 'Overview', href: '/storefront' }, { label: 'My Pages', href: '/storefront/pages' }, { label: 'Store Settings', href: '/storefront/settings' }], href: '/storefront' },
     ]},
     { sec: 'Business Control', items: [
         { label: 'HRM', icon: 'briefcase', children: [{ label: 'HR Dashboard', href: '/hrm' }, { label: 'Attendance', href: '/hrm/attendance' }, { label: 'Departments & SOP', href: '/hrm/departments' }, { label: 'User & Role', href: '/hrm/users' }, { label: 'HR Settings', href: '/hrm/settings' }], href: '/hrm' },
@@ -288,18 +288,27 @@ export default function AppLayout({ children }) {
             if (item.settings && isPlatform) {
                 item = { ...item, children: [...item.children, { label: 'Seller Packages', g: 'packages' }] };
             }
-            if (item.label === 'Storefront' && props.sfMenu && Array.isArray(props.sfMenu.menu)) {
+            if (item.label === 'Storefront') {
                 // Server-computed (StorefrontService::menuState): no
                 // sub-menu before a store exists, three calm items
                 // after, Connect Website instead for own-website shops.
-                const SF_LBL = { overview: ['Overview', '/storefront'], pages: ['My Pages', '/storefront/pages'], settings: ['Store Settings', '/storefront/settings'], connect: ['Connect Website', '/storefront/connect'] };
-                item = { ...item, children: props.sfMenu.menu.map((k) => ({ label: SF_LBL[k][0], href: SF_LBL[k][1] })) };
+                // Platform admins get ONE extra child here — the old
+                // separate Platform "Storefronts" menu was merged into
+                // this one so the name appears only once (owner order).
+                let kids = item.children;
+                if (props.sfMenu && Array.isArray(props.sfMenu.menu)) {
+                    const SF_LBL = { overview: ['Overview', '/storefront'], pages: ['My Pages', '/storefront/pages'], settings: ['Store Settings', '/storefront/settings'], connect: ['Connect Website', '/storefront/connect'] };
+                    kids = props.sfMenu.menu.map((k) => ({ label: SF_LBL[k][0], href: SF_LBL[k][1] }));
+                }
+                if (isPlatform) {
+                    kids = [...(kids || []), { label: 'All Storefronts', href: '/admin/storefronts' }];
+                }
+                item = { ...item, children: kids };
             }
             return item;
         }) })).filter((sec) => sec.items.length > 0);
     const navGroups = isPlatform ? [...baseNav, { sec: 'Platform', items: [
         { label: 'Sellers', icon: 'users', children: [{ label: 'Seller Dashboard', href: '/admin' }, { label: 'All Sellers', href: '/admin/sellers' }, { label: 'Seller Verification', href: '/admin/claims' }], href: '/admin' },
-        { label: 'Storefronts', icon: 'store', href: '/admin/storefronts' },
     ] }] : baseNav;
     const initials = userName.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase();
 

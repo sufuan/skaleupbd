@@ -2642,6 +2642,7 @@ BN.update([
     ('Payment claim rejected', 'পেমেন্ট দাবি বাতিল হয়েছে'),
     ('Storefront', 'স্টোরফ্রন্ট'),
     ('Storefronts', 'স্টোরফ্রন্টসমূহ'),
+    ('All Storefronts', 'সব স্টোরফ্রন্ট'),
     ('Subdomain', 'সাবডোমেইন'),
     ('Domains', 'ডোমেইন'),
     ('Shop address', 'দোকানের ঠিকানা'),
