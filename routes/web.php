@@ -440,13 +440,14 @@ Route::post('/api/webhooks/redx/dm/{method}', [WebhookController::class, 'redx']
 Route::post('/api/webhooks/sms/amarsms', [\App\Http\Controllers\SmsWebhookController::class, 'amarsms'])->name('api.webhooks.sms.amarsms');
 Route::post('/api/webhooks/sms/nishchit', [\App\Http\Controllers\SmsWebhookController::class, 'nishchit'])->name('api.webhooks.sms.nishchit');
 
+require __DIR__.'/auth.php';
+
 // M18: storefront page slugs (/{page-slug}) on tenant hosts are
 // intercepted by ResolveStorefrontHost before this route can run;
 // the route only exists so the URL is routable at all. On the
-// platform host a bare slug is a plain 404. Defined LAST so every
-// real single-segment route above wins first.
+// platform host a bare slug is a plain 404. Defined LAST — after
+// auth.php too — so every real single-segment route (register,
+// forgot-password, ...) wins first.
 Route::get('/{sfPageSlug}', function () {
     abort(404);
 })->where('sfPageSlug', '[a-z0-9][a-z0-9-]*')->name('sf.page');
-
-require __DIR__.'/auth.php';
