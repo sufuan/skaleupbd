@@ -96,7 +96,12 @@ class OrderService
             $delivery = (float) ($data['delivery_charge'] ?? 0);
             $advance = (float) ($data['advance'] ?? 0);
 
-            $check = $this->fraud->forPhone($businessId, $phone);
+            // Deferred network check: intake stores the local-history verdict
+            // plus any already-cached courier-network result. When a network
+            // figure is still outstanding, RefreshFraudCheckJob (dispatched
+            // below, once the order exists) completes the snapshot off the
+            // request path — a courier API must never hold up order creation.
+            $check = $this->fraud->forPhone($businessId, $phone, deferNetwork: true);
 
             $order = Order::create([
                 'business_id' => $businessId,
@@ -167,8 +172,15 @@ class OrderService
 
             $fresh = $order->fresh(['items']);
             app(\App\Services\FinanceService::class)->syncOrderAdvance($fresh, $actor);
+            if ($check['network_pending'] ?? false) {
+                // Queued on the database connection inside this transaction,
+                // so the job becomes visible exactly when the order commits.
+                \App\Jobs\RefreshFraudCheckJob::dispatch($order->id);
+            }
             try {
-                app(\App\Services\AutomationService::class)->onOrderCreated($fresh);
+                // The thank-you flow sends an SMS through the seller's
+                // gateway (external HTTP) — queued, never synchronous.
+                \App\Jobs\OrderCreatedAutomationJob::dispatch($fresh->id);
             } catch (\Throwable) {
                 // Marketing must never break order intake.
             }

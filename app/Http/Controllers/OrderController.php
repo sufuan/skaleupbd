@@ -336,7 +336,13 @@ class OrderController extends Controller
         $this->own($request, $order);
         $order->load(['items', 'processor', 'history', 'activities', 'courierMethod', 'pickupStore']);
         $biz = $this->businessId($request);
-        $rate = $this->fraud->forPhone($biz, $order->customer_phone);
+        // Cache-only network figures: the detail page renders the stored
+        // snapshot plus whatever is already cached and queues the live
+        // refresh — it never waits on a courier API either.
+        $rate = $this->fraud->forPhone($biz, $order->customer_phone, deferNetwork: true);
+        if ($rate['network_pending'] ?? false) {
+            \App\Jobs\RefreshFraudCheckJob::dispatch($order->id);
+        }
 
         $suggestion = app(\App\Services\SuggestCourierService::class)->suggest($order);
 

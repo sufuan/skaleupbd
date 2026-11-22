@@ -17,8 +17,15 @@ use Illuminate\Support\Facades\Cache;
  */
 class SuccessRateService
 {
-    /** @return array{rate:?int, verdict:string, note:string, orders:int, delivered:int, returned:int} */
-    public function forPhone(int $businessId, string $phone): array
+    /**
+     * @return array{rate:?int, verdict:string, note:string, orders:int, delivered:int, returned:int, network_pending:bool}
+     *
+     * $deferNetwork: never call a courier API from here. The network part is
+     * read from the cache only; when a connected courier has no cached entry
+     * the result carries network_pending=true and the caller is expected to
+     * queue RefreshFraudCheckJob (order intake must never wait on a courier).
+     */
+    public function forPhone(int $businessId, string $phone, bool $deferNetwork = false): array
     {
         $phone = PhoneNormalizer::normalize($phone);
 
@@ -38,7 +45,8 @@ class SuccessRateService
         // Courier network check (M3 join, brief §1.8): the couriers' own
         // network-wide record for this phone is the headline figure when any
         // connected courier answers; this shop's own history stays alongside.
-        $network = $this->networkCheck($businessId, $phone);
+        $networkPending = false;
+        $network = $this->networkCheck($businessId, $phone, $deferNetwork, $networkPending);
         $headlineRate = $rate;
         $headline = 'history';
         $networkRates = collect($network)->filter(fn ($n) => $n['rate'] !== null);
@@ -73,14 +81,34 @@ class SuccessRateService
 
         return ['rate' => $headlineRate, 'verdict' => $verdict, 'note' => $note,
             'orders' => $orders, 'delivered' => $delivered, 'returned' => $returned,
-            'network' => $network, 'headline' => $headline];
+            'network' => $network, 'headline' => $headline, 'network_pending' => $networkPending];
+    }
+
+    /**
+     * Run the LIVE check for an existing order and store the outcome on it
+     * (the same silent overwrite approve() does). Called by
+     * RefreshFraudCheckJob so the snapshot taken at intake — local history
+     * plus whatever network results were already cached — is completed by
+     * the courier-network figures a few seconds later, off the request path.
+     */
+    public function refreshOrderSnapshot(Order $order): void
+    {
+        $check = $this->forPhone((int) $order->business_id, (string) $order->customer_phone);
+        if ($check['verdict'] !== $order->fraud_verdict
+            || $check['rate'] !== $order->fraud_rate
+            || $check['note'] !== $order->fraud_note) {
+            $order->fraud_verdict = $check['verdict'];
+            $order->fraud_rate = $check['rate'];
+            $order->fraud_note = $check['note'];
+            $order->save();
+        }
     }
 
     /** @return array<int, array{courier:string, rate:?float, delivered:?int, returned:?int, label:?string}> */
     /** @var array<int, \Illuminate\Support\Collection> */
     private array $methodsCache = [];
 
-    private function networkCheck(int $businessId, string $phone): array
+    private function networkCheck(int $businessId, string $phone, bool $deferNetwork = false, ?bool &$pending = null): array
     {
         $required = [
             'STEADFAST' => ['api_key', 'api_secret'],
@@ -96,11 +124,23 @@ class SuccessRateService
             if (! config('couriers.mock') && ! DriverFactory::hasRealCredentials($method, $required[$method->courier_type])) {
                 continue; // placeholder credentials — not really connected, never call out
             }
-            $result = Cache::remember(
-                'fraudnet:' . $businessId . ':' . $phone . ':' . $method->id,
-                now()->addMinutes(10),
-                fn () => DriverFactory::for($method)->fraudCheck($phone, $method)
-            );
+            $cacheKey = 'fraudnet:' . $businessId . ':' . $phone . ':' . $method->id;
+            if ($deferNetwork) {
+                // Cache-only: a miss means the network figure is still
+                // outstanding — flag it so the caller queues the refresh job
+                // instead of waiting on the courier's API here.
+                $result = Cache::get($cacheKey);
+                if ($result === null) {
+                    $pending = true;
+                    continue;
+                }
+            } else {
+                $result = Cache::remember(
+                    $cacheKey,
+                    now()->addMinutes(10),
+                    fn () => DriverFactory::for($method)->fraudCheck($phone, $method)
+                );
+            }
             if ($result !== null) {
                 $out[] = ['courier' => $method->label()] + $result;
             }
