@@ -292,7 +292,7 @@ export default function AppLayout({ children }) {
         }) })).filter((sec) => sec.items.length > 0);
     const navGroups = isPlatform ? [...baseNav, { sec: 'Platform', items: [
         { label: 'Seller Dashboard', icon: 'grid', href: '/admin' },
-        { label: 'Sellers', icon: 'users', children: [{ label: 'All Sellers', href: '/admin/sellers' }, { label: 'Packages', href: '/settings?group=packages' }], href: '/admin/sellers' },
+        { label: 'Sellers', icon: 'users', children: [{ label: 'All Sellers', href: '/admin/sellers' }], href: '/admin/sellers' },
         { label: 'Payment Claims', icon: 'wallet', href: '/admin/claims' },
         { label: 'Storefronts', icon: 'store', href: '/admin/storefronts' },
     ] }] : baseNav;
