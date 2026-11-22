@@ -105,19 +105,56 @@ const ASK_TOPICS = [
 
 const KIND_ICON = { order: 'box', delivery: 'truck', stock: 'layers', task: 'check', info: 'bell' };
 
+// Groups the user opened by hand. Every page remounts its own AppLayout
+// on an Inertia visit, so useState alone forgets manual opens; the JS
+// bundle itself survives visits, so a module-level Set remembers them.
+const OPEN_GROUPS = new Set();
+
+// Same trick for the sidebar's own scroll position: kept across the
+// per-page remounts so a long sidebar never jumps back to the top.
+let SB_SCROLL_TOP = 0;
+
 // Badge counts live on the SUB-MENU item they belong to (each child may
 // carry a badgeKey into the counts object). A parent with children shows
 // the SUM of its own + its children's counts, but only while collapsed —
 // once the dropdown opens, the badge moves down to the owning child.
 function NavGroup({ item, current }) {
-    const pageProps = usePage().props;
+    const page = usePage();
+    const pageProps = page.props;
     const counts = useContext(CountsContext);
     const val = (k) => (k ? Number(counts[k] ?? pageProps.sidebarCounts?.[k] ?? 0) : 0);
     const childVal = (c) => (c && typeof c === 'object' ? val(c.badgeKey) : 0);
     const ownVal = val(item.badgeKey);
     const total = ownVal + (item.children || []).reduce((s, c) => s + childVal(c), 0);
-    const active = current.startsWith(item.href);
-    const [open, setOpen] = useState(active);
+    // Child-aware active detection: the group is active when the current
+    // path matches the parent href OR any child href. Among matching
+    // children the LONGEST href wins (same rule as the badge
+    // seen-watcher), so /orders/create highlights New Order, not the
+    // /orders prefix of Order List.
+    const activeChild = (item.children || [])
+        .filter((c) => c && typeof c === 'object' && c.href && (current === c.href || current.startsWith(c.href + '/')))
+        .sort((a, b) => b.href.length - a.href.length)[0] || null;
+    // Settings children are query-driven (/settings?group=api); the
+    // server defaults a missing group to 'home'. Only on the settings
+    // page itself — otherwise every page would match group 'home'.
+    const settingsGroup = item.settings && current.startsWith('/settings')
+        ? (new URLSearchParams((page.url || '').split('?')[1] || '').get('group') || 'home')
+        : null;
+    const activeSettingsChild = settingsGroup
+        ? (item.children || []).find((c) => c.g === settingsGroup) || null
+        : null;
+    const active = current.startsWith(item.href) || !!activeChild || !!activeSettingsChild;
+    // Open on arrival when this group holds the current page (even if it
+    // was closed by hand earlier in the session) or when the user opened
+    // it manually before; toggling keeps the Set in sync.
+    const [open, setOpenState] = useState(() => active || OPEN_GROUPS.has(item.label));
+    const toggleOpen = () => {
+        setOpenState((prev) => {
+            const next = !prev;
+            if (next) OPEN_GROUPS.add(item.label); else OPEN_GROUPS.delete(item.label);
+            return next;
+        });
+    };
     if (!item.children) {
         return (
             <Link href={item.href} className={`nav-item ${active ? 'act' : ''}`}>
@@ -128,7 +165,7 @@ function NavGroup({ item, current }) {
     }
     return (
         <>
-            <div className={`nav-item ${open ? 'open' : ''} ${active ? 'act' : ''}`} onClick={() => setOpen(!open)}>
+            <div className={`nav-item ${open ? 'open' : ''} ${active ? 'act' : ''}`} onClick={toggleOpen}>
                 <I d={P[item.icon]} />{t(item.label)}
                 {item.badge && <span className="badge">{item.badge}</span>}
                 {!open && total > 0 && <span className="badge">{total}</span>}
@@ -137,9 +174,9 @@ function NavGroup({ item, current }) {
             {open && (
                 <div className="sub-items">
                     {item.children.map((c) => item.settings ? (
-                        <Link key={c.g} href={`/settings?group=${c.g}`} className="nav-item">{t(c.label)}</Link>
+                        <Link key={c.g} href={`/settings?group=${c.g}`} className={`nav-item ${activeSettingsChild === c ? 'act' : ''}`}>{t(c.label)}</Link>
                     ) : typeof c === 'object' ? (
-                        <Link key={c.label} href={c.href} className="nav-item">{t(c.label)}{childVal(c) > 0 && <span className="badge">{childVal(c)}</span>}</Link>
+                        <Link key={c.label} href={c.href} className={`nav-item ${activeChild === c ? 'act' : ''}`}>{t(c.label)}{childVal(c) > 0 && <span className="badge">{childVal(c)}</span>}</Link>
                     ) : (
                         <Link key={c} href={item.href} className="nav-item">{t(c)}</Link>
                     ))}
@@ -364,6 +401,39 @@ export default function AppLayout({ children }) {
 
     useEffect(() => { setSbOpen(false); }, [current]);
 
+    // Sidebar scroll: save on scroll, restore on mount, and when the
+    // active item lands outside the visible area after a navigation,
+    // bring it into view (block: 'nearest', so an already-visible item
+    // never moves the position the user left).
+    const sbRef = useRef(null);
+    const sbCountsSettled = useRef(false);
+    const settleSidebarScroll = () => {
+        const sb = sbRef.current;
+        if (!sb) return;
+        sb.scrollTop = SB_SCROLL_TOP;
+        const box = sb.getBoundingClientRect();
+        if (box.right <= 0 || box.left >= window.innerWidth) return; // off-canvas (mobile drawer closed)
+        const act = sb.querySelector('.sub-items .nav-item.act') || sb.querySelector('.nav-item.act');
+        if (!act) return;
+        const r = act.getBoundingClientRect();
+        if (r.top < box.top || r.bottom > box.bottom) act.scrollIntoView({ block: 'nearest' });
+    };
+    useEffect(() => {
+        const sb = sbRef.current;
+        if (!sb) return;
+        settleSidebarScroll();
+        const onScroll = () => { SB_SCROLL_TOP = sb.scrollTop; };
+        sb.addEventListener('scroll', onScroll, { passive: true });
+        return () => sb.removeEventListener('scroll', onScroll);
+    }, []);
+    // Badges arriving with the first live counts can shift row heights;
+    // settle once more then so the restored position stays accurate.
+    useEffect(() => {
+        if (liveCounts === null || sbCountsSettled.current) return;
+        sbCountsSettled.current = true;
+        settleSidebarScroll();
+    }, [liveCounts]);
+
     // Badge clearing: when the current page belongs to a watermarked
     // sub-menu item, post the seen watermark and adopt the fresh counts.
     // The LONGEST matching child href decides which page this is, so
@@ -408,7 +478,7 @@ export default function AppLayout({ children }) {
         <CountsContext.Provider value={counts}>
         <div className="shell">
             {sbOpen && <div className="sb-overlay" onClick={() => setSbOpen(false)} />}
-            <aside className={`sb ${sbOpen ? 'open' : ''}`}>
+            <aside ref={sbRef} className={`sb ${sbOpen ? 'open' : ''}`}>
                 <div className="sb-ws">
                     <div className="sb-ava">{(props.auth?.business?.name || userName).trim().charAt(0).toUpperCase()}</div>
                     <div><div className="nm">{props.auth?.business?.name || userName}</div><div className="rl">{t('Workspace')}</div></div>
