@@ -58,7 +58,9 @@ class DeliveryController extends Controller
 
         $activeMethods = $this->methods($biz);
         $rows = $orders->map(function (Order $o) use ($activeMethods) {
-            $suggestion = $this->suggester->suggest($o, $activeMethods);
+            // suggest() returns null when the shop has no courier method
+            // at all — normalise so the row fields below can use ?? safely.
+            $suggestion = $this->suggester->suggest($o, $activeMethods) ?? ['method' => null, 'reason' => null];
 
             $district = $o->effectiveDistrict();
             $waiting = '—';
@@ -81,7 +83,7 @@ class DeliveryController extends Controller
                 'booking_status' => $o->booking_status,
                 'last_error' => $o->bookingLogs()->where('booking_status', 'failed')->latest()->value('error'),
                 'suggested_method_id' => $suggestion['method']->id ?? null,
-                'suggested_label' => $suggestion['method']->label() ?? null,
+                'suggested_label' => $suggestion['method']?->label(),
                 'suggested_reason' => $suggestion['reason'] ?? null,
             ];
         })->all();

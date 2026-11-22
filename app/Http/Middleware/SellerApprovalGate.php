@@ -36,6 +36,7 @@ class SellerApprovalGate
         'registration.verify.store',
         'registration.verify.resend',
         'sidebar.counts',
+        'sidebar.counts.seen',
     ];
 
     /** The only routes an unverified seller may touch. */

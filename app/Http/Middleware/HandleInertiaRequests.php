@@ -82,12 +82,11 @@ class HandleInertiaRequests extends Middleware
             'translations' => $translations,
             'translations_version' => file_exists($langPath) ? md5_file($langPath) : null,
             'notifications' => $notifications,
-            'delivery_waiting' => ($request->user() && $request->user()->business_id && Schema::hasTable('orders'))
-                ? \App\Models\Order::where('business_id', $request->user()->business_id)->where('status', 'Processing')->count()
-                : 0,
-            'orders_pending' => ($request->user() && $request->user()->business_id && Schema::hasTable('orders'))
-                ? \App\Models\Order::where('business_id', $request->user()->business_id)->where('status', 'Pending')->count()
-                : 0,
+            // Sidebar badge counts (same SidebarCountsService the shell
+            // polls) so the first paint already shows watermarked values.
+            'sidebarCounts' => $request->user()
+                ? app(\App\Services\SidebarCountsService::class)->countsFor($request->user())
+                : null,
             'tokenGate' => ($request->user() && $request->user()->business_id && Schema::hasTable('business_wallets'))
                 ? (function () use ($request) {
                     $tokens = app(\App\Services\TokenService::class);

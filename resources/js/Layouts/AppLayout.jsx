@@ -7,6 +7,11 @@ import { createContext, useContext, useEffect, useMemo, useRef, useState } from 
 // Live counts for sidebar/topbar badges, refreshed by polling /sidebar-counts.
 const CountsContext = createContext({});
 
+// Badge keys backed by the server-side seen watermark (visiting the
+// owning sub-menu page clears the badge until something new arrives).
+// messages_inbox is NOT here: it is the real unread count.
+const WATERMARKED_KEYS = ['orders_list', 'delivery_ready', 'purchases_toreceive', 'work_control', 'sellers_pending'];
+
 const I = ({ d, size = 17 }) => (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d={d} /></svg>
 );
@@ -48,14 +53,14 @@ const NAV = [
         { label: 'Dashboard', icon: 'grid', href: '/dashboard' },
     ]},
     { sec: 'Operations', items: [
-        { label: 'Orders', icon: 'box', badgeKey: 'orders_pending', children: [{ label: 'New Order', href: '/orders/create' }, { label: 'Order List', href: '/orders' }, { label: 'Auto Pick Orders', href: '/orders/autopick' }, { label: 'Auto Call Center', href: '/orders/autocall' }, { label: 'Order Block List', href: '/orders/block-list' }, { label: 'Preorders', href: '/orders/preorders' }, { label: 'Orders Dashboard', href: '/orders/dashboard' }], href: '/orders' },
-        { label: 'Delivery', icon: 'truck', badgeKey: 'delivery_waiting', children: [{ label: 'Ready to Ship', href: '/delivery/ready' }, { label: 'Courier Management', href: '/delivery/parcels' }, { label: 'Scan To Update', href: '/delivery/scan' }, { label: 'Courier Invoice Upload', href: '/delivery/invoice' }, { label: 'Courier Ledger', href: '/delivery/ledger' }], href: '/delivery/ready' },
+        { label: 'Orders', icon: 'box', children: [{ label: 'New Order', href: '/orders/create' }, { label: 'Order List', href: '/orders', badgeKey: 'orders_list' }, { label: 'Auto Pick Orders', href: '/orders/autopick' }, { label: 'Auto Call Center', href: '/orders/autocall' }, { label: 'Order Block List', href: '/orders/block-list' }, { label: 'Preorders', href: '/orders/preorders' }, { label: 'Orders Dashboard', href: '/orders/dashboard' }], href: '/orders' },
+        { label: 'Delivery', icon: 'truck', children: [{ label: 'Ready to Ship', href: '/delivery/ready', badgeKey: 'delivery_ready' }, { label: 'Courier Management', href: '/delivery/parcels' }, { label: 'Scan To Update', href: '/delivery/scan' }, { label: 'Courier Invoice Upload', href: '/delivery/invoice' }, { label: 'Courier Ledger', href: '/delivery/ledger' }], href: '/delivery/ready' },
         { label: 'Inventory', icon: 'layers', children: [{ label: 'Inventory Dashboard', href: '/inventory/dashboard' }, { label: 'Products', href: '/inventory/products' }, { label: 'Stock Ledger', href: '/inventory/ledger' }, { label: 'Branches', href: '/inventory/branches' }, { label: 'Warranty', href: '/inventory/warranty' }], href: '/inventory/dashboard' },
-        { label: 'Messages', icon: 'chat', badgeKey: 'messages_unread', children: [{ label: 'Inbox', href: '/messages/inbox' }, { label: 'Comments', href: '/messages/comments' }, { label: 'AI Activity', href: '/messages/activity' }], href: '/messages/inbox' },
-        { label: 'Purchase', icon: 'cart', badgeKey: 'purchase_toreceive', children: [{ label: 'Purchase Dashboard', href: '/purchase' }, { label: 'Purchases', href: '/purchases' }, { label: 'Suppliers', href: '/suppliers' }], href: '/purchase' },
+        { label: 'Messages', icon: 'chat', children: [{ label: 'Inbox', href: '/messages/inbox', badgeKey: 'messages_inbox' }, { label: 'Comments', href: '/messages/comments' }, { label: 'AI Activity', href: '/messages/activity' }], href: '/messages/inbox' },
+        { label: 'Purchase', icon: 'cart', children: [{ label: 'Purchase Dashboard', href: '/purchase' }, { label: 'Purchases', href: '/purchases', badgeKey: 'purchases_toreceive' }, { label: 'Suppliers', href: '/suppliers' }], href: '/purchase' },
         { label: 'Task & Follow-up', icon: 'check', children: ['Task Board', 'Agent Cockpit', 'Follow-up Management', 'My Follow-ups', 'Follow-up Performance'], href: mod('task') },
         { label: 'Call Center', icon: 'phone', children: ['Call Dashboard', 'Call Reports', 'Contacts'], href: mod('call-center') },
-        { label: 'Work Inbox', icon: 'inbox', badgeKey: 'workinbox_open', children: [{ label: 'Work Control', href: '/work-inbox/control' }, { label: 'Settings', href: '/work-inbox/settings' }], href: '/work-inbox/control' },
+        { label: 'Work Inbox', icon: 'inbox', children: [{ label: 'Work Control', href: '/work-inbox/control', badgeKey: 'work_control' }, { label: 'Settings', href: '/work-inbox/settings' }], href: '/work-inbox/control' },
     ]},
     { sec: 'Growth', items: [
         { label: 'Ads', icon: 'chart', children: ['Ads Dashboard', 'Meta Ads', 'TikTok Ads'], href: mod('ads') },
@@ -100,21 +105,33 @@ const ASK_TOPICS = [
 
 const KIND_ICON = { order: 'box', delivery: 'truck', stock: 'layers', task: 'check', info: 'bell' };
 
+// Badge counts live on the SUB-MENU item they belong to (each child may
+// carry a badgeKey into the counts object). A parent with children shows
+// the SUM of its own + its children's counts, but only while collapsed —
+// once the dropdown opens, the badge moves down to the owning child.
 function NavGroup({ item, current }) {
     const pageProps = usePage().props;
     const counts = useContext(CountsContext);
-    const badgeValue = item.badgeKey ? (counts[item.badgeKey] ?? pageProps[item.badgeKey] ?? 0) : 0;
+    const val = (k) => (k ? Number(counts[k] ?? pageProps.sidebarCounts?.[k] ?? 0) : 0);
+    const childVal = (c) => (c && typeof c === 'object' ? val(c.badgeKey) : 0);
+    const ownVal = val(item.badgeKey);
+    const total = ownVal + (item.children || []).reduce((s, c) => s + childVal(c), 0);
     const active = current.startsWith(item.href);
     const [open, setOpen] = useState(active);
     if (!item.children) {
-        return <Link href={item.href} className={`nav-item ${active ? 'act' : ''}`}><I d={P[item.icon]} />{t(item.label)}</Link>;
+        return (
+            <Link href={item.href} className={`nav-item ${active ? 'act' : ''}`}>
+                <I d={P[item.icon]} />{t(item.label)}
+                {ownVal > 0 && <span className="badge">{ownVal}</span>}
+            </Link>
+        );
     }
     return (
         <>
             <div className={`nav-item ${open ? 'open' : ''} ${active ? 'act' : ''}`} onClick={() => setOpen(!open)}>
                 <I d={P[item.icon]} />{t(item.label)}
                 {item.badge && <span className="badge">{item.badge}</span>}
-                {item.badgeKey && Number(badgeValue) > 0 && <span className="badge">{badgeValue}</span>}
+                {!open && total > 0 && <span className="badge">{total}</span>}
                 <span className="chev">›</span>
             </div>
             {open && (
@@ -122,7 +139,7 @@ function NavGroup({ item, current }) {
                     {item.children.map((c) => item.settings ? (
                         <Link key={c.g} href={`/settings?group=${c.g}`} className="nav-item">{t(c.label)}</Link>
                     ) : typeof c === 'object' ? (
-                        <Link key={c.label} href={c.href} className="nav-item">{t(c.label)}</Link>
+                        <Link key={c.label} href={c.href} className="nav-item">{t(c.label)}{childVal(c) > 0 && <span className="badge">{childVal(c)}</span>}</Link>
                     ) : (
                         <Link key={c} href={item.href} className="nav-item">{t(c)}</Link>
                     ))}
@@ -253,12 +270,13 @@ export default function AppLayout({ children }) {
     const [toast, setToast] = useState(null);
     const [liveCounts, setLiveCounts] = useState(null);
     const counts = {
-        orders_pending: liveCounts?.orders_pending ?? props.orders_pending ?? 0,
-        delivery_waiting: liveCounts?.delivery_waiting ?? props.delivery_waiting ?? 0,
+        orders_list: liveCounts?.orders_list ?? props.sidebarCounts?.orders_list ?? 0,
+        delivery_ready: liveCounts?.delivery_ready ?? props.sidebarCounts?.delivery_ready ?? 0,
         notifications_unread: liveCounts?.notifications_unread ?? props.notifications?.unread ?? 0,
-        messages_unread: liveCounts?.messages_unread ?? 0,
-        purchase_toreceive: liveCounts?.purchase_toreceive ?? props.purchase_toreceive ?? 0,
-        workinbox_open: liveCounts?.workinbox_open ?? props.workinbox_open ?? 0,
+        messages_inbox: liveCounts?.messages_inbox ?? props.sidebarCounts?.messages_inbox ?? 0,
+        purchases_toreceive: liveCounts?.purchases_toreceive ?? props.sidebarCounts?.purchases_toreceive ?? 0,
+        work_control: liveCounts?.work_control ?? props.sidebarCounts?.work_control ?? 0,
+        sellers_pending: liveCounts?.sellers_pending ?? props.sidebarCounts?.sellers_pending ?? 0,
     };
     const unread = counts.notifications_unread;
 
@@ -310,7 +328,7 @@ export default function AppLayout({ children }) {
             return item;
         }) })).filter((sec) => sec.items.length > 0);
     const navGroups = isPlatform ? [...baseNav, { sec: 'Platform', items: [
-        { label: 'Sellers', icon: 'users', children: [{ label: 'Seller Dashboard', href: '/admin' }, { label: 'All Sellers', href: '/admin/sellers' }, { label: 'Seller Verification', href: '/admin/claims' }], href: '/admin' },
+        { label: 'Sellers', icon: 'users', children: [{ label: 'Seller Dashboard', href: '/admin' }, { label: 'All Sellers', href: '/admin/sellers' }, { label: 'Seller Verification', href: '/admin/claims', badgeKey: 'sellers_pending' }], href: '/admin' },
     ] }] : baseNav;
     const initials = userName.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase();
 
@@ -345,6 +363,39 @@ export default function AppLayout({ children }) {
     }, [props.flash]);
 
     useEffect(() => { setSbOpen(false); }, [current]);
+
+    // Badge clearing: when the current page belongs to a watermarked
+    // sub-menu item, post the seen watermark and adopt the fresh counts.
+    // The LONGEST matching child href decides which page this is, so
+    // /orders/create (New Order) never clears the Order List badge,
+    // while /orders and /orders/123 do. Posted once per count value —
+    // the response zeroes the key, so this cannot loop.
+    const seenPosted = useRef({});
+    useEffect(() => {
+        const kids = [];
+        navGroups.forEach((g) => g.items.forEach((it) => (it.children || []).forEach((c) => {
+            if (c && typeof c === 'object' && c.href) kids.push(c);
+        })));
+        const match = kids
+            .filter((c) => current === c.href || current.startsWith(c.href + '/'))
+            .sort((a, b) => b.href.length - a.href.length)[0];
+        if (!match?.badgeKey || !WATERMARKED_KEYS.includes(match.badgeKey)) return;
+        const key = match.badgeKey;
+        const value = Number(counts[key] ?? 0);
+        if (value <= 0 || seenPosted.current[key] === value) return;
+        seenPosted.current[key] = value;
+        (async () => {
+            try {
+                const res = await fetch('/sidebar-counts/seen', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '', 'X-Requested-With': 'XMLHttpRequest' },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({ key }),
+                });
+                if (res.ok) setLiveCounts(await res.json());
+            } catch { /* the next poll reconciles */ }
+        })();
+    }, [current, counts.orders_list, counts.delivery_ready, counts.purchases_toreceive, counts.work_control, counts.sellers_pending]);
 
     const toggleTheme = () => {
         const next = theme === 'dark' ? 'light' : 'dark';

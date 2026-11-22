@@ -67,29 +67,21 @@ Route::middleware(['auth', 'verified', 'totp'])->group(function () {
     Route::get('/dashboard', [\App\Http\Controllers\DashboardController::class, 'index'])->name('dashboard');
     Route::get('/dashboard/earnings', [\App\Http\Controllers\DashboardController::class, 'earnings'])->name('dashboard.earnings');
 
-    // Live sidebar/topbar counts, polled by the app shell (no page reload needed).
+    // Live sidebar/topbar counts, polled by the app shell (no page reload
+    // needed). Each count belongs to one sub-menu item; the shell sums
+    // them onto a collapsed parent. Watermarked keys clear when the user
+    // visits the owning page (POST /sidebar-counts/seen).
     Route::get('/sidebar-counts', function (\Illuminate\Http\Request $request) {
-        $biz = $request->user()?->business_id;
-        $hasOrders = $biz && \Illuminate\Support\Facades\Schema::hasTable('orders');
-        return response()->json([
-            'orders_pending' => $hasOrders ? \App\Models\Order::where('business_id', $biz)->where('status', 'Pending')->count() : 0,
-            'delivery_waiting' => $hasOrders ? \App\Models\Order::where('business_id', $biz)->where('status', 'Processing')->count() : 0,
-            'notifications_unread' => \Illuminate\Support\Facades\Schema::hasTable('app_notifications')
-                ? \App\Models\AppNotification::whereNull('read_at')->count()
-                : 0,
-            'messages_unread' => $biz && \Illuminate\Support\Facades\Schema::hasTable('conversations')
-                ? (int) \App\Models\Conversation::where('business_id', $biz)->sum('unread_count')
-                    + \App\Models\ChatMessage::where('business_id', $biz)->whereIn('status', ['draft', 'flagged'])->count()
-                : 0,
-            'workinbox_open' => $biz && \Illuminate\Support\Facades\Schema::hasTable('work_tasks')
-                ? \App\Models\WorkTask::where('business_id', $biz)->whereIn('status', ['open', 'in_progress'])->count()
-                : 0,
-            'purchase_toreceive' => $biz && \Illuminate\Support\Facades\Schema::hasTable('purchases')
-                ? \App\Models\Purchase::where('business_id', $biz)
-                    ->whereHas('items', fn ($q) => $q->whereRaw('qty_received + qty_damaged < qty_ordered'))->count()
-                : 0,
-        ]);
+        return response()->json(app(\App\Services\SidebarCountsService::class)->countsFor($request->user()));
     })->name('sidebar.counts');
+
+    Route::post('/sidebar-counts/seen', function (\Illuminate\Http\Request $request) {
+        $svc = app(\App\Services\SidebarCountsService::class);
+        $key = (string) $request->input('key', '');
+        abort_unless($svc->isWatermarked($key), 422);
+
+        return response()->json($svc->markSeen($request->user(), $key));
+    })->name('sidebar.counts.seen');
 
     Route::get('/settings', [SettingsController::class, 'index'])->name('settings');
     Route::post('/settings/totp', [SettingsController::class, 'updateTotp'])->name('settings.totp');

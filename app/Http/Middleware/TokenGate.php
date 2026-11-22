@@ -27,6 +27,7 @@ class TokenGate
         if ($user && ! $request->isMethod('GET') && ! $user->is_platform_admin && $user->business_id) {
             $name = (string) ($request->route()?->getName() ?? '');
             $exempt = $name === 'logout' || $name === 'locale.switch' || $name === 'verification.send'
+                || $name === 'sidebar.counts.seen' // clearing a badge is view state, not a shop mutation
                 || $name === 'registration.verify.store' || $name === 'registration.verify.resend'
                 || $name === 'billing.claims.store' || $name === 'billing.claims.submit'
                 || str_starts_with($name, 'totp.');
