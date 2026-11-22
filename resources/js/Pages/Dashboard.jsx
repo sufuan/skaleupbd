@@ -5,16 +5,6 @@ import { useEffect, useState } from 'react';
 
 const VIEWS = ['My Dashboard', 'Overview', 'Decision', 'Operations', 'Products', 'Marketing', 'Customers & Team', 'Activity'];
 
-function Kpi({ label, value, delta, prev }) {
-    return (
-        <div className="card kpi">
-            <div className="lb"><span>{t(label)}</span><span className="pill">{t('Today')}</span></div>
-            <div className="vl">{value}</div>
-            {delta && <div className="dl"><b>↗ {delta}</b> &nbsp;{t('Previous')} {prev}</div>}
-        </div>
-    );
-}
-
 function Donut({ size = 190, stroke = 26, parts }) {
     const r = (size - stroke) / 2, c = 2 * Math.PI * r, total = parts.reduce((a, p) => a + p.v, 0) || 1;
     let off = 0;
@@ -30,30 +20,44 @@ function Donut({ size = 190, stroke = 26, parts }) {
 }
 
 const fmt = (n) => '৳' + Math.round(Number(n) || 0).toLocaleString('en-US');
-const PALETTE = ['#5b2a86', '#411550', '#7a4bb3', '#9570c4', '#c9b3ec', '#e3d5f7'];
 
 const CalSvg = ({ size = 11 }) => (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4" /><path d="M8 2v4" /><path d="M3 10h18" /></svg>
 );
-const FunnelBtn = () => (
-    <button type="button" className="funnel-btn" title={t('Counted on Approved date')}>
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 4h18l-7 8v6l-4 2v-8L3 4z" /></svg>
-        <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
-    </button>
-);
+
+/** Display-only day label (not a control). */
 const TodayPill = ({ label }) => (
-    <button type="button" className="today-pill"><span style={{ marginRight: 4, display: 'inline-flex' }}><CalSvg /></span>{label}</button>
+    <span className="today-pill"><span style={{ marginRight: 4, display: 'inline-flex' }}><CalSvg /></span>{label}</span>
 );
 
-function DashKpi({ label, k, money, pill, hint }) {
+const BASIS_LABELS = { approved: 'Approved date', created: 'Web order date', courier: 'Courier date' };
+
+/** The counting-basis switch: a real dropdown, applied server-side. */
+function BasisSelect({ basis, onBasis }) {
+    return (
+        <select className="basis-sel" value={basis} onChange={(e) => onBasis(e.target.value)} title={t('Counted on')} aria-label={t('Counted on')}>
+            <option value="approved">{t('Approved date')}</option>
+            <option value="created">{t('Web order date')}</option>
+            <option value="courier">{t('Courier date')}</option>
+        </select>
+    );
+}
+
+/** Display-only chip naming the active counting basis on cards the switch drives. */
+const BasisChip = ({ basis }) => <span className="today-pill">{t(BASIS_LABELS[basis] || 'Approved date')}</span>;
+
+function Delta({ k, money }) {
+    if (k.pct === null) return <>{t('Previous')} {money ? fmt(k.prev) : String(Math.round(k.prev))}</>;
+    return <><span className={k.pct >= 0 ? 'up' : 'down'}>{k.pct >= 0 ? '↗' : '↘'} {Math.abs(k.pct).toFixed(1)}%</span> &nbsp;{t('Previous')} {money ? fmt(k.prev) : String(Math.round(k.prev))}</>;
+}
+
+function DashKpi({ label, k, money, pill, hint, basis, onBasis }) {
     return (
         <div className="card kpi">
             <div className="kpi-top"><span className="kpi-lbl">{t(label)}</span>
-                <span className="kpi-controls"><FunnelBtn /><TodayPill label={pill} /></span></div>
+                <span className="kpi-controls"><BasisSelect basis={basis} onBasis={onBasis} /><TodayPill label={pill} /></span></div>
             <div className="val">{money ? fmt(k.value) : String(Math.round(k.value))}</div>
-            <div className="sub">{k.pct === null
-                ? <>{t('Previous')} {money ? fmt(k.prev) : String(Math.round(k.prev))}</>
-                : <><span className={k.pct >= 0 ? 'up' : 'down'}>{k.pct >= 0 ? '↗' : '↘'} {Math.abs(k.pct).toFixed(1)}%</span> &nbsp;{t('Previous')} {money ? fmt(k.prev) : String(Math.round(k.prev))}</>}</div>
+            <div className="sub"><Delta k={k} money={money} /></div>
             {hint && <div className="sub" style={{ marginTop: 2 }}>{t(hint)}</div>}
         </div>
     );
@@ -62,7 +66,7 @@ function DashKpi({ label, k, money, pill, hint }) {
 const SRC_PALETTE = ['#4f46e5', '#2563eb', '#16A34A', '#D97706', '#DC2626', '#7C3AED', '#0891B2'];
 const HOURS = ['12 AM', '1 AM', '2 AM', '3 AM', '4 AM', '5 AM', '6 AM', '7 AM', '8 AM', '9 AM', '10 AM', '11 AM', '12 PM', '1 PM', '2 PM', '3 PM', '4 PM', '5 PM', '6 PM', '7 PM', '8 PM', '9 PM', '10 PM', '11 PM'];
 
-function MyDashboard({ my }) {
+function MyDashboard({ my, onBasis }) {
     const pill = my.is_today ? t('Today') : my.day_short;
     const [worTab, setWorTab] = useState('web');
     const worVals = my.web_series.map((d) => (worTab === 'web' ? d.web : d.inc));
@@ -94,9 +98,9 @@ function MyDashboard({ my }) {
     return (
         <>
             <div className="kpi-grid">
-                <DashKpi label="Total Orders" k={my.kpis.orders} pill={pill} />
-                <DashKpi label="Revenue" k={my.kpis.revenue} money pill={pill} hint="Delivered orders only" />
-                <DashKpi label="Profit" k={my.kpis.profit} money pill={pill} />
+                <DashKpi label="Total Orders" k={my.kpis.orders} pill={pill} basis={my.basis} onBasis={onBasis} />
+                <DashKpi label="Revenue" k={my.kpis.revenue} money pill={pill} hint="Delivered orders only" basis={my.basis} onBasis={onBasis} />
+                <DashKpi label="Profit" k={my.kpis.profit} money pill={pill} basis={my.basis} onBasis={onBasis} />
                 <div className="card kpi">
                     <div className="kpi-top"><span className="kpi-lbl">{t('Pending Web Orders')}</span>
                         <span className="kpi-controls"><TodayPill label={pill} /></span></div>
@@ -108,7 +112,7 @@ function MyDashboard({ my }) {
             <div className="dash-2col">
                 <div className="card">
                     <div style={{ display: 'flex', alignItems: 'center' }}><h3>{t('Web Order Report')}</h3>
-                        <span style={{ marginLeft: 'auto' }}><button type="button" className="ctl-btn">{pill} <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg></button></span></div>
+                        <span style={{ marginLeft: 'auto' }}><TodayPill label={pill} /></span></div>
                     <div style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: 10, padding: '2px 12px', margin: '12px 0 14px' }}>
                         <div className="ptabs" style={{ borderBottom: 'none', margin: 0 }}>
                             <span className={`ptab ${worTab === 'web' ? 'act' : ''}`} onClick={() => setWorTab('web')}>{t('Web Orders')}</span>
@@ -140,7 +144,7 @@ function MyDashboard({ my }) {
                 <div className="card">
                     <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}><h3>{t('Orders by Source')}</h3>
                         <span style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
-                            <button type="button" className="ctl-btn">⧩ {t('Approved')}</button>
+                            <BasisChip basis={my.basis} />
                             <TodayPill label={pill} />
                         </span></div>
                     <div style={{ display: 'flex', alignItems: 'center', margin: '12px 0', flexWrap: 'wrap' }}>
@@ -202,7 +206,7 @@ function MyDashboard({ my }) {
                 <div style={{ height: 14 }} />
                 <div style={{ display: 'flex', alignItems: 'flex-end', gap: 3, height: 110, borderBottom: '1px solid var(--line)' }}>
                     {slice.map((d) => (
-                        <div key={d.date} title={`${d.date} — ${t('Created')} ${d.created} · ${t('Sent to Courier')} ${d.sent}`} style={{ flex: 1, display: 'flex', alignItems: 'flex-end', gap: 1, height: '100%' }}>
+                        <div key={d.date} title={`${d.date} - ${t('Created')} ${d.created} · ${t('Sent to Courier')} ${d.sent}`} style={{ flex: 1, display: 'flex', alignItems: 'flex-end', gap: 1, height: '100%' }}>
                             <div style={{ flex: 1, background: d.created ? '#2563eb' : 'transparent', height: d.created ? `${Math.max(4, (d.created / cMax) * 100)}%` : 0, borderRadius: '3px 3px 0 0' }} />
                             <div style={{ flex: 1, background: d.sent ? '#16a34a' : 'transparent', height: d.sent ? `${Math.max(4, (d.sent / cMax) * 100)}%` : 0, borderRadius: '3px 3px 0 0' }} />
                         </div>
@@ -216,8 +220,7 @@ function MyDashboard({ my }) {
             <div className="card" style={{ marginBottom: 18 }}>
                 <div style={{ display: 'flex', alignItems: 'center' }}><h3>{t('Earning Reports')}</h3>
                     <span style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
-                        <button type="button" className="ctl-btn">⧩ {t('Approved')}</button>
-                        <button type="button" className="ctl-btn">{t('Year')}</button>
+                        <span className="today-pill">{t('Year')}</span>
                     </span></div>
                 {!earn ? (
                     <div className="dashed-empty" style={{ marginTop: 12 }}>
@@ -273,8 +276,8 @@ function MyDashboard({ my }) {
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}><h3>{t('Top Selling Products')}</h3>
                         {my.top_products.length > 0 && <span className="pill grey">{t('Top')} {my.top_products.length}</span>}
                         <span style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
-                            <button type="button" className="ctl-btn">⧩ {t('Approved')}</button>
-                            <button type="button" className="ctl-btn">{pill}</button>
+                            <BasisChip basis={my.basis} />
+                            <TodayPill label={pill} />
                         </span></div>
                     <div style={{ marginTop: 14 }}>
                         {my.top_products.map((p, i) => (
@@ -300,73 +303,114 @@ function MyDashboard({ my }) {
     );
 }
 
-function Overview({ stats }) {
-    const total = Math.max(1, stats.total);
+function OvKpi({ label, value, sub }) {
+    return (
+        <div className="card kpi">
+            <div className="kpi-top"><span className="kpi-lbl">{t(label)}</span></div>
+            <div className="val">{value}</div>
+            <div className="sub">{sub || <>&nbsp;</>}</div>
+        </div>
+    );
+}
+
+function Overview({ ov, dayLabel }) {
     const funnel = [
-        { label: 'Web Orders', v: stats.total, w: 100, color: '#5b2a86' },
-        { label: 'Incomplete Orders', v: stats.incomplete, w: (stats.incomplete / total) * 100, color: '#a678d8' },
-        { label: 'Cancelled', v: stats.cancelled, w: (stats.cancelled / total) * 100, color: '#c9b3ec' },
-        { label: 'Processing', v: stats.processing, w: (stats.processing / total) * 100, color: '#7a4bb3' },
-        { label: 'Shipped', v: stats.shipped, w: (stats.shipped / total) * 100, color: '#9570c4' },
-        { label: 'Delivered', v: stats.delivered, w: (stats.delivered / total) * 100, color: '#411550' },
+        { label: 'Web Orders', v: ov.web, color: '#5b2a86' },
+        { label: 'Incomplete', v: ov.incomplete, color: '#a678d8' },
+        { label: 'Processing', v: ov.processing, color: '#7a4bb3' },
     ];
+    const fMax = Math.max(1, ...funnel.map((f) => f.v));
+    const counts = [
+        { label: 'Created', v: ov.received, color: '#2563eb' },
+        { label: 'Sent to Courier', v: ov.sent, color: '#16a34a' },
+    ];
+    const cMax = Math.max(1, ...counts.map((c) => c.v));
+    const barRow = (f, max) => (
+        <div className="funnel-row" key={f.label}>
+            <span style={{ width: 130 }}>{t(f.label)}</span>
+            <div className="funnel-bar" style={{ width: `${Math.max(3, (f.v / max) * 220)}px`, background: f.color }} />
+            <b>{f.v}</b>
+        </div>
+    );
+    return (
+        <>
+            <div className="kpi-grid">
+                <OvKpi label="Orders Received" value={String(ov.received)} sub={t('Last 30 days')} />
+                <OvKpi label="Approved Orders" value={String(ov.approved)} sub={t('Processing + Shipped + Delivered')} />
+                <OvKpi label="Processing" value={String(ov.processing)} />
+                <OvKpi label="Shipped" value={String(ov.shipped)} />
+                <OvKpi label="Delivered" value={String(ov.delivered)} />
+                <OvKpi label="Cancelled" value={String(ov.cancelled)} sub={`${ov.cancelled_pct}% ${t('of total')}`} />
+                <OvKpi label="Return" value={String(ov.returned)} />
+                <OvKpi label="Revenue" value={fmt(ov.revenue)} sub={<Delta k={{ pct: ov.revenue_pct, prev: ov.revenue_prev }} money />} />
+                <OvKpi label="Profit" value={fmt(ov.profit)} sub={t('Estimated')} />
+                <OvKpi label="Ad Spend" value={fmt(ov.ad_spend)} sub={t('No ad accounts connected')} />
+                <OvKpi label="Courier Cost" value={fmt(ov.courier_cost)} sub={dayLabel} />
+                <OvKpi label="Pending COD" value={fmt(ov.pending_cod)} sub={t('COD receivable')} />
+            </div>
+            <div className="dash-2col">
+                <div className="card">
+                    <h3>{t('Order Funnel')}</h3>
+                    <div className="card-sub">{t('Last 30 days')}</div>
+                    <div style={{ marginTop: 10 }}>{funnel.map((f) => barRow(f, fMax))}</div>
+                </div>
+                <div className="card">
+                    <h3>{t('Order Counts')}</h3>
+                    <div className="card-sub">{t('Last 30 days')}</div>
+                    <div style={{ marginTop: 10 }}>{counts.map((f) => barRow(f, cMax))}</div>
+                </div>
+            </div>
+        </>
+    );
+}
+
+function DecisionView({ dc }) {
+    const verdict = dc.verdict === 'major' ? 'Major rule breach: act now' : dc.verdict === 'some' ? 'Some rules need attention' : 'No major rule breach';
+    return (
+        <div className="card decision-box">
+            <h3>{t('Decision Box')}</h3>
+            <div className="conf-wrap">
+                <Donut size={150} stroke={16} parts={[{ v: dc.confidence, color: '#411550' }, { v: 100 - dc.confidence, color: '#e9d5ff' }]} />
+                <div className="conf-num">{dc.confidence}%</div>
+            </div>
+            <div className="conf-lbl">{t('Confidence')}</div>
+            <p style={{ marginTop: 12 }}>{t('How much of today\'s rules are working properly (orders, stock and courier together).')}</p>
+            <p>{t('আজকের নিয়মগুলোর কতভাগ ঠিকঠাক চলছে (order, stock, courier মিলিয়ে)')}</p>
+            <div className="verdict">{t(verdict)}</div>
+            <div className="sub" style={{ fontSize: 13, color: 'var(--mut)' }}>
+                {dc.breaching} / {dc.live_rules} {t('rules need attention')} · {dc.open_tasks} {t('open tasks')} · {dc.critical_open} {t('critical')}
+            </div>
+            <p style={{ marginTop: 16 }}><a className="btn pri" href="/work-inbox/control">{t('Open Work Inbox')}</a></p>
+        </div>
+    );
+}
+
+function OperationsView({ ops }) {
     const pillFor = (st) => st === 'Pending' ? 'amber' : st === 'Processing' ? 'blue' : '';
     return (
         <>
-            <div className="kpis">
-                <Kpi label="Total Orders" value={String(stats.total)} />
-                <Kpi label="Approved Orders" value={String(stats.approved)} />
-                <Kpi label="Revenue" value={fmt(stats.revenue)} />
-                <Kpi label="Profit" value={fmt(stats.profit)} />
-            </div>
-            <div className="dash-grid">
-                <div className="card">
-                    <h3>{t('Web Order Funnel')}</h3>
-                    <div className="card-sub">{t('Last 30 days')} · {t('All numbers come from the same accounts')}</div>
-                    {funnel.map((f) => (
-                        <div className="funnel-row" key={f.label}>
-                            <span style={{ width: 130 }}>{t(f.label)}</span>
-                            <div className="funnel-bar" style={{ width: `${Math.max(3, f.w * 2.4)}px`, background: f.color }} />
-                            <b>{f.v}</b>{f.label === 'Cancelled' && stats.total > 0 && <span className="mut sm">({Math.round((stats.cancelled / stats.total) * 100)}%)</span>}
-                        </div>
+            <div className="card" style={{ marginBottom: 18 }}>
+                <h3>{t('Stuck Orders')}</h3>
+                <div className="card-sub">{t('Open a box to see the work in Work Inbox')}</div>
+                <div className="stuck-grid">
+                    {ops.stuck.map((s) => (
+                        <a key={s.label} className="stuck" href="/work-inbox/control">
+                            <span className="stuck-n">{s.count}</span>
+                            <span className="stuck-l">{t(s.label)}</span>
+                        </a>
                     ))}
-                    <div className="mt16 sm note-box" style={{ padding: '10px 12px' }}>
-                        <b>{t('Confidence 65%')}</b> — {t('How much of today\'s rules are working properly (orders, stock and courier together).')}
-                    </div>
-                </div>
-                <div className="card">
-                    <div className="flex"><h3>{t('Orders by Source')}</h3><span className="spacer" /><span className="pill">{t('Last 30 days')} ⌄</span></div>
-                    <div className="flex" style={{ justifyContent: 'center', margin: '12px 0 4px' }}>
-                        <Donut parts={[{ v: stats.processing, color: '#5b2a86' }, { v: stats.delivered, color: '#411550' }, { v: stats.cancelled, color: '#c9b3ec' }, { v: stats.shipped, color: '#9570c4' }, { v: stats.incomplete, color: '#e3d5f7' }]} />
-                    </div>
-                    <div className="sm" style={{ textAlign: 'center' }}>
-                        <div><span className="legend-dot" style={{ background: '#7a4bb3' }} />{t('Processing')} {stats.processing} · <span className="legend-dot" style={{ background: '#411550' }} />{t('Delivered')} {stats.delivered}</div>
-                        <div className="mut" style={{ marginTop: 3 }}>{t('Cancelled')} {stats.cancelled} · {t('Shipped')} {stats.shipped} · {t('Incomplete')} {stats.incomplete}</div>
-                        <div className="b" style={{ marginTop: 8, fontSize: 14 }}>{t('Total Orders')}: {stats.total}</div>
-                    </div>
-                    <div className="mt16 flex" style={{ gap: 12 }}>
-                        <div className="stat-box" style={{ flex: 1, textAlign: 'center', padding: '12px 18px' }}>
-                            <div className="sm mut">{t('Created')}</div><div style={{ fontSize: 22, fontWeight: 800, color: '#5b2a86' }}>{stats.total}</div>
-                        </div>
-                        <div className="stat-box alt" style={{ flex: 1, textAlign: 'center', padding: '12px 18px' }}>
-                            <div className="sm mut">{t('Sent to Courier')}</div><div style={{ fontSize: 22, fontWeight: 800 }}>{stats.sent}</div>
-                        </div>
-                        <div className="stat-box alt" style={{ flex: 1, textAlign: 'center', padding: '12px 18px' }}>
-                            <div className="sm mut">{t('Created Today')}</div><div style={{ fontSize: 22, fontWeight: 800 }}>{stats.created_today}</div>
-                        </div>
-                    </div>
                 </div>
             </div>
             <div className="card">
-                <h3>{t('Courier Table — Orders Not Sent To Courier')}</h3>
-                <div className="card-sub">{stats.courier_rows.length} {t('orders')}</div>
+                <h3>{t('Courier Table - Orders Not Sent To Courier')}</h3>
+                <div className="card-sub">{ops.not_sent_total} {t('orders waiting')}{ops.couriers.length > 0 ? ` · ${ops.couriers.join(', ')}` : ''}</div>
                 <table className="tbl">
                     <thead><tr><th>{t('Invoice')}</th><th>{t('Customer')}</th><th>{t('Courier')}</th><th>{t('Status')}</th></tr></thead>
                     <tbody>
-                        {stats.courier_rows.map((r) => (
+                        {ops.courier_rows.map((r) => (
                             <tr key={r.invoice}><td className="b">{r.invoice}</td><td>{r.name}</td><td>{r.courier}</td><td><span className={`pill ${pillFor(r.status)}`}>{t(r.status)}</span></td></tr>
                         ))}
-                        {stats.courier_rows.length === 0 && <tr><td colSpan="4" className="mut">{t('No orders are waiting')}</td></tr>}
+                        {ops.courier_rows.length === 0 && <tr><td colSpan="4" className="mut">{t('No orders are waiting')}</td></tr>}
                     </tbody>
                 </table>
             </div>
@@ -374,7 +418,163 @@ function Overview({ stats }) {
     );
 }
 
-export default function Dashboard({ stats, my, billing }) {
+function ProductsView({ prod }) {
+    const max = Math.max(1, ...prod.top.map((p) => p.qty));
+    return (
+        <div className="dash-2col">
+            <div className="card">
+                <h3>{t('Top Selling Products')}</h3>
+                <div className="card-sub">{t('Last 30 days')}</div>
+                <div style={{ marginTop: 10 }}>
+                    {prod.top.map((p) => (
+                        <div className="bar-row" key={p.name}>
+                            <span className="bar-l">{p.name}</span>
+                            <span className="bar-track"><span className="bar-fill" style={{ width: `${Math.max(3, (p.qty / max) * 100)}%` }} /></span>
+                            <b>{p.qty}</b>
+                        </div>
+                    ))}
+                    {prod.top.length === 0 && <div className="mut">{t('No products sold in this period')}</div>}
+                </div>
+            </div>
+            <div className="card">
+                <h3>{t('Low And Dead Stock')}</h3>
+                <div className="card-sub">{prod.low_total_stock} {t('in stock')} · {prod.low_count} {t('at or below alert level')} · {prod.total_sold} {t('sold all time')}</div>
+                <table className="tbl" style={{ marginTop: 10 }}>
+                    <thead><tr><th>{t('Product')}</th><th>{t('Stock')}</th><th>{t('Sold')}</th></tr></thead>
+                    <tbody>
+                        {prod.low_rows.map((r) => <tr key={r.name}><td>{r.name}</td><td>{r.stock}</td><td>{r.sold}</td></tr>)}
+                        {prod.low_rows.length === 0 && <tr><td colSpan="3" className="mut">{t('No low stock products')}</td></tr>}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    );
+}
+
+function MarketingView({ mkt }) {
+    const pMax = Math.max(1, ...mkt.profit_days.map((d) => Math.abs(d.profit)));
+    const hourLabel = (h) => `${((h + 11) % 12) + 1}${h < 12 ? 'a' : 'p'}`;
+    return (
+        <div className="dash-2col">
+            <div className="card">
+                <h3>{t('Ad Spend Vs Profit')}</h3>
+                <div className="card-sub">{t('No campaign data')}</div>
+                <div style={{ marginTop: 10 }}>
+                    {mkt.profit_days.map((d) => (
+                        <div className="bar-row" key={d.label}>
+                            <span className="bar-l">{d.label}</span>
+                            <span className="bar-track"><span className="bar-fill" style={{ width: `${Math.max(3, (Math.abs(d.profit) / pMax) * 100)}%` }} /></span>
+                            <b>{fmt(d.profit)}</b>
+                        </div>
+                    ))}
+                </div>
+                <div className="sub" style={{ fontSize: 13, color: 'var(--mut)', marginTop: 12 }}>
+                    {t('Ad Spend')} {fmt(mkt.ad_spend)} · {t('Revenue from ads')} {fmt(mkt.ad_revenue)} · {t('True ROAS')} -
+                </div>
+            </div>
+            <div className="card">
+                <h3>{t('Hourly Order Heatmap')}</h3>
+                <div className="card-sub">{t(mkt.heatmap_weekday)} · {t('orders per hour')}</div>
+                <div className="hm-grid">
+                    {mkt.heatmap_hours.map((n, h) => (
+                        <div key={h} className={`hm-cell ${n === 0 ? '' : n === 1 ? 'h1' : n <= 3 ? 'h2' : 'h3'}`}>{hourLabel(h)}{n > 0 ? ` · ${n}` : ''}</div>
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
+}
+
+function TeamView({ team }) {
+    const c = team.customers;
+    return (
+        <div className="dash-2col">
+            <div className="card">
+                <h3>{t('Agent Performance')}</h3>
+                <div className="card-sub">{t('Last 30 days')}</div>
+                <table className="tbl" style={{ marginTop: 10 }}>
+                    <thead><tr><th>#</th><th>{t('Agent')}</th><th>{t('Processed')}</th><th>{t('Processing')}</th><th>{t('Revenue')}</th></tr></thead>
+                    <tbody>
+                        {team.agents.map((a) => (
+                            <tr key={a.rank + a.name}><td>{a.rank}</td><td>{a.name}</td><td>{a.processed}</td><td>{a.processing_pct}%</td><td>{fmt(a.revenue)}</td></tr>
+                        ))}
+                        {team.agents.length === 0 && <tr><td colSpan="5" className="mut">{t('No processed orders in this period')}</td></tr>}
+                    </tbody>
+                </table>
+            </div>
+            <div className="card">
+                <h3>{t('Customer Details')}</h3>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 24, marginTop: 12 }}>
+                    <Donut size={170} stroke={26} parts={[
+                        { v: c.repeat, color: '#411550' },
+                        { v: c.one, color: '#a855f7' },
+                        { v: c.none, color: '#e9d5ff' },
+                    ]} />
+                    <div style={{ fontSize: 13.5 }}>
+                        <div style={{ marginBottom: 8 }}><span className="legend-dot" style={{ background: '#411550' }} />{t('Repeat')} ({c.repeat})</div>
+                        <div style={{ marginBottom: 8 }}><span className="legend-dot" style={{ background: '#a855f7' }} />{t('One order')} ({c.one})</div>
+                        <div style={{ marginBottom: 14 }}><span className="legend-dot" style={{ background: '#e9d5ff' }} />{t('No orders yet')} ({c.none})</div>
+                        <div>{t('Repeat customers')} - {c.repeat}</div>
+                        <div style={{ marginTop: 4 }}>{t('Repeat rate')} - {c.repeat_rate}%</div>
+                        <div style={{ marginTop: 4 }}>{t('District')}: {c.district_label === 'Unknown' ? t('Unknown') : c.district_label} - {c.district_count}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+function ActivityView({ act, my }) {
+    return (
+        <div className="dash-2col">
+            <div className="card">
+                <h3>{t('Live Activity Feed')}</h3>
+                <div style={{ marginTop: 6 }}>
+                    {act.feed.map((a, i) => (
+                        <div className="feed-it" key={i}>
+                            <div>{a.text}</div>
+                            <div className="feed-when">{a.invoice} · {a.when}</div>
+                        </div>
+                    ))}
+                    {act.feed.length === 0 && <div className="mut" style={{ padding: '10px 0' }}>{t('No activity yet')}</div>}
+                </div>
+            </div>
+            <div>
+                <div className="card" style={{ marginBottom: 18 }}>
+                    <h3>{t('Orders by Date Basis')}</h3>
+                    <div className="kpi" style={{ padding: '10px 0 0' }}>
+                        <div className="kpi-lbl">{t('Total Orders')}</div>
+                        <div className="val">{Math.round(my.kpis.orders.value)}</div>
+                        <div className="sub"><Delta k={my.kpis.orders} /></div>
+                        <div className="kpi-lbl" style={{ marginTop: 12 }}>{t('Total Sales')}</div>
+                        <div className="val">{fmt(my.kpis.revenue.value)}</div>
+                        <div className="sub"><Delta k={my.kpis.revenue} money /></div>
+                    </div>
+                </div>
+                <div className="card" style={{ marginBottom: 18 }}>
+                    <h3>{t('Web Orders / Incomplete')}</h3>
+                    {act.web_day + act.inc_day === 0 ? (
+                        <div className="mut" style={{ marginTop: 8 }}>{t('No web orders in this period')}</div>
+                    ) : (
+                        <div style={{ marginTop: 8, fontSize: 13.5 }}>
+                            <div>{t('Web Orders')}: <b>{act.web_day}</b></div>
+                            <div style={{ marginTop: 4 }}>{t('Incomplete Orders')}: <b>{act.inc_day}</b></div>
+                        </div>
+                    )}
+                </div>
+                <div className="card">
+                    <h3>{t('Order Counts')}</h3>
+                    <div style={{ marginTop: 8 }}>
+                        <div className="bar-row"><span className="bar-l">{t('Created')}</span><b>{act.created_day}</b></div>
+                        <div className="bar-row"><span className="bar-l">{t('Sent to Courier')}</span><b>{act.sent_day}</b></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+export default function Dashboard({ my, ov, dc, ops, prod, mkt, team, act, billing }) {
     const [view, setView] = useState('My Dashboard');
     const [clock, setClock] = useState('--:--:--');
     useEffect(() => {
@@ -383,18 +583,26 @@ export default function Dashboard({ stats, my, billing }) {
         const id = setInterval(f, 1000);
         return () => clearInterval(id);
     }, []);
-    const navDay = (iso) => router.get('/dashboard', iso ? { day: iso } : {}, { preserveScroll: true });
+    const todayIso = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Dhaka' }).format(new Date());
+    const navDay = (iso) => router.get('/dashboard', {
+        ...(iso ? { day: iso } : {}),
+        ...(my.basis !== 'approved' ? { basis: my.basis } : {}),
+    }, { preserveScroll: true });
+    const navBasis = (b) => router.get('/dashboard', {
+        ...(!my.is_today ? { day: my.day } : {}),
+        ...(b !== 'approved' ? { basis: b } : {}),
+    }, { preserveScroll: true });
     return (
         <AppLayout>
             <Head title={t('Dashboard')} />
             {billing && billing.blocked && (
                 <div style={{ background: '#FDECEC', border: '1px solid #F3B4B4', color: '#8B1E1E', borderRadius: 10, padding: '12px 14px', marginBottom: 12, fontSize: 14 }}>
-                    <b>{t('Your points are finished — the shop is view-only.')}</b> {t('New orders are paused until you buy a points pack.')} <a href="/billing" style={{ fontWeight: 700, color: '#8B1E1E', textDecoration: 'underline' }}>{t('Go to Points & Billing')}</a>
+                    <b>{t('Your points are finished. The shop is view-only.')}</b> {t('New orders are paused until you buy a points pack.')} <a href="/billing" style={{ fontWeight: 700, color: '#8B1E1E', textDecoration: 'underline' }}>{t('Go to Points & Billing')}</a>
                 </div>
             )}
             {billing && !billing.blocked && (billing.low || billing.ending_soon) && (
                 <div style={{ background: '#FFF6E0', border: '1px solid #F0D48A', color: '#7A5200', borderRadius: 10, padding: '12px 14px', marginBottom: 12, fontSize: 14 }}>
-                    <b>{t('Points are running low')}</b> — {billing.balance} {t('points left')}{billing.cycle_end ? ` · ${t('pack resets')} ${billing.cycle_end}` : ''}{billing.wallet_expires_at ? ` · ${t('wallet ends')} ${billing.wallet_expires_at}` : ''}. <a href="/billing" style={{ fontWeight: 700, color: '#7A5200', textDecoration: 'underline' }}>{t('Top up')}</a>
+                    <b>{t('Points are running low')}</b>: {billing.balance} {t('points left')}{billing.cycle_end ? ` · ${t('pack resets')} ${billing.cycle_end}` : ''}{billing.wallet_expires_at ? ` · ${t('wallet ends')} ${billing.wallet_expires_at}` : ''}. <a href="/billing" style={{ fontWeight: 700, color: '#7A5200', textDecoration: 'underline' }}>{t('Top up')}</a>
                 </div>
             )}
             <div className="dash-pg">
@@ -405,29 +613,26 @@ export default function Dashboard({ stats, my, billing }) {
                     <div className="dash-tools">
                         <div className="dhaka-box"><div className="dhaka-lbl">{t('DHAKA TIME')}</div><div className="dhaka-clock">{clock}</div></div>
                         <button type="button" className="ctl-btn" title={t('Previous day')} onClick={() => navDay(my.prev_iso)}>‹</button>
-                        <button type="button" className="ctl-btn" onClick={() => navDay(null)}>
-                            <span style={{ marginRight: 5, display: 'inline-flex', verticalAlign: -3 }}><CalSvg size={14} /></span>{my.is_today ? t('Today') : my.day_label}
-                        </button>
+                        <input type="date" className="ctl-btn date-pick" aria-label={t('Pick a date')} value={my.day} max={todayIso}
+                            onChange={(e) => { if (e.target.value) navDay(e.target.value); }} />
+                        {!my.is_today && (
+                            <button type="button" className="ctl-btn" onClick={() => navDay(null)}>
+                                <span style={{ marginRight: 5, display: 'inline-flex', verticalAlign: -3 }}><CalSvg size={14} /></span>{t('Today')}
+                            </button>
+                        )}
                         <button type="button" className="ctl-btn" title={t('Refresh')} style={{ padding: '7px 9px' }} onClick={() => router.reload()}>
                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36" /><path d="M21 3v6h-6" /></svg>
                         </button>
                     </div>
                 </div>
-                {view === 'My Dashboard' && <MyDashboard my={my} />}
-                {view === 'Overview' && <Overview stats={stats} />}
-                {view === 'Marketing' && (
-                    <div className="card" style={{ textAlign: 'center', padding: '52px 18px' }}>
-                        <h3>{t('Marketing')}</h3>
-                        <p className="mut" style={{ marginTop: 8 }}>{t('SMS campaigns, automation flows and templates live in the Marketing module.')}</p>
-                        <p style={{ marginTop: 14 }}><a className="btn pri" href="/marketing">{t('Open Marketing')}</a></p>
-                    </div>
-                )}
-                {!['My Dashboard', 'Overview', 'Marketing'].includes(view) && (
-                    <div className="card" style={{ textAlign: 'center', padding: '52px 18px' }}>
-                        <h3>{t(view)}</h3>
-                        <p className="mut" style={{ marginTop: 8 }}>{t('Coming Soon')}</p>
-                    </div>
-                )}
+                {view === 'My Dashboard' && <MyDashboard my={my} onBasis={navBasis} />}
+                {view === 'Overview' && <Overview ov={ov} dayLabel={my.is_today ? t('Today') : my.day_short} />}
+                {view === 'Decision' && <DecisionView dc={dc} />}
+                {view === 'Operations' && <OperationsView ops={ops} />}
+                {view === 'Products' && <ProductsView prod={prod} />}
+                {view === 'Marketing' && <MarketingView mkt={mkt} />}
+                {view === 'Customers & Team' && <TeamView team={team} />}
+                {view === 'Activity' && <ActivityView act={act} my={my} />}
             </div>
         </AppLayout>
     );
