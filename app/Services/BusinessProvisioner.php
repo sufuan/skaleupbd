@@ -7,6 +7,7 @@ use App\Models\FinanceAccount;
 use App\Models\MessageTemplate;
 use App\Models\OrderSource;
 use App\Models\User;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 class BusinessProvisioner
@@ -92,7 +93,13 @@ class BusinessProvisioner
 
         // M19 Pricing: every business gets a points wallet (0 balance —
         // view-only until the first pack purchase; that IS the model).
-        app(TokenService::class)->ensureWallet($biz->id);
+        // Guarded: this seeder is also called by the 2026_11_20 backfill
+        // migration, which runs BEFORE the migration that creates the
+        // wallets table — that later migration backfills wallets for
+        // existing shops itself, so skipping here loses nothing.
+        if (Schema::hasTable('business_wallets')) {
+            app(TokenService::class)->ensureWallet($biz->id);
+        }
     }
 
     /** The standard template library (same texts MarketingSeeder installs). */
