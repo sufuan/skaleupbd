@@ -95,6 +95,13 @@ class PlatformStorefrontController extends Controller
         $storefront->domain_status = 'active';
         $storefront->domain_added_at = now();
         $storefront->save();
+        // Mirror onto the primary domain row (M18 merge §3.5).
+        $primary = $storefront->primaryDomain();
+        if ($primary) {
+            $primary->status = 'active';
+            $primary->added_at = now();
+            $primary->save();
+        }
         $this->svc->forgetHostCache($storefront);
 
         return back()->with('success', 'Custom domain is now active.');

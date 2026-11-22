@@ -52,13 +52,18 @@ class ResolveStorefrontHost
         $request->attributes->set('storefront_kind', $resolved['kind']);
 
         $isPublic = ($request->isMethod('GET') && ($path === '/' || preg_match('#^/p/\d+$#', $path)
-                || preg_match('#^/order-success/[^/]+$#', $path) || $path === '/report'))
+                || preg_match('#^/order-success/[^/]+$#', $path) || $path === '/report'
+                || preg_match('#^/[a-z0-9][a-z0-9-]*$#', $path)))
             || ($request->isMethod('POST') && ($path === '/order' || $path === '/report'));
         if (! $isPublic) {
             return redirect()->to($request->getScheme().'://'.$host.'/');
         }
         if ($path === '/' && $request->isMethod('GET')) {
             return app(StorefrontPublicController::class)->home($request);
+        }
+        if ($request->isMethod('GET') && preg_match('#^/([a-z0-9][a-z0-9-]*)$#', $path, $m)
+            && ! in_array($m[1], ['report'], true)) {
+            return app(StorefrontPublicController::class)->page($request, $m[1]);
         }
 
         return $next($request);

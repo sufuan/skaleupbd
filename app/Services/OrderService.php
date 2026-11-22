@@ -130,6 +130,7 @@ class OrderService
                 'idempotency_key' => $data['idempotency_key'] ?? null,
                 // M18 storefront attribution (saved on every storefront order).
                 'storefront_id' => $data['storefront_id'] ?? null,
+                'storefront_page_id' => $data['storefront_page_id'] ?? null,
                 'utm_source' => $data['utm_source'] ?? null,
                 'utm_medium' => $data['utm_medium'] ?? null,
                 'utm_campaign' => $data['utm_campaign'] ?? null,

@@ -9,10 +9,11 @@ const STATUS = {
     taken_down: ['Taken down by the platform', 'red'],
 };
 
-export default function Overview({ sf, orderCount, openReports, hasAddress }) {
+export default function Overview({ sf, state, pageCount, livePageCount, viewsTotal, orderCount, openReports, hasAddress }) {
     const otpSend = useForm({ phone: '' });
     const otpVerify = useForm({ code: '' });
     const [label, tone] = STATUS[sf.status] || [sf.status, ''];
+    const hasStore = !!(state && state.hasStore);
 
     const checkRow = (ok, text, href, cta) => (
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 0', borderBottom: '1px solid var(--border, #E7DEF0)' }}>
@@ -27,12 +28,12 @@ export default function Overview({ sf, orderCount, openReports, hasAddress }) {
             <Head title={t('Storefront')} />
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 14 }}>
                 <h3 style={{ fontSize: 19, margin: 0 }}>{t('Storefront')}</h3>
-                <span className={`pill ${tone}`}>{t(label)}</span>
-                {sf.status === 'published'
+                {hasStore && <span className={`pill ${tone}`}>{t(label)}</span>}
+                {hasStore && (sf.status === 'published'
                     ? <button className="btn" onClick={() => router.post('/storefront/unpublish')}>{t('Unpublish')}</button>
                     : (hasAddress && sf.phoneVerified && !sf.domainLocked)
                         ? <button className="btn pri" onClick={() => router.post('/storefront/publish')}>{t('Publish storefront')}</button>
-                        : <button className="btn pri" disabled style={{ opacity: 0.45, cursor: 'not-allowed' }} title={t('Finish the checklist below first — your shop address and mobile verification are needed')}>{t('Publish storefront')}</button>}
+                        : <button className="btn pri" disabled style={{ opacity: 0.45, cursor: 'not-allowed' }} title={t('Finish the checklist below first — your shop address and mobile verification are needed')}>{t('Publish storefront')}</button>)}
                 {sf.subdomainUrl && <a className="btn" href={sf.subdomainUrl} target="_blank" rel="noreferrer">{t('View shop')}</a>}
             </div>
 
@@ -48,58 +49,66 @@ export default function Overview({ sf, orderCount, openReports, hasAddress }) {
                 </div>
             )}
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12, marginBottom: 14 }} className="sf-kpis">
-                <div className="card">
-                    <div style={{ fontSize: 12.5, color: 'var(--muted)' }}>{t('Shop address')}</div>
-                    <div style={{ fontWeight: 700, fontSize: 15.5, wordBreak: 'break-all' }}>{sf.subdomainUrl || t('Not set yet')}</div>
-                    {sf.customDomainUrl && <div style={{ fontSize: 13, color: 'var(--muted)' }}>{sf.customDomainUrl}</div>}
+            {!hasStore ? (
+                <div className="card" style={{ textAlign: 'center', padding: '30px 20px' }}>
+                    <div style={{ fontWeight: 700, fontSize: 17, marginBottom: 6 }}>{t('You do not have a store yet')}</div>
+                    <p style={{ color: 'var(--muted)', fontSize: 14.5, margin: '0 0 16px' }}>{t('Make your free store in five easy steps — your products come in automatically.')}</p>
+                    <Link className="btn pri" href="/storefront/wizard">{t('Create your store')}</Link>
                 </div>
-                <div className="card">
-                    <div style={{ fontSize: 12.5, color: 'var(--muted)' }}>{t('Orders from the storefront')}</div>
-                    <div style={{ fontWeight: 800, fontSize: 24 }}>{orderCount}</div>
-                </div>
-                <div className="card">
-                    <div style={{ fontSize: 12.5, color: 'var(--muted)' }}>{t('Open page reports')}</div>
-                    <div style={{ fontWeight: 800, fontSize: 24 }}>{openReports}</div>
-                </div>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, alignItems: 'start' }} className="sf-2col">
-                <div className="card">
-                    <h4 style={{ fontSize: 15.5, margin: '2px 0 6px' }}>{t('Before you publish')}</h4>
-                    {checkRow(hasAddress, 'Choose your shop address', '/storefront/subdomain', 'Choose')}
-                    {checkRow(sf.phoneVerified, 'Verify your mobile number', null, null)}
-                    {checkRow(true, 'Build your page', '/storefront/builder', 'Open builder')}
-                    <div style={{ fontSize: 13, color: 'var(--muted)', marginTop: 10 }}>
-                        {t('Your free subdomain keeps working even after you connect your own domain.')}
+            ) : (
+                <>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12, marginBottom: 14 }} className="sf-kpis">
+                        <div className="card">
+                            <div style={{ fontSize: 12.5, color: 'var(--muted)' }}>{t('Your link')}</div>
+                            <div style={{ fontWeight: 700, fontSize: 15, wordBreak: 'break-all' }}>{sf.subdomainUrl || t('Not set yet')}</div>
+                            {sf.customDomainUrl && <div style={{ fontSize: 13, color: 'var(--muted)' }}>{sf.customDomainUrl}</div>}
+                        </div>
+                        <div className="card">
+                            <div style={{ fontSize: 12.5, color: 'var(--muted)' }}>{t('Pages')}</div>
+                            <div style={{ fontWeight: 800, fontSize: 24 }}>{pageCount} <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--muted)' }}>({livePageCount} {t('live')})</span></div>
+                        </div>
+                        <div className="card">
+                            <div style={{ fontSize: 12.5, color: 'var(--muted)' }}>{t('Total views')}</div>
+                            <div style={{ fontWeight: 800, fontSize: 24 }}>{viewsTotal}</div>
+                        </div>
+                        <div className="card">
+                            <div style={{ fontSize: 12.5, color: 'var(--muted)' }}>{t('Orders from the storefront')}</div>
+                            <div style={{ fontWeight: 800, fontSize: 24 }}>{orderCount}</div>
+                        </div>
                     </div>
-                </div>
 
-                <div className="card">
-                    <h4 style={{ fontSize: 15.5, margin: '2px 0 6px' }}>{t('Mobile verification')}</h4>
-                    {sf.phoneVerified ? (
-                        <p style={{ fontSize: 14.5, margin: 0 }}><span className="pill green">{t('Verified')}</span> {sf.phoneToVerify || ''}</p>
-                    ) : (
-                        <>
-                            <form onSubmit={(e) => { e.preventDefault(); otpSend.post('/storefront/otp/send', { preserveScroll: true }); }}>
-                                <label className="lbl">{t('Your mobile number')}</label>
+                    <div className="card">
+                        <div style={{ fontWeight: 700, fontSize: 15.5, marginBottom: 4 }}>{t('Before you publish')}</div>
+                        {checkRow(hasAddress, 'Shop address added', '/storefront/settings', 'Add')}
+                        {checkRow(!!sf.phoneVerified, 'Mobile number verified', null, null)}
+                        {checkRow(!sf.domainLocked, 'First pack payment done', '/billing', 'Pay')}
+                        {!sf.phoneVerified && (
+                            <div className="sf-form" style={{ paddingTop: 10 }}>
+                                <label className="lbl">{t('Mobile number')}</label>
                                 <div style={{ display: 'flex', gap: 8 }}>
-                                    <input className="fld" style={{ flex: 1 }} placeholder="01XXXXXXXXX" value={otpSend.data.phone} onChange={(e) => otpSend.setData('phone', e.target.value)} required />
-                                    <button className="btn pri" disabled={otpSend.processing}>{t('Send code')}</button>
+                                    <input className="fld" style={{ flex: 1 }} value={otpSend.data.phone} onChange={(e) => otpSend.setData('phone', e.target.value)} placeholder="01XXXXXXXXX" inputMode="tel" />
+                                    <button className="btn" disabled={otpSend.processing} onClick={() => otpSend.post('/storefront/otp/send', { preserveScroll: true })}>{t('Send code')}</button>
                                 </div>
-                            </form>
-                            <form onSubmit={(e) => { e.preventDefault(); otpVerify.post('/storefront/otp/verify', { preserveScroll: true }); }} style={{ marginTop: 12 }}>
-                                <label className="lbl">{t('6-digit code from the SMS')}</label>
+                                {otpSend.errors.phone && <div style={{ color: '#B91C1C', fontSize: 13, marginTop: 5 }}>{otpSend.errors.phone}</div>}
+                                <label className="lbl" style={{ marginTop: 10 }}>{t('Code from the SMS')}</label>
                                 <div style={{ display: 'flex', gap: 8 }}>
-                                    <input className="fld" style={{ flex: 1 }} placeholder={t('6-digit code')} inputMode="numeric" value={otpVerify.data.code} onChange={(e) => otpVerify.setData('code', e.target.value)} required />
-                                    <button className="btn" disabled={otpVerify.processing}>{t('Verify')}</button>
+                                    <input className="fld" style={{ flex: 1 }} value={otpVerify.data.code} onChange={(e) => otpVerify.setData('code', e.target.value)} placeholder="123456" inputMode="numeric" />
+                                    <button className="btn pri" disabled={otpVerify.processing} onClick={() => otpVerify.post('/storefront/otp/verify', { preserveScroll: true })}>{t('Verify')}</button>
                                 </div>
-                            </form>
-                        </>
-                    )}
-                </div>
-            </div>
-            <style>{`@media (max-width: 760px){ .sf-kpis{grid-template-columns:1fr !important} .sf-2col{grid-template-columns:1fr !important} }`}</style>
+                                {otpVerify.errors.code && <div style={{ color: '#B91C1C', fontSize: 13, marginTop: 5 }}>{otpVerify.errors.code}</div>}
+                            </div>
+                        )}
+                        <div style={{ display: 'flex', gap: 8, marginTop: 14, flexWrap: 'wrap' }}>
+                            <Link className="btn" href="/storefront/pages">{t('My Pages')}</Link>
+                            <Link className="btn" href="/storefront/settings">{t('Store Settings')}</Link>
+                            {Number(openReports) > 0 && <span className="pill red">{openReports} {t('open report(s) — see Store Settings')}</span>}
+                        </div>
+                    </div>
+                </>
+            )}
+            <style>{`.sf-form .lbl { display:block; font-size:13px; font-weight:600; }
+.sf-form .fld { display:block; width:100%; height:40px; border-radius:8px; font-size:14px; border:1px solid #D9CDE4; background:#fff; padding:0 12px; margin-top:5px; font-family:inherit; color:var(--ink); box-sizing:border-box; }
+@media (max-width: 900px){ .sf-kpis{grid-template-columns:repeat(2,1fr) !important} }`}</style>
         </AppLayout>
     );
 }

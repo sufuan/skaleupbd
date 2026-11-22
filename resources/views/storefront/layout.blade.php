@@ -5,6 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{{ $brand['name'] }}@isset($pageTitle) — {{ $pageTitle }}@endisset</title>
 <meta name="description" content="{{ $brand['name'] }} — order online, cash on delivery.">
+<meta property="og:title" content="{{ $brand['name'] }}@isset($pageTitle) — {{ $pageTitle }}@endisset">
+<meta property="og:description" content="{{ $brand['name'] }} — order online, cash on delivery.">
+<meta property="og:type" content="website">
+@if($brand['logo'])<meta property="og:image" content="{{ $brand['logo'] }}">@endif
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Noto+Sans+Bengali:wght@400;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/css/storefront.css">
@@ -87,6 +91,8 @@ window.sfTrack=function(ev,params,eventID){
       if(minus) minus.addEventListener('click', function(){ qty.value=Math.max(1,(parseInt(qty.value||'1',10)||1)-1); totals(); });
       if(plus) plus.addEventListener('click', function(){ qty.value=Math.min(20,(parseInt(qty.value||'1',10)||1)+1); totals(); });
     }
+    var vsel=form.querySelector('select[name="variant_id"]');
+    if(vsel){ vsel.addEventListener('change', function(){ var o=vsel.selectedOptions[0]; if(o&&o.dataset.price){ price=parseFloat(o.dataset.price); } totals(); }); }
     totals();
     form.addEventListener('submit', function(){
       var pe=form.querySelector('input[name="purchase_event_id"]'); if(pe) pe.value=window.sfEventId();

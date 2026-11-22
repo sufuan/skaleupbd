@@ -48,9 +48,135 @@ class StorefrontPublicController extends Controller
             return $this->unavailable($sf);
         }
         $host = $this->svc->normalizeHost($request->getHost());
+        $page = $sf->rootPage();
+        if ($page) {
+            if ($page->status === 'paused') {
+                return $this->paused($sf);
+            }
+            if ($page->status !== 'live') {
+                return $this->unavailable($sf);
+            }
+            $html = $this->cachedHtml($sf, $host, '/pg'.$page->id.':'.($page->updated_at?->timestamp ?? 0),
+                fn () => $this->renderPageHtml($request, $sf, $page, (array) $page->published_blocks, false));
+            $this->svc->recordView($page, $request->userAgent());
+
+            return response($html)->header('Content-Type', 'text/html');
+        }
+        // No page row (defensive fallback): the legacy single-page shop.
         $html = $this->cachedHtml($sf, $host, '/', fn () => view('storefront.home', $this->homeData($request, $sf))->render());
 
         return response($html)->header('Content-Type', 'text/html');
+    }
+
+    /** A store page at /{slug} (system-made slug; dispatched by the host middleware). */
+    public function page(Request $request, string $slug)
+    {
+        $sf = $this->sf($request);
+        $host = $this->svc->normalizeHost($request->getHost());
+        $page = $sf->pages()->where('slug', $slug)->first();
+        if (! $page || $page->status === 'draft') {
+            return response()->view('storefront.notfound', ['domain' => $host], 404);
+        }
+        if (! $sf->isPublished()) {
+            return $this->unavailable($sf);
+        }
+        if ($page->status === 'paused') {
+            return $this->paused($sf);
+        }
+        $html = $this->cachedHtml($sf, $host, '/pg'.$page->id.':'.($page->updated_at?->timestamp ?? 0),
+            fn () => $this->renderPageHtml($request, $sf, $page, (array) $page->published_blocks, false));
+        $this->svc->recordView($page, $request->userAgent());
+
+        return response($html)->header('Content-Type', 'text/html');
+    }
+
+    /**
+     * THE page renderer — used by the public pages AND the seller
+     * editor's preview (with draft blocks), so they can never drift.
+     * Handles both the v2 editor model and legacy v1 blocks.
+     */
+    public function renderPageHtml(Request $request, Storefront $sf, \App\Models\StorefrontPage $page, array $blocks, bool $preview): string
+    {
+        if (\App\Models\StorefrontPage::isV2($blocks)) {
+            return view('storefront.page', $this->pageDataV2($request, $sf, $page, $blocks, $preview))->render();
+        }
+
+        return view('storefront.home', $this->homeData($request, $sf, $blocks))->render();
+    }
+
+    /** Resolve a v2 blocks payload into render data (live products). */
+    private function pageDataV2(Request $request, Storefront $sf, \App\Models\StorefrontPage $page, array $payload, bool $preview): array
+    {
+        $brand = $this->brand($sf);
+        $sections = [];
+        $firstProduct = null;
+        $formSectionIdx = null;
+        foreach ((array) ($payload['blocks'] ?? []) as $block) {
+            $type = (string) ($block['type'] ?? '');
+            $props = (array) ($block['props'] ?? []);
+            $resolved = [];
+            if ($type === 'products') {
+                $resolved['products'] = collect($this->svc->pageProducts($sf, $props))
+                    ->map(fn ($p) => $this->productVm($p))->all();
+                if ($firstProduct === null && ! empty($resolved['products'])) {
+                    $firstProduct = $resolved['products'][0];
+                }
+            }
+            if ($type === 'hero' && ! empty($props['image'])) {
+                $resolved['image'] = '/storage/'.$props['image'];
+            }
+            if ($type === 'order_form') {
+                $formSectionIdx = count($sections);
+            }
+            $sections[] = ['type' => $type, 'props' => $props, 'resolved' => $resolved];
+        }
+        // The order form's product: its own choice, else the page's
+        // first product, else the shop's first active product.
+        if ($formSectionIdx !== null) {
+            $props = $sections[$formSectionIdx]['props'];
+            $p = null;
+            if (! empty($props['product_id'])) {
+                $p = Product::where('business_id', $sf->business_id)->where('is_active', true)->find((int) $props['product_id']);
+            }
+            if (! $p && $firstProduct) {
+                $p = Product::where('business_id', $sf->business_id)->find($firstProduct['id']);
+            }
+            if (! $p) {
+                $p = Product::where('business_id', $sf->business_id)->where('is_active', true)->latest('id')->first();
+            }
+            $sections[$formSectionIdx]['resolved']['product'] = $p ? $this->productVm($p) : null;
+            if ($firstProduct === null && $p) {
+                $firstProduct = $this->productVm($p);
+            }
+        }
+        $b = (array) $sf->branding;
+        $returnText = trim((string) ($b['return_policy'] ?? ''));
+
+        return [
+            'sf' => $sf,
+            'brand' => $brand,
+            'page' => $page,
+            'sections' => $sections,
+            'districts' => StorefrontService::districts(),
+            'ctaProduct' => $firstProduct,
+            'fbPage' => $this->svc->facebookPageId($sf->business_id),
+            'reported' => $request->query('reported') === '1',
+            'preview' => $preview,
+            'pageTitle' => $page->isRoot() ? null : $page->name,
+            'legal' => [
+                'terms' => StorefrontService::defaultLegalText('terms'),
+                'privacy' => StorefrontService::defaultLegalText('privacy'),
+                'return' => $returnText !== '' ? '<p>'.nl2br(e($returnText)).'</p>' : StorefrontService::defaultLegalText('return'),
+            ],
+        ];
+    }
+
+    private function paused(Storefront $sf)
+    {
+        return response()->view('storefront.paused', [
+            'sf' => $sf,
+            'brand' => $this->brand($sf),
+        ], 200)->header('X-Robots-Tag', 'noindex');
     }
 
     public function product(Request $request, int $product)
@@ -136,6 +262,11 @@ class StorefrontPublicController extends Controller
         }
         RateLimiter::hit($ipKey, 60);
 
+        // Zero balance = no new orders, said honestly (M19 rule).
+        if (app(\App\Services\TokenService::class)->blocked($sf->business_id)) {
+            return $this->orderError($request, 'This shop cannot take new orders right now. Please contact the shop owner.');
+        }
+
         try {
             $data = $request->validate([
                 'customer_name' => ['required', 'string', 'max:120'],
@@ -143,6 +274,9 @@ class StorefrontPublicController extends Controller
                 'customer_address' => ['required', 'string', 'min:10', 'max:500'],
                 'district' => ['required', 'string', 'max:60'],
                 'product_id' => ['required', 'integer'],
+                'variant_id' => ['nullable', 'integer'],
+                'page_id' => ['nullable', 'integer'],
+                'idem' => ['nullable', 'string', 'max:80'],
                 'qty' => ['nullable', 'integer', 'min:1', 'max:20'],
                 'utm_source' => ['nullable', 'string', 'max:120'],
                 'utm_medium' => ['nullable', 'string', 'max:120'],
@@ -173,9 +307,40 @@ class StorefrontPublicController extends Controller
         if ($product->manage_stock && ((int) $product->stock_qty - (int) $product->reserved_qty) < $qty) {
             return $this->orderError($request, 'Sorry, this product is out of stock right now.');
         }
+        // Variant: must belong to this product; its own stock + price rule.
+        $variant = null;
+        if (! empty($data['variant_id'])) {
+            $variant = $product->variants()->find((int) $data['variant_id']);
+            if (! $variant) {
+                return $this->orderError($request, 'That variant is not available. Please choose another.');
+            }
+            if ($product->manage_stock && $variant->available() < $qty) {
+                return $this->orderError($request, 'Sorry, this variant is out of stock right now.');
+            }
+        }
         RateLimiter::hit($phoneKey, 3600);
 
-        $price = $product->effectivePrice();
+        $price = $variant ? $variant->effectivePrice() : $product->effectivePrice();
+
+        // Page attribution: the page the form lives on (validated as
+        // this shop's), else the store root page.
+        $pageId = null;
+        if (! empty($data['page_id'])) {
+            $pageId = $sf->pages()->whereKey((int) $data['page_id'])->value('id');
+        }
+        if (! $pageId) {
+            $pageId = $sf->rootPage()?->id;
+        }
+
+        // Idempotency: one form render = one order, however many times
+        // it is submitted (double-tap, refresh, back button).
+        $idem = trim((string) ($data['idem'] ?? ''));
+        if ($idem !== '') {
+            $existing = Order::where('business_id', $sf->business_id)->where('idempotency_key', $idem)->first();
+            if ($existing) {
+                return redirect('/order-success/'.$existing->invoice_no.'?pe='.urlencode((string) ($data['purchase_event_id'] ?? '')));
+            }
+        }
         $delivery = $data['district'] === 'Dhaka' ? $sf->deliveryInside() : $sf->deliveryOutside();
         $host = $this->svc->normalizeHost($request->getHost());
         $pageUrl = $request->getScheme().'://'.$host.'/p/'.$product->id;
@@ -188,39 +353,68 @@ class StorefrontPublicController extends Controller
             ], $pageUrl, $request->ip(), $request->userAgent());
         }
 
+        $makeOrder = fn () => $this->orders->create($sf->business_id, [
+            'customer_name' => $data['customer_name'],
+            'customer_phone' => $phone,
+            'customer_address' => $data['customer_address'],
+            'district' => $data['district'],
+            'source' => $this->svc->orderSource($sf->business_id),
+            'site' => $host,
+            'status' => 'Pending',
+            'delivery_charge' => $delivery,
+            'ip' => $request->ip(),
+            'storefront_id' => $sf->id,
+            'storefront_page_id' => $pageId,
+            'idempotency_key' => $idem !== '' ? $idem : null,
+            'utm_source' => $data['utm_source'] ?? null,
+            'utm_medium' => $data['utm_medium'] ?? null,
+            'utm_campaign' => $data['utm_campaign'] ?? null,
+            'fbclid' => $data['fbclid'] ?? null,
+            'items' => [[
+                'product_id' => $product->id,
+                'name' => $product->name,
+                'variant_name' => $variant?->name,
+                'qty' => $qty,
+                'price' => $price,
+            ]],
+        ], null, 'Storefront');
+
+        $isDuplicate = false;
         try {
-            $order = $this->orders->create($sf->business_id, [
-                'customer_name' => $data['customer_name'],
-                'customer_phone' => $phone,
-                'customer_address' => $data['customer_address'],
-                'district' => $data['district'],
-                'source' => $this->svc->orderSource($sf->business_id),
-                'site' => $host,
-                'status' => 'Pending',
-                'delivery_charge' => $delivery,
-                'ip' => $request->ip(),
-                'storefront_id' => $sf->id,
-                'utm_source' => $data['utm_source'] ?? null,
-                'utm_medium' => $data['utm_medium'] ?? null,
-                'utm_campaign' => $data['utm_campaign'] ?? null,
-                'fbclid' => $data['fbclid'] ?? null,
-                'items' => [[
-                    'product_id' => $product->id,
-                    'name' => $product->name,
-                    'qty' => $qty,
-                    'price' => $price,
-                ]],
-            ], null, 'Storefront');
+            if ($idem !== '') {
+                // Serialize same-key submissions; the loser finds the
+                // winner's order and lands on the same success page.
+                $order = Cache::lock('sfidem:'.$sf->business_id.':'.sha1($idem), 10)->block(8,
+                    function () use ($makeOrder, $sf, $idem, &$isDuplicate) {
+                        $found = Order::where('business_id', $sf->business_id)->where('idempotency_key', $idem)->first();
+                        if ($found) {
+                            $isDuplicate = true;
+
+                            return $found;
+                        }
+
+                        return $makeOrder();
+                    });
+            } else {
+                $order = $makeOrder();
+            }
         } catch (InsufficientTokensException) {
             return response()->view('storefront.unable', ['sf' => $sf, 'brand' => $this->brand($sf)], 200);
+        } catch (\Illuminate\Contracts\Cache\LockTimeoutException) {
+            return $this->orderError($request, 'Your order is being placed. Please wait a moment and check again.');
         }
 
-        AppNotification::create(['kind' => 'order', 'title' => "New order {$order->invoice_no}",
-            'body' => "{$order->customer_name} · ৳".number_format((float) $order->grand_total)." · Storefront",
-            'link' => "/orders/{$order->id}"]);
+        if (! $isDuplicate) {
+            AppNotification::create(['kind' => 'order', 'title' => "New order {$order->invoice_no}",
+                'body' => "{$order->customer_name} · ৳".number_format((float) $order->grand_total)." · Storefront",
+                'link' => "/orders/{$order->id}"]);
+            if ($pageId) {
+                $this->svc->bumpDailyStat($pageId, 'orders');
+            }
+        }
 
         // Server Purchase — same event_id the success page fires in the browser.
-        if (! empty($data['purchase_event_id'])) {
+        if (! $isDuplicate && ! empty($data['purchase_event_id'])) {
             $this->tracking->send($sf, 'Purchase', $data['purchase_event_id'], [
                 'currency' => 'BDT', 'value' => (float) $order->grand_total,
                 'content_ids' => [(string) $product->id], 'content_type' => 'product',
@@ -268,7 +462,14 @@ class StorefrontPublicController extends Controller
         $key = 'sfhtml:'.$sf->business_id.':'.$host.':'.$path.':'.($sf->updated_at?->timestamp ?? 0);
         $html = Cache::remember($key, 45, $render);
 
-        return str_replace('%%SF_CSRF%%', csrf_token(), $html);
+        // Per-response tokens are swapped in AFTER the cache read: the
+        // CSRF token and the checkout idempotency key must never be
+        // shared between visitors of the same cached page.
+        return str_replace(
+            ['%%SF_CSRF%%', '%%SF_IDEM%%'],
+            [csrf_token(), \Illuminate\Support\Str::random(32)],
+            $html
+        );
     }
 
     public function brand(Storefront $sf): array
@@ -316,13 +517,20 @@ class StorefrontPublicController extends Controller
             'gallery' => $images,
             'short' => (string) ($p->short_description ?? ''),
             'long' => (string) ($p->long_description ?? ''),
+            'variants' => $p->variants()->orderBy('id')->get()->map(fn ($v) => [
+                'id' => $v->id,
+                'name' => (string) $v->name,
+                'price' => $v->effectivePrice(),
+                'available' => $v->available() > 0,
+                'available_qty' => $v->available(),
+            ])->all(),
         ];
     }
 
-    private function homeData(Request $request, Storefront $sf): array
+    private function homeData(Request $request, Storefront $sf, ?array $blocksOverride = null): array
     {
         $blocks = [];
-        foreach ((array) $sf->blocks as $block) {
+        foreach ((array) ($blocksOverride ?? $sf->blocks) as $block) {
             $type = $block['type'] ?? '';
             $d = (array) ($block['data'] ?? []);
             $resolved = [];

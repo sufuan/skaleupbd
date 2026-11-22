@@ -39,6 +39,40 @@ class Storefront extends Model
         return $this->hasMany(StorefrontReport::class);
     }
 
+    public function pages(): HasMany
+    {
+        return $this->hasMany(StorefrontPage::class);
+    }
+
+    public function domains(): HasMany
+    {
+        return $this->hasMany(StorefrontDomain::class);
+    }
+
+    public function primaryDomain(): ?StorefrontDomain
+    {
+        return $this->domains()->where('is_primary', true)->first()
+            ?? $this->domains()->orderBy('id')->first();
+    }
+
+    /** The store root page (slug null), if the seller has one. */
+    public function rootPage(): ?StorefrontPage
+    {
+        return $this->pages()->whereNull('slug')->orderBy('id')->first();
+    }
+
+    /** Door mode: 'hosted' (pages with us) or 'connect' (own website). */
+    public function mode(): string
+    {
+        return (($this->settings['mode'] ?? 'hosted') === 'connect') ? 'connect' : 'hosted';
+    }
+
+    /** A store "exists" once the wizard finished: address chosen or a page made. */
+    public function hasStore(): bool
+    {
+        return ! empty($this->subdomain) || $this->pages()->exists();
+    }
+
     public function orders(): HasMany
     {
         return $this->hasMany(Order::class);

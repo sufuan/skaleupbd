@@ -13,6 +13,10 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->validateCsrfTokens(except: ['api/external/*', 'api/webhooks/*']);
+        // sf_err carries a plain-language shop error message that the
+        // storefront layout reads from document.cookie — it must not
+        // be encrypted (it holds no sensitive data).
+        $middleware->encryptCookies(except: ['sf_err']);
         $middleware->web(append: [
             \App\Http\Middleware\ResolveStorefrontHost::class,
             \App\Http\Middleware\SetLocale::class,

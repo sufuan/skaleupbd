@@ -354,24 +354,56 @@ Route::middleware(['auth', 'verified', 'totp'])->group(function () {
     Route::post('/billing/claims', [\App\Http\Controllers\BillingController::class, 'storeClaim'])->name('billing.claims.store');
     Route::post('/billing/claims/{claim}/submit', [\App\Http\Controllers\BillingController::class, 'submitClaim'])->name('billing.claims.submit');
 
-    // M18 Storefront — seller section
+    // M18 Storefront — seller section (merged redesign: wizard, My Pages,
+    // Store Settings, Connect Website; menu state is server-computed).
     Route::get('/storefront', [\App\Http\Controllers\StorefrontController::class, 'overview'])->name('storefront.overview');
+    Route::get('/storefront/state', [\App\Http\Controllers\StorefrontController::class, 'state'])->name('storefront.state');
     Route::post('/storefront/publish', [\App\Http\Controllers\StorefrontController::class, 'publish'])->name('storefront.publish');
     Route::post('/storefront/unpublish', [\App\Http\Controllers\StorefrontController::class, 'unpublish'])->name('storefront.unpublish');
     Route::post('/storefront/otp/send', [\App\Http\Controllers\StorefrontController::class, 'sendOtp'])->name('storefront.otp.send');
     Route::post('/storefront/otp/verify', [\App\Http\Controllers\StorefrontController::class, 'verifyOtp'])->name('storefront.otp.verify');
-    Route::get('/storefront/subdomain', [\App\Http\Controllers\StorefrontController::class, 'subdomain'])->name('storefront.subdomain');
+    // Wizard
+    Route::get('/storefront/wizard', [\App\Http\Controllers\StorefrontController::class, 'wizard'])->name('storefront.wizard');
+    Route::post('/storefront/onboarding', [\App\Http\Controllers\StorefrontController::class, 'saveOnboarding'])->name('storefront.onboarding.save');
+    Route::post('/storefront/wizard/publish', [\App\Http\Controllers\StorefrontController::class, 'wizardPublish'])->name('storefront.wizard.publish');
+    Route::get('/storefront/published', [\App\Http\Controllers\StorefrontController::class, 'wizardDone'])->name('storefront.published');
+    Route::post('/storefront/logo', [\App\Http\Controllers\StorefrontController::class, 'uploadLogo'])->name('storefront.logo');
+    // My Pages + editor
+    Route::get('/storefront/pages', [\App\Http\Controllers\StorefrontController::class, 'pages'])->name('storefront.pages');
+    Route::post('/storefront/pages', [\App\Http\Controllers\StorefrontController::class, 'createPage'])->name('storefront.pages.create');
+    Route::get('/storefront/pages/{page}/edit', [\App\Http\Controllers\StorefrontController::class, 'editPage'])->whereNumber('page')->name('storefront.pages.edit');
+    Route::get('/storefront/pages/{page}/preview', [\App\Http\Controllers\StorefrontController::class, 'previewPage'])->whereNumber('page')->name('storefront.pages.preview');
+    Route::post('/storefront/pages/{page}/draft', [\App\Http\Controllers\StorefrontController::class, 'saveDraft'])->whereNumber('page')->name('storefront.pages.draft');
+    Route::post('/storefront/pages/{page}/publish', [\App\Http\Controllers\StorefrontController::class, 'publishPage'])->whereNumber('page')->name('storefront.pages.publish');
+    Route::post('/storefront/pages/{page}/duplicate', [\App\Http\Controllers\StorefrontController::class, 'duplicatePage'])->whereNumber('page')->name('storefront.pages.duplicate');
+    Route::post('/storefront/pages/{page}/pause', [\App\Http\Controllers\StorefrontController::class, 'pausePage'])->whereNumber('page')->name('storefront.pages.pause');
+    Route::post('/storefront/pages/{page}/resume', [\App\Http\Controllers\StorefrontController::class, 'resumePage'])->whereNumber('page')->name('storefront.pages.resume');
+    Route::post('/storefront/pages/{page}/restore/{version}', [\App\Http\Controllers\StorefrontController::class, 'restorePage'])->whereNumber('page')->whereNumber('version')->name('storefront.pages.restore');
+    Route::delete('/storefront/pages/{page}', [\App\Http\Controllers\StorefrontController::class, 'deletePage'])->whereNumber('page')->name('storefront.pages.delete');
+    // Store Settings (accordion) + Door 2 Connect Website
+    Route::get('/storefront/settings', [\App\Http\Controllers\StorefrontController::class, 'settingsPage'])->name('storefront.settings');
+    Route::post('/storefront/settings', [\App\Http\Controllers\StorefrontController::class, 'saveSettings'])->name('storefront.settings.save');
+    Route::get('/storefront/connect', [\App\Http\Controllers\StorefrontController::class, 'connect'])->name('storefront.connect');
+    Route::post('/storefront/connect/key', [\App\Http\Controllers\StorefrontController::class, 'connectKey'])->name('storefront.connect.key');
+    Route::post('/storefront/connect/webhook', [\App\Http\Controllers\StorefrontController::class, 'connectWebhook'])->name('storefront.connect.webhook');
+    Route::post('/storefront/connect/test-order', [\App\Http\Controllers\StorefrontController::class, 'connectTestOrder'])->name('storefront.connect.test');
+    // Kept endpoints (availability, branding save, images, domains CRUD)
     Route::get('/storefront/availability', [\App\Http\Controllers\StorefrontController::class, 'availability'])->name('storefront.availability');
     Route::post('/storefront/subdomain', [\App\Http\Controllers\StorefrontController::class, 'saveSubdomain'])->name('storefront.subdomain.save');
-    Route::get('/storefront/branding', [\App\Http\Controllers\StorefrontController::class, 'branding'])->name('storefront.branding');
     Route::post('/storefront/branding', [\App\Http\Controllers\StorefrontController::class, 'saveBranding'])->name('storefront.branding.save');
-    Route::get('/storefront/builder', [\App\Http\Controllers\StorefrontController::class, 'builder'])->name('storefront.builder');
     Route::post('/storefront/builder', [\App\Http\Controllers\StorefrontController::class, 'saveBlocks'])->name('storefront.builder.save');
     Route::post('/storefront/images', [\App\Http\Controllers\StorefrontController::class, 'uploadImage'])->name('storefront.images');
-    Route::get('/storefront/domains', [\App\Http\Controllers\StorefrontController::class, 'domains'])->name('storefront.domains');
     Route::post('/storefront/domains', [\App\Http\Controllers\StorefrontController::class, 'requestDomain'])->name('storefront.domains.request');
-    Route::post('/storefront/domains/verify', [\App\Http\Controllers\StorefrontController::class, 'verifyDomain'])->name('storefront.domains.verify');
-    Route::delete('/storefront/domains', [\App\Http\Controllers\StorefrontController::class, 'removeDomain'])->name('storefront.domains.remove');
+    Route::post('/storefront/domains/{domain}/verify', [\App\Http\Controllers\StorefrontController::class, 'verifyDomain'])->whereNumber('domain')->name('storefront.domains.verify');
+    Route::post('/storefront/domains/{domain}/primary', [\App\Http\Controllers\StorefrontController::class, 'primaryDomain'])->whereNumber('domain')->name('storefront.domains.primary');
+    Route::delete('/storefront/domains/{domain}', [\App\Http\Controllers\StorefrontController::class, 'removeDomain'])->whereNumber('domain')->name('storefront.domains.remove');
+    // Old GET pages redirect to their new homes (nothing 404s)
+    // GET-only on purpose: Route::redirect() would answer ANY verb
+    // and shadow the real POST /storefront/domains route below.
+    Route::get('/storefront/subdomain', fn () => redirect('/storefront/settings'));
+    Route::get('/storefront/branding', fn () => redirect('/storefront/settings'));
+    Route::get('/storefront/builder', fn () => redirect('/storefront/pages'));
+    Route::get('/storefront/domains', fn () => redirect('/storefront/settings'));
 
     // M18 Storefront — platform admin
     Route::get('/admin/storefronts', [\App\Http\Controllers\PlatformStorefrontController::class, 'index'])->name('platform.storefronts');
@@ -407,5 +439,14 @@ Route::post('/api/webhooks/paperfly/dm/{method}', [WebhookController::class, 'pa
 Route::post('/api/webhooks/redx/dm/{method}', [WebhookController::class, 'redx'])->name('api.webhooks.redx');
 Route::post('/api/webhooks/sms/amarsms', [\App\Http\Controllers\SmsWebhookController::class, 'amarsms'])->name('api.webhooks.sms.amarsms');
 Route::post('/api/webhooks/sms/nishchit', [\App\Http\Controllers\SmsWebhookController::class, 'nishchit'])->name('api.webhooks.sms.nishchit');
+
+// M18: storefront page slugs (/{page-slug}) on tenant hosts are
+// intercepted by ResolveStorefrontHost before this route can run;
+// the route only exists so the URL is routable at all. On the
+// platform host a bare slug is a plain 404. Defined LAST so every
+// real single-segment route above wins first.
+Route::get('/{sfPageSlug}', function () {
+    abort(404);
+})->where('sfPageSlug', '[a-z0-9][a-z0-9-]*')->name('sf.page');
 
 require __DIR__.'/auth.php';

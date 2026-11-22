@@ -288,6 +288,13 @@ export default function AppLayout({ children }) {
             if (item.settings && isPlatform) {
                 item = { ...item, children: [...item.children, { label: 'Seller Packages', g: 'packages' }] };
             }
+            if (item.label === 'Storefront' && props.sfMenu && Array.isArray(props.sfMenu.menu)) {
+                // Server-computed (StorefrontService::menuState): no
+                // sub-menu before a store exists, three calm items
+                // after, Connect Website instead for own-website shops.
+                const SF_LBL = { overview: ['Overview', '/storefront'], pages: ['My Pages', '/storefront/pages'], settings: ['Store Settings', '/storefront/settings'], connect: ['Connect Website', '/storefront/connect'] };
+                item = { ...item, children: props.sfMenu.menu.map((k) => ({ label: SF_LBL[k][0], href: SF_LBL[k][1] })) };
+            }
             return item;
         }) })).filter((sec) => sec.items.length > 0);
     const navGroups = isPlatform ? [...baseNav, { sec: 'Platform', items: [

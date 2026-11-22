@@ -5,6 +5,8 @@
   <div class="sf-err-slot" style="display:none"></div>
   <form method="POST" action="/order" class="sf-order-form" data-inside="{{ $sf->deliveryInside() }}" data-outside="{{ $sf->deliveryOutside() }}" data-price="{{ $product['effective'] }}">
     <input type="hidden" name="_token" value="%%SF_CSRF%%">
+    <input type="hidden" name="idem" value="%%SF_IDEM%%">
+    @isset($pageId)<input type="hidden" name="page_id" value="{{ $pageId }}">@endisset
     <input type="hidden" name="product_id" value="{{ $product['id'] }}">
     <input type="hidden" name="ic_event_id" value="">
     <input type="hidden" name="purchase_event_id" value="">
@@ -25,6 +27,16 @@
       <label>সম্পূর্ণ ঠিকানা</label>
       <textarea name="customer_address" required rows="2" maxlength="500" placeholder="বাসা/হোল্ডিং, রোড, এলাকা"></textarea>
     </div>
+    @if(!empty($product['variants']))
+    <div class="sf-field">
+      <label>ধরন বেছে নিন</label>
+      <select name="variant_id" required>
+        @foreach($product['variants'] as $v)
+          <option value="{{ $v['id'] }}" data-price="{{ $v['price'] }}" @disabled(!$v['available'])>{{ $v['name'] }} — ৳{{ number_format($v['price']) }}@if(!$v['available']) (স্টক শেষ)@endif</option>
+        @endforeach
+      </select>
+    </div>
+    @endif
     <div class="sf-field">
       <label>জেলা</label>
       <select name="district" required class="sf-district">

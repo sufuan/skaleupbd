@@ -77,6 +77,11 @@ class StorefrontService
                 return Storefront::where('subdomain', $slug)->value('id') ?? 0;
             }
 
+            $fromTable = \App\Models\StorefrontDomain::where('domain', $host)->where('status', 'active')->value('storefront_id');
+            if ($fromTable) {
+                return $fromTable;
+            }
+
             return Storefront::where('custom_domain', $host)->where('domain_status', 'active')->value('id') ?? 0;
         });
         if (! $id) {
@@ -353,7 +358,7 @@ class StorefrontService
     }
 
     /** Convert an uploaded image to WebP under the seller's quota; returns the public-disk path. */
-    public function storeImage(int $businessId, UploadedFile $file): string
+    public function storeImage(int $businessId, UploadedFile $file, int $maxDim = 1600): string
     {
         if (! $file->isValid() || ! str_starts_with((string) $file->getMimeType(), 'image/')) {
             throw ValidationException::withMessages(['image' => 'Please choose a valid image file.']);
@@ -368,10 +373,11 @@ class StorefrontService
         if (! $src) {
             throw ValidationException::withMessages(['image' => 'This image format is not supported.']);
         }
-        // Cap dimensions at 1600px on the long side — storefront images never need more.
+        // Cap dimensions on the long side (1600px pages, 256px logos) —
+        // re-encoding to WebP also strips EXIF and any payload.
         $w = imagesx($src);
         $h = imagesy($src);
-        $max = 1600;
+        $max = $maxDim;
         if (max($w, $h) > $max) {
             $scale = $max / max($w, $h);
             $resized = imagecreatetruecolor((int) ($w * $scale), (int) ($h * $scale));
@@ -480,15 +486,48 @@ class StorefrontService
         if (! $sf->custom_domain || ! $sf->domain_txt_token) {
             return false;
         }
-        foreach (['_scalenow-verify.'.$sf->custom_domain, $sf->custom_domain] as $host) {
+
+        return $this->domainTxtMatches($sf->custom_domain, $sf->domain_txt_token);
+    }
+
+    public function domainTxtFoundFor(\App\Models\StorefrontDomain $domain): bool
+    {
+        if (! $domain->txt_token) {
+            return false;
+        }
+
+        return $this->domainTxtMatches($domain->domain, $domain->txt_token);
+    }
+
+    private function domainTxtMatches(string $domain, string $token): bool
+    {
+        foreach (['_scalenow-verify.'.$domain, '_skaleup-verify.'.$domain, $domain] as $host) {
             foreach ($this->dnsTxtRecords($host) as $txt) {
-                if (str_contains((string) $txt, $sf->domain_txt_token)) {
+                if (str_contains((string) $txt, $token)) {
                     return true;
                 }
             }
         }
 
         return false;
+    }
+
+    /** Keep the storefront row's legacy domain columns mirroring
+     *  its primary domain row (admin screens + resolver read them). */
+    public function syncDomainMirror(Storefront $sf): void
+    {
+        $primary = $sf->primaryDomain();
+        $sf->custom_domain = $primary?->domain;
+        $sf->domain_status = $primary ? $primary->status : 'none';
+        $sf->domain_txt_token = $primary?->txt_token;
+        $sf->domain_verified_at = $primary?->verified_at;
+        $sf->domain_added_at = $primary?->added_at;
+        $sf->save();
+        $this->forgetHostCache($sf);
+        if ($primary) {
+            \Illuminate\Support\Facades\Cache::forget('sfhost:'.$primary->domain);
+            \Illuminate\Support\Facades\Cache::forget('sfhost:www.'.$primary->domain);
+        }
     }
 
     public function domainCap(): int
@@ -503,7 +542,16 @@ class StorefrontService
 
     public function activeDomainCount(): int
     {
-        return Storefront::where('domain_status', 'active')->whereNotNull('custom_domain')->count();
+        // Union of the multi-domain rows and any storefront whose legacy
+        // single-domain columns say active without a matching active row
+        // (the columns mirror the primary row, but never under-count).
+        $activeRowDomains = \App\Models\StorefrontDomain::where('status', 'active')->pluck('domain')->all();
+        $legacyOnly = Storefront::where('domain_status', 'active')
+            ->whereNotNull('custom_domain')
+            ->whereNotIn('custom_domain', $activeRowDomains ?: [''])
+            ->count();
+
+        return count($activeRowDomains) + $legacyOnly;
     }
 
     public function activationAllowed(): bool
@@ -539,6 +587,7 @@ class StorefrontService
      */
     public function lapseSweep(): array
     {
+        $this->flushViewStats();
         $grace = max(0, (int) $this->settings->get('storefront.lapse_grace_days', 7));
         $stats = ['checked' => 0, 'unpublished' => 0];
         foreach (Storefront::where('status', 'published')->get() as $sf) {
@@ -589,6 +638,508 @@ class StorefrontService
         );
 
         return 'STOREFRONT';
+    }
+
+    // ------------------------------------------------------------ pages (v2)
+
+    public const PAGE_BLOCK_TYPES = ['hero', 'offer', 'products', 'faq', 'order_form'];
+
+    public const TEMPLATES = ['single', 'store', 'offer'];
+
+    public const PRESET_COLORS = ['#e11d48', '#ea580c', '#15803d', '#2347e8', '#7c3aed', '#111827'];
+
+    /** Validate + sanitise a v2 page-blocks payload ({version, blocks:[{id,type,props}]}). */
+    public function sanitizePageBlocks(mixed $payload): array
+    {
+        $list = is_array($payload) && array_key_exists('blocks', $payload) ? (array) $payload['blocks'] : (array) $payload;
+        $out = [];
+        foreach (array_slice($list, 0, 12) as $block) {
+            $type = (string) ($block['type'] ?? '');
+            if (! in_array($type, self::PAGE_BLOCK_TYPES, true)) {
+                continue;
+            }
+            $p = (array) ($block['props'] ?? $block['data'] ?? []);
+            $clean = match ($type) {
+                'hero' => [
+                    'title' => $this->cleanText($p['title'] ?? '', 60),
+                    'subtitle' => $this->cleanText($p['subtitle'] ?? '', 120),
+                    'image' => $this->cleanImagePath($p['image'] ?? null),
+                    'alt' => $this->cleanText($p['alt'] ?? '', 120),
+                    'hidden' => (bool) ($p['hidden'] ?? false),
+                ],
+                'offer' => [
+                    'text' => $this->cleanText($p['text'] ?? '', 80),
+                    'hidden' => (bool) ($p['hidden'] ?? false),
+                ],
+                'products' => [
+                    'product_ids' => collect((array) ($p['product_ids'] ?? []))->map(fn ($i) => (int) $i)
+                        ->filter(fn ($i) => $i > 0)->unique()->take(24)->values()->all(),
+                    'title' => $this->cleanText($p['title'] ?? '', 120),
+                ],
+                'faq' => [
+                    'items' => collect((array) ($p['items'] ?? []))->take(10)->map(fn ($i) => [
+                        'q' => $this->cleanText($i['q'] ?? '', 200),
+                        'a' => $this->cleanText($i['a'] ?? '', 500),
+                    ])->filter(fn ($i) => $i['q'] !== '' || $i['a'] !== '')->values()->all(),
+                    'hidden' => (bool) ($p['hidden'] ?? false),
+                ],
+                'order_form' => [
+                    'product_id' => ! empty($p['product_id']) ? (int) $p['product_id'] : null,
+                    'title' => $this->cleanText($p['title'] ?? '', 120),
+                ],
+                default => [],
+            };
+            $out[] = ['id' => preg_replace('/[^a-zA-Z0-9_-]/', '', (string) ($block['id'] ?? Str::random(8))) ?: Str::random(8),
+                'type' => $type, 'props' => $clean];
+        }
+
+        return ['version' => 2, 'blocks' => $out];
+    }
+
+    /** Default FAQ copy (Bangla) every new page starts with. */
+    public function defaultFaqItems(): array
+    {
+        return [
+            ['q' => 'ডেলিভারি কতদিনে পাবো?', 'a' => 'ঢাকায় ১–২ দিন, ঢাকার বাইরে ৩–৫ দিন।'],
+            ['q' => 'ক্যাশ অন ডেলিভারি আছে?', 'a' => 'হ্যাঁ, পণ্য হাতে পেয়ে টাকা দিন।'],
+        ];
+    }
+
+    /** The starting blocks of a page made from a template. Products are
+     *  automatic (live Inventory) — a products block with no ids means
+     *  "all the shop's products", an order form with no product resolves
+     *  to the page's first product at render time. */
+    public function templateBlocks(string $template, string $storeName): array
+    {
+        $mk = fn (string $type, array $props = []) => ['id' => Str::random(8), 'type' => $type, 'props' => $props];
+        $hero = $mk('hero', ['title' => $storeName, 'subtitle' => 'সরাসরি আমাদের কাছ থেকে কিনুন', 'image' => null, 'alt' => '', 'hidden' => false]);
+        $products = $mk('products', ['product_ids' => [], 'title' => '']);
+        $form = $mk('order_form', ['product_id' => null, 'title' => 'অর্ডার করুন']);
+        $faq = $mk('faq', ['items' => $this->defaultFaqItems(), 'hidden' => false]);
+        $blocks = match ($template) {
+            'offer' => [$hero, $mk('offer', ['text' => 'আজই অর্ডার করলে ডেলিভারিতে ছাড়', 'hidden' => false]), $products, $form, $faq],
+            'single' => [$hero, $products, $form, $faq],
+            default => [$hero, $products, $faq, $form],
+        };
+
+        return ['version' => 2, 'blocks' => $blocks];
+    }
+
+    /** Convert legacy (v1) blocks into the v2 editor model. Lossy by
+     *  design: testimonials/countdown/legal are not v1 editor sections
+     *  (legal pages are appended by the renderer automatically). */
+    public function legacyToV2(array $legacy): array
+    {
+        $out = [];
+        $formProduct = null;
+        foreach ($legacy as $block) {
+            $type = (string) ($block['type'] ?? '');
+            $d = (array) ($block['data'] ?? []);
+            $id = preg_replace('/[^a-zA-Z0-9_-]/', '', (string) ($block['id'] ?? Str::random(8))) ?: Str::random(8);
+            switch ($type) {
+                case 'hero':
+                    $out[] = ['id' => $id, 'type' => 'hero', 'props' => [
+                        'title' => mb_substr((string) ($d['title'] ?? ''), 0, 60),
+                        'subtitle' => mb_substr((string) ($d['subtitle'] ?? ''), 0, 120),
+                        'image' => $d['image'] ?? null, 'alt' => '', 'hidden' => false]];
+                    if (! empty($d['cta_product_id'])) {
+                        $formProduct = (int) $d['cta_product_id'];
+                    }
+                    break;
+                case 'price_offer':
+                    $text = trim(strip_tags((string) ($d['text'] ?? ''))) ?: (string) ($d['title'] ?? '');
+                    $out[] = ['id' => $id, 'type' => 'offer', 'props' => ['text' => mb_substr($text, 0, 80), 'hidden' => false]];
+                    if (! empty($d['product_id'])) {
+                        $formProduct = (int) $d['product_id'];
+                    }
+                    break;
+                case 'product_grid':
+                    $out[] = ['id' => $id, 'type' => 'products', 'props' => ['product_ids' => [], 'title' => (string) ($d['title'] ?? '')]];
+                    break;
+                case 'product_single':
+                    $pid = ! empty($d['product_id']) ? (int) $d['product_id'] : null;
+                    $out[] = ['id' => $id, 'type' => 'products', 'props' => ['product_ids' => $pid ? [$pid] : [], 'title' => '']];
+                    if ($pid) {
+                        $formProduct = $pid;
+                    }
+                    break;
+                case 'order_form':
+                    $out[] = ['id' => $id, 'type' => 'order_form', 'props' => [
+                        'product_id' => ! empty($d['product_id']) ? (int) $d['product_id'] : null,
+                        'title' => (string) ($d['title'] ?? 'অর্ডার করুন')]];
+                    break;
+                case 'faq':
+                    $out[] = ['id' => $id, 'type' => 'faq', 'props' => ['items' => (array) ($d['items'] ?? []), 'hidden' => false]];
+                    break;
+                default:
+                    break; // testimonials, countdown, legal: not editor sections
+            }
+        }
+        $types = array_column($out, 'type');
+        if (! in_array('products', $types, true)) {
+            $out[] = ['id' => Str::random(8), 'type' => 'products', 'props' => ['product_ids' => [], 'title' => '']];
+        }
+        if (! in_array('order_form', $types, true)) {
+            $out[] = ['id' => Str::random(8), 'type' => 'order_form', 'props' => ['product_id' => $formProduct, 'title' => 'অর্ডার করুন']];
+        }
+
+        return $this->sanitizePageBlocks(['version' => 2, 'blocks' => $out]);
+    }
+
+    /** Live products for a v2 products block: the listed own active
+     *  products, or all of the shop's active products when none listed. */
+    public function pageProducts(Storefront $sf, array $props): array
+    {
+        $ids = collect((array) ($props['product_ids'] ?? []))->map(fn ($i) => (int) $i)->filter()->all();
+        $q = \App\Models\Product::where('business_id', $sf->business_id)->where('is_active', true);
+        if ($ids) {
+            $found = $q->whereIn('id', $ids)->get()->keyBy('id');
+
+            return collect($ids)->map(fn ($id) => $found->get($id))->filter()->values()->all();
+        }
+
+        return $q->latest('id')->limit(24)->get()->all();
+    }
+
+    /** Darken a hex colour until white text on it passes WCAG AA (4.5:1). */
+    public function ensureContrast(string $hex): string
+    {
+        if (! preg_match('/^#[0-9a-fA-F]{6}$/', $hex)) {
+            return '#411550';
+        }
+        [$r, $g, $b] = [hexdec(substr($hex, 1, 2)), hexdec(substr($hex, 3, 2)), hexdec(substr($hex, 5, 2))];
+        $lum = function (int $r, int $g, int $b): float {
+            $f = fn (int $c) => ($c / 255) <= 0.03928 ? ($c / 255) / 12.92 : pow((($c / 255) + 0.055) / 1.055, 2.4);
+
+            return 0.2126 * $f($r) + 0.7152 * $f($g) + 0.0722 * $f($b);
+        };
+        for ($i = 0; $i < 24 && (1.05 / ($lum($r, $g, $b) + 0.05)) < 4.5; $i++) {
+            $r = (int) ($r * 0.85);
+            $g = (int) ($g * 0.85);
+            $b = (int) ($b * 0.85);
+        }
+
+        return sprintf('#%02x%02x%02x', $r, $g, $b);
+    }
+
+    /** Brand names a store name may not impersonate (token match, plus
+     *  a flat contains-match for the longer brands so "BkashShop" is
+     *  caught without refusing honest names like "Robiul Store"). */
+    public const BRAND_NAMES = ['bkash', 'nagad', 'rocket', 'upay', 'pathao', 'steadfast', 'redx',
+        'carrybee', 'paperfly', 'ecourier', 'facebook', 'meta', 'instagram', 'whatsapp', 'google',
+        'youtube', 'tiktok', 'daraz', 'bikroy', 'grameenphone', 'banglalink', 'robi', 'scalenow', 'skaleup'];
+
+    /** Store-name safety: length is validated by callers; this rejects
+     *  brand impersonation and abusive words. Returns an error or null. */
+    public function storeNameError(string $name): ?string
+    {
+        $lower = strtolower($name);
+        $tokens = preg_split('/[^a-z0-9]+/', $lower) ?: [];
+        $flat = preg_replace('/[^a-z0-9]/', '', $lower) ?? '';
+        foreach (self::BRAND_NAMES as $bad) {
+            if (in_array($bad, $tokens, true) || (strlen($bad) >= 5 && str_contains($flat, $bad))) {
+                return 'This name looks like another brand. Please choose your own shop name.';
+            }
+        }
+        foreach (['fuck', 'shit', 'bitch', 'porn'] as $bad) {
+            if (in_array($bad, $tokens, true) || str_contains($flat, $bad)) {
+                return 'Please choose a proper shop name.';
+            }
+        }
+
+        return null;
+    }
+
+    /** Friendly alternatives when a slug is taken at publish time. */
+    public function slugSuggestions(string $slug, int $businessId): array
+    {
+        $out = [];
+        foreach (['-shop', '-bd', '-store', '-1', '-2'] as $suffix) {
+            $candidate = mb_substr($slug, 0, 30 - strlen($suffix)).$suffix;
+            if ($this->availability($candidate, $businessId)['state'] === 'available') {
+                $out[] = $candidate;
+            }
+            if (count($out) >= 3) {
+                break;
+            }
+        }
+
+        return $out;
+    }
+
+    // ------------------------------------------------------------ menu state
+
+    /**
+     * The server-computed Storefront menu state (brief §1): the
+     * frontend renders exactly this and never decides visibility.
+     * @return array{hasStore: bool, mode: string, suspended: bool, hasPaid: bool, phoneVerified: bool, menu: string[], subdomain: ?string}
+     */
+    public function menuState(int $businessId): array
+    {
+        $sf = Storefront::where('business_id', $businessId)->first();
+        $hasStore = $sf !== null && $sf->hasStore();
+        $mode = $sf?->mode() ?? 'hosted';
+        $suspended = $sf !== null && $sf->status === 'taken_down';
+        $menu = [];
+        if ($suspended) {
+            $menu = ['overview'];
+        } elseif ($hasStore) {
+            $menu = ['overview', 'pages', 'settings'];
+        } elseif ($mode === 'connect') {
+            $menu = ['overview', 'connect'];
+        }
+
+        return [
+            'hasStore' => $hasStore,
+            'mode' => $mode,
+            'suspended' => $suspended,
+            'hasPaid' => $this->hasPaid($businessId),
+            'phoneVerified' => $sf?->phone_verified_at !== null,
+            'menu' => $menu,
+            'subdomain' => $sf?->subdomain,
+        ];
+    }
+
+    // ------------------------------------------------------------ wizard
+
+    /**
+     * The wizard's publish: one transaction that sets the (single,
+     * immutable) subdomain, branding and the first live page, after
+     * every gate in brief §2.1 has passed. Products are automatic.
+     * @return array{ok: bool, error?: string, suggestions?: string[], storefront?: Storefront, page?: \App\Models\StorefrontPage}
+     */
+    public function wizardPublish(int $businessId, array $payload): array
+    {
+        $sf = $this->ensureFor($businessId);
+        if (! empty($sf->subdomain)) {
+            return ['ok' => false, 'error' => 'Your shop already has its link. It cannot be changed.'];
+        }
+        if (! $this->hasPaid($businessId)) {
+            return ['ok' => false, 'error' => 'Your shop unlocks after your first pack payment is confirmed. Buy a points pack first.'];
+        }
+        if (! $sf->phone_verified_at) {
+            return ['ok' => false, 'error' => 'Verify your mobile number first (the OTP step).'];
+        }
+        if (empty($payload['agree'])) {
+            return ['ok' => false, 'error' => 'Please tick "I agree to the Storefront rules" to publish.'];
+        }
+        $name = trim((string) ($payload['name'] ?? ''));
+        if (mb_strlen($name) < 2 || mb_strlen($name) > 40) {
+            return ['ok' => false, 'error' => 'Shop name must be 2–40 characters.'];
+        }
+        if ($err = $this->storeNameError($name)) {
+            return ['ok' => false, 'error' => $err];
+        }
+        $template = in_array($payload['template'] ?? '', self::TEMPLATES, true) ? $payload['template'] : 'store';
+        $slug = strtolower(trim((string) ($payload['slug'] ?? '')));
+        $avail = $this->availability($slug, $businessId);
+        if ($avail['state'] !== 'available') {
+            return ['ok' => false, 'error' => $avail['message'], 'suggestions' => $this->slugSuggestions($slug, $businessId)];
+        }
+        $color = $this->ensureContrast((string) ($payload['color'] ?? '#411550'));
+        $logo = $this->cleanImagePath($payload['logo'] ?? null);
+
+        try {
+            $page = \Illuminate\Support\Facades\DB::transaction(function () use ($sf, $name, $template, $slug, $color, $logo) {
+                $b = (array) $sf->branding;
+                $b['display_name'] = $name;
+                $b['theme_color'] = $color;
+                if ($logo) {
+                    $b['logo'] = $logo;
+                }
+                $sf->branding = $b;
+                $sf->subdomain = $slug;
+                $settings = (array) $sf->settings;
+                $settings['mode'] = 'hosted';
+                $sf->settings = $settings;
+                $sf->status = 'published';
+                $sf->published_at = now();
+                $sf->unpublished_reason = null;
+                $sf->save();
+
+                $blocks = $this->templateBlocks($template, $name);
+                $page = $sf->pages()->create([
+                    'business_id' => $sf->business_id,
+                    'name' => $name,
+                    'slug' => null,
+                    'template' => $template,
+                    'status' => 'live',
+                    'draft_blocks' => $blocks,
+                    'published_blocks' => $blocks,
+                    'published_at' => now(),
+                    'sort' => 0,
+                ]);
+                \App\Models\StorefrontOnboarding::where('business_id', $sf->business_id)->delete();
+
+                return $page;
+            });
+        } catch (\Illuminate\Database\QueryException) {
+            // The unique index caught a slug race — one winner only.
+            return ['ok' => false, 'error' => 'This link was just taken by another shop.', 'suggestions' => $this->slugSuggestions($slug, $businessId)];
+        }
+        $this->forgetHostCache($sf);
+
+        return ['ok' => true, 'storefront' => $sf->fresh(), 'page' => $page];
+    }
+
+    // ------------------------------------------------------------ page lifecycle
+
+    /** Create an extra page (name + template; slug is system-made). */
+    public function createPage(Storefront $sf, string $name, string $template, ?string $slugBase = null): \App\Models\StorefrontPage
+    {
+        $template = in_array($template, self::TEMPLATES, true) ? $template : 'store';
+        $brand = (string) (($sf->branding['display_name'] ?? '') ?: $name);
+        $page = $sf->pages()->create([
+            'business_id' => $sf->business_id,
+            'name' => $name,
+            'slug' => null,
+            'template' => $template,
+            'status' => 'draft',
+            'draft_blocks' => $this->templateBlocks($template, $brand),
+            'published_blocks' => null,
+            'sort' => (int) $sf->pages()->max('sort') + 1,
+        ]);
+        // System-made slug: from the name when it slugifies, else the
+        // page id; suffixed until unique inside this store. A duplicate
+        // passes its source page's slug as the base (about-us -> about-us-2).
+        $base = $slugBase !== null && $slugBase !== '' ? $slugBase : \Illuminate\Support\Str::slug($name);
+        if (strlen($base) < 3) {
+            $base = 'page-'.$page->id;
+        }
+        $candidate = $base;
+        for ($i = 2; $sf->pages()->withTrashed()->where('slug', $candidate)->where('id', '!=', $page->id)->exists(); $i++) {
+            $candidate = $base.'-'.$i;
+        }
+        $page->slug = $candidate;
+        $page->save();
+
+        return $page;
+    }
+
+    /** Publish changes: snapshot the current live blocks (keep 5), then copy draft → live. */
+    public function publishChanges(\App\Models\StorefrontPage $page): void
+    {
+        \Illuminate\Support\Facades\DB::transaction(function () use ($page) {
+            if (! empty($page->published_blocks)) {
+                $page->versions()->create(['blocks' => $page->published_blocks]);
+                $keep = $page->versions()->latest('id')->take(5)->pluck('id');
+                $page->versions()->whereNotIn('id', $keep)->delete();
+            }
+            $page->published_blocks = $page->draft_blocks;
+            $page->published_at = now();
+            if ($page->status === 'draft') {
+                $page->status = 'live';
+            }
+            $page->save();
+        });
+        $sf = $page->storefront;
+        if ($sf) {
+            $this->forgetHostCache($sf);
+        }
+    }
+
+    /** Restore a snapshot: it becomes both the draft and the live page. */
+    public function restoreVersion(\App\Models\StorefrontPage $page, \App\Models\StorefrontPageVersion $version): void
+    {
+        \Illuminate\Support\Facades\DB::transaction(function () use ($page, $version) {
+            if (! empty($page->published_blocks)) {
+                $page->versions()->create(['blocks' => $page->published_blocks]);
+                $keep = $page->versions()->latest('id')->take(5)->pluck('id');
+                $page->versions()->whereNotIn('id', $keep)->delete();
+            }
+            $page->draft_blocks = $version->blocks;
+            $page->published_blocks = $version->blocks;
+            $page->published_at = now();
+            if ($page->status === 'draft') {
+                $page->status = 'live';
+            }
+            $page->save();
+        });
+        $sf = $page->storefront;
+        if ($sf) {
+            $this->forgetHostCache($sf);
+        }
+    }
+
+    // ------------------------------------------------------------ stats
+
+    private function isBot(?string $ua): bool
+    {
+        $ua = strtolower((string) $ua);
+
+        return $ua === '' || (bool) preg_match('/bot|crawl|spider|slurp|facebookexternalhit|embedly|preview|headless/', $ua);
+    }
+
+    /**
+     * Count a page view WITHOUT a DB write per view: views accumulate
+     * in cache counters and are flushed into storefront_daily_stats
+     * in batches (every 20th view, and on the daily sweep).
+     */
+    public function recordView(\App\Models\StorefrontPage $page, ?string $userAgent): void
+    {
+        if ($this->isBot($userAgent)) {
+            return;
+        }
+        $key = 'sfview:'.$page->id.':'.now()->toDateString();
+        // The database cache store does not create a key on increment.
+        \Illuminate\Support\Facades\Cache::add($key, 0, now()->addDays(3));
+        $count = (int) \Illuminate\Support\Facades\Cache::increment($key);
+        $registry = (array) (\Illuminate\Support\Facades\Cache::get('sfview:registry') ?: []);
+        if (! in_array($key, $registry, true)) {
+            $registry[] = $key;
+            \Illuminate\Support\Facades\Cache::put('sfview:registry', $registry, now()->addDays(3));
+        }
+        if ($count % 20 === 0) {
+            $this->flushViewStats();
+        }
+    }
+
+    public function flushViewStats(): void
+    {
+        $registry = (array) (\Illuminate\Support\Facades\Cache::get('sfview:registry') ?: []);
+        foreach ($registry as $key) {
+            $count = (int) \Illuminate\Support\Facades\Cache::pull($key, 0);
+            if ($count <= 0) {
+                continue;
+            }
+            $parts = explode(':', $key);
+            $pageId = (int) ($parts[1] ?? 0);
+            $date = (string) ($parts[2] ?? '');
+            if (! $pageId || ! $date) {
+                continue;
+            }
+            $this->bumpDailyStat($pageId, 'views', $count, $date);
+        }
+        \Illuminate\Support\Facades\Cache::forget('sfview:registry');
+    }
+
+    /** Add to a page's daily counter (SQLite stores date casts as
+     *  'Y-m-d 00:00:00', so the lookup must use whereDate). */
+    public function bumpDailyStat(int $pageId, string $field, int $amount = 1, ?string $date = null): void
+    {
+        $date = $date ?: now()->toDateString();
+        $row = \App\Models\StorefrontDailyStat::where('page_id', $pageId)->whereDate('date', $date)->first();
+        if (! $row) {
+            try {
+                $row = \App\Models\StorefrontDailyStat::create(['page_id' => $pageId, 'date' => $date, 'views' => 0, 'orders' => 0]);
+            } catch (\Illuminate\Database\QueryException) {
+                $row = \App\Models\StorefrontDailyStat::where('page_id', $pageId)->whereDate('date', $date)->first();
+            }
+        }
+        $row?->increment($field, $amount);
+    }
+
+    /** Views (flushed) + orders totals for one page. The root page also
+     *  owns the shop's older orders that carry no page reference. */
+    public function pageTotals(\App\Models\StorefrontPage $page): array
+    {
+        $views = (int) \App\Models\StorefrontDailyStat::where('page_id', $page->id)->sum('views');
+        $orders = \App\Models\Order::where('storefront_page_id', $page->id);
+        if ($page->isRoot()) {
+            $orders->orWhere(fn ($q) => $q->where('storefront_id', $page->storefront_id)->whereNull('storefront_page_id'));
+        }
+
+        return ['views' => $views, 'orders' => $orders->count()];
     }
 
     /** Bangladesh districts for the public order form (longest first). */

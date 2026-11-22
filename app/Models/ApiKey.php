@@ -7,4 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 class ApiKey extends Model
 {
     protected $guarded = [];
+
+    protected $casts = [
+        'last_used_at' => 'datetime',
+    ];
 }

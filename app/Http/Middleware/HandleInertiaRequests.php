@@ -73,6 +73,11 @@ class HandleInertiaRequests extends Middleware
                     ? (bool) app(\App\Services\SettingsService::class)->get('hr.'.$request->user()->business_id.'.payroll_enabled', false)
                     : false,
             ],
+            // M18 merge: the Storefront sub-menu is computed server-side
+            // from store state; the shell renders exactly this.
+            'sfMenu' => ($request->user() && $request->user()->business_id && Schema::hasTable('storefronts'))
+                ? app(\App\Services\StorefrontService::class)->menuState((int) $request->user()->business_id)
+                : null,
             'locale' => $locale,
             'translations' => $translations,
             'translations_version' => file_exists($langPath) ? md5_file($langPath) : null,

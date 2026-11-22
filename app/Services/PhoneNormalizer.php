@@ -7,7 +7,10 @@ class PhoneNormalizer
 {
     public static function normalize(?string $phone): string
     {
-        $d = preg_replace('/\D+/', '', (string) $phone);
+        // Bangla digits (০–৯) type exactly like ASCII ones on BD phones.
+        $phone = strtr((string) $phone, ['০' => '0', '১' => '1', '২' => '2', '৩' => '3', '৪' => '4',
+            '৫' => '5', '৬' => '6', '৭' => '7', '৮' => '8', '৯' => '9']);
+        $d = preg_replace('/\D+/', '', $phone);
         if (str_starts_with($d, '880')) {
             $d = substr($d, 2); // 8801... -> 01...
         }
