@@ -263,6 +263,21 @@ class StorefrontService
         return mb_substr(trim(strip_tags((string) $s)), 0, $max);
     }
 
+    /** Parse a seller-supplied date/time into 'Y-m-d H:i:s' (the wall
+     *  clock the seller picked), or null when empty/unparseable. */
+    private function cleanDateTime(mixed $value): ?string
+    {
+        $value = trim((string) ($value ?? ''));
+        if ($value === '') {
+            return null;
+        }
+        try {
+            return \Carbon\Carbon::parse($value)->format('Y-m-d H:i:s');
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
     /** Validate + sanitise a blocks payload from the builder. */
     public function sanitizeBlocks(array $blocks): array
     {
@@ -642,7 +657,7 @@ class StorefrontService
 
     // ------------------------------------------------------------ pages (v2)
 
-    public const PAGE_BLOCK_TYPES = ['hero', 'offer', 'products', 'faq', 'order_form'];
+    public const PAGE_BLOCK_TYPES = ['hero', 'offer', 'products', 'faq', 'order_form', 'info', 'countdown'];
 
     public const TEMPLATES = ['single', 'store', 'offer'];
 
@@ -687,6 +702,14 @@ class StorefrontService
                     'product_id' => ! empty($p['product_id']) ? (int) $p['product_id'] : null,
                     'title' => $this->cleanText($p['title'] ?? '', 120),
                 ],
+                // Nothing editable: the strip renders from Store Settings.
+                'info' => [
+                    'hidden' => (bool) ($p['hidden'] ?? false),
+                ],
+                'countdown' => [
+                    'ends_at' => $this->cleanDateTime($p['ends_at'] ?? null),
+                    'hidden' => (bool) ($p['hidden'] ?? false),
+                ],
                 default => [],
             };
             $out[] = ['id' => preg_replace('/[^a-zA-Z0-9_-]/', '', (string) ($block['id'] ?? Str::random(8))) ?: Str::random(8),
@@ -726,8 +749,10 @@ class StorefrontService
     }
 
     /** Convert legacy (v1) blocks into the v2 editor model. Lossy by
-     *  design: testimonials/countdown/legal are not v1 editor sections
-     *  (legal pages are appended by the renderer automatically). */
+     *  design: testimonials/legal are not v2 editor sections (legal
+     *  pages are appended by the renderer automatically). A v1
+     *  countdown maps to the v2 countdown block (its end time carries
+     *  over; its custom title does not — v2 locks the label). */
     public function legacyToV2(array $legacy): array
     {
         $out = [];
@@ -771,8 +796,12 @@ class StorefrontService
                 case 'faq':
                     $out[] = ['id' => $id, 'type' => 'faq', 'props' => ['items' => (array) ($d['items'] ?? []), 'hidden' => false]];
                     break;
+                case 'countdown':
+                    $out[] = ['id' => $id, 'type' => 'countdown', 'props' => [
+                        'ends_at' => ! empty($d['ends_at']) ? (string) $d['ends_at'] : null, 'hidden' => false]];
+                    break;
                 default:
-                    break; // testimonials, countdown, legal: not editor sections
+                    break; // testimonials, legal: not editor sections
             }
         }
         $types = array_column($out, 'type');

@@ -125,6 +125,29 @@ class StorefrontPublicController extends Controller
             if ($type === 'hero' && ! empty($props['image'])) {
                 $resolved['image'] = '/storage/'.$props['image'];
             }
+            if ($type === 'info') {
+                $resolved['lines'] = $this->infoLines($sf);
+            }
+            if ($type === 'countdown') {
+                // ends_at is the Dhaka wall clock the seller picked.
+                $ends = null;
+                if (! empty($props['ends_at'])) {
+                    try {
+                        $ends = \Carbon\Carbon::parse((string) $props['ends_at'], 'Asia/Dhaka');
+                    } catch (\Throwable) {
+                        $ends = null;
+                    }
+                }
+                $secs = $ends ? $ends->getTimestamp() - now()->getTimestamp() : -1;
+                // An expired (or missing) end time renders NOTHING —
+                // a timer on the page must never be fake.
+                $resolved['active'] = $secs > 0;
+                if ($secs > 0) {
+                    $resolved['ends'] = $ends->toIso8601String();
+                    $resolved['remaining'] = ($secs >= 86400 ? intdiv($secs, 86400).'d ' : '')
+                        .sprintf('%02d:%02d:%02d', intdiv($secs % 86400, 3600), intdiv($secs % 3600, 60), $secs % 60);
+                }
+            }
             if ($type === 'order_form') {
                 $formSectionIdx = count($sections);
             }
@@ -168,6 +191,24 @@ class StorefrontPublicController extends Controller
                 'privacy' => StorefrontService::defaultLegalText('privacy'),
                 'return' => $returnText !== '' ? '<p>'.nl2br(e($returnText)).'</p>' : StorefrontService::defaultLegalText('return'),
             ],
+        ];
+    }
+
+    /** Lines for the v2 info strip, from data the store already has:
+     *  the delivery charges saved in Store Settings plus cash on
+     *  delivery (every storefront order is COD). There is no
+     *  free-delivery threshold or short return-policy line in the
+     *  storefront data — checkout always charges these flat rates —
+     *  so those lines are never invented. */
+    private function infoLines(Storefront $sf): array
+    {
+        $in = $sf->deliveryInside();
+        $out = $sf->deliveryOutside();
+
+        return [
+            $in > 0 ? 'ঢাকার ভিতরে ডেলিভারি চার্জ ৳'.number_format($in) : 'ঢাকার ভিতরে ফ্রি ডেলিভারি',
+            $out > 0 ? 'ঢাকার বাইরে ডেলিভারি চার্জ ৳'.number_format($out) : 'ঢাকার বাইরে ফ্রি ডেলিভারি',
+            'ক্যাশ অন ডেলিভারি আছে — পণ্য হাতে পেয়ে টাকা দিন',
         ];
     }
 

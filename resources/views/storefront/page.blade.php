@@ -69,6 +69,27 @@
       @endif
       @break
 
+    @case('info')
+      @if(empty($p['hidden']) && !empty($r['lines']))
+      <section class="sf-section" data-bid="{{ $section['id'] ?? '' }}">
+        <div class="sf-infobox"><ul>
+          @foreach($r['lines'] as $line)<li>{{ $line }}</li>@endforeach
+        </ul></div>
+      </section>
+      @endif
+      @break
+
+    @case('countdown')
+      @if(empty($p['hidden']) && !empty($r['active']))
+      <section class="sf-section" data-bid="{{ $section['id'] ?? '' }}" data-sf-countdown>
+        <div class="sf-count">
+          <h2 style="margin-top:0">অফার শেষ হতে বাকি</h2>
+          <div class="sf-timer" data-ends="{{ $r['ends'] }}">{{ $r['remaining'] }}</div>
+        </div>
+      </section>
+      @endif
+      @break
+
     @case('order_form')
       @if(!empty($r['product']))
       <section class="sf-section" data-bid="{{ $section['id'] ?? '' }}">
@@ -107,4 +128,23 @@
   <a class="sf-btn" href="/p/{{ $ctaProduct['id'] }}">Order now</a>
 </div>
 @endif
+@endsection
+
+@section('scripts')
+<script>
+  // Countdown sections vanish the moment their end time passes —
+  // the layout script ticks the timer text; this only hides at zero.
+  (function () {
+    var wraps = document.querySelectorAll('[data-sf-countdown]');
+    if (!wraps.length) return;
+    function sweep() {
+      wraps.forEach(function (w) {
+        var t = w.querySelector('.sf-timer');
+        if (t && new Date(t.dataset.ends).getTime() <= Date.now()) w.style.display = 'none';
+      });
+    }
+    sweep();
+    setInterval(sweep, 1000);
+  })();
+</script>
 @endsection

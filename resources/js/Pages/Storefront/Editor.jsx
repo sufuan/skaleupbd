@@ -10,9 +10,9 @@ import { t } from '@/lib/i18n';
    through commit() (undo snapshots + typing coalescing + autosave);
    undo only ever touches the draft, never the live page. */
 
-const TYPE_LABEL = { hero: 'Top banner', offer: 'Offer strip', products: 'Products', faq: 'Questions & answers', order_form: 'Order form' };
-const TYPES = ['hero', 'offer', 'products', 'faq', 'order_form'];
-const HIDEABLE = ['hero', 'offer', 'faq'];
+const TYPE_LABEL = { hero: 'Top banner', offer: 'Offer strip', products: 'Products', faq: 'Questions & answers', order_form: 'Order form', info: 'Delivery & payment info', countdown: 'Countdown' };
+const TYPES = ['hero', 'offer', 'products', 'faq', 'order_form', 'info', 'countdown'];
+const HIDEABLE = ['hero', 'offer', 'faq', 'info', 'countdown'];
 const LOCKED = ['products', 'order_form'];
 
 const svg = (children, size = 18) => (
@@ -67,6 +67,14 @@ function computeChecks(blocks, products) {
         if (b.type === 'faq') {
             const bad = (p.items || []).some((it) => (String(it.q || '').trim() === '') !== (String(it.a || '').trim() === ''));
             if (bad) out.push({ level: 'warning', blockId: b.id, msg: t('A question or answer is empty') });
+        }
+        if (b.type === 'countdown' && !p.hidden) {
+            // An ERROR (blocks publish) like the empty hero title: the
+            // seller's own incomplete input, never a product/stock rule.
+            const end = p.ends_at ? new Date(String(p.ends_at).replace(' ', 'T')) : null;
+            if (!end || Number.isNaN(end.getTime()) || end.getTime() <= Date.now()) {
+                out.push({ level: 'error', blockId: b.id, msg: t('Countdown end time is missing or has passed') });
+            }
         }
     }
     return out;
@@ -263,6 +271,8 @@ export default function Editor({ sf, page, previewUrl, products, branding, prese
             products: { title: '', product_ids: [] },
             faq: { items: [{ q: '', a: '' }], hidden: false },
             order_form: { title: '', product_id: null },
+            info: { hidden: false },
+            countdown: { ends_at: null, hidden: false },
         };
         const nb = { id: `b${Date.now().toString(36)}${Math.floor(Math.random() * 999)}`, type, props: defaults[type] };
         const at = selIdx >= 0 ? selIdx + 1 : blocksRef.current.length;
@@ -546,6 +556,19 @@ export default function Editor({ sf, page, previewUrl, products, branding, prese
                     </select>
                 </Field>
                 <p className="ed-note">{t('Name, mobile number and address — the customer fills these in.')}</p>
+            </>
+        );
+        if (b.type === 'info') return (
+            <p className="ed-note" style={{ marginTop: 12 }}>{t('Everything here comes from your Store Settings — nothing to write in the builder.')}</p>
+        );
+        if (b.type === 'countdown') return (
+            <>
+                <Field label={t('Offer end time')}>
+                    <input type="datetime-local" className="ed-fld"
+                        value={p.ends_at ? String(p.ends_at).replace(' ', 'T').slice(0, 16) : ''}
+                        onChange={(e) => setProp(b.id, 'ends_at', e.target.value ? `${e.target.value.replace('T', ' ')}:00` : null, false)} />
+                </Field>
+                <p className="ed-note">{t('When the time passes, the countdown hides by itself.')}</p>
             </>
         );
         return null;

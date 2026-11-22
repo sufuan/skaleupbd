@@ -128,6 +128,9 @@ a{color:var(--sf-accent)}
 .sf-notice p{color:var(--sf-muted)}
 .sf-ok-icon{width:64px;height:64px;border-radius:50%;background:#e7f6ec;color:var(--sf-ok);font-size:32px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px}
 .sf-thanks{background:#e7f6ec;border:1px solid #bfe6cc;color:var(--sf-ok);border-radius:12px;padding:11px 15px;margin:16px 0 0;font-size:14.5px}
+.sf-infobox{background:#fff;border:1.5px solid var(--sf-accent);border-radius:16px;padding:16px 18px}
+.sf-infobox ul{list-style:none;margin:0;padding:0;display:grid;gap:7px}
+.sf-infobox li{font-size:15px;font-weight:600}
 
 @media (min-width:720px){
   .sf-hero{padding:56px 0 20px}
