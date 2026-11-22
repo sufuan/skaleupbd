@@ -212,6 +212,11 @@ class MessagesController extends Controller
 
     public function panic(Request $request): RedirectResponse
     {
+        // The panic flag lives in the platform-global ai.autonomy setting
+        // (it pauses AI for EVERY shop, not just the caller's), so it is
+        // platform admin only until ai.* is namespaced per business.
+        // Per-conversation AI pause (toggleAi) stays available to sellers.
+        abort_unless((bool) ($request->user()?->is_platform_admin), 403);
         $auto = $this->settings->get('ai.autonomy', []);
         $auto['panic'] = !($auto['panic'] ?? false);
         $this->settings->set('ai.autonomy', $auto, $request->user()?->id);

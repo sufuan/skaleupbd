@@ -23,6 +23,7 @@ class SettingsController extends Controller
     public function index(Request $request): Response
     {
         $biz = (int) ($request->user()?->business_id ?? 0);
+        $isPlatform = (bool) ($request->user()?->is_platform_admin);
 
         // Settings Home is computed from the shop's REAL state — the
         // checklist and cards must never show hardcoded prototype copy.
@@ -94,14 +95,19 @@ class SettingsController extends Controller
             'paymentGateway' => $biz ? app(\App\Services\PaymentGatewayService::class)->view($biz) : null,
             'platformPaymentGateway' => ($request->user()?->is_platform_admin)
                 ? app(\App\Services\PaymentGatewayService::class)->view(null) : null,
+            // The Meta connection is the PLATFORM's single connection,
+            // not the shop's: its values (the verify token above all)
+            // are shared with platform admins only. Sellers receive the
+            // same shape, empty, so the tab still renders. The secret
+            // VALUE is never shared with anyone — only app_secret_set.
             'channels' => [
                 'webhook_url' => url('/api/webhooks/meta'),
-                'verify_token' => (string) $this->settings->get('meta.verify_token', ''),
-                'app_id' => (string) $this->settings->get('meta.app_id', ''),
-                'app_secret_set' => ! empty($this->settings->get('meta.app_secret_enc')),
-                'facebook' => $this->channelView('facebook', ['page_name']),
-                'whatsapp' => $this->channelView('whatsapp', ['waba_id', 'phone_number']),
-                'instagram' => $this->channelView('instagram', ['username']),
+                'verify_token' => $isPlatform ? (string) $this->settings->get('meta.verify_token', '') : '',
+                'app_id' => $isPlatform ? (string) $this->settings->get('meta.app_id', '') : '',
+                'app_secret_set' => $isPlatform && ! empty($this->settings->get('meta.app_secret_enc')),
+                'facebook' => $isPlatform ? $this->channelView('facebook', ['page_name']) : $this->emptyChannelView(['page_name']),
+                'whatsapp' => $isPlatform ? $this->channelView('whatsapp', ['waba_id', 'phone_number']) : $this->emptyChannelView(['waba_id', 'phone_number']),
+                'instagram' => $isPlatform ? $this->channelView('instagram', ['username']) : $this->emptyChannelView(['username']),
             ],
             'packagesData' => ($request->user()?->is_platform_admin) ? [
                 'packs' => \App\Models\PointPack::orderBy('sort')->orderBy('id')->get()->map(fn ($p) => [
@@ -239,6 +245,9 @@ class SettingsController extends Controller
     /** Master switch for two-factor authentication (Settings → Security & Records). */
     public function updateTotp(Request $request): RedirectResponse
     {
+        // security.totp_enabled is platform-global: one switch for every
+        // user on the platform, so only a platform admin may flip it.
+        abort_unless((bool) ($request->user()?->is_platform_admin), 403);
         $request->validate(['enabled' => ['required', 'boolean']]);
 
         $this->settings->set('security.totp_enabled', $request->boolean('enabled'), $request->user()?->id);
@@ -512,6 +521,11 @@ class SettingsController extends Controller
 
     public function updateAiReply(Request $request): RedirectResponse
     {
+        // ai.* keys are platform-global (read without any business
+        // namespacing by RuleBrainService / AiTalkerService), so every
+        // AI settings write is platform admin only until ai.* is
+        // namespaced per business.
+        abort_unless((bool) ($request->user()?->is_platform_admin), 403);
         $data = $request->validate([
             'facebook' => ['required', 'string', 'in:off,draft,auto,full_auto'],
             'whatsapp' => ['required', 'string', 'in:off,draft,auto,full_auto'],
@@ -532,6 +546,8 @@ class SettingsController extends Controller
 
     public function updateAiTalker(Request $request): RedirectResponse
     {
+        // ai.talker holds the platform's own Gemini/Claude API keys.
+        abort_unless((bool) ($request->user()?->is_platform_admin), 403);
         $data = $request->validate([
             'enabled' => ['required', 'boolean'],
             'normal_provider' => ['required', 'string', 'in:gemini,claude'],
@@ -580,6 +596,7 @@ class SettingsController extends Controller
 
     public function updateAiNegotiation(Request $request): RedirectResponse
     {
+        abort_unless((bool) ($request->user()?->is_platform_admin), 403);
         $data = $request->validate([
             'max_discount' => ['required', 'integer', 'min:0', 'max:90'],
             'step' => ['required', 'integer', 'min:1', 'max:50'],
@@ -592,6 +609,7 @@ class SettingsController extends Controller
 
     public function updateAiBehavior(Request $request): RedirectResponse
     {
+        abort_unless((bool) ($request->user()?->is_platform_admin), 403);
         $data = $request->validate([
             'angry_holding' => ['required', 'boolean'],
             'honorific' => ['required', 'string', 'in:auto,apu,bhaiya,none'],
@@ -661,6 +679,17 @@ class SettingsController extends Controller
 
     // ---------- Messaging Channels (Meta connection) ----------
 
+    /** The channels prop shape for non-platform users: same keys, no values. */
+    private function emptyChannelView(array $extraKeys): array
+    {
+        $view = ['account_id' => '', 'token_set' => false];
+        foreach ($extraKeys as $k) {
+            $view[$k] = '';
+        }
+
+        return $view;
+    }
+
     private function channelView(string $channel, array $extraKeys): array
     {
         $cfg = (array) $this->settings->get("channels.{$channel}", []);
@@ -677,6 +706,11 @@ class SettingsController extends Controller
 
     public function updateChannels(Request $request): RedirectResponse
     {
+        // meta.* and channels.* are the PLATFORM's single Meta connection
+        // (one app, one set of channel tokens for every shop). A seller
+        // saving this tab would replace the credentials for the whole
+        // platform, so it is platform admin only.
+        abort_unless((bool) ($request->user()?->is_platform_admin), 403);
         $data = $request->validate([
             'app_id' => ['nullable', 'string', 'max:40'],
             'app_secret' => ['nullable', 'string', 'max:200'],
