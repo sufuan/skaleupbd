@@ -2900,5 +2900,15 @@
  "Facebook page link (optional)": "Facebook page link (optional)",
  "Your Facebook Page is connected — an Order on Messenger button shows on your store by itself.": "Your Facebook Page is connected — an Order on Messenger button shows on your store by itself.",
  "Connect your Facebook Page (Settings → API Connection) and an Order on Messenger button will show on your store by itself.": "Connect your Facebook Page (Settings → API Connection) and an Order on Messenger button will show on your store by itself.",
- "Your business ID (send it with every order)": "Your business ID (send it with every order)"
+ "Your business ID (send it with every order)": "Your business ID (send it with every order)",
+ "Reset your SkaleUp BD password": "Reset your SkaleUp BD password",
+ "Hello :name,": "Hello :name,",
+ "Hello,": "Hello,",
+ "We received a request to reset the password for your SkaleUp BD account.": "We received a request to reset the password for your SkaleUp BD account.",
+ "Tap the button below to choose a new password.": "Tap the button below to choose a new password.",
+ "This link will expire in :count minutes, so please use it soon.": "This link will expire in :count minutes, so please use it soon.",
+ "If you did not ask for this, you can safely ignore this email — your password will not change.": "If you did not ask for this, you can safely ignore this email — your password will not change.",
+ "— The SkaleUp BD team": "— The SkaleUp BD team",
+ "Sent by SkaleUp BD — all your orders, inbox and delivery in one place.": "Sent by SkaleUp BD — all your orders, inbox and delivery in one place.",
+ "All rights reserved.": "All rights reserved."
 }

@@ -2900,5 +2900,15 @@
  "Facebook page link (optional)": "Facebook পেজের লিংক (চাইলে)",
  "Your Facebook Page is connected — an Order on Messenger button shows on your store by itself.": "আপনার Facebook Page সংযুক্ত আছে — আপনার দোকানে নিজে নিজেই Order on Messenger বোতাম দেখা যায়।",
  "Connect your Facebook Page (Settings → API Connection) and an Order on Messenger button will show on your store by itself.": "আপনার Facebook Page সংযোগ করুন (সেটিংস → API সংযোগ) — তাহলেই আপনার দোকানে নিজে নিজে Order on Messenger বোতাম দেখা যাবে।",
- "Your business ID (send it with every order)": "আপনার বিজনেস ID (প্রতিটি অর্ডারের সাথে পাঠাতে হয়)"
+ "Your business ID (send it with every order)": "আপনার বিজনেস ID (প্রতিটি অর্ডারের সাথে পাঠাতে হয়)",
+ "Reset your SkaleUp BD password": "আপনার SkaleUp BD পাসওয়ার্ড রিসেট করুন",
+ "Hello :name,": "হ্যালো :name,",
+ "Hello,": "হ্যালো,",
+ "We received a request to reset the password for your SkaleUp BD account.": "আমরা আপনার SkaleUp BD অ্যাকাউন্টের পাসওয়ার্ড রিসেট করার অনুরোধ পেয়েছি।",
+ "Tap the button below to choose a new password.": "নতুন পাসওয়ার্ড বেছে নিতে নিচের বোতামটি চাপুন।",
+ "This link will expire in :count minutes, so please use it soon.": "এই লিংকটি :count মিনিটের মধ্যে মেয়াদ শেষ হয়ে যাবে, তাই দ্রুত ব্যবহার করুন।",
+ "If you did not ask for this, you can safely ignore this email — your password will not change.": "আপনি যদি এটি না চেয়ে থাকেন, তাহলে এই ইমেইলটি নিরাপদে উপেক্ষা করতে পারেন — আপনার পাসওয়ার্ড বদলাবে না।",
+ "— The SkaleUp BD team": "— SkaleUp BD টিম",
+ "Sent by SkaleUp BD — all your orders, inbox and delivery in one place.": "SkaleUp BD পাঠিয়েছে — আপনার সব অর্ডার, ইনবক্স আর ডেলিভারি এক জায়গায়।",
+ "All rights reserved.": "সর্বস্বত্ব সংরক্ষিত।"
 }

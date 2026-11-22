@@ -42,6 +42,12 @@ class User extends Authenticatable
         return $this->belongsTo(Business::class);
     }
 
+    /** Send the branded SkaleUp BD password reset notification. */
+    public function sendPasswordResetNotification($token): void
+    {
+        $this->notify(new \App\Notifications\ResetPasswordNotification($token));
+    }
+
     /** True once the user has enrolled in TOTP and confirmed a code. */
     public function hasTotpEnabled(): bool
     {
