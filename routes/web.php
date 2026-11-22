@@ -84,6 +84,10 @@ Route::middleware(['auth', 'verified', 'totp'])->group(function () {
             'workinbox_open' => $biz && \Illuminate\Support\Facades\Schema::hasTable('work_tasks')
                 ? \App\Models\WorkTask::where('business_id', $biz)->whereIn('status', ['open', 'in_progress'])->count()
                 : 0,
+            'purchase_toreceive' => $biz && \Illuminate\Support\Facades\Schema::hasTable('purchases')
+                ? \App\Models\Purchase::where('business_id', $biz)
+                    ->whereHas('items', fn ($q) => $q->whereRaw('qty_received + qty_damaged < qty_ordered'))->count()
+                : 0,
         ]);
     })->name('sidebar.counts');
 
@@ -185,6 +189,24 @@ Route::middleware(['auth', 'verified', 'totp'])->group(function () {
     Route::post('/finance/close-month', [\App\Http\Controllers\FinanceController::class, 'closeMonth'])->name('finance.closeMonth');
     Route::post('/finance/daily-close', [\App\Http\Controllers\FinanceController::class, 'dailyClose'])->name('finance.dailyClose');
     Route::post('/finance/payout-task', [\App\Http\Controllers\FinanceController::class, 'raisePayoutTask'])->name('finance.payoutTask');
+
+    // Purchase (M5) — 3 pages: Dashboard / Purchases / Suppliers.
+    Route::get('/purchase', [\App\Http\Controllers\PurchaseController::class, 'dashboard'])->name('purchase.dashboard');
+    Route::get('/purchases', [\App\Http\Controllers\PurchaseController::class, 'index'])->name('purchases.index');
+    Route::get('/purchases/create', [\App\Http\Controllers\PurchaseController::class, 'create'])->name('purchases.create');
+    Route::post('/purchases', [\App\Http\Controllers\PurchaseController::class, 'store'])->name('purchases.store');
+    Route::get('/purchases/quick', [\App\Http\Controllers\PurchaseController::class, 'quickForm'])->name('purchases.quick');
+    Route::post('/purchases/quick', [\App\Http\Controllers\PurchaseController::class, 'storeQuick'])->name('purchases.quick.store');
+    Route::get('/purchases/{purchase}/receive', [\App\Http\Controllers\PurchaseController::class, 'receiveForm'])->name('purchases.receive');
+    Route::post('/purchases/{purchase}/receive', [\App\Http\Controllers\PurchaseController::class, 'storeReceive'])->name('purchases.receive.store');
+    Route::post('/purchases/{purchase}/pay', [\App\Http\Controllers\PurchaseController::class, 'payPurchase'])->name('purchases.pay');
+    Route::get('/purchases/{purchase}', [\App\Http\Controllers\PurchaseController::class, 'show'])->name('purchases.show');
+    Route::delete('/purchases/{purchase}', [\App\Http\Controllers\PurchaseController::class, 'destroy'])->name('purchases.destroy');
+    Route::get('/suppliers', [\App\Http\Controllers\PurchaseController::class, 'suppliers'])->name('suppliers.index');
+    Route::post('/suppliers', [\App\Http\Controllers\PurchaseController::class, 'storeSupplier'])->name('suppliers.store');
+    Route::patch('/suppliers/{supplier}', [\App\Http\Controllers\PurchaseController::class, 'updateSupplier'])->name('suppliers.update');
+    Route::delete('/suppliers/{supplier}', [\App\Http\Controllers\PurchaseController::class, 'destroySupplier'])->name('suppliers.destroy');
+    Route::post('/suppliers/{supplier}/pay', [\App\Http\Controllers\PurchaseController::class, 'paySupplier'])->name('suppliers.pay');
 
     // HRM (M13)
     Route::get('/hrm', [\App\Http\Controllers\HrmController::class, 'dashboard'])->name('hrm.dashboard');

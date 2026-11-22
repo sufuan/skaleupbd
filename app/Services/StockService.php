@@ -16,11 +16,12 @@ use Illuminate\Support\Facades\DB;
  */
 class StockService
 {
-    public function adjust(Product $product, int $delta, string $reason, ?string $note, ?User $actor): StockLedger
+    public function adjust(Product $product, int $delta, string $reason, ?string $note, ?User $actor, string $reference = 'ADJUST', ?float $unitCost = null): StockLedger
     {
-        return DB::transaction(function () use ($product, $delta, $reason, $note, $actor) {
+        return DB::transaction(function () use ($product, $delta, $reason, $note, $actor, $reference, $unitCost) {
             $prev = $product->stock_qty;
             $product->increment('stock_qty', $delta);
+            $cost = $unitCost ?? (float) $product->cost;
 
             return StockLedger::create([
                 'business_id' => $product->business_id,
@@ -29,9 +30,9 @@ class StockService
                 'qty' => abs($delta),
                 'prev_stock' => $prev,
                 'new_stock' => $prev + $delta,
-                'unit_cost' => $product->cost,
-                'value_impact' => $delta * (float) $product->cost,
-                'reference' => 'ADJUST',
+                'unit_cost' => $cost,
+                'value_impact' => $delta * $cost,
+                'reference' => $reference,
                 'user_id' => $actor?->id,
                 'reason' => $reason,
                 'note' => $note,

@@ -80,6 +80,7 @@ class WorkInboxService
         'ai_draft_stuck' => 'draft পাঠানো/সরানো হয়ে যাওয়ায় task নিজে থেকে বন্ধ হয়েছে',
         'comment_reply' => 'comment-এর জবাব হয়ে যাওয়ায় task নিজে থেকে বন্ধ হয়েছে',
         'low_stock' => 'stock ফিরে আসায় task নিজে থেকে বন্ধ হয়েছে',
+        'supplier_due' => 'supplier-এর পাওনা শোধ হয়ে যাওয়ায় task নিজে থেকে বন্ধ হয়েছে',
         'ledger_mismatch' => 'ledger মিলে যাওয়ায় task নিজে থেকে বন্ধ হয়েছে',
         'warranty_overdue' => 'claim বন্ধ হয়ে যাওয়ায় task নিজে থেকে বন্ধ হয়েছে',
         'negative_stock' => 'stock ঠিক হয়ে যাওয়ায় task নিজে থেকে বন্ধ হয়েছে',
@@ -933,6 +934,30 @@ class WorkInboxService
                     'source_label' => 'Product · ' . $p->name, 'link' => '/inventory/products',
                 ];
             });
+
+        return $out;
+    }
+
+    /** M5: a supplier bill whose credit terms ran out while money is still due. */
+    private function ruleSupplierDue(int $biz, array $def, array $c): array
+    {
+        if (! \Illuminate\Support\Facades\Schema::hasTable('purchases')) {
+            return [];
+        }
+        $out = [];
+        $svc = app(\App\Services\PurchaseService::class);
+        foreach ($svc->supplierSummaries($biz) as $row) {
+            if ($row['overdue'] <= 0) {
+                continue;
+            }
+            $s = $row['supplier'];
+            $out[] = [
+                'fingerprint' => 'supplier:' . $s->id,
+                'title' => $s->name . '-এর পাওনা overdue — ৳' . number_format($row['overdue'], 0, '.', ',') . ' বকেয়া, সবচেয়ে পুরনো due ' . ($row['oldest_due_date'] ?? ''),
+                'source_type' => 'supplier', 'source_id' => $s->id,
+                'source_label' => 'Supplier · ' . $s->name, 'link' => '/suppliers',
+            ];
+        }
 
         return $out;
     }

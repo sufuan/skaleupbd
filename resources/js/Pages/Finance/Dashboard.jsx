@@ -33,7 +33,7 @@ function SetupWizard() {
 
 export default function Dashboard(props) {
     const { setupDone, canSee, period, accounts, categories, figures, bridge, dues, totalCash,
-        inventoryValue, stalePayouts, cashAccount, closingToday, dailyClosingOn, recent } = props;
+        inventoryValue, supplierDue, stalePayouts, cashAccount, closingToday, dailyClosingOn, recent } = props;
     const [more, setMore] = useState(false);
     const [counted, setCounted] = useState('');
     const setPeriod = (p) => router.get('/finance', { period: p }, { preserveState: true, replace: true });
@@ -123,6 +123,7 @@ export default function Dashboard(props) {
                                 <div className="x-kpi"><b>{fmt(figures.otherIncome)}</b><span>{t('Other income')}</span></div>
                                 <div className="x-kpi red"><b>{fmt(figures.rtoLoss)}</b><span>{t('Return/RTO loss')}</span></div>
                                 <div className="x-kpi red"><b>{fmt(dues.total)}</b><span>{t('Customer dues (:count orders) —', { count: dues.count })} <Link href="/orders" style={{ color: '#411550' }}>{t('List')}</Link></span></div>
+                                <div className="x-kpi red"><b>{fmt(supplierDue || 0)}</b><span>{t('Supplier due —')} <Link href="/suppliers" style={{ color: '#411550' }}>{t('Suppliers')}</Link></span></div>
                                 <div className="x-kpi"><b>{fmt(figures.productCost)}</b><span>{t('Product cost')}</span></div>
                                 <div className="x-kpi"><b>{fmt(figures.courierCharges)}</b><span>{t('Courier charge (Delivered)')}</span></div>
                                 <div className="x-kpi"><b>{fmt(inventoryValue)}</b><span>{t('Inventory value (cost)')}</span></div>

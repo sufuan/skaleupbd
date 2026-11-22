@@ -133,6 +133,11 @@ class FinanceController extends Controller
             'totalCash' => $this->fin->totalCash($biz),
             'inventoryValue' => round((float) \App\Models\Product::where('business_id', $biz)
                 ->selectRaw('SUM(stock_qty * cost) as v')->value('v'), 2),
+            // M5 hook: what the shop owes its suppliers (was hidden until
+            // the Purchase module existed) — one figure, from M5's tables.
+            'supplierDue' => \Illuminate\Support\Facades\Schema::hasTable('purchases')
+                ? app(\App\Services\PurchaseService::class)->totalDue($biz)
+                : 0,
             'stalePayouts' => ['count' => $stale->count(), 'amount' => $staleAmount],
             'cashAccount' => $cash ? ['id' => $cash->id, 'name' => $cash->name, 'balance' => $this->fin->accountBalance($cash)] : null,
             'closingToday' => $closing ? ['counted' => (float) $closing->counted, 'difference' => (float) $closing->difference] : null,

@@ -52,7 +52,7 @@ const NAV = [
         { label: 'Delivery', icon: 'truck', badgeKey: 'delivery_waiting', children: [{ label: 'Ready to Ship', href: '/delivery/ready' }, { label: 'Courier Management', href: '/delivery/parcels' }, { label: 'Scan To Update', href: '/delivery/scan' }, { label: 'Courier Invoice Upload', href: '/delivery/invoice' }, { label: 'Courier Ledger', href: '/delivery/ledger' }], href: '/delivery/ready' },
         { label: 'Inventory', icon: 'layers', children: [{ label: 'Inventory Dashboard', href: '/inventory/dashboard' }, { label: 'Products', href: '/inventory/products' }, { label: 'Stock Ledger', href: '/inventory/ledger' }, { label: 'Branches', href: '/inventory/branches' }, { label: 'Warranty', href: '/inventory/warranty' }], href: '/inventory/dashboard' },
         { label: 'Messages', icon: 'chat', badgeKey: 'messages_unread', children: [{ label: 'Inbox', href: '/messages/inbox' }, { label: 'Comments', href: '/messages/comments' }, { label: 'AI Activity', href: '/messages/activity' }], href: '/messages/inbox' },
-        { label: 'Purchase', icon: 'cart', children: ['Purchase Dashboard', 'Purchase List', 'New Purchase', 'Receive Purchase', 'Supplier Ledger', 'Suppliers', 'Ask for Quotation'], href: mod('purchase') },
+        { label: 'Purchase', icon: 'cart', badgeKey: 'purchase_toreceive', children: [{ label: 'Purchase Dashboard', href: '/purchase' }, { label: 'Purchases', href: '/purchases' }, { label: 'Suppliers', href: '/suppliers' }], href: '/purchase' },
         { label: 'Task & Follow-up', icon: 'check', children: ['Task Board', 'Agent Cockpit', 'Follow-up Management', 'My Follow-ups', 'Follow-up Performance'], href: mod('task') },
         { label: 'Call Center', icon: 'phone', children: ['Call Dashboard', 'Call Reports', 'Contacts'], href: mod('call-center') },
         { label: 'Work Inbox', icon: 'inbox', badgeKey: 'workinbox_open', children: [{ label: 'Work Control', href: '/work-inbox/control' }, { label: 'Settings', href: '/work-inbox/settings' }], href: '/work-inbox/control' },
@@ -257,6 +257,8 @@ export default function AppLayout({ children }) {
         delivery_waiting: liveCounts?.delivery_waiting ?? props.delivery_waiting ?? 0,
         notifications_unread: liveCounts?.notifications_unread ?? props.notifications?.unread ?? 0,
         messages_unread: liveCounts?.messages_unread ?? 0,
+        purchase_toreceive: liveCounts?.purchase_toreceive ?? props.purchase_toreceive ?? 0,
+        workinbox_open: liveCounts?.workinbox_open ?? props.workinbox_open ?? 0,
     };
     const unread = counts.notifications_unread;
 

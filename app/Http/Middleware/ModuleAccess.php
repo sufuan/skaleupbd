@@ -23,6 +23,8 @@ class ModuleAccess
         'hrm' => 'hrm',
         'settings' => 'settings',
         'purchase' => 'purchase',
+        'purchases' => 'purchase',
+        'suppliers' => 'purchase',
         'call-center' => 'callcenter',
         'tasks' => 'tasks',
         'follow-ups' => 'tasks',
