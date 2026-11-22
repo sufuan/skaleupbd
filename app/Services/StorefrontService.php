@@ -1038,27 +1038,12 @@ class StorefrontService
         }
     }
 
-    /** Restore a snapshot: it becomes both the draft and the live page. */
+    /** Restore a snapshot into the DRAFT only — the live page and its
+     *  status stay untouched until the seller publishes (spec §4/§8). */
     public function restoreVersion(\App\Models\StorefrontPage $page, \App\Models\StorefrontPageVersion $version): void
     {
-        \Illuminate\Support\Facades\DB::transaction(function () use ($page, $version) {
-            if (! empty($page->published_blocks)) {
-                $page->versions()->create(['blocks' => $page->published_blocks]);
-                $keep = $page->versions()->latest('id')->take(5)->pluck('id');
-                $page->versions()->whereNotIn('id', $keep)->delete();
-            }
-            $page->draft_blocks = $version->blocks;
-            $page->published_blocks = $version->blocks;
-            $page->published_at = now();
-            if ($page->status === 'draft') {
-                $page->status = 'live';
-            }
-            $page->save();
-        });
-        $sf = $page->storefront;
-        if ($sf) {
-            $this->forgetHostCache($sf);
-        }
+        $page->draft_blocks = $version->blocks;
+        $page->save();
     }
 
     // ------------------------------------------------------------ stats

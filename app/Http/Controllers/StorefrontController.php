@@ -548,13 +548,29 @@ class StorefrontController extends Controller
             $p->save();
         }
 
+        $b = (array) $sf->branding;
+
         return Inertia::render('Storefront/Editor', [
             'sf' => $this->view($request, $sf),
             'page' => $this->pageView($sf, $p) + [
                 'draft' => $draft,
+                'published' => $p->published_blocks,
                 'versions' => $p->versions()->latest('id')->take(5)->get()
                     ->map(fn ($v) => ['id' => $v->id, 'at' => $v->created_at?->format('d M Y, h:i A')])->all(),
             ],
+            // The Design tab edits the store colour in place; it needs
+            // the full current branding values to post them back with
+            // only the colour changed (POST /storefront/branding).
+            'branding' => [
+                'display_name' => (string) ($b['display_name'] ?? '') ?: (string) (\App\Models\Business::where('id', $sf->business_id)->value('name') ?? ''),
+                'theme_color' => (string) ($b['theme_color'] ?? '#411550'),
+                'pixel_id' => (string) ($b['pixel_id'] ?? ''),
+                'ga4_id' => (string) ($b['ga4_id'] ?? ''),
+                'footer_text' => (string) ($b['footer_text'] ?? ''),
+                'delivery_inside' => $sf->deliveryInside(),
+                'delivery_outside' => $sf->deliveryOutside(),
+            ],
+            'presetColors' => StorefrontService::PRESET_COLORS,
             'previewUrl' => '/storefront/pages/'.$p->id.'/preview',
             'products' => Product::where('business_id', $sf->business_id)->where('is_active', true)
                 ->orderBy('name')->get()->map(fn ($pr) => ['id' => $pr->id, 'name' => $pr->name,
@@ -587,7 +603,7 @@ class StorefrontController extends Controller
         abort_unless($v, 404);
         $this->svc->restoreVersion($p, $v);
 
-        return back()->with('success', 'That version is live again.');
+        return back()->with('success', 'That version is in your draft — publish to make it live.');
     }
 
     /** Editor preview: the SAME renderer as the public page, on the draft. */
@@ -596,6 +612,28 @@ class StorefrontController extends Controller
         $p = $this->ownPage($request, $page);
         $sf = $p->storefront;
         $html = app(StorefrontPublicController::class)->renderPageHtml($request, $sf, $p, (array) $p->draft_blocks, true);
+
+        // Editor bridge (preview only, never on the public page):
+        // clicking a section tells the editor to select it; the editor
+        // answers with a highlight for the current selection.
+        $bridge = <<<'HTML'
+<script>
+document.addEventListener('click', function (e) {
+    var el = e.target.closest('[data-bid]');
+    if (el && el.getAttribute('data-bid')) parent.postMessage({ sfSelect: el.getAttribute('data-bid') }, '*');
+});
+window.addEventListener('message', function (e) {
+    if (!e.data || !e.data.sfHighlight) return;
+    document.querySelectorAll('[data-bid]').forEach(function (el) {
+        var on = el.getAttribute('data-bid') === e.data.sfHighlight;
+        el.style.outline = on ? '2px solid #411550' : '';
+        el.style.outlineOffset = on ? '-2px' : '';
+        if (on) el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    });
+});
+</script>
+HTML;
+        $html = str_contains($html, '</body>') ? str_replace('</body>', $bridge.'</body>', $html) : $html.$bridge;
 
         return response($html)->header('Content-Type', 'text/html');
     }

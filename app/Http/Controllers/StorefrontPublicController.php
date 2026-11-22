@@ -128,7 +128,7 @@ class StorefrontPublicController extends Controller
             if ($type === 'order_form') {
                 $formSectionIdx = count($sections);
             }
-            $sections[] = ['type' => $type, 'props' => $props, 'resolved' => $resolved];
+            $sections[] = ['id' => (string) ($block['id'] ?? ''), 'type' => $type, 'props' => $props, 'resolved' => $resolved];
         }
         // The order form's product: its own choice, else the page's
         // first product, else the shop's first active product.

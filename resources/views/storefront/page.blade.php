@@ -13,7 +13,7 @@
 
     @case('hero')
       @if(empty($p['hidden']))
-      <section class="sf-hero">
+      <section class="sf-hero" data-bid="{{ $section['id'] ?? '' }}">
         <div class="sf-hero-grid">
           <div>
             <h1>{{ $p['title'] ?? '' }}</h1>
@@ -30,14 +30,14 @@
 
     @case('offer')
       @if(empty($p['hidden']) && !empty($p['text']))
-      <section class="sf-section">
+      <section class="sf-section" data-bid="{{ $section['id'] ?? '' }}">
         <div class="sf-offerbox"><h2 style="margin:0">{{ $p['text'] }}</h2></div>
       </section>
       @endif
       @break
 
     @case('products')
-      <section class="sf-section" id="products">
+      <section class="sf-section" id="products" data-bid="{{ $section['id'] ?? '' }}">
         @if(!empty($p['title']))<h2>{{ $p['title'] }}</h2>@endif
         <div class="sf-grid">
           @foreach($r['products'] ?? [] as $prod)
@@ -61,7 +61,7 @@
 
     @case('faq')
       @if(empty($p['hidden']) && !empty($p['items']))
-      <section class="sf-section sf-faq">
+      <section class="sf-section sf-faq" data-bid="{{ $section['id'] ?? '' }}">
         @foreach($p['items'] as $f)
           <details><summary>{{ $f['q'] ?? '' }}</summary><p>{{ $f['a'] ?? '' }}</p></details>
         @endforeach
@@ -71,7 +71,7 @@
 
     @case('order_form')
       @if(!empty($r['product']))
-      <section class="sf-section">
+      <section class="sf-section" data-bid="{{ $section['id'] ?? '' }}">
         @include('storefront.partials.order-form', ['product' => $r['product'], 'showQty' => true, 'pageId' => $page->id])
         @if(!empty($fbPage))
         <p style="text-align:center;margin-top:10px"><a class="sf-btn messenger" href="https://m.me/{{ $fbPage }}?ref={{ $r['product']['id'] }}" target="_blank" rel="noopener">Order on Messenger</a></p>
