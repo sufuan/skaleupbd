@@ -172,6 +172,11 @@ class OrderService
             } catch (\Throwable) {
                 // Marketing must never break order intake.
             }
+            try {
+                app(\App\Services\StageService::class)->noteOrderCreated($fresh);
+            } catch (\Throwable) {
+                // Sales Growth staging must never break order intake.
+            }
 
             return $fresh;
         });

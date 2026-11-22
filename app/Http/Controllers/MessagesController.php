@@ -145,6 +145,7 @@ class MessagesController extends Controller
         ]);
         [$sentOk, $sendErr] = app(\App\Services\MetaGraphService::class)->dispatch($msg);
         $conversation->last_message_at = now();
+        $conversation->last_outbound_at = now();
         $conversation->needs_human = false;
         $conversation->save();
 

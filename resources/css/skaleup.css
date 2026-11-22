@@ -822,6 +822,38 @@ label.fl{display:block;font-size:12.5px;font-weight:600;color:#55496e;margin:0 0
 .mkt .btn-s{background:#fff;color:#411550;border:1px solid #D8CBE3;padding:8px 14px;border-radius:8px;font-weight:600;cursor:pointer;font-size:13.5px;font-family:inherit}
 @media (max-width: 760px){.mkt .mk-strip{grid-template-columns:1fr}.mkt table.mk-table{display:block;overflow-x:auto}.mkt .flow-card{flex-wrap:wrap}.mkt .phone{width:100%}}
 
+/* M12 Sales Growth (বিক্রি বাড়ান) — scoped under .mkt like the rest of Marketing */
+.mkt .gw-card{background:#fff;border:1px solid #E7EAF0;border-radius:14px;padding:16px 18px}
+.mkt .gw-h{margin:0;font-size:16px;color:#1E293B}
+.mkt .gw-sub{color:#64748B;font-size:13px;margin-top:2px}
+.mkt .gw-prev{font-size:12.5px;color:#94A3B8;margin-top:5px}
+.mkt .gw-note{background:#FFFBEB;color:#92400E;border:1px solid #FDE68A;border-radius:12px;padding:10px 14px;font-size:13.5px;margin-bottom:12px}
+.mkt .gw-cols{display:grid;grid-template-columns:1.1fr 1fr;gap:12px}
+.mkt .gw-stage{display:grid;grid-template-columns:150px 1fr;align-items:center;gap:10px;width:100%;padding:6px;border:1px solid transparent;border-radius:10px;background:none;text-align:left;cursor:pointer;font-family:inherit}
+.mkt .gw-stage:hover{background:#F8FAFC}
+.mkt .gw-stage.on{border-color:#411550;background:#F4EDF7}
+.mkt .gw-stage-name b{display:block;font-size:14px;color:#1E293B}
+.mkt .gw-stage-name small{display:block;color:#64748B;font-size:12px}
+.mkt .gw-bar{height:34px;border-radius:8px;background:#411550;color:#fff;display:flex;align-items:center;padding:0 10px;font-weight:700;min-width:44px;white-space:nowrap;font-size:14px}
+.mkt .gw-drop{font-size:12.5px;color:#DC2626;padding:0 6px 2px 166px}
+.mkt .gw-def{background:#F8FAFC;border-radius:10px;padding:10px 12px;margin-top:8px;font-size:13px;color:#334155}
+.mkt .gw-task{border:1px solid #E7EAF0;border-radius:12px;padding:12px 14px;margin-top:10px}
+.mkt .gw-pill{font-size:11px;font-weight:700;border-radius:99px;padding:2px 9px;background:#F1F5F9;color:#64748B;white-space:nowrap}
+.mkt .gw-pill.hot{background:#FEF2F2;color:#DC2626}
+.mkt .gw-pill.ok{background:#F0FDF4;color:#16A34A}
+.mkt .gw-done-row{display:flex;justify-content:space-between;align-items:center;gap:8px;border:1px solid #E7EAF0;border-radius:12px;padding:10px 14px;margin-top:8px;opacity:.55;font-size:13.5px}
+.mkt .gw-stuckbar{display:flex;height:26px;border-radius:8px;overflow:hidden;margin:12px 0 10px;background:#F1F5F9}
+.mkt .gw-stuckbar i{display:block;height:100%}
+.mkt .gw-legend{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:13px;color:#334155}
+.mkt .gw-legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px}
+.mkt .gw-overlay{position:fixed;inset:0;z-index:300;background:rgba(15,10,25,.45);display:flex;justify-content:flex-end}
+.mkt .gw-drawer{background:#F7F8FA;width:min(460px,100%);height:100%;overflow:auto;padding:18px 16px;box-shadow:-12px 0 40px rgba(0,0,0,.25)}
+.mkt .gw-cu{background:#fff;border:1px solid #E7EAF0;border-radius:12px;padding:11px 13px;margin-top:9px}
+.mkt .gw-why{background:#F8FAFC;border-radius:9px;padding:8px 11px;margin-top:8px;font-size:12.5px;color:#475569}
+.gw-toast{position:fixed;left:50%;transform:translateX(-50%);bottom:24px;background:#1E293B;color:#fff;padding:10px 18px;border-radius:10px;font-size:13.5px;z-index:400;max-width:90%}
+@media (max-width: 900px){.mkt .gw-cols{grid-template-columns:1fr}.mkt .gw-stage{grid-template-columns:1fr}.mkt .gw-drop{padding-left:6px}}
+@media (max-width: 700px){.mkt .gw-overlay{align-items:flex-end;justify-content:stretch}.mkt .gw-drawer{width:100%;height:auto;max-height:88vh;border-radius:18px 18px 0 0}}
+
 /* M15 Reports — prototype x-* language, scoped under .rep */
 .rep .x-head{margin-bottom:14px}
 .rep .x-head h3{font-size:20px;color:#1E293B}

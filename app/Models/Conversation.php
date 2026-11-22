@@ -10,7 +10,8 @@ class Conversation extends Model
 {
     protected $guarded = [];
 
-    protected $casts = ['last_message_at' => 'datetime', 'ai_paused' => 'boolean', 'needs_human' => 'boolean', 'state_data' => 'array', 'focus_at' => 'datetime'];
+    protected $casts = ['last_message_at' => 'datetime', 'ai_paused' => 'boolean', 'needs_human' => 'boolean', 'state_data' => 'array', 'focus_at' => 'datetime',
+        'first_inbound_at' => 'datetime', 'last_inbound_at' => 'datetime', 'last_outbound_at' => 'datetime', 'window_expires_at' => 'datetime', 'contact_shared' => 'boolean'];
 
     public function messages(): HasMany
     {

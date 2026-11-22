@@ -8,6 +8,50 @@ Schedule::command('ai:process-pending')->everyMinute();
 Schedule::command('workinbox:run')->everyFiveMinutes();
 Schedule::command('pricing:expire-cycles')->daily();
 Schedule::command('storefront:lapse-sweep')->daily();
+Schedule::command('growth:rollup')->everyFifteenMinutes();
+Schedule::command('growth:tasks')->hourly();
+Schedule::command('growth:reconcile')->daily();
+
+Artisan::command('growth:rollup', function () {
+    $svc = app(\App\Services\InsightService::class);
+    $ids = \App\Models\ConversationStage::distinct()->pluck('business_id');
+    foreach ($ids as $biz) {
+        $svc->rollup((int) $biz);
+    }
+    $this->comment('Sales Growth rollups: '.count($ids).' business(es)');
+})->purpose('Recompute Sales Growth daily rollups (last 35 days) from the stage layer');
+
+Artisan::command('growth:tasks', function () {
+    $svc = app(\App\Services\InsightService::class);
+    $ids = \App\Models\ConversationStage::distinct()->pluck('business_id');
+    foreach ($ids as $biz) {
+        $svc->generateTasks((int) $biz);
+    }
+    $this->comment('Sales Growth tasks: '.count($ids).' business(es)');
+})->purpose('Generate today\'s Sales Growth action tasks (complaint, ready, interested)');
+
+Artisan::command('growth:reconcile', function () {
+    $svc = app(\App\Services\InsightService::class);
+    $ids = \App\Models\ConversationStage::distinct()->pluck('business_id');
+    $bad = 0;
+    foreach ($ids as $biz) {
+        if (! $svc->reconcile((int) $biz)['ok']) {
+            $bad++;
+        }
+    }
+    $this->comment('Sales Growth reconciliation: '.count($ids).' checked, '.$bad.' failed');
+})->purpose('Independently re-derive Sales Growth counts from messages + orders and hide any that do not reconcile');
+
+Artisan::command('growth:backfill {--business=}', function () {
+    $svc = app(\App\Services\InsightService::class);
+    $ids = $this->option('business')
+        ? [(int) $this->option('business')]
+        : \App\Models\Business::pluck('id')->all();
+    foreach ($ids as $biz) {
+        $stats = $svc->backfill((int) $biz);
+        $this->comment('Backfill business '.$biz.': '.json_encode($stats));
+    }
+})->purpose('Derive Sales Growth stages for conversations that predate the stage layer (idempotent)');
 
 Artisan::command('storefront:lapse-sweep', function () {
     $stats = app(\App\Services\StorefrontService::class)->lapseSweep();

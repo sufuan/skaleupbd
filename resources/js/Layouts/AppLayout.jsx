@@ -59,7 +59,7 @@ const NAV = [
     ]},
     { sec: 'Growth', items: [
         { label: 'Ads', icon: 'chart', children: ['Ads Dashboard', 'Meta Ads', 'TikTok Ads'], href: mod('ads') },
-        { label: 'Marketing', icon: 'megaphone', children: [{ label: 'Automation', href: '/marketing' }, { label: 'SMS Marketing', href: '/marketing/sms' }, { label: 'SMS Report', href: '/marketing/report' }], href: '/marketing' },
+        { label: 'Marketing', icon: 'megaphone', children: [{ label: 'Automation', href: '/marketing' }, { label: 'SMS Marketing', href: '/marketing/sms' }, { label: 'SMS Report', href: '/marketing/report' }, { label: 'Sales Growth', href: '/marketing/growth' }], href: '/marketing' },
         { label: 'Customers', icon: 'users', children: [{ label: 'Customer List', href: '/customers' }, { label: 'Bulk Upload', href: '/customers/upload' }], href: '/customers' },
         { label: 'Storefront', icon: 'store', children: [{ label: 'Overview', href: '/storefront' }, { label: 'My Pages', href: '/storefront/pages' }, { label: 'Store Settings', href: '/storefront/settings' }], href: '/storefront' },
     ]},

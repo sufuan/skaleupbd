@@ -611,6 +611,12 @@ class RuleBrainService
         }
         $conversation->save();
 
+        // Sales Growth: a captured phone/address is stage-2 evidence.
+        try {
+            app(StageService::class)->noteContactShared($conversation);
+        } catch (\Throwable) {
+        }
+
         $missing = [];
         if (empty($conversation->customer_phone)) {
             $missing[] = 'phone';
@@ -757,6 +763,13 @@ class RuleBrainService
         $conversation->last_message_at = now();
         $conversation->save();
 
+        // Sales Growth stage layer: an inbound message is stage-0
+        // evidence. Insights must never break message intake.
+        try {
+            app(StageService::class)->noteInbound($conversation, $incoming);
+        } catch (\Throwable) {
+        }
+
         return $incoming;
     }
 
@@ -875,6 +888,30 @@ class RuleBrainService
                     $conversation->save();
                 }
             }
+        }
+
+        // Sales Growth: record the FINAL intent for this message —
+        // the deterministic keyword result first; the AI classifier's
+        // fallback intent only when the keywords decided nothing.
+        // When both exist and disagree, the rule result wins and the
+        // disagreement is logged for the classifier audit sample.
+        try {
+            $stageSvc = app(StageService::class);
+            $aiIntent = $stage2['intent'] ?? null;
+            if ($intent !== null && $aiIntent !== null && $intent !== $aiIntent) {
+                $stageSvc->noteDisagreement($conversation, $incoming, (string) $intent, (string) $aiIntent);
+            }
+            $finalIntent = $intent ?? $aiIntent;
+            $finalSource = $intent !== null ? 'rule' : 'ai';
+            if ($rule && $rule->match_text === 'spam') {
+                $finalIntent = 'spam';
+                $finalSource = $intent === 'spam' ? 'rule' : $finalSource;
+            }
+            if ($finalIntent !== null) {
+                $stageSvc->noteIntent($conversation, $incoming, (string) $finalIntent, $finalSource);
+            }
+        } catch (\Throwable) {
+            // Insights must never break the reply flow.
         }
 
         // A pending variant question gets its answer first: "L" after

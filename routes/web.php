@@ -229,6 +229,15 @@ Route::middleware(['auth', 'verified', 'totp'])->group(function () {
     Route::post('/marketing/sms/send', [\App\Http\Controllers\MarketingController::class, 'sendCampaign'])->name('marketing.sms.send');
     Route::get('/marketing/report', [\App\Http\Controllers\MarketingController::class, 'report'])->name('marketing.report');
     Route::post('/marketing/report/window', [\App\Http\Controllers\MarketingController::class, 'saveWindow'])->name('marketing.report.window');
+    // Sales Growth (বিক্রি বাড়ান) — stage funnel + today's action tasks.
+    Route::get('/marketing/growth', [\App\Http\Controllers\GrowthController::class, 'index'])->name('marketing.growth');
+    Route::get('/marketing/growth/summary', [\App\Http\Controllers\GrowthController::class, 'summary'])->name('marketing.growth.summary');
+    Route::get('/marketing/growth/tasks', [\App\Http\Controllers\GrowthController::class, 'tasks'])->name('marketing.growth.tasks');
+    Route::post('/marketing/growth/tasks/{task}/status', [\App\Http\Controllers\GrowthController::class, 'taskStatus'])->name('marketing.growth.tasks.status');
+    Route::get('/marketing/growth/tasks/{task}/customers', [\App\Http\Controllers\GrowthController::class, 'taskCustomers'])->name('marketing.growth.tasks.customers');
+    Route::post('/marketing/growth/tasks/{task}/drafts', [\App\Http\Controllers\GrowthController::class, 'taskDrafts'])->name('marketing.growth.tasks.drafts');
+    Route::post('/marketing/growth/tasks/{task}/calls', [\App\Http\Controllers\GrowthController::class, 'taskCalls'])->name('marketing.growth.tasks.calls');
+    Route::get('/marketing/growth/conversations/{conversation}/why', [\App\Http\Controllers\GrowthController::class, 'why'])->name('marketing.growth.why');
 
     // Work Inbox (M10) — system-made problem tasks; My Work page is built
     // but stays OFF unless the shop turns it on in Work Inbox Settings.
