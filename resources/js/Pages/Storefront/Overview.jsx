@@ -1,7 +1,16 @@
+import { useState } from 'react';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import AppLayout from '@/Layouts/AppLayout';
 import DomainLocked from './DomainLocked';
 import { t } from '@/lib/i18n';
+
+// Same masking as the registration verify screen: 017******78 —
+// enough to recognise the number, never the full number.
+const maskPhone = (p) => {
+    const s = String(p || '').trim();
+    if (s.length < 7) return s;
+    return s.slice(0, 3) + '*'.repeat(s.length - 5) + s.slice(-2);
+};
 
 const STATUS = {
     draft: ['Draft — not live', 'amber'],
@@ -12,6 +21,18 @@ const STATUS = {
 export default function Overview({ sf, state, pageCount, livePageCount, viewsTotal, orderCount, openReports, hasAddress }) {
     const otpSend = useForm({ phone: sf.phoneToVerify || sf.contactMobile || '' });
     const otpVerify = useForm({ code: '' });
+    const [otpNote, setOtpNote] = useState(null);
+    const sendCode = () => {
+        const phone = otpSend.data.phone;
+        otpSend.post('/storefront/otp/send', {
+            preserveScroll: true,
+            onSuccess: (page) => {
+                const f = (page.props && page.props.flash) || {};
+                if (f.success) setOtpNote({ ok: true, phone: maskPhone(phone) });
+                else if (f.error) setOtpNote({ ok: false, text: f.error });
+            },
+        });
+    };
     const [label, tone] = STATUS[sf.status] || [sf.status, ''];
     const hasStore = !!(state && state.hasStore);
 
@@ -86,9 +107,12 @@ export default function Overview({ sf, state, pageCount, livePageCount, viewsTot
                             <div className="sf-form" style={{ paddingTop: 10 }}>
                                 <label className="lbl">{t('Mobile number')}</label>
                                 <div style={{ display: 'flex', gap: 8 }}>
-                                    <input className="fld" style={{ flex: 1 }} value={otpSend.data.phone} onChange={(e) => otpSend.setData('phone', e.target.value)} placeholder="01XXXXXXXXX" inputMode="tel" />
-                                    <button className="btn" disabled={otpSend.processing} onClick={() => otpSend.post('/storefront/otp/send', { preserveScroll: true })}>{t('Send code')}</button>
+                                    <input className="fld" style={{ flex: 1 }} value={otpSend.data.phone} onChange={(e) => { otpSend.setData('phone', e.target.value); setOtpNote(null); }} placeholder="01XXXXXXXXX" inputMode="tel" />
+                                    <button className="btn" disabled={otpSend.processing} onClick={sendCode}>{t('Send code')}</button>
                                 </div>
+                                {otpNote && (otpNote.ok
+                                    ? <div style={{ fontSize: 13.5, marginTop: 6 }}>{t('Code sent to :phone', { phone: otpNote.phone })}</div>
+                                    : <div style={{ color: '#B91C1C', fontSize: 13, marginTop: 5 }}>{otpNote.text}</div>)}
                                 {otpSend.errors.phone && <div style={{ color: '#B91C1C', fontSize: 13, marginTop: 5 }}>{otpSend.errors.phone}</div>}
                                 <label className="lbl" style={{ marginTop: 10 }}>{t('Code from the SMS')}</label>
                                 <div style={{ display: 'flex', gap: 8 }}>

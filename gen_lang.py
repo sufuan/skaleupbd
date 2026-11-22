@@ -3220,6 +3220,8 @@ BN.update([
     ('Bring this version into your draft?', 'এই সংস্করণটি খসড়ায় আনবেন?'),
     ('Colour saved', 'রং সেভ হয়েছে'),
     ('No versions yet — publish once and earlier versions will appear here.', 'এখনো কোনো সংস্করণ নেই — একবার চালু করলে আগের সংস্করণগুলো এখানে আসবে।'),
+    ('Creating…', 'তৈরি হচ্ছে…'),
+    ('Code sent to :phone', 'কোড পাঠানো হয়েছে এই নম্বরে: :phone'),
 ])
 
 EN = {k: k for k in BN}

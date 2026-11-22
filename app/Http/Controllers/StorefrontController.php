@@ -348,9 +348,18 @@ class StorefrontController extends Controller
             return redirect('/storefront/pages');
         }
         $ob = \App\Models\StorefrontOnboarding::firstOrCreate(['business_id' => $sf->business_id], ['step' => 0, 'payload' => []]);
+        // The name step starts filled with the name the shop already
+        // trades under (branding display name, else the business name);
+        // the seller can still change it freely before saving.
+        $branding = (array) $sf->branding;
+        $shopName = trim((string) ($branding['display_name'] ?? ''));
+        if ($shopName === '') {
+            $shopName = (string) (\App\Models\Business::where('id', $sf->business_id)->value('name') ?? '');
+        }
 
         return Inertia::render('Storefront/Wizard', [
             'sf' => $this->view($request, $sf),
+            'shopName' => $shopName,
             'onboarding' => ['step' => (int) $ob->step, 'payload' => (array) $ob->payload],
             'presetColors' => StorefrontService::PRESET_COLORS,
             'state' => $this->svc->menuState($sf->business_id),

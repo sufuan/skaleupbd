@@ -15,6 +15,7 @@ export default function Pages({ pages }) {
     const [showForm, setShowForm] = useState(false);
     const [name, setName] = useState('');
     const [template, setTemplate] = useState('store');
+    const [creating, setCreating] = useState(false);
     const [copiedId, setCopiedId] = useState(null);
 
     const copy = async (page) => {
@@ -54,7 +55,7 @@ export default function Pages({ pages }) {
                         ))}
                     </div>
                     <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
-                        <button className="btn pri" disabled={name.trim().length < 2} onClick={() => router.post('/storefront/pages', { name, template })}>{t('Create page')}</button>
+                        <button className="btn pri" disabled={creating || name.trim().length < 2} onClick={() => { setCreating(true); router.post('/storefront/pages', { name, template }, { onFinish: () => setCreating(false) }); }}>{creating ? t('Creating…') : t('Create page')}</button>
                         <button className="btn" onClick={() => setShowForm(false)}>{t('Cancel')}</button>
                     </div>
                 </div>

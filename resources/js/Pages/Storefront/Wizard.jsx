@@ -10,7 +10,7 @@ const TEMPLATES = [
     ['offer', 'Offer page', 'A big offer banner on top, products below — best for campaigns.'],
 ];
 
-export default function Wizard({ sf, onboarding, presetColors }) {
+export default function Wizard({ sf, onboarding, presetColors, shopName = '' }) {
     const saved = onboarding;
     const phoneVerified = !!sf.phoneVerified;
     const hasPaid = !!sf.hasPaid;
@@ -19,7 +19,7 @@ export default function Wizard({ sf, onboarding, presetColors }) {
     const [step, setStep] = useState(saved ? Math.min(Number(saved.step) || 0, 4) : 0);
     const [hasWebsite, setHasWebsite] = useState(initial.has_website ?? null);
     const [template, setTemplate] = useState(initial.template || 'store');
-    const [name, setName] = useState(initial.name || '');
+    const [name, setName] = useState(initial.name || shopName || '');
     const [color, setColor] = useState(initial.color || '#411550');
     const [logoUrl, setLogoUrl] = useState(sf.logoUrl || null);
     const [slug, setSlug] = useState(initial.slug || '');
