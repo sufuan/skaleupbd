@@ -21,6 +21,9 @@ class AuthenticatedSessionController extends Controller
         return Inertia::render('Auth/Login', [
             'canResetPassword' => Route::has('password.request'),
             'status' => session('status'),
+            // Dev-only quick login button: rendered solely when APP_ENV=local,
+            // so it can never appear on the production site.
+            'devLogin' => app()->isLocal(),
         ]);
     }
 

@@ -1,8 +1,8 @@
 import GuestLayout from '@/Layouts/GuestLayout';
 import { t } from '@/lib/i18n';
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, router, useForm } from '@inertiajs/react';
 
-export default function Login({ status, canResetPassword }) {
+export default function Login({ status, canResetPassword, devLogin }) {
     const { data, setData, post, processing, errors, reset } = useForm({
         email: '',
         password: '',
@@ -45,6 +45,16 @@ export default function Login({ status, canResetPassword }) {
                     {t('Log in')}
                 </button>
             </form>
+            {devLogin && (
+                <button
+                    type="button"
+                    className="btn sec"
+                    style={{ width: '100%', justifyContent: 'center', padding: '11px 16px', marginTop: 10 }}
+                    onClick={() => router.post(route('login'), { email: 'admin@skaleup.test', password: 'password', remember: true })}
+                >
+                    {t('Dev quick login (local only)')}
+                </button>
+            )}
             <p className="sm mut" style={{ textAlign: 'center', marginTop: 18 }}>
                 {t('New to SkaleUp BD?')} <Link href={route('register')} className="auth-link">{t('Create an account')}</Link>
             </p>
