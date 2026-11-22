@@ -44,7 +44,7 @@ export default function SellerDashboard({ stats, recentPayments, topSellers, exp
                             <thead><tr><th>{t('Seller')}</th><th>{t('Package')}</th><th>{t('Orders')}</th><th>{t('Sales')}</th></tr></thead>
                             <tbody>
                                 {topSellers.map((s) => (
-                                    <tr key={s.id}><td><Link href={`/admin/sellers/${s.id}`} style={{ fontWeight: 600 }}>{s.name}</Link></td><td>{s.package || '—'}</td><td>{s.orders}</td><td style={{ fontWeight: 600 }}>{tk(s.revenue)}</td></tr>
+                                    <tr key={s.id}><td><Link href={`/admin/sellers/${s.id}`} style={{ fontWeight: 600 }}>{s.name}</Link></td><td>{s.package || '-'}</td><td>{s.orders}</td><td style={{ fontWeight: 600 }}>{tk(s.revenue)}</td></tr>
                                 ))}
                                 {topSellers.length === 0 && <tr><td colSpan={4} style={{ textAlign: 'center', padding: 24, color: 'var(--muted)' }}>{t('No sellers yet')}</td></tr>}
                             </tbody>

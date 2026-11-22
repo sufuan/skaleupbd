@@ -15,11 +15,11 @@ export default function Report({ rows, totals, window_days, preset, from, to }) 
 
     return (
         <AppLayout>
-            <Head title={t('Marketing — SMS Report')} />
+            <Head title={t('Marketing - SMS Report')} />
             <div className="mkt">
                 <div style={{ marginBottom: 14 }}>
                     <h3 style={{ fontSize: 20 }}>{t('SMS Report')}</h3>
-                    <p style={{ color: '#64748B', fontSize: 13.5, marginTop: 3 }}>{t('How much orders grew by sending SMS — campaigns and automation, all accounts in one place. Which SMS is earning money and which is going to waste is clear right here.')}</p>
+                    <p style={{ color: '#64748B', fontSize: 13.5, marginTop: 3 }}>{t('How much orders grew by sending SMS - campaigns and automation, all accounts in one place. Which SMS is earning money and which is going to waste is clear right here.')}</p>
                 </div>
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginBottom: 16 }}>
                     <div className="ptabs" style={{ marginBottom: 0, borderBottom: 'none' }}>
@@ -62,7 +62,7 @@ export default function Report({ rows, totals, window_days, preset, from, to }) 
                         {rows.length === 0 && <tr><td colSpan="8" style={{ color: '#94A3B8' }}>{t('No marketing SMS was sent in this period.')}</td></tr>}
                     </tbody>
                 </table>
-                <p style={{ fontSize: 13, color: '#94A3B8', marginTop: 12, lineHeight: 1.7 }}>{t('Rule: if a customer orders within :days days of getting the SMS, the order is counted in the name of that SMS. If several SMS went in this time, the last one gets it. Order-news SMS (thank-you · courier-sent news · delivered thank-you) are not for growing orders — they are not counted in this report. Net profit = the profit of those orders (counted as delivered) − SMS cost.', { days: fmtNum(window_days) })}</p>
+                <p style={{ fontSize: 13, color: '#94A3B8', marginTop: 12, lineHeight: 1.7 }}>{t('Rule: if a customer orders within :days days of getting the SMS, the order is counted in the name of that SMS. If several SMS went in this time, the last one gets it. Order-news SMS (thank-you · courier-sent news · delivered thank-you) are not for growing orders - they are not counted in this report. Net profit = the profit of those orders (counted as delivered) − SMS cost.', { days: fmtNum(window_days) })}</p>
             </div>
         </AppLayout>
     );

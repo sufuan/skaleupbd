@@ -27,7 +27,7 @@ class PayrollController extends Controller
     private function guard(Request $request): ?RedirectResponse
     {
         if (! $this->payroll->enabled($this->biz($request))) {
-            return redirect('/hrm')->with('error', 'Payroll এখন বন্ধ আছে — চালু করতে HR Settings-এ যান।');
+            return redirect('/hrm')->with('error', 'Payroll এখন বন্ধ আছে - চালু করতে HR Settings-এ যান।');
         }
 
         return null;
@@ -104,7 +104,7 @@ class PayrollController extends Controller
             return back()->with('error', 'এই কাজ করার permission নেই।');
         }
         if ($run->status === 'paid') {
-            return back()->with('error', 'বেতন দেওয়া হয়ে গেছে — আর বদলানো যাবে না।');
+            return back()->with('error', 'বেতন দেওয়া হয়ে গেছে - আর বদলানো যাবে না।');
         }
         $data = $request->validate([
             'advance_cut' => 'nullable|numeric|min:0',
@@ -138,6 +138,6 @@ class PayrollController extends Controller
             return back()->with('error', $e->getMessage());
         }
 
-        return back()->with('success', 'বেতন দেওয়া হয়েছে — Finance-এ খরচ entry হয়েছে।');
+        return back()->with('success', 'বেতন দেওয়া হয়েছে - Finance-এ খরচ entry হয়েছে।');
     }
 }

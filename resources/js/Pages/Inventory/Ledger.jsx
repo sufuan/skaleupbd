@@ -4,7 +4,7 @@ import AppLayout from '@/Layouts/AppLayout';
 import { t } from '@/lib/i18n';
 import { BTN_OUTLINE, BTN_PRIMARY, INPUT } from './ProductFields';
 
-// Stock Ledger — copied from the prototype's inv-ledger panel:
+// Stock Ledger - copied from the prototype's inv-ledger panel:
 // tabs Stock Ledger / Stock Integrity, insight links, filters, 17-column table.
 const TYPES = ['reserve', 'release_reserve', 'ship_out', 'return_in', 'adjust_in', 'adjust_out', 'transfer_in', 'transfer_out', 'damage'];
 const TYPE_LABEL = { reserve: 'Reserve', release_reserve: 'Release Reserve', ship_out: 'Shipped Out', return_in: 'Return In', adjust_in: 'Adjustment In', adjust_out: 'Adjustment Out', transfer_in: 'Transfer In', transfer_out: 'Transfer Out', damage: 'Damage / Lost' };
@@ -36,7 +36,7 @@ export default function Ledger({ rows, cards, rail, findings, insights, filters,
                     <div className="flex items-center justify-between">
                         <div>
                             <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">{t('Stock Ledger')}</h1>
-                            <p className="text-sm text-muted-foreground">{t('Every stock movement, written by the system — the ledger is the source of truth')}</p>
+                            <p className="text-sm text-muted-foreground">{t('Every stock movement, written by the system - the ledger is the source of truth')}</p>
                         </div>
                         <div className="flex gap-2">
                             <button type="button" className={BTN_OUTLINE + ' h-9 px-3'} onClick={exportCsv}>{t('Export')}</button>
@@ -115,15 +115,15 @@ export default function Ledger({ rows, cards, rail, findings, insights, filters,
                                                     <td className="p-4">{t(TYPE_LABEL[r.type] || r.type)}</td>
                                                     <td className="p-4">{r.direction}</td>
                                                     <td className="p-4">{r.qty}</td>
-                                                    <td className="p-4">{r.prev_stock ?? '—'}</td>
-                                                    <td className="p-4">{r.new_stock ?? '—'}</td>
-                                                    <td className="p-4">{r.unit_cost ?? '—'}</td>
-                                                    <td className="p-4">{r.value_impact ?? '—'}</td>
-                                                    <td className="p-4">{r.reference || '—'}</td>
-                                                    <td className="p-4">{r.branch || '—'}</td>
-                                                    <td className="p-4">{r.updated_by || '—'}</td>
-                                                    <td className="p-4">{r.reason || '—'}</td>
-                                                    <td className="p-4">{r.note || '—'}</td>
+                                                    <td className="p-4">{r.prev_stock ?? '-'}</td>
+                                                    <td className="p-4">{r.new_stock ?? '-'}</td>
+                                                    <td className="p-4">{r.unit_cost ?? '-'}</td>
+                                                    <td className="p-4">{r.value_impact ?? '-'}</td>
+                                                    <td className="p-4">{r.reference || '-'}</td>
+                                                    <td className="p-4">{r.branch || '-'}</td>
+                                                    <td className="p-4">{r.updated_by || '-'}</td>
+                                                    <td className="p-4">{r.reason || '-'}</td>
+                                                    <td className="p-4">{r.note || '-'}</td>
                                                     <td className="p-4">{r.status}</td>
                                                 </tr>
                                             ))}
@@ -168,11 +168,11 @@ export default function Ledger({ rows, cards, rail, findings, insights, filters,
                                             <tr key={i} className="border-b">
                                                 <td className="p-4 font-medium">{f.kind}</td>
                                                 <td className="p-4"><span className="text-amber-600 font-medium">{t('Warning')}</span></td>
-                                                <td className="p-4">{f.product} ({f.sku}) — {f.text}</td>
+                                                <td className="p-4">{f.product} ({f.sku}) - {f.text}</td>
                                                 <td className="p-4">{t('Open')}</td>
                                             </tr>
                                         ))}
-                                        {findings.length === 0 && <tr><td colSpan="4" className="p-8 text-center text-muted-foreground">{t('No integrity problems found — the ledger and stock agree')}</td></tr>}
+                                        {findings.length === 0 && <tr><td colSpan="4" className="p-8 text-center text-muted-foreground">{t('No integrity problems found - the ledger and stock agree')}</td></tr>}
                                     </tbody>
                                 </table>
                             </div>
@@ -207,7 +207,7 @@ function AddAdjustment({ products, close }) {
                     <p className="text-sm text-muted-foreground">{t('Every adjustment is written to the ledger with the balance before and after.')}</p>
                     <select className={INPUT} value={productId} onChange={(e) => setProductId(e.target.value)}>
                         <option value="">{t('Select product')}</option>
-                        {(products || []).map((p) => <option key={p.id} value={p.id}>{p.name} ({p.sku}) — {t('Stock')}: {p.stock_qty}</option>)}
+                        {(products || []).map((p) => <option key={p.id} value={p.id}>{p.name} ({p.sku}) - {t('Stock')}: {p.stock_qty}</option>)}
                     </select>
                     <input className={INPUT} type="number" placeholder="+10 / -5" value={delta} onChange={(e) => setDelta(e.target.value)} />
                     <input className={INPUT} placeholder={t('Reason')} value={reason} onChange={(e) => setReason(e.target.value)} />

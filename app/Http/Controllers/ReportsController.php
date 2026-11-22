@@ -174,7 +174,9 @@ class ReportsController extends Controller
         $hist = OrderStatusHistory::whereIn('order_id', $orders->pluck('id'))
             ->whereIn('to_status', ['Shipped', 'Delivered'])->get()->groupBy('order_id');
 
-        $rows = $orders->groupBy(fn (Order $o) => trim(explode('—', $o->delivery_method)[0]))
+        // delivery_method is stored as "Label - Zone"; older rows used an
+        // em-dash separator, so normalize before splitting on the hyphen.
+        $rows = $orders->groupBy(fn (Order $o) => trim(explode('-', str_replace('—', '-', (string) $o->delivery_method))[0]))
             ->map(function ($g, $name) use ($hist) {
                 $sent = $g->count();
                 $del = $g->where('status', 'Delivered')->count();

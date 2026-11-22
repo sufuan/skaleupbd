@@ -13,7 +13,7 @@ const maskPhone = (p) => {
 };
 
 const STATUS = {
-    draft: ['Draft — not live', 'amber'],
+    draft: ['Draft - not live', 'amber'],
     published: ['Live', 'green'],
     taken_down: ['Taken down by the platform', 'red'],
 };
@@ -54,7 +54,7 @@ export default function Overview({ sf, state, pageCount, livePageCount, viewsTot
                     ? <button className="btn" onClick={() => router.post('/storefront/unpublish')}>{t('Unpublish')}</button>
                     : (hasAddress && sf.phoneVerified && !sf.domainLocked)
                         ? <button className="btn pri" onClick={() => router.post('/storefront/publish')}>{t('Publish storefront')}</button>
-                        : <button className="btn pri" disabled style={{ opacity: 0.45, cursor: 'not-allowed' }} title={t('Finish the checklist below first — your shop address and mobile verification are needed')}>{t('Publish storefront')}</button>)}
+                        : <button className="btn pri" disabled style={{ opacity: 0.45, cursor: 'not-allowed' }} title={t('Finish the checklist below first - your shop address and mobile verification are needed')}>{t('Publish storefront')}</button>)}
                 {sf.subdomainUrl && <a className="btn" href={sf.subdomainUrl} target="_blank" rel="noreferrer">{t('View shop')}</a>}
             </div>
 
@@ -73,7 +73,7 @@ export default function Overview({ sf, state, pageCount, livePageCount, viewsTot
             {!hasStore ? (
                 <div className="card" style={{ textAlign: 'center', padding: '30px 20px' }}>
                     <div style={{ fontWeight: 700, fontSize: 17, marginBottom: 6 }}>{t('You do not have a store yet')}</div>
-                    <p style={{ color: 'var(--muted)', fontSize: 14.5, margin: '0 0 16px' }}>{t('Make your free store in five easy steps — your products come in automatically.')}</p>
+                    <p style={{ color: 'var(--muted)', fontSize: 14.5, margin: '0 0 16px' }}>{t('Make your free store in five easy steps - your products come in automatically.')}</p>
                     <Link className="btn pri" href="/storefront/wizard">{t('Create your store')}</Link>
                 </div>
             ) : (
@@ -125,7 +125,7 @@ export default function Overview({ sf, state, pageCount, livePageCount, viewsTot
                         <div style={{ display: 'flex', gap: 8, marginTop: 14, flexWrap: 'wrap' }}>
                             <Link className="btn" href="/storefront/pages">{t('My Pages')}</Link>
                             <Link className="btn" href="/storefront/settings">{t('Store Settings')}</Link>
-                            {Number(openReports) > 0 && <span className="pill red">{openReports} {t('open report(s) — see Store Settings')}</span>}
+                            {Number(openReports) > 0 && <span className="pill red">{openReports} {t('open report(s) - see Store Settings')}</span>}
                         </div>
                     </div>
                 </>

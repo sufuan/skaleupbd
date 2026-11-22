@@ -46,12 +46,12 @@ export const FIELD_DEFS = {
 const GUIDE = {
     STEADFAST: 'How to get these: register free at steadfast.com.bd/register, then in the merchant panel open API → Your API keys and copy the Api-Key and Secret-Key. There is no fee for API access.',
     PATHAO: 'How to get these: register free at merchant.pathao.com/register, add your store and payment info, then open the Developer API section in the panel for the Client ID and Secret. The username is your merchant login email. A new store takes about an hour to be approved.',
-    REDX: 'How to get this: open redx.com.bd/developer-api — your access token is shown on that page (sign in to your merchant account if it is blank). There is no fee for API access.',
-    CARRYBEE: 'How to get these: register free at merchant.carrybee.com/register, then open the API section in your merchant panel — the Client ID, Secret and Context are already generated there for your business, ready to copy. There is no fee for API access.',
-    ECOURIER: 'How to get these: register at ecourier.com.bd and wait for eCourier to activate your account, then copy the API-KEY, API-SECRET and USER-ID from the panel\'s API credentials section — or ask eCourier support. The fraud check needs eCourier support to switch it on.',
-    PAPERFLY: 'How to get these: sign in to the Paperfly merchant panel (go.paperfly.com.bd) and open Developer Guide — your API Key is printed inside the Order Creation code sample there. Tracking signs in with your panel username + password, so keep those here too. There is no sandbox: every booking is a real parcel.',
-    BAHOK: 'Bahok has no public API — book in the Bahok app and record the CN number when sending, like a manual courier.',
-    OTHERS: 'A manual courier needs no credentials — staff book in the courier\'s own app or branch and write the CN number when sending.',
+    REDX: 'How to get this: open redx.com.bd/developer-api - your access token is shown on that page (sign in to your merchant account if it is blank). There is no fee for API access.',
+    CARRYBEE: 'How to get these: register free at merchant.carrybee.com/register, then open the API section in your merchant panel - the Client ID, Secret and Context are already generated there for your business, ready to copy. There is no fee for API access.',
+    ECOURIER: 'How to get these: register at ecourier.com.bd and wait for eCourier to activate your account, then copy the API-KEY, API-SECRET and USER-ID from the panel\'s API credentials section - or ask eCourier support. The fraud check needs eCourier support to switch it on.',
+    PAPERFLY: 'How to get these: sign in to the Paperfly merchant panel (go.paperfly.com.bd) and open Developer Guide - your API Key is printed inside the Order Creation code sample there. Tracking signs in with your panel username + password, so keep those here too. There is no sandbox: every booking is a real parcel.',
+    BAHOK: 'Bahok has no public API - book in the Bahok app and record the CN number when sending, like a manual courier.',
+    OTHERS: 'A manual courier needs no credentials - staff book in the courier\'s own app or branch and write the CN number when sending.',
 };
 
 const TYPE_LABELS = { PATHAO: 'Pathao', STEADFAST: 'Steadfast', REDX: 'RedX', CARRYBEE: 'Carrybee', PAPERFLY: 'Paperfly', ECOURIER: 'eCourier', BAHOK: 'Bahok', OTHERS: 'Manual (Other)' };
@@ -103,7 +103,7 @@ function MethodModal({ method, onClose }) {
     return (
         <div className="overlay" onClick={onClose}>
             <div className="modal" style={{ maxWidth: 600 }} onClick={(e) => e.stopPropagation()}>
-                <h3 style={{ marginTop: 0 }}>{isNew ? t('Add Courier') : `${t('Configure')} — ${method.label}`}</h3>
+                <h3 style={{ marginTop: 0 }}>{isNew ? t('Add Courier') : `${t('Configure')} - ${method.label}`}</h3>
                 {isNew && (
                     <div className="frow"><label className="fl">{t('Courier')}</label>
                         <select className="inp" value={type} onChange={(e) => switchType(e.target.value)}>
@@ -120,7 +120,7 @@ function MethodModal({ method, onClose }) {
                         ) : (
                             <input className="inp" type={kind === 'secret' ? 'password' : 'text'} autoComplete="new-password"
                                 value={kind === 'secret' ? (creds[key] ?? '') : (creds[key] ?? '')}
-                                placeholder={method?.credentials?.[key]?.set ? `${t('Saved')} ${method.credentials[key].masked} — ${t('leave blank to keep')}` : ''}
+                                placeholder={method?.credentials?.[key]?.set ? `${t('Saved')} ${method.credentials[key].masked} - ${t('leave blank to keep')}` : ''}
                                 onChange={(e) => setCreds({ ...creds, [key]: e.target.value })} />
                         )}
                     </div>
@@ -173,7 +173,7 @@ export default function CourierSettings({ couriers }) {
         <div>
             <div className="card">
                 <h3>{t('Courier Integration')}</h3>
-                <div className="card-sub">{t('Your own account with each courier — delivery charges live here, per courier. Only couriers switched on here appear in Send to Courier.')}</div>
+                <div className="card-sub">{t('Your own account with each courier - delivery charges live here, per courier. Only couriers switched on here appear in Send to Courier.')}</div>
                 {methods.map((m) => (
                     <div className="conn-row" key={m.id}>
                         <div style={{ flex: 1 }}>
@@ -195,7 +195,7 @@ export default function CourierSettings({ couriers }) {
                         <button className="btn" onClick={async () => { if (await confirmDialog(t('Remove this courier connection?'))) router.delete(`/settings/couriers/${m.id}`); }}>{t('Remove')}</button>
                     </div>
                 ))}
-                {methods.length === 0 && <p className="mut sm">{t('No courier connected yet — add your first courier below.')}</p>}
+                {methods.length === 0 && <p className="mut sm">{t('No courier connected yet - add your first courier below.')}</p>}
                 <button className="btn pri" style={{ marginTop: 14 }} onClick={() => setEditing({})}>{t('Add Courier')}</button>
             </div>
 
@@ -206,7 +206,7 @@ export default function CourierSettings({ couriers }) {
                     <div className="conn-row" key={r.id}>
                         <div style={{ flex: 1 }}>
                             <span className="b">{t(r.scope === 'product' ? 'Product rule' : r.scope === 'category' ? 'Category rule' : r.scope === 'district' ? 'District rule' : 'Area rule')}</span>
-                            <span className="sm mut"> — {r.scope === 'product' ? (products.find((p) => p.id === r.product_id)?.name || r.product_id) : r.scope === 'category' ? r.category : r.scope === 'district' ? r.district : r.area} → {r.method_label} · {t('Priority')} {r.priority}</span>
+                            <span className="sm mut"> - {r.scope === 'product' ? (products.find((p) => p.id === r.product_id)?.name || r.product_id) : r.scope === 'category' ? r.category : r.scope === 'district' ? r.district : r.area} → {r.method_label} · {t('Priority')} {r.priority}</span>
                         </div>
                         <button className="btn" onClick={() => router.delete(`/settings/courier-rules/${r.id}`)}>{t('Remove')}</button>
                     </div>

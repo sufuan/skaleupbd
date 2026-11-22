@@ -4,7 +4,7 @@ import AppLayout from '@/Layouts/AppLayout';
 import { confirmDialog } from '@/lib/confirm';
 import { t } from '@/lib/i18n';
 
-/* Page Builder v2 — three-pane workspace over the v2 block JSON.
+/* Page Builder v2 - three-pane workspace over the v2 block JSON.
    The canvas is the REAL public renderer in an iframe (draft preview),
    so what the seller sees is exactly what customers get. All edits go
    through commit() (undo snapshots + typing coalescing + autosave);
@@ -57,7 +57,7 @@ function computeChecks(blocks, products) {
             } else if (products.length === 0) {
                 // Never an error (owner rule): an empty store may publish;
                 // products appear by themselves once added to Inventory.
-                out.push({ level: 'warning', blockId: b.id, msg: t('Add a product in Inventory — your page will show it automatically.') });
+                out.push({ level: 'warning', blockId: b.id, msg: t('Add a product in Inventory - your page will show it automatically.') });
             }
         }
         if (b.type === 'order_form' && p.product_id) {
@@ -292,7 +292,7 @@ export default function Editor({ sf, page, previewUrl, products, branding, prese
 
     // Pointer drag reorder (prototype pattern): move the row node live,
     // commit the resulting order once on release. Move/up listeners sit
-    // on window — handle-scoped listeners miss moves once the pointer
+    // on window - handle-scoped listeners miss moves once the pointer
     // leaves the (possibly re-rendered) grip element.
     const onHandleDown = (e, id) => {
         e.preventDefault();
@@ -375,7 +375,7 @@ export default function Editor({ sf, page, previewUrl, products, branding, prese
         router.post(`/storefront/pages/${page.id}/restore/${v.id}`, {}, { preserveScroll: true });
     };
     const unpublish = async () => {
-        if (!(await confirmDialog(`${t('Unpublish page')} — ${t('Your draft is kept.')}`))) return;
+        if (!(await confirmDialog(`${t('Unpublish page')} - ${t('Your draft is kept.')}`))) return;
         setDlg('');
         router.post(`/storefront/pages/${page.id}/pause`, {}, { preserveScroll: true });
     };
@@ -383,7 +383,7 @@ export default function Editor({ sf, page, previewUrl, products, branding, prese
     // ------------------------------------------------------------ effects
     // Adopt a server-side draft change (restore / publish visit): our own
     // autosave never changes the prop (JSON endpoint), so any change here
-    // is external — take it and clear undo/redo.
+    // is external - take it and clear undo/redo.
     const propDraftJson = useMemo(() => JSON.stringify(page.draft?.blocks ?? []), [page.draft]);
     const adoptedRef = useRef(propDraftJson);
     useEffect(() => {
@@ -495,7 +495,7 @@ export default function Editor({ sf, page, previewUrl, products, branding, prese
         );
         if (b.type === 'offer') return (
             <Field label={t('Offer text')} value={p.text} max={80}>
-                <input className="ed-fld" maxLength={80} value={p.text || ''} onChange={(e) => setProp(b.id, 'text', e.target.value)} placeholder={t('e.g. Eid offer — 20% off everything')} />
+                <input className="ed-fld" maxLength={80} value={p.text || ''} onChange={(e) => setProp(b.id, 'text', e.target.value)} placeholder={t('e.g. Eid offer - 20% off everything')} />
             </Field>
         );
         if (b.type === 'products') {
@@ -510,7 +510,7 @@ export default function Editor({ sf, page, previewUrl, products, branding, prese
                         <input className="ed-fld" maxLength={120} value={p.title || ''} onChange={(e) => setProp(b.id, 'title', e.target.value)} />
                     </Field>
                     <Field label={t('Choose products')}>
-                        <p className="ed-note" style={{ marginTop: 0 }}>{t('Leave all unticked to show everything — products come from your Inventory with true prices.')}</p>
+                        <p className="ed-note" style={{ marginTop: 0 }}>{t('Leave all unticked to show everything - products come from your Inventory with true prices.')}</p>
                         <div className="ed-pick">
                             {products.map((pr) => (
                                 <label key={pr.id} className="ed-pk">
@@ -555,11 +555,11 @@ export default function Editor({ sf, page, previewUrl, products, branding, prese
                         {products.map((pr) => <option key={pr.id} value={pr.id}>{pr.name}</option>)}
                     </select>
                 </Field>
-                <p className="ed-note">{t('Name, mobile number and address — the customer fills these in.')}</p>
+                <p className="ed-note">{t('Name, mobile number and address - the customer fills these in.')}</p>
             </>
         );
         if (b.type === 'info') return (
-            <p className="ed-note" style={{ marginTop: 12 }}>{t('Everything here comes from your Store Settings — nothing to write in the builder.')}</p>
+            <p className="ed-note" style={{ marginTop: 12 }}>{t('Everything here comes from your Store Settings - nothing to write in the builder.')}</p>
         );
         if (b.type === 'countdown') return (
             <>
@@ -576,7 +576,7 @@ export default function Editor({ sf, page, previewUrl, products, branding, prese
 
     return (
         <AppLayout>
-            <Head title={`${t('Edit page')} — ${page.name}`} />
+            <Head title={`${t('Edit page')} - ${page.name}`} />
             <div className="ed-wrap">
                 {/* ------------------------------------------------ top bar */}
                 <div className="ed-top">
@@ -697,7 +697,7 @@ export default function Editor({ sf, page, previewUrl, products, branding, prese
                                     <button type="button" className="ed-ib sm" disabled={selIdx >= blocks.length - 1} onClick={() => moveBlock(selBlock.id, 1)} aria-label={t('Move down')}>↓</button>
                                 </div>
                                 {LOCKED.includes(selBlock.type) && (
-                                    <div className="ed-locknote">{Ic.lock(14)}<span>{t('This section always shows — its prices and fields come from your shop.')}</span></div>
+                                    <div className="ed-locknote">{Ic.lock(14)}<span>{t('This section always shows - its prices and fields come from your shop.')}</span></div>
                                 )}
                                 {inspectorForm(selBlock)}
                                 {HIDEABLE.includes(selBlock.type) && (
@@ -737,7 +737,7 @@ export default function Editor({ sf, page, previewUrl, products, branding, prese
                         <div className="ed-md card">
                             <h3 style={{ marginTop: 0 }}>{isLive ? t('Publish these changes?') : t('Publish this page?')}</h3>
                             {firstPublish ? (
-                                <p className="ed-diffline">{t('First publish — the whole page goes live.')}</p>
+                                <p className="ed-diffline">{t('First publish - the whole page goes live.')}</p>
                             ) : (
                                 <div className="ed-diff">
                                     {diff.added.length > 0 && <p><b>{t('Added sections')}:</b> {diff.added.map((ty) => t(TYPE_LABEL[ty])).join(', ')}</p>}
@@ -769,7 +769,7 @@ export default function Editor({ sf, page, previewUrl, products, branding, prese
                                     <span>{v.at}</span>
                                     <button type="button" className="btn" onClick={() => restore(v)}>{t('Bring into draft')}</button>
                                 </div>
-                            )) : <p className="ed-note">{t('No versions yet — publish once and earlier versions will appear here.')}</p>}
+                            )) : <p className="ed-note">{t('No versions yet - publish once and earlier versions will appear here.')}</p>}
                             {isLive && (
                                 <div style={{ marginTop: 14, borderTop: '1px solid var(--line)', paddingTop: 12 }}>
                                     <button type="button" className="btn" onClick={unpublish}>{t('Unpublish page')}</button>

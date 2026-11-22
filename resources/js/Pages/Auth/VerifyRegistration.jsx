@@ -40,7 +40,7 @@ export default function VerifyRegistration({ shopName = '', channels = 'email', 
             <Head title={t('Enter your code')} />
             <h1 className="auth-title">{t('Enter your code')}</h1>
             <p className="auth-sub">
-                {shopName ? t('One last step for :shop — check that the shop is really yours.', { shop: shopName }) : t('One last step — check that the account is really yours.')}
+                {shopName ? t('One last step for :shop - check that the shop is really yours.', { shop: shopName }) : t('One last step - check that the account is really yours.')}
             </p>
             <p style={{ fontSize: 14.5, marginBottom: 16 }}>{sentTo}</p>
 

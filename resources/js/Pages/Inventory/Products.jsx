@@ -6,7 +6,7 @@ import AppLayout from '@/Layouts/AppLayout';
 import { t } from '@/lib/i18n';
 import ProductFields, { BTN_OUTLINE, BTN_PRIMARY, INPUT } from './ProductFields';
 
-// Products page — structure copied from the prototype's inv-products panel:
+// Products page - structure copied from the prototype's inv-products panel:
 // header actions, 4 stat chips, 8 tabs, toolbar + data table + pagination.
 const TABS = ['Products', 'Inactive Products', 'Combo Products', 'Wraps', 'Shared Inventory', 'Stock Links', 'Variations', 'Categories & Brands'];
 const money = (n) => '৳' + Number(n || 0).toLocaleString('en-IN');
@@ -16,7 +16,7 @@ const TH = 'h-12 px-4 text-left align-middle font-medium text-muted-foreground';
 const TD = 'p-4 align-middle';
 
 // Product thumbnail: a stored path whose file is missing used to render a
-// blank white box — fall back to the same IMG placeholder as no-image.
+// blank white box - fall back to the same IMG placeholder as no-image.
 function Thumb({ src }) {
     const [bad, setBad] = useState(false);
     if (!src || bad) {
@@ -41,7 +41,7 @@ function Switch({ checked, onClick, label }) {
 export default function Products({ products, summary, inactive, combos, wraps, sharedGroups, linkGroups, variants, categories, brands, filters }) {
     const [tab, setTab] = useState('Products');
     const [search, setSearch] = useState(filters.search || '');
-    // Row action menu: rendered in a portal with fixed positioning — the
+    // Row action menu: rendered in a portal with fixed positioning - the
     // table wrapper's overflow-x-auto clipped an in-table absolute menu.
     const [menu, setMenu] = useState(null); // { p, right, top } | { p, right, bottom }
     const [editFor, setEditFor] = useState(null);
@@ -107,7 +107,7 @@ export default function Products({ products, summary, inactive, combos, wraps, s
                                     <div className="min-w-0 space-y-1">
                                         <div className="block max-w-[260px] truncate font-medium">{p.name}</div>
                                         {p.featured && <span className="text-[11px] text-amber-600">★ {t('Featured')}</span>}
-                                        {typeof p.ai_score === 'number' && <span title={t('How ready this product is for the AI to sell it — photo, price, description, other names and stock')} className={`block text-[11px] ${p.ai_score >= 80 ? 'text-emerald-600' : p.ai_score >= 50 ? 'text-amber-600' : 'text-red-500'}`}>{t('AI ready')} {p.ai_score}%</span>}
+                                        {typeof p.ai_score === 'number' && <span title={t('How ready this product is for the AI to sell it - photo, price, description, other names and stock')} className={`block text-[11px] ${p.ai_score >= 80 ? 'text-emerald-600' : p.ai_score >= 50 ? 'text-amber-600' : 'text-red-500'}`}>{t('AI ready')} {p.ai_score}%</span>}
                                     </div>
                                 </div>
                             </td>
@@ -348,7 +348,7 @@ function Taxonomy({ categories, brands }) {
 }
 
 function EditModal({ product, categories, brands, close }) {
-    // NOTE: submit via POST + _method spoofing — PHP cannot parse a
+    // NOTE: submit via POST + _method spoofing - PHP cannot parse a
     // multipart/form-data body on a real PATCH request (the name field
     // would arrive empty), so forceFormData must go through POST.
     const { data, setData, post, processing, errors } = useForm({
@@ -368,7 +368,7 @@ function EditModal({ product, categories, brands, close }) {
         <div className="overlay" onClick={close}>
             <div className="modal invx" style={{ maxWidth: 980, width: '94vw', maxHeight: '92vh', overflowY: 'auto', padding: 0 }} onClick={(e) => e.stopPropagation()}>
                 <div className="flex items-center justify-between px-5 py-4 border-b">
-                    <div className="text-lg font-semibold">{t('Edit Product')} — {product.name}</div>
+                    <div className="text-lg font-semibold">{t('Edit Product')} - {product.name}</div>
                     <button type="button" className="text-xl leading-none" onClick={close}>×</button>
                 </div>
                 <form onSubmit={submit} className="p-5">
@@ -403,7 +403,7 @@ function ImportExportModal({ close }) {
                         <div className="font-semibold text-sm">{t('Import products')}</div>
                         <input type="file" accept=".xlsx,.xls,.csv" className={INPUT} onChange={(e) => setData('file', e.target.files[0] || null)} />
                         {errors.file && <div className="text-sm text-red-600">{errors.file}</div>}
-                        <div className="text-sm text-muted-foreground">{t('Name your product photos by SKU (like SP-001.jpg) and upload them all at once to the import-images folder on your server. Then either paste the photo link in the sheet, or leave it blank — the photo is matched by SKU on its own. Extra photos: SP-001_1.jpg, SP-001_2.jpg.')}</div>
+                        <div className="text-sm text-muted-foreground">{t('Name your product photos by SKU (like SP-001.jpg) and upload them all at once to the import-images folder on your server. Then either paste the photo link in the sheet, or leave it blank - the photo is matched by SKU on its own. Extra photos: SP-001_1.jpg, SP-001_2.jpg.')}</div>
                         <button type="submit" className={BTN_PRIMARY + ' h-9 px-3'} disabled={processing || !data.file}>{t('Import')}</button>
                     </form>
                     <div className="border-t pt-4 space-y-2">
@@ -433,7 +433,7 @@ function AdjustModal({ product, close }) {
         <div className="overlay" onClick={close}>
             <div className="modal invx" style={{ maxWidth: 440, width: '92vw', padding: 0 }} onClick={(e) => e.stopPropagation()}>
                 <div className="flex items-center justify-between px-5 py-4 border-b">
-                    <div className="text-lg font-semibold">{t('Adjust Stock')} — {product.name}</div>
+                    <div className="text-lg font-semibold">{t('Adjust Stock')} - {product.name}</div>
                     <button type="button" className="text-xl leading-none" onClick={close}>×</button>
                 </div>
                 <div className="p-5 space-y-3">

@@ -3,7 +3,7 @@ import { Link, router } from '@inertiajs/react';
 import { t } from '@/lib/i18n';
 
 /**
- * The Send to Courier modal (§10.7b) — shared by Ready to Ship and the
+ * The Send to Courier modal (§10.7b) - shared by Ready to Ship and the
  * Order Detail page. Lists only the couriers configured in Settings,
  * pre-selects the Suggested one with its reason, asks for a CN number
  * for manual couriers, and books only when Send is pressed.
@@ -42,7 +42,7 @@ export default function SendCourierModal({ order, methods, suggestedId = null, s
                 {methods.length === 0 ? (
                     <div style={{ padding: '12px 0' }}>
                         <p className="b">{t('No courier configured yet')}</p>
-                        <p className="sm mut">{t('Add your courier account in Settings first — then it will show here.')}</p>
+                        <p className="sm mut">{t('Add your courier account in Settings first - then it will show here.')}</p>
                         <div className="frow" style={{ gap: 8, marginTop: 12 }}>
                             <Link href="/settings?group=api" className="btn pri">{t('Go to Settings')}</Link>
                             <button type="button" className="btn" onClick={onClose}>{t('Close')}</button>
@@ -83,7 +83,7 @@ export default function SendCourierModal({ order, methods, suggestedId = null, s
                             </div>
                         )}
                         {selected && selected.type === 'PATHAO' && !selected.has_store_id && (!selected.stores || selected.stores.length === 0) && (
-                            <p className="sm mut" style={{ marginTop: 10 }}>{t('No pickup store synced yet — sync stores in Settings → Courier, or the booking will use the store saved on the connection.')}</p>
+                            <p className="sm mut" style={{ marginTop: 10 }}>{t('No pickup store synced yet - sync stores in Settings → Courier, or the booking will use the store saved on the connection.')}</p>
                         )}
 
                         <div className="frow" style={{ gap: 8, marginTop: 18, justifyContent: 'flex-end' }}>

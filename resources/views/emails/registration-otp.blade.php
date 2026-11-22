@@ -7,9 +7,9 @@
 <div style="text-align: center; font-size: 34px; font-weight: 700; letter-spacing: 10px; color: #411550;">{{ $code }}</div>
 </x-mail::panel>
 
-{{ __('This code is valid for 10 minutes. Never share it with anyone — the SkaleUp BD team will never ask for it.') }}
+{{ __('This code is valid for 10 minutes. Never share it with anyone - the SkaleUp BD team will never ask for it.') }}
 
 {{ __('If you did not create this account, you can safely ignore this email.') }}
 
-{{ __('— The SkaleUp BD team') }}
+{{ __('- The SkaleUp BD team') }}
 </x-mail::message>

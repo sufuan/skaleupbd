@@ -109,6 +109,8 @@ class RegisteredUserController extends Controller
         }
 
         // The new shop is pending approval — tell the platform admins.
+        // Platform notice: business_id stays NULL on purpose, so only
+        // platform admins ever see it (see AppNotification::visibleTo).
         if ($user->business_id) {
             try {
                 \App\Models\AppNotification::create([

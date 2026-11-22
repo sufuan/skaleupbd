@@ -431,7 +431,7 @@ class PurchaseController extends Controller
         $hasReceived = (int) $purchase->items()->sum('qty_received') > 0
             || (int) $purchase->items()->sum('qty_damaged') > 0;
         if ($hasReceived || $purchase->payments()->exists()) {
-            return back()->with('error', 'This purchase cannot be deleted — goods were received or a payment was made against it.');
+            return back()->with('error', 'This purchase cannot be deleted - goods were received or a payment was made against it.');
         }
         foreach ($purchase->attachments as $a) {
             Storage::disk('public')->delete($a->path);
@@ -568,7 +568,7 @@ class PurchaseController extends Controller
         $biz = $this->biz($request);
         abort_unless($supplier->business_id === $biz, 404);
         if ($supplier->purchases()->exists()) {
-            return back()->with('error', 'This supplier cannot be deleted — purchases exist against it.');
+            return back()->with('error', 'This supplier cannot be deleted - purchases exist against it.');
         }
         $supplier->delete();
 

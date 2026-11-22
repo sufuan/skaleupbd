@@ -30,7 +30,7 @@ export default function IncomeExpense(props) {
             <div className="fin">
                 <div className="x-head">
                     <h3>{t('Income & Expense')}</h3>
-                    <p>{t('The book of all income and expenses. Courier payouts and order advances come here on their own — writing them again by hand would count them twice.')}</p>
+                    <p>{t('The book of all income and expenses. Courier payouts and order advances come here on their own - writing them again by hand would count them twice.')}</p>
                 </div>
 
                 <div style={{ display: 'flex', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
@@ -58,8 +58,8 @@ export default function IncomeExpense(props) {
                                 <tbody>
                                     {byCategory.map((r) => (
                                         <tr key={r.name}><td>{r.name}</td>
-                                            <td style={{ color: '#16A34A' }}>{r.income ? '+ ' + fmt(r.income) : '—'}</td>
-                                            <td style={{ color: '#DC2626' }}>{r.expense ? '− ' + fmt(r.expense) : '—'}</td></tr>
+                                            <td style={{ color: '#16A34A' }}>{r.income ? '+ ' + fmt(r.income) : '-'}</td>
+                                            <td style={{ color: '#DC2626' }}>{r.expense ? '− ' + fmt(r.expense) : '-'}</td></tr>
                                     ))}
                                     {!byCategory.length && <tr><td colSpan={3}>{t('No entries this month.')}</td></tr>}
                                 </tbody>
@@ -77,7 +77,7 @@ export default function IncomeExpense(props) {
                                 <option value="">{t('All categories')}</option>
                                 {categories.filter((c) => c.kind === tab).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                             </select>
-                            {activeFilter && <span className="chip chip-amber">{t('Filter: :name — the total below is for this filter', { name: activeFilter.name })}</span>}
+                            {activeFilter && <span className="chip chip-amber">{t('Filter: :name - the total below is for this filter', { name: activeFilter.name })}</span>}
                         </div>
                         <TxnTable list={list} onVoid={voidTxn} onEdit={openEditTxn} />
                         {editTxn && (
@@ -89,7 +89,7 @@ export default function IncomeExpense(props) {
                                     <input className="inp" type="date" value={txnForm.data.txn_date} onChange={(e) => txnForm.setData('txn_date', e.target.value)} required /></div>
                                 <div><label className="lbl">{t('Category')}</label>
                                     <select className="inp" style={{ width: 180 }} value={txnForm.data.category_id} onChange={(e) => txnForm.setData('category_id', e.target.value)}>
-                                        <option value="">—</option>
+                                        <option value="">-</option>
                                         {categories.filter((c) => c.kind === editTxn.type).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                                     </select></div>
                                 <div style={{ flex: 1, minWidth: 180 }}><label className="lbl">{t('Note')}</label>
@@ -121,7 +121,7 @@ export default function IncomeExpense(props) {
                         {editCat && (
                             <form onSubmit={(e) => { e.preventDefault(); editForm.patch(`/finance/categories/${editCat.id}`, { onSuccess: () => setEditCat(null) }); }}
                                 style={{ display: 'flex', gap: 8, marginTop: 14, alignItems: 'end' }}>
-                                <div><label className="lbl">{t('New name — :name', { name: editCat.name })}</label>
+                                <div><label className="lbl">{t('New name - :name', { name: editCat.name })}</label>
                                     <input className="inp" value={editForm.data.name} onChange={(e) => editForm.setData('name', e.target.value)} required /></div>
                                 <button className="btn-p" type="submit">{t('Save')}</button>
                                 <button className="btn-s" type="button" onClick={() => setEditCat(null)}>{t('Discard')}</button>
@@ -158,7 +158,7 @@ function TxnTable({ list, onVoid, onEdit }) {
                     {list.map((x) => (
                         <tr key={x.id} style={x.voided ? { opacity: 0.55 } : undefined}>
                             <td>{x.date}</td><td>{x.note}{x.voided && <span className="chip chip-red" style={{ marginLeft: 6 }}>{t('Voided')}</span>}</td>
-                            <td>{x.category || '—'}</td><td>{x.account}</td>
+                            <td>{x.category || '-'}</td><td>{x.account}</td>
                             <td><b style={{ color: x.direction === 'in' ? '#16A34A' : '#DC2626' }}>{fmtSigned(x.amount, x.direction)}</b></td>
                             <td>{!x.voided && !x.is_reversal && <span style={{ display: 'inline-flex', gap: 6 }}><button className="btn-s" onClick={() => onEdit(x)}>{t('Edit')}</button><button className="btn-s" onClick={() => onVoid(x)}>{t('Void')}</button></span>}</td>
                         </tr>

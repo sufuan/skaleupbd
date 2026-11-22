@@ -27,12 +27,12 @@ export default function Show({ order, customer, couriers, courierMethods = [], s
     const saveMethod = () => { if (newMethod.trim()) router.post('/settings/courier-methods', { name: newMethod.trim() }, { preserveScroll: true, preserveState: true, onSuccess: () => { form.setData('delivery_method', newMethod.trim()); setAddingMethod(false); setNewMethod(''); } }); };
     const risky = order.fraud.verdict === 'risky';
     const canApprove = ['Pending', 'Incomplete'].includes(order.status);
-    const verdictLabel = order.fraud.verdict === 'safe' ? 'Safe' : risky ? 'Risky — take advance' : 'Not checked';
+    const verdictLabel = order.fraud.verdict === 'safe' ? 'Safe' : risky ? 'Risky - take advance' : 'Not checked';
 
     // The Change Status dropdown must show the order's CURRENT status.
     // While the order is in the processing flow that is its processing
     // sub-status; once it has moved on (Shipped, Delivered, ...) the
-    // main status is what the dropdown shows — never a stale "Processing".
+    // main status is what the dropdown shows - never a stale "Processing".
     const inFlow = ['Pending', 'Processing'].includes(order.status);
     const form = useForm({
         source: order.source || '',
@@ -58,11 +58,11 @@ export default function Show({ order, customer, couriers, courierMethods = [], s
 
     return (
         <AppLayout>
-            <Head title={`${order.source_label ? `${order.source_label} ${t('Order')}` : t('Order')} — ${order.invoice}`} />
+            <Head title={`${order.source_label ? `${order.source_label} ${t('Order')}` : t('Order')} - ${order.invoice}`} />
             <div className="ord-detail">
                 <div className="page-head">
                     <div>
-                        <h1>{order.source_label ? `${order.source_label} ${t('Order')}` : t('Order')} — {order.invoice}</h1>
+                        <h1>{order.source_label ? `${order.source_label} ${t('Order')}` : t('Order')} - {order.invoice}</h1>
                         <p>{order.created}, {order.created_time} · {t('Source')}: {order.source_label || order.source}</p>
                     </div>
                     <span style={{ marginLeft: 'auto', display: 'flex', gap: 10, alignItems: 'center' }}>
@@ -80,7 +80,7 @@ export default function Show({ order, customer, couriers, courierMethods = [], s
                             {order.alt_phone && <div className="sum-row"><span>{t('Alternative Number')}</span><b>{order.alt_phone}</b></div>}
                             {order.email && <div className="sum-row"><span>{t('Email')}</span><b>{order.email}</b></div>}
                             <div className="sum-row"><span>{t('Address')}</span><b style={{ textAlign: 'right' }}>{order.address}{order.district ? `, ${order.district}` : ''}</b></div>
-                            <div className="sum-row"><span>{t('Customer History')}</span><b style={{ textAlign: 'right', whiteSpace: 'normal' }}>{customer.orders} {customer.orders === 1 ? t('order') : t('orders')} · {t('Success rate')}: {customer.rate === null ? '—' : `${customer.rate}%`} · {t(verdictLabel)}</b></div>
+                            <div className="sum-row"><span>{t('Customer History')}</span><b style={{ textAlign: 'right', whiteSpace: 'normal' }}>{customer.orders} {customer.orders === 1 ? t('order') : t('orders')} · {t('Success rate')}: {customer.rate === null ? '-' : `${customer.rate}%`} · {t(verdictLabel)}</b></div>
                             <div className="sum-row"><span>{customer.is_returning ? t('Returning customer') : t('New customer')}</span><b>{customer.delivered} {t('delivered')} · {customer.returned} {t('returned')}</b></div>
                             <h3 style={{ fontSize: 13.5, margin: '14px 0 2px' }}>{t('Success Rate')}</h3>
                             {perCourierSorted.map(([c, v]) => (
@@ -92,17 +92,17 @@ export default function Show({ order, customer, couriers, courierMethods = [], s
                                     {customer.network.map((n, i) => (
                                         <div className="sum-row" key={i}><span>{n.courier}</span><b>{n.rate !== null && n.rate !== undefined ? `${Math.round(n.rate)}%` : (n.label || t('Not checked'))}</b></div>
                                     ))}
-                                    <div className="sm mut" style={{ marginTop: 6 }}>{t("The network figure is the headline — it comes from the couriers' own records for this phone.")}</div>
+                                    <div className="sm mut" style={{ marginTop: 6 }}>{t("The network figure is the headline - it comes from the couriers' own records for this phone.")}</div>
                                 </>
                             )}
                         </div>
 
                         {risky && (
                             <div className="alert-red">
-                                <b>{t('RED ALERT — Risky customer')}</b>
+                                <b>{t('RED ALERT - Risky customer')}</b>
                                 <div className="sm" style={{ marginTop: 3 }}>
                                     {order.fraud.note}. {t('Take advance payment before approving.')}
-                                    {customer.per_courier && <> · Steadfast {customer.per_courier.Steadfast ?? '—'}% · Pathao {customer.per_courier.Pathao ?? '—'}%</>}
+                                    {customer.per_courier && <> · Steadfast {customer.per_courier.Steadfast ?? '-'}% · Pathao {customer.per_courier.Pathao ?? '-'}%</>}
                                 </div>
                             </div>
                         )}
@@ -164,7 +164,7 @@ export default function Show({ order, customer, couriers, courierMethods = [], s
                             <div className="fld-l frow" style={{ marginTop: 12 }}>{t('Delivery Method')}
                                 <span style={{ display: 'flex', gap: 8 }}>
                                     <select className="fld" style={{ flex: 1 }} value={form.data.delivery_method} onChange={(e) => form.setData('delivery_method', e.target.value)}>
-                                        <option value="">—</option>
+                                        <option value="">-</option>
                                         {couriers.map((c) => <option key={c} value={c}>{c}</option>)}
                                     </select>
                                     <button type="button" className="ctl-btn" style={{ marginTop: 6 }} onClick={() => setAddingMethod(!addingMethod)}>{t('Add Delivery Method')}</button>
@@ -220,7 +220,7 @@ export default function Show({ order, customer, couriers, courierMethods = [], s
                             <h3 style={{ marginBottom: 10 }}>{t('Delivery')}</h3>
                             {order.status === 'Processing' && (
                                 <>
-                                    {order.booking_status === 'failed' && <p className="sm" style={{ color: 'var(--bad)', marginBottom: 10 }}>{t('The last booking failed — see the reason in Ready to Ship, or try again.')}</p>}
+                                    {order.booking_status === 'failed' && <p className="sm" style={{ color: 'var(--bad)', marginBottom: 10 }}>{t('The last booking failed - see the reason in Ready to Ship, or try again.')}</p>}
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                                         <button className="btn-primary" style={{ width: '100%' }} onClick={() => setSendOpen(true)}>{t('Send to Courier')}</button>
                                         {order.booking_status === 'failed' && <button className="ctl-btn w100" onClick={() => router.post(`/delivery/${order.id}/retry`)}>{t('Retry')}</button>}
@@ -252,7 +252,7 @@ export default function Show({ order, customer, couriers, courierMethods = [], s
                                     </div>
                                 </>
                             )}
-                            {order.status === 'Pending' && <p className="sm mut">{t('Approve the order first — then it waits in Ready to Ship for the courier.')}</p>}
+                            {order.status === 'Pending' && <p className="sm mut">{t('Approve the order first - then it waits in Ready to Ship for the courier.')}</p>}
                             {['Shipped', 'Delivered', 'Returned'].includes(order.status) && !order.tracking_id && !order.consignment_id && (
                                 <p className="sm mut">{t('This order was shipped before courier booking was tracked here.')}</p>
                             )}

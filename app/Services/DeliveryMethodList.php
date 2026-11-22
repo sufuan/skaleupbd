@@ -29,8 +29,8 @@ class DeliveryMethodList
             if ($m->bookingMode() === 'manual') {
                 $out[] = $m->label();
             } else {
-                $out[] = $m->label().' — Inside Dhaka';
-                $out[] = $m->label().' — Outside Dhaka';
+                $out[] = $m->label().' - Inside Dhaka';
+                $out[] = $m->label().' - Outside Dhaka';
             }
         }
 

@@ -4,7 +4,7 @@ import AppLayout from '@/Layouts/AppLayout';
 import { t } from '@/lib/i18n';
 import { BTN_OUTLINE, BTN_PRIMARY, INPUT } from './ProductFields';
 
-// Inventory Dashboard — copied from the prototype's inv-dashboard panel:
+// Inventory Dashboard - copied from the prototype's inv-dashboard panel:
 // tabs Overview / Warehouse Lookup / Smart Restock / Low Stock.
 const TABS = ['Overview', 'Warehouse Lookup', 'Smart Restock', 'Low Stock'];
 const TAB_BTN = (active) => `inline-flex items-center justify-center text-sm font-medium ring-offset-background focus-visible:outline-none group relative h-full whitespace-nowrap rounded-md border px-3 py-1.5 transition-colors duration-200 ${active ? 'border-primary/30 bg-primary/10 text-primary' : 'border-transparent bg-background text-muted-foreground hover:text-foreground/80'}`;
@@ -265,7 +265,7 @@ function Reconcile({ allProducts, back }) {
                                     <td className="p-4">{p.name} <span className="text-muted-foreground">({p.sku})</span></td>
                                     <td className="p-4">{p.stock_qty}</td>
                                     <td className="p-4"><input className={INPUT + ' w-28'} type="number" min="0" value={counted} onChange={(e) => setCounts({ ...counts, [p.id]: e.target.value })} /></td>
-                                    <td className="p-4">{diff === '' ? '—' : <span className={diff === 0 ? 'text-emerald-600' : 'text-red-600 font-medium'}>{diff > 0 ? '+' + diff : diff}</span>}</td>
+                                    <td className="p-4">{diff === '' ? '-' : <span className={diff === 0 ? 'text-emerald-600' : 'text-red-600 font-medium'}>{diff > 0 ? '+' + diff : diff}</span>}</td>
                                 </tr>
                             );
                         })}
@@ -298,7 +298,7 @@ function QuickEdit({ product, categories, close }) {
                     <div className="space-y-1"><label className="text-sm font-medium">{t('SKU')}</label><input className={INPUT} value={form.sku} onChange={(e) => set('sku', e.target.value)} /></div>
                     <div className="space-y-1"><label className="text-sm font-medium">{t('Category')}</label>
                         <select className={INPUT} value={form.category_id} onChange={(e) => set('category_id', e.target.value)}>
-                            <option value="">—</option>
+                            <option value="">-</option>
                             {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                         </select>
                     </div>

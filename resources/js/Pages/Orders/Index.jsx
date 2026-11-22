@@ -41,7 +41,7 @@ export default function Index({ rows, counts, filters, pagination, pendingCount,
                 <div className="page-head">
                     <div>
                         <h1>{t('Orders')}</h1>
-                        <p>{t('All web orders in one list — confirm, process and hand them to delivery.')}</p>
+                        <p>{t('All web orders in one list - confirm, process and hand them to delivery.')}</p>
                     </div>
                     <span style={{ marginLeft: 'auto', display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
                         <span className="wol-search">{I.search}
@@ -90,7 +90,7 @@ export default function Index({ rows, counts, filters, pagination, pendingCount,
                                             <span style={{ fontSize: 12, color: '#64748B', whiteSpace: 'nowrap' }}>{o.created.replace(/ \d{4}$/, '')}, {o.created_time.replace(/^0/, '').toLowerCase()}</span></td>
                                         <td>{o.auto_call && o.auto_call !== 'off'
                                             ? <span className={`pill ${o.auto_call === 'answered' ? 'green' : 'amber'}`}>{t(o.auto_call === 'answered' ? 'Answered' : 'No Answer')}</span>
-                                            : <span style={{ color: '#64748B' }}>—</span>}</td>
+                                            : <span style={{ color: '#64748B' }}>-</span>}</td>
                                         <td>
                                             <b>{o.phone}</b>
                                             <span className="icon-btns">
@@ -115,15 +115,15 @@ export default function Index({ rows, counts, filters, pagination, pendingCount,
                                             : <Link className="mini-btn" title={t('Add Tag')} href={`/orders/${o.id}`}>{I.plus}</Link>}</td>
                                         <td><span className="site-cell">{o.site_label || o.site || o.source}</span></td>
                                         <td><StatusPill status={o.status} />{o.is_preorder && <div className="sm mut">{t('Preorder')}</div>}</td>
-                                        <td>{o.pbx_calls > 0 ? o.pbx_calls : <span style={{ color: '#64748B' }}>—</span>}</td>
-                                        <td>{o.processed_by || <span style={{ color: '#64748B' }}>—</span>}</td>
+                                        <td>{o.pbx_calls > 0 ? o.pbx_calls : <span style={{ color: '#64748B' }}>-</span>}</td>
+                                        <td>{o.processed_by || <span style={{ color: '#64748B' }}>-</span>}</td>
                                         <td><span style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}>
                                             <a className="mini-btn" title={t('Download Invoice')} href={`/orders/${o.id}/invoice`}>{I.dl}</a>
                                             <Link className="open-btn" href={`/orders/${o.id}`}>{t('Open')} {I.open}</Link>
                                         </span></td>
                                     </tr>
                                 ))}
-                                {rows.length === 0 && <tr><td colSpan={12} className="mut" style={{ textAlign: 'center', padding: 26 }}>{t('No orders here')} — {t('try another tab or search.')}</td></tr>}
+                                {rows.length === 0 && <tr><td colSpan={12} className="mut" style={{ textAlign: 'center', padding: 26 }}>{t('No orders here')} - {t('try another tab or search.')}</td></tr>}
                             </tbody>
                         </table>
                     </div>
@@ -157,12 +157,12 @@ export default function Index({ rows, counts, filters, pagination, pendingCount,
                             <input className="inp" type="date" value={adv.to} onChange={(e) => setAdv({ ...adv, to: e.target.value })} /></div>
                         <div className="frow"><label className="fl">{t('Source')}</label>
                             <select className="inp" value={adv.source} onChange={(e) => setAdv({ ...adv, source: e.target.value })}>
-                                <option value="">—</option>
+                                <option value="">-</option>
                                 {(filterOptions?.sources || []).map((s) => <option key={s.code} value={s.code}>{s.label}</option>)}
                             </select></div>
                         <div className="frow"><label className="fl">{t('Processed By')}</label>
                             <select className="inp" value={adv.processed_by} onChange={(e) => setAdv({ ...adv, processed_by: e.target.value })}>
-                                <option value="">—</option>
+                                <option value="">-</option>
                                 {(filterOptions?.staff || []).map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
                             </select></div>
                         <div className="frow"><label className="fl">{t('Product Code')}</label>

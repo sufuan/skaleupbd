@@ -5,7 +5,7 @@ import { confirmDialog } from '@/lib/confirm';
 import { t } from '@/lib/i18n';
 import { GuideBtn, PageHead, PayModal, dhakaToday, fmt, fmtDate } from './shared';
 
-// Purchases — EcomDrive's Purchase List with its four tabs; the
+// Purchases - EcomDrive's Purchase List with its four tabs; the
 // "To receive" tab swaps in Purchase Receive's quantity columns.
 export default function Index({ tab, q, counts, rows, lineRows, pager, accounts }) {
     const [search, setSearch] = useState(q || '');
@@ -92,7 +92,7 @@ export default function Index({ tab, q, counts, rows, lineRows, pager, accounts 
                                             </td>
                                             <td>{r.items}</td>
                                             <td className="b">{fmt(r.amount)}</td>
-                                            <td>{r.kind === 'quick' || r.due <= 0 ? (r.paid ? <span className="pill green">{t('Paid')}</span> : '—') : <span className="b" style={{ color: 'var(--bad)' }}>{fmt(r.due)}</span>}</td>
+                                            <td>{r.kind === 'quick' || r.due <= 0 ? (r.paid ? <span className="pill green">{t('Paid')}</span> : '-') : <span className="b" style={{ color: 'var(--bad)' }}>{fmt(r.due)}</span>}</td>
                                             <td><span className={`pill ${r.status === 'Received' ? 'green' : 'amber'}`}>{t(r.status)}</span></td>
                                             <td>
                                                 <div className="flex" style={{ gap: 6, flexWrap: 'wrap' }}>
@@ -122,7 +122,7 @@ export default function Index({ tab, q, counts, rows, lineRows, pager, accounts 
 
                 {payFor && (
                     <PayModal
-                        title={`${t('Pay')} — ${payFor.supplier?.name || ''}`}
+                        title={`${t('Pay')} - ${payFor.supplier?.name || ''}`}
                         due={payFor.due} accounts={accounts} today={dhakaToday()}
                         action={`/purchases/${payFor.id}/pay`}
                         onClose={() => setPayFor(null)}

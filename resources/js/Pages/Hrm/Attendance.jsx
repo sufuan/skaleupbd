@@ -6,7 +6,7 @@ import { TodayTable, LeaveCards } from './parts';
 import { t } from '@/lib/i18n';
 
 function hoursLabel(minutes) {
-    if (!minutes) return '—';
+    if (!minutes) return '-';
     const h = Math.floor(minutes / 60);
     const m = minutes % 60;
     return m ? t(':h hours :m minutes', { h, m }) : t(':h hours', { h });
@@ -26,9 +26,9 @@ function DayCard({ my }) {
             {my && (
                 <div className="daycard">
                     <div className="nums">
-                        <div><b>{my.check_in || '—'}</b><span>{t('Check-in')}</span></div>
-                        <div><b>{my.check_out || '—'}</b><span>{t('Check-out')}</span></div>
-                        <div><b>{my.break_minutes ? t(':n minutes', { n: my.break_minutes }) : '—'}</b><span>{t('Break')}</span></div>
+                        <div><b>{my.check_in || '-'}</b><span>{t('Check-in')}</span></div>
+                        <div><b>{my.check_out || '-'}</b><span>{t('Check-out')}</span></div>
+                        <div><b>{my.break_minutes ? t(':n minutes', { n: my.break_minutes }) : '-'}</b><span>{t('Break')}</span></div>
                         <div><b>{hoursLabel(my.work_minutes)}</b><span>{t('Work time')}</span></div>
                     </div>
                     {!my.check_out && (
@@ -70,7 +70,7 @@ function LeaveApply({ myLeaves }) {
                     <thead><tr><th>{t('Date')}</th><th>{t('Days')}</th><th>{t('Reason')}</th><th>{t('Status')}</th></tr></thead>
                     <tbody>
                         {myLeaves.map((l) => (
-                            <tr key={l.id}><td>{l.from} — {l.to}</td><td>{l.days}</td><td>{l.reason || '—'}</td><td>{statusChip(l.status)}</td></tr>
+                            <tr key={l.id}><td>{l.from} - {l.to}</td><td>{l.days}</td><td>{l.reason || '-'}</td><td>{statusChip(l.status)}</td></tr>
                         ))}
                     </tbody>
                 </table>
@@ -151,7 +151,7 @@ function ShiftCard({ shift, staffOptions, canManage }) {
                             </label>
                         ))}
                     </div>
-                    <p className="x-note">{t('One staff member stays in one Shift only — bringing them here from another Shift moves them out of there.')}</p>
+                    <p className="x-note">{t('One staff member stays in one Shift only - bringing them here from another Shift moves them out of there.')}</p>
                     <button className="btn-p" type="submit" disabled={assign.processing} style={{ marginTop: 8 }}>{t('Save')}</button>
                 </form>
             )}

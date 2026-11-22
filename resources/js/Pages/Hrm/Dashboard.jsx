@@ -10,7 +10,7 @@ export default function Dashboard({ stats, today, pending_leaves, can_manage }) 
             <div className="hrm">
                 <div className="x-head">
                     <h3>{t('HR Dashboard')}</h3>
-                    <p>{t('Who came today, who is on leave — the whole team picture on one screen.')}</p>
+                    <p>{t('Who came today, who is on leave - the whole team picture on one screen.')}</p>
                 </div>
 
                 <div className="x-kpis">

@@ -246,7 +246,7 @@ class PlatformController extends Controller
             return back()->with('error', $e->getMessage());
         }
 
-        return back()->with('success', 'Purchase recorded — points credited');
+        return back()->with('success', 'Purchase recorded - points credited');
     }
 
     /** The 7-day refund of a seller's first purchase (M19, once only). */
@@ -258,7 +258,7 @@ class PlatformController extends Controller
             return back()->with('error', $e->getMessage());
         }
 
-        return back()->with('success', 'Refund done — points removed');
+        return back()->with('success', 'Refund done - points removed');
     }
 
     // ---------- M19 purchase flow: seller payment claims ----------

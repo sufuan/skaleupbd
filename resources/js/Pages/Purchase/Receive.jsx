@@ -3,7 +3,7 @@ import AppLayout from '@/Layouts/AppLayout';
 import { t } from '@/lib/i18n';
 import { PageHead, fmtDate } from './shared';
 
-// Receive form — no source HTML in the EcomDrive saves (only the queue
+// Receive form - no source HTML in the EcomDrive saves (only the queue
 // exists); built in the same table language: per line Ordered /
 // Already received / Now receiving / Damaged-missing, with Left shown.
 // Damaged qty never enters stock.

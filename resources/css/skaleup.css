@@ -36,6 +36,12 @@ button{font:inherit;cursor:pointer;background:none;border:none;color:inherit}
 .tb-right{margin-left:auto;display:flex;align-items:center;gap:8px}
 .ask-btn{border:1.5px solid var(--acc2);color:var(--acc);border-radius:20px;padding:6px 14px;font-size:13px;font-weight:600}
 .tb-ava{width:34px;height:34px;border-radius:50%;background:var(--acc2);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12.5px;font-weight:700}
+button.tb-ava{border:none;cursor:pointer;font-family:inherit;padding:0}
+.user-menu{position:absolute;top:48px;right:0;width:264px;max-width:92vw;background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:0 18px 50px rgba(34,16,53,.22);z-index:60;overflow:hidden;padding:6px}
+.user-menu-head{padding:10px 12px;border-bottom:1px solid var(--line);margin-bottom:6px}
+.user-menu-item{display:flex;width:100%;padding:9px 12px;border-radius:9px;font-size:13.5px;font-weight:600;color:var(--ink);text-align:left;background:none;border:none;cursor:pointer;font-family:inherit;text-decoration:none}
+.user-menu-item:hover{background:#faf7fc}
+.user-menu-item.danger{color:#b3261e}
 .content{padding:22px 26px 40px;max-width:1460px;width:100%;margin:0 auto}
 .page-h{font-size:24px;font-weight:800;margin:0 0 4px}
 .page-sub{color:var(--mut);font-size:13.5px;margin-bottom:18px}
@@ -209,6 +215,7 @@ label.fl{display:block;font-size:12.5px;font-weight:600;color:#55496e;margin:0 0
 :root[data-theme="dark"] .notif-item{border-color:#2e2145}
 :root[data-theme="dark"] .notif-item:hover{background:#241839}
 :root[data-theme="dark"] .notif-item.unread{background:#2a1e40}
+:root[data-theme="dark"] .user-menu-item:hover{background:#241839}
 :root[data-theme="dark"] .search-item{color:#d9cdee}
 :root[data-theme="dark"] .check-row,.conn-row{border-color:#2e2145}
 :root[data-theme="dark"] .empty-box{border-color:var(--line)}
@@ -493,7 +500,10 @@ label.fl{display:block;font-size:12.5px;font-weight:600;color:#55496e;margin:0 0
 /* ===== Dashboard — My Dashboard panel copied from prototype index.html ===== */
 .dash-pg .dash-head{display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap;margin-bottom:6px}
 .dash-pg .dash-tools{display:flex;gap:8px;align-items:center;margin-bottom:18px}
-.dash-pg .dhaka-box{text-align:right;background:var(--card);border:1px solid #E5E7EB;border-radius:10px;padding:5px 12px}
+.dash-pg .dhaka-box{text-align:right;background:var(--card);border:1px solid #E5E7EB;border-radius:10px;padding:0 12px;height:34px;display:flex;flex-direction:column;justify-content:center;align-items:flex-end}
+.dash-pg .ctl-btn:disabled{opacity:.6;cursor:default}
+@keyframes dash-spin{to{transform:rotate(360deg)}}
+.dash-pg .ctl-btn .spin{animation:dash-spin .8s linear infinite}
 .dash-pg .dhaka-lbl{font-size:10px;letter-spacing:.14em;color:var(--mut2);font-weight:700}
 .dash-pg .dhaka-clock{font-size:13px;font-weight:600;color:var(--acc)}
 .dash-pg .ctl-btn{height:34px;padding:0 12px;border:1px solid #E5E7EB;background:var(--card);border-radius:9px;font-size:12.5px;font-weight:600;color:var(--ink);cursor:pointer;display:inline-flex;align-items:center;justify-content:center}

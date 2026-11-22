@@ -131,7 +131,7 @@ class DeliveryController extends Controller
             $result['ok'] ? $ok++ : $failed++;
         }
 
-        return back()->with($failed ? 'error' : 'success', "Sent {$ok} order(s)" . ($failed ? ", {$failed} failed — they stay in the queue with the reason on the row" : ''));
+        return back()->with($failed ? 'error' : 'success', "Sent {$ok} order(s)" . ($failed ? ", {$failed} failed - they stay in the queue with the reason on the row" : ''));
     }
 
     public function retry(Request $request, Order $order)
@@ -348,10 +348,10 @@ class DeliveryController extends Controller
                     return response()->json(['ok' => false, 'duplicate' => true, 'note' => 'Already shipped']);
                 }
                 if ($order->status !== 'Processing') {
-                    return $fail('Order is ' . $order->status . ' — it cannot be shipped from here');
+                    return $fail('Order is ' . $order->status . ' - it cannot be shipped from here');
                 }
                 if ($order->booking_status !== 'booked' || ! $order->tracking_id) {
-                    return $fail('Not booked yet — send it to a courier first');
+                    return $fail('Not booked yet - send it to a courier first');
                 }
                 $order->shipped_at = now();
                 $order->save();
@@ -369,7 +369,7 @@ class DeliveryController extends Controller
                 $order->save();
                 $orders->changeStatus($order, 'Returned', $request->user(), 'Scanned as return');
 
-                return $done('Returned — stock is back in');
+                return $done('Returned - stock is back in');
             case 'rts':
                 if ($order->status !== 'Shipped') {
                     return $fail('Only a shipped parcel can come back to the store (RTS)');

@@ -12,14 +12,14 @@ const GROUPS = [
 ];
 
 const USED_IN = {
-    thankyou: 'Used in: Automation — when a new order comes',
-    reminder: 'Used in: Automation — reminder',
+    thankyou: 'Used in: Automation - when a new order comes',
+    reminder: 'Used in: Automation - reminder',
     advance: 'Used in: Automation + the Send Advance SMS on the Order page',
-    shipping: 'Used in: Automation — as soon as it is sent to the courier',
-    delivered: 'Used in: Automation — when Delivered',
-    back_in_stock: 'Used in: Automation — when stock returns',
-    winback: 'Used in: Automation — sleeping customer offer',
-    post_return: 'Used in: Automation — call after a return',
+    shipping: 'Used in: Automation - as soon as it is sent to the courier',
+    delivered: 'Used in: Automation - when Delivered',
+    back_in_stock: 'Used in: Automation - when stock returns',
+    winback: 'Used in: Automation - sleeping customer offer',
+    post_return: 'Used in: Automation - call after a return',
     offer: 'Used in: SMS Marketing campaigns',
 };
 
@@ -42,7 +42,7 @@ function FlowCard({ flow }) {
                         <span className="ft-lab">{t('Set the time yourself:')}</span> {t('the first one')}
                         <input type="number" className="ft-in" min="1" value={timing.first_hours ?? 2} onChange={(e) => setT('first_hours', e.target.value)} onBlur={saveTiming} /> {t('hours later')} · {t('the second one')}
                         <input type="number" className="ft-in" min="1" value={timing.second_hours ?? 20} onChange={(e) => setT('second_hours', e.target.value)} onBlur={saveTiming} /> {t('hours later')}
-                        <span style={{ color: '#94A3B8' }}>{t('(the second one ≈ the next morning — you can give 36 or 48 too)')}</span>
+                        <span style={{ color: '#94A3B8' }}>{t('(the second one ≈ the next morning - you can give 36 or 48 too)')}</span>
                     </div>
                 )}
                 {flow.key === 'winback' && (
@@ -85,13 +85,13 @@ export default function Automation({ flows, templates, strip }) {
 
     return (
         <AppLayout>
-            <Head title={t('Marketing — Automation')} />
+            <Head title={t('Marketing - Automation')} />
             <div className="mkt">
                 {tab === 'auto' ? (
                     <>
                         <div style={{ marginBottom: 14 }}>
                             <h3 style={{ fontSize: 20 }}>{t('Automation')}</h3>
-                            <p style={{ color: '#64748B', fontSize: 13.5, marginTop: 3 }}>{t('The jobs that happen on their own — just keep the switch on. Every card says in simple words when what happens.')}</p>
+                            <p style={{ color: '#64748B', fontSize: 13.5, marginTop: 3 }}>{t('The jobs that happen on their own - just keep the switch on. Every card says in simple words when what happens.')}</p>
                         </div>
                         <div className="ptabs" style={{ marginBottom: 16 }}>
                             <button className="ptab act">{t('Automation')}</button>
@@ -114,7 +114,7 @@ export default function Automation({ flows, templates, strip }) {
                         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 14 }}>
                             <div>
                                 <h3 style={{ fontSize: 20 }}>{t('Templates')}</h3>
-                                <p style={{ color: '#64748B', fontSize: 13.5, marginTop: 3 }}>{t('Ready-made texts — Automation and campaigns send these very texts. Change it in one place and it changes everywhere.')}</p>
+                                <p style={{ color: '#64748B', fontSize: 13.5, marginTop: 3 }}>{t('Ready-made texts - Automation and campaigns send these very texts. Change it in one place and it changes everywhere.')}</p>
                             </div>
                             <button className="btn-p" onClick={openNew}>+ {t('New Template')}</button>
                         </div>
@@ -148,7 +148,7 @@ export default function Automation({ flows, templates, strip }) {
                         <label style={{ fontSize: 13, color: '#64748B' }}>{t('Name')}</label>
                         <input type="text" value={tName} onChange={(e) => setTName(e.target.value)} placeholder={t('e.g. News of the new collection')} />
                         <label style={{ fontSize: 13, color: '#64748B' }}>{t('Text')}</label>
-                        <textarea rows="4" value={tBody} onChange={(e) => setTBody(e.target.value)} placeholder={t('The SMS text — you can use fields like {name}, {invoice}, {coupon}')}></textarea>
+                        <textarea rows="4" value={tBody} onChange={(e) => setTBody(e.target.value)} placeholder={t('The SMS text - you can use fields like {name}, {invoice}, {coupon}')}></textarea>
                         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
                             <button className="btn-s" onClick={() => setModal(false)}>{t('Discard')}</button>
                             <button className="btn-p" onClick={saveTemplate}>{t('Save')}</button>

@@ -3,7 +3,7 @@ import { Head, Link } from '@inertiajs/react';
 // Public landing page for Scalenow Bd. Professional front page for the
 // seller platform (header, hero, features, how it works, CTA, footer).
 // The footer carries the legal business name and address verbatim —
-// required for Meta Business Verification — so those strings are
+// required for Meta Business Verification - so those strings are
 // hardcoded in Latin script, NOT passed through t().
 const ACCENT = '#411550';
 
@@ -204,7 +204,7 @@ export default function Landing() {
                     <h1>Run your whole F-commerce business from <span>one dashboard</span></h1>
                     <p>
                         Orders from Facebook and WhatsApp, courier booking, one inbox for every
-                        message, and AI replies that answer your customers — everything your
+                        message, and AI replies that answer your customers - everything your
                         online shop needs, in one simple place.
                     </p>
                     <div className="lp-hero-btns">

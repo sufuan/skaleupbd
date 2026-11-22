@@ -2,7 +2,7 @@ import { Head, Link, usePage } from '@inertiajs/react';
 import { useMemo, useState } from 'react';
 import { t } from '@/lib/i18n';
 
-// M19 — public pricing page. Same visual family as the landing page
+// M19 - public pricing page. Same visual family as the landing page
 // (own pp- styles), but its own layout: pack cards rendered live from
 // the point packs, a volume helper, the credit rule in plain words,
 // and the legal footer block verbatim (Meta verification).
@@ -90,7 +90,7 @@ function PackCard({ p, best, bestValue, loggedIn }) {
             <div className="pp-pack-line">{t('Covers about')} <b>{num(p.orders)}</b> {t('orders')}</div>
             <div className="pp-pack-line">{tk(p.per_order)} {t('per order')}</div>
             <div className="pp-pack-note">{p.validity_type === 'monthly'
-                ? t('Points reset every 30 days — unused points do not carry over.')
+                ? t('Points reset every 30 days - unused points do not carry over.')
                 : t('A wallet: points carry for the full 12 months.')}</div>
             {loggedIn
                 ? <Link className="pp-pack-btn" href={`/billing?pack=${p.id}`}>{t('Buy this pack')}</Link>
@@ -112,17 +112,17 @@ export default function Pricing({ monthly, wallets, pointsPerOrder, onboardingFe
     const isBestValue = (p) => Math.abs(p.price_bdt / Math.max(1, p.credits) - bestRate) < 0.001;
 
     const faqs = [
-        { q: t('When is a point used?'), a: t('A point is spent the moment a new order enters your shop — from Facebook, WhatsApp, your website or typed in by hand. Status changes never cost extra points.') },
-        { q: t('What if an order is cancelled or returned?'), a: t('The point is not given back. A point pays for the order entering your system, not for its final result — the same simple rule for everyone.') },
-        { q: t('Monthly pack or yearly wallet — what is the difference?'), a: t('Monthly pack points reset every 30 days — unused points do not carry over. Yearly wallet points carry for the full 12 months — better if your sales go up and down.') },
+        { q: t('When is a point used?'), a: t('A point is spent the moment a new order enters your shop - from Facebook, WhatsApp, your website or typed in by hand. Status changes never cost extra points.') },
+        { q: t('What if an order is cancelled or returned?'), a: t('The point is not given back. A point pays for the order entering your system, not for its final result - the same simple rule for everyone.') },
+        { q: t('Monthly pack or yearly wallet - what is the difference?'), a: t('Monthly pack points reset every 30 days - unused points do not carry over. Yearly wallet points carry for the full 12 months - better if your sales go up and down.') },
         { q: t('What happens when my points finish?'), a: t('Your shop becomes view-only: you can still log in and see everything, but new orders and changes pause until you top up. Nothing is deleted.') },
-        { q: t('Is there a free trial?'), a: t('No trial — instead, your first purchase can be refunded within 7 days if the platform is not right for you.') },
-        { q: t('What is the onboarding fee?'), a: `${t('A one-time')} ${tk(onboardingFee)} ${t('setup fee, charged only on your very first purchase — never again.')}` },
+        { q: t('Is there a free trial?'), a: t('No trial - instead, your first purchase can be refunded within 7 days if the platform is not right for you.') },
+        { q: t('What is the onboarding fee?'), a: `${t('A one-time')} ${tk(onboardingFee)} ${t('setup fee, charged only on your very first purchase - never again.')}` },
     ];
 
     return (
         <div className="pp-root">
-            <Head title={`${t('Pricing')} — Scalenow Bd`} />
+            <Head title={`${t('Pricing')} - Scalenow Bd`} />
             <style>{CSS}</style>
 
             <header className="pp-header">
@@ -145,14 +145,14 @@ export default function Pricing({ monthly, wallets, pointsPerOrder, onboardingFe
             <section className="pp-hero">
                 <div className="pp-wrap">
                     <h1>{t('Simple pricing:')} <span>{t('pay per order')}</span></h1>
-                    <p>{t('Buy a pack of points. Every feature is in every pack — packs differ only in points and price. No hidden charges, no per-user fees.')} {t('A one-time onboarding fee of')} {tk(onboardingFee)} {t('applies to your first purchase only.')}</p>
+                    <p>{t('Buy a pack of points. Every feature is in every pack - packs differ only in points and price. No hidden charges, no per-user fees.')} {t('A one-time onboarding fee of')} {tk(onboardingFee)} {t('applies to your first purchase only.')}</p>
                 </div>
             </section>
 
             <section className="pp-section">
                 <div className="pp-wrap">
                     <h2 className="pp-h2">{t('Find your pack')}</h2>
-                    <p className="pp-sub">{t('Tell us how many orders you get in a month — we will point at the cheapest pack that covers you.')}</p>
+                    <p className="pp-sub">{t('Tell us how many orders you get in a month - we will point at the cheapest pack that covers you.')}</p>
                     <div className="pp-helper">
                         <div className="pp-helper-row">
                             <span style={{ fontSize: 15.5 }}>{t('I get about')}</span>
@@ -161,9 +161,9 @@ export default function Pricing({ monthly, wallets, pointsPerOrder, onboardingFe
                         </div>
                         <div className="pp-helper-result">
                             {need === 0 && <>{t('Enter your monthly orders to see a suggestion.')}</>}
-                            {need > 0 && fit && <>{t('You need')} <b>{num(need)}</b> {t('points a month.')} <b>{fit.name}</b> {t('covers you for')} <b>{tk(fit.price_bdt)}</b> — {tk(fit.per_order)} {t('per order.')}</>}
-                            {need > 0 && !fit && biggest && <>{t('You need')} <b>{num(need)}</b> {t('points a month — more than our biggest monthly pack')} (<b>{biggest.name}</b>, {num(biggest.credits)} {t('points')}). {t('Buy it and top up again mid-month, or talk to us about a bigger wallet.')}</>}
-                            {walletFit && <div style={{ marginTop: 6 }}>{t('Or take')} <b>{walletFit.name}</b> — {tk(walletFit.price_bdt)} {t('once, and the points last the whole year.')}</div>}
+                            {need > 0 && fit && <>{t('You need')} <b>{num(need)}</b> {t('points a month.')} <b>{fit.name}</b> {t('covers you for')} <b>{tk(fit.price_bdt)}</b> - {tk(fit.per_order)} {t('per order.')}</>}
+                            {need > 0 && !fit && biggest && <>{t('You need')} <b>{num(need)}</b> {t('points a month - more than our biggest monthly pack')} (<b>{biggest.name}</b>, {num(biggest.credits)} {t('points')}). {t('Buy it and top up again mid-month, or talk to us about a bigger wallet.')}</>}
+                            {walletFit && <div style={{ marginTop: 6 }}>{t('Or take')} <b>{walletFit.name}</b> - {tk(walletFit.price_bdt)} {t('once, and the points last the whole year.')}</div>}
                         </div>
                     </div>
                 </div>
@@ -179,7 +179,7 @@ export default function Pricing({ monthly, wallets, pointsPerOrder, onboardingFe
                     {wallets.length > 0 && (
                         <>
                             <h2 className="pp-h2" style={{ marginTop: 48 }}>{t('Yearly wallets')}</h2>
-                            <p className="pp-sub">{t('One payment — points stay valid for 12 months.')}</p>
+                            <p className="pp-sub">{t('One payment - points stay valid for 12 months.')}</p>
                             <div className="pp-grid">
                                 {wallets.map((p) => <PackCard key={p.id} p={p} best={!fit && walletFit && walletFit.id === p.id} bestValue={isBestValue(p)} loggedIn={loggedIn} />)}
                             </div>
@@ -203,7 +203,7 @@ export default function Pricing({ monthly, wallets, pointsPerOrder, onboardingFe
 
             <section className="pp-cta">
                 <div className="pp-wrap">
-                    <h2>{t('Start with any pack — upgrade any time')}</h2>
+                    <h2>{t('Start with any pack - upgrade any time')}</h2>
                     <p>{t('Create your shop, buy points when you are ready, and take your first order today.')}</p>
                     <Link className="pp-btn pp-btn-white" href={route('register')}>Create an account</Link>
                 </div>

@@ -5,9 +5,9 @@ import DomainLocked from './DomainLocked';
 import { t } from '@/lib/i18n';
 
 const TEMPLATES = [
-    ['single', 'Single product', 'One product, one page — best for a single hot item.'],
+    ['single', 'Single product', 'One product, one page - best for a single hot item.'],
     ['store', 'Full store', 'All your products in a nice list, with an order form.'],
-    ['offer', 'Offer page', 'A big offer banner on top, products below — best for campaigns.'],
+    ['offer', 'Offer page', 'A big offer banner on top, products below - best for campaigns.'],
 ];
 
 export default function Wizard({ sf, onboarding, presetColors, shopName = '' }) {
@@ -97,7 +97,7 @@ export default function Wizard({ sf, onboarding, presetColors, shopName = '' }) 
         <AppLayout>
             <Head title={t('Create your store')} />
             <h3 style={{ fontSize: 19, margin: '0 0 6px' }}>{t('Create your store')}</h3>
-            <p style={{ color: 'var(--muted)', fontSize: 14, margin: '0 0 14px' }}>{t('Five easy steps. Your products come in automatically from your Inventory — nothing to add by hand.')}</p>
+            <p style={{ color: 'var(--muted)', fontSize: 14, margin: '0 0 14px' }}>{t('Five easy steps. Your products come in automatically from your Inventory - nothing to add by hand.')}</p>
             {stepsBar}
 
             {!hasPaid && <DomainLocked />}
@@ -107,10 +107,10 @@ export default function Wizard({ sf, onboarding, presetColors, shopName = '' }) 
                     <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 10 }}>{t('Do you already have your own website?')}</div>
                     <div style={{ display: 'grid', gap: 10 }}>
                         <button type="button" className="btn" style={{ justifyContent: 'flex-start', height: 'auto', padding: '12px 14px' }} onClick={async () => { setHasWebsite(true); if (await save(0, { has_website: true })) router.visit('/storefront/connect'); }}>
-                            {t('Yes, I have my own website')} — {t('connect it and take orders there')}
+                            {t('Yes, I have my own website')} - {t('connect it and take orders there')}
                         </button>
                         <button type="button" className="btn pri" style={{ justifyContent: 'flex-start', height: 'auto', padding: '12px 14px' }} onClick={() => { setHasWebsite(false); save(0, { has_website: false }, 1); }}>
-                            {t('No — make my store here')} — {t('free address, ready in minutes')}
+                            {t('No - make my store here')} - {t('free address, ready in minutes')}
                         </button>
                     </div>
                 </div>
@@ -196,7 +196,7 @@ export default function Wizard({ sf, onboarding, presetColors, shopName = '' }) 
             {step === 4 && (
                 <div className="card sf-form">
                     <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 6 }}>{t('Choose your link')}</div>
-                    <p style={{ fontSize: 14, color: 'var(--muted)', margin: '0 0 10px' }}>{t('This is the address customers will visit. Choose carefully — it cannot be changed later.')}</p>
+                    <p style={{ fontSize: 14, color: 'var(--muted)', margin: '0 0 10px' }}>{t('This is the address customers will visit. Choose carefully - it cannot be changed later.')}</p>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                         <input className="fld" style={{ flex: '1 1 180px' }} value={slug} onChange={(e) => checkSlug(e.target.value)} placeholder="your-shop-name" />
                         <span style={{ fontSize: 14.5, color: 'var(--muted)' }}>.{domainRoot}</span>
@@ -209,13 +209,13 @@ export default function Wizard({ sf, onboarding, presetColors, shopName = '' }) 
                         </div>
                     )}
                     <div style={{ background: '#F7F2FA', border: '1px solid #E7DEF0', borderRadius: 10, padding: '12px 14px', marginTop: 14, fontSize: 14, display: 'grid', gap: 5 }}>
-                        <div>{t('One store, one link — pages inside the store are unlimited.')}</div>
+                        <div>{t('One store, one link - pages inside the store are unlimited.')}</div>
                         <div style={{ fontWeight: 700 }}>Only one subdomain will be applied</div>
-                        <div>{t('Your products and prices always stay true — the store reads them from your Inventory.')}</div>
+                        <div>{t('Your products and prices always stay true - the store reads them from your Inventory.')}</div>
                     </div>
                     <label style={{ display: 'flex', gap: 8, alignItems: 'flex-start', marginTop: 12, fontSize: 14.5, cursor: 'pointer' }}>
                         <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} style={{ marginTop: 3 }} />
-                        <span>{t('I agree to the store rules — honest products, real prices, and delivery as promised.')}</span>
+                        <span>{t('I agree to the store rules - honest products, real prices, and delivery as promised.')}</span>
                     </label>
                     {pubError && <div style={{ color: '#B91C1C', fontSize: 14, marginTop: 8 }}>{pubError}</div>}
                     <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>

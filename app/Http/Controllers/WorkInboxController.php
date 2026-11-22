@@ -216,7 +216,7 @@ class WorkInboxController extends Controller
     {
         $biz = $this->biz($request);
         if (! $this->wi->myWorkEnabled($biz)) {
-            return redirect('/work-inbox/control')->with('error', 'My Work আপাতত বন্ধ আছে — সব কাজ Work Control থেকে হবে');
+            return redirect('/work-inbox/control')->with('error', 'My Work আপাতত বন্ধ আছে - সব কাজ Work Control থেকে হবে');
         }
         $me = $request->user()->id;
         $mine = WorkTask::where('business_id', $biz)

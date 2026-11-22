@@ -54,12 +54,12 @@ class OrdersSeeder extends Seeder
             }
         }
         if ($settings->get('couriers.methods') === null) {
-            $settings->set('couriers.methods', ['Steadfast — Inside Dhaka', 'Pathao — Inside Dhaka', 'RedX — Dhaka', 'Carrybee', 'Manual', 'Steadfast — Outside Dhaka', 'Pathao — Outside Dhaka', 'Sundarban']);
+            $settings->set('couriers.methods', ['Steadfast - Inside Dhaka', 'Pathao - Inside Dhaka', 'RedX - Dhaka', 'Carrybee', 'Manual', 'Steadfast - Outside Dhaka', 'Pathao - Outside Dhaka', 'Sundarban']);
         }
         // The demo shop's own per-business list (order forms read this
         // now — the global key above is the legacy copy).
         if ($settings->get('couriers.'.$biz->id.'.methods') === null) {
-            $settings->set('couriers.'.$biz->id.'.methods', ['Steadfast — Inside Dhaka', 'Pathao — Inside Dhaka', 'RedX — Dhaka', 'Carrybee', 'Manual', 'Steadfast — Outside Dhaka', 'Pathao — Outside Dhaka', 'Sundarban']);
+            $settings->set('couriers.'.$biz->id.'.methods', ['Steadfast - Inside Dhaka', 'Pathao - Inside Dhaka', 'RedX - Dhaka', 'Carrybee', 'Manual', 'Steadfast - Outside Dhaka', 'Pathao - Outside Dhaka', 'Sundarban']);
         }
 
         $sources = [
@@ -74,17 +74,17 @@ class OrdersSeeder extends Seeder
         }
 
         MessageTemplate::firstOrCreate(['business_id' => $biz->id, 'key' => 'reminder'],
-            ['name' => 'Order Reminder SMS', 'body' => 'Dear {name}, your order {invoice} (total ৳{amount}) is waiting for confirmation. Please reply YES or call us to confirm your order. — {shop}']);
+            ['name' => 'Order Reminder SMS', 'body' => 'Dear {name}, your order {invoice} (total ৳{amount}) is waiting for confirmation. Please reply YES or call us to confirm your order. - {shop}']);
         MessageTemplate::firstOrCreate(['business_id' => $biz->id, 'key' => 'advance'],
-            ['name' => 'Advance Payment SMS', 'body' => 'Dear {name}, to confirm your order {invoice}, please send an advance of ৳{advance} by bKash and share the transaction ID. — {shop}']);
+            ['name' => 'Advance Payment SMS', 'body' => 'Dear {name}, to confirm your order {invoice}, please send an advance of ৳{advance} by bKash and share the transaction ID. - {shop}']);
 
         ApiKey::firstOrCreate(['business_id' => $biz->id, 'key_hash' => hash('sha256', 'sk_demo_test_key_0001')],
             ['last4' => '0001', 'label' => 'Demo website']);
 
         $products = [
-            ['Cotton Panjabi — White', 'CP-101', 1250, 800, 42],
-            ['Cotton Panjabi — Blue', 'CP-102', 1250, 800, 18],
-            ['Silk Saree — Red', 'SS-201', 3400, 2400, 7],
+            ['Cotton Panjabi - White', 'CP-101', 1250, 800, 42],
+            ['Cotton Panjabi - Blue', 'CP-102', 1250, 800, 18],
+            ['Silk Saree - Red', 'SS-201', 3400, 2400, 7],
             ['T-Shirt Pack (3 pcs)', 'TS-301', 899, 520, 65],
             ['Leather Wallet', 'LW-401', 650, 380, 3],
             ['Wireless Earbuds', 'WE-501', 1450, 950, 27],
@@ -138,39 +138,39 @@ class OrdersSeeder extends Seeder
         foreach ($pending as [$inv, $name, $phone, $sku, $src]) {
             $mk(['invoice_no' => $inv, 'customer_name' => $name, 'customer_phone' => $phone,
                 'customer_address' => 'Dhaka', 'district' => 'Dhaka', 'source' => $src,
-                'delivery_method' => 'Steadfast — Inside Dhaka', 'delivery_charge' => 60,
+                'delivery_method' => 'Steadfast - Inside Dhaka', 'delivery_charge' => 60,
                 'items' => [$item($sku)]]);
         }
         // A pending order from the blacklisted customer (risky at approve)
         $mk(['customer_name' => 'Rony Ahmed', 'customer_phone' => '01911112222', 'customer_address' => 'Unknown, Dhaka',
-            'district' => 'Dhaka', 'source' => 'FB', 'delivery_method' => 'Steadfast — Inside Dhaka', 'delivery_charge' => 60,
+            'district' => 'Dhaka', 'source' => 'FB', 'delivery_method' => 'Steadfast - Inside Dhaka', 'delivery_charge' => 60,
             'items' => [$item('WE-501')]]);
 
 
         // Customer history builders (delivered / returned outcomes drive success rates)
-        $rahim = ['customer_name' => 'Rahim Uddin', 'customer_phone' => '01712345678', 'customer_address' => 'Mirpur 10, Dhaka', 'district' => 'Dhaka', 'source' => 'FB', 'delivery_method' => 'Steadfast — Inside Dhaka', 'delivery_charge' => 60];
+        $rahim = ['customer_name' => 'Rahim Uddin', 'customer_phone' => '01712345678', 'customer_address' => 'Mirpur 10, Dhaka', 'district' => 'Dhaka', 'source' => 'FB', 'delivery_method' => 'Steadfast - Inside Dhaka', 'delivery_charge' => 60];
         foreach ([['CP-101'], ['TS-301'], ['WE-501'], ['CP-102']] as $it) {
             $flow($mk($rahim + ['items' => [$item($it[0])]]), ['approve', 'Shipped', 'Delivered']);
         }
         $flow($mk($rahim + ['items' => [$item('LW-401')]]), ['approve', 'Shipped', 'Returned']);
 
-        $karim = ['customer_name' => 'Karim Sheikh', 'customer_phone' => '01898765432', 'customer_address' => 'Uttara Sector 7, Dhaka', 'district' => 'Dhaka', 'source' => 'WEB', 'delivery_method' => 'Pathao — Inside Dhaka', 'delivery_charge' => 60];
+        $karim = ['customer_name' => 'Karim Sheikh', 'customer_phone' => '01898765432', 'customer_address' => 'Uttara Sector 7, Dhaka', 'district' => 'Dhaka', 'source' => 'WEB', 'delivery_method' => 'Pathao - Inside Dhaka', 'delivery_charge' => 60];
         $flow($mk($karim + ['items' => [$item('SS-201')]]), ['approve', 'Shipped', 'Delivered']);
         foreach ([['CP-101'], ['WE-501'], ['TS-301']] as $it) {
             $flow($mk($karim + ['items' => [$item($it[0])]]), ['approve', 'Shipped', 'Returned']);
         }
 
         // Processing / Shipped / Cancelled samples
-        $flow($mk(['customer_name' => 'Selina Akter', 'customer_phone' => '01755556666', 'customer_address' => 'Banani, Dhaka', 'district' => 'Dhaka', 'source' => 'WHATSAPP', 'delivery_method' => 'Pathao — Inside Dhaka', 'delivery_charge' => 60, 'items' => [$item('SS-201')]]), ['approve']);
-        $flow($mk(['customer_name' => 'Tanvir Hasan', 'customer_phone' => '01655557777', 'customer_address' => 'Chattogram', 'district' => 'Chattogram', 'source' => 'WEB', 'delivery_method' => 'RedX — Dhaka', 'delivery_charge' => 120, 'items' => [$item('TS-301', 2)]]), ['approve']);
-        $flow($mk(['customer_name' => 'Nusrat Jahan', 'customer_phone' => '01555558888', 'customer_address' => 'Sylhet', 'district' => 'Sylhet', 'source' => 'FB', 'delivery_method' => 'Steadfast — Inside Dhaka', 'delivery_charge' => 120, 'items' => [$item('CP-101'), $item('LW-401')]]), ['approve', 'Shipped']);
+        $flow($mk(['customer_name' => 'Selina Akter', 'customer_phone' => '01755556666', 'customer_address' => 'Banani, Dhaka', 'district' => 'Dhaka', 'source' => 'WHATSAPP', 'delivery_method' => 'Pathao - Inside Dhaka', 'delivery_charge' => 60, 'items' => [$item('SS-201')]]), ['approve']);
+        $flow($mk(['customer_name' => 'Tanvir Hasan', 'customer_phone' => '01655557777', 'customer_address' => 'Chattogram', 'district' => 'Chattogram', 'source' => 'WEB', 'delivery_method' => 'RedX - Dhaka', 'delivery_charge' => 120, 'items' => [$item('TS-301', 2)]]), ['approve']);
+        $flow($mk(['customer_name' => 'Nusrat Jahan', 'customer_phone' => '01555558888', 'customer_address' => 'Sylhet', 'district' => 'Sylhet', 'source' => 'FB', 'delivery_method' => 'Steadfast - Inside Dhaka', 'delivery_charge' => 120, 'items' => [$item('CP-101'), $item('LW-401')]]), ['approve', 'Shipped']);
         $cancelled = $flow($mk(['customer_name' => 'Hasan Ali', 'customer_phone' => '01455559999', 'customer_address' => 'Khulna', 'district' => 'Khulna', 'source' => 'DIRECT', 'delivery_charge' => 120, 'items' => [$item('WE-501')]]), ['approve']);
         $orders->changeStatus($cancelled, 'Cancelled', $admin, 'Customer Request');
 
         // Preorder sample
         $mk(['customer_name' => 'Farhana Islam', 'customer_phone' => '01355551111', 'customer_address' => 'Rajshahi', 'district' => 'Rajshahi',
             'source' => 'WEB', 'delivery_charge' => 120, 'is_preorder' => true, 'preorder_reason' => 'Out of Stock',
-            'notify_date' => now()->addDays(3)->toDateString(), 'items' => [['name' => 'Jamdhani Saree — Blue', 'sku' => 'JS-901', 'qty' => 1, 'price' => 5200]]]);
+            'notify_date' => now()->addDays(3)->toDateString(), 'items' => [['name' => 'Jamdhani Saree - Blue', 'sku' => 'JS-901', 'qty' => 1, 'price' => 5200]]]);
 
         foreach ([['01712345678', 'verified', 2], ['01898765432', 'no_answer', 1], ['01612349876', 'verified', 3]] as [$phone, $outcome, $mins]) {
             CallLog::create(['business_id' => $biz->id, 'phone' => $phone, 'staff_name' => $admin?->name, 'outcome' => $outcome, 'minutes' => $mins]);

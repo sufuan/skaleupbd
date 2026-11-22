@@ -157,7 +157,7 @@ class CourierSettingsController extends Controller
             ->where('status', 'Shipped')
             ->exists();
         if ($inFlight) {
-            return back()->with('error', 'This courier still has parcels in transit — it cannot be removed until they are delivered or returned');
+            return back()->with('error', 'This courier still has parcels in transit - it cannot be removed until they are delivered or returned');
         }
         $courier->delete();
         $this->syncMethodList($request);

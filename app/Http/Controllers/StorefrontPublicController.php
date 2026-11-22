@@ -446,7 +446,7 @@ class StorefrontPublicController extends Controller
         }
 
         if (! $isDuplicate) {
-            AppNotification::create(['kind' => 'order', 'title' => "New order {$order->invoice_no}",
+            AppNotification::create(['business_id' => $order->business_id, 'kind' => 'order', 'title' => "New order {$order->invoice_no}",
                 'body' => "{$order->customer_name} · ৳".number_format((float) $order->grand_total)." · Storefront",
                 'link' => "/orders/{$order->id}"]);
             if ($pageId) {

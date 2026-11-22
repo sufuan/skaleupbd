@@ -22,7 +22,7 @@ export default function Sellers({ sellers, q, pendingApprovals }) {
                     </form>
                 </span>
             </div>
-            <div style={{ fontSize: 13, color: 'var(--muted)', margin: '6px 0 12px' }}>{t('These are the shops that buy the SkaleUp service — our customers.')}</div>
+            <div style={{ fontSize: 13, color: 'var(--muted)', margin: '6px 0 12px' }}>{t('These are the shops that buy the SkaleUp service - our customers.')}</div>
             {pendingApprovals > 0 && (
                 <div style={{ background: '#FFF7E6', border: '1px solid #F0D9A8', borderRadius: 10, padding: '10px 14px', fontSize: 14, marginBottom: 12 }}>
                     <b>{pendingApprovals}</b> {t('seller(s) are waiting for approval. Open a seller and use Approve or Reject.')}
@@ -37,8 +37,8 @@ export default function Sellers({ sellers, q, pendingApprovals }) {
                             {sellers.map((s) => (
                                 <tr key={s.id}>
                                     <td><div style={{ fontWeight: 600 }}>{s.name}</div><div style={{ fontSize: 12, color: 'var(--muted)' }}>{t('Joined')} {s.joined}</div></td>
-                                    <td><div>{s.owner_name || '—'}</div><div style={{ fontSize: 12, color: 'var(--muted)' }}>{s.phone || ''}</div></td>
-                                    <td>{s.token_pack ? <><div style={{ fontWeight: 600 }}>{s.token_pack}</div><div style={{ fontSize: 12, color: 'var(--muted)' }}>{s.token_until ? `${t('until')} ${s.token_until}` : ''}</div></> : '—'}</td>
+                                    <td><div>{s.owner_name || '-'}</div><div style={{ fontSize: 12, color: 'var(--muted)' }}>{s.phone || ''}</div></td>
+                                    <td>{s.token_pack ? <><div style={{ fontWeight: 600 }}>{s.token_pack}</div><div style={{ fontSize: 12, color: 'var(--muted)' }}>{s.token_until ? `${t('until')} ${s.token_until}` : ''}</div></> : '-'}</td>
                                     <td style={{ fontWeight: 700 }}>{Number(s.token_balance || 0).toLocaleString('en-IN')}</td>
                                     <td>{pill(s)}</td>
                                     <td>{approvalPill(s)}</td>

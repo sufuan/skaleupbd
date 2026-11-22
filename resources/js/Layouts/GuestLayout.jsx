@@ -18,10 +18,10 @@ export default function GuestLayout({ children }) {
                         <div className="brand-tag">{t('F-commerce seller platform')}</div>
                     </div>
                 </div>
-                <h1>{t('Orders, delivery and customer chats — one dashboard')}</h1>
+                <h1>{t('Orders, delivery and customer chats - one dashboard')}</h1>
                 <p className="lead">{t('Run your whole shop from one place: website, Facebook, WhatsApp and phone orders together, with AI help for replies and bargaining.')}</p>
                 <div className="brand-points">
-                    <div className="brand-point"><Tick />{t('All channels in one inbox — Messenger, WhatsApp, website')}</div>
+                    <div className="brand-point"><Tick />{t('All channels in one inbox - Messenger, WhatsApp, website')}</div>
                     <div className="brand-point"><Tick />{t('Courier booking and delivery tracking built in')}</div>
                     <div className="brand-point"><Tick />{t('AI replies and price bargaining inside your rules')}</div>
                 </div>

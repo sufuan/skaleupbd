@@ -424,7 +424,7 @@ class SettingsController extends Controller
             return back()->with('success', 'Test SMS sent');
         }
 
-        return back()->with('error', 'Test SMS not sent — ' . ($log->error ?: 'unknown error'));
+        return back()->with('error', 'Test SMS not sent - ' . ($log->error ?: 'unknown error'));
     }
 
     public function updateOrderToggles(Request $request): RedirectResponse
@@ -807,7 +807,7 @@ class SettingsController extends Controller
     {
         abort_unless((bool) ($request->user()?->is_platform_admin), 403);
         if (\App\Models\BusinessWallet::where('pack_id', $package->id)->exists()) {
-            return back()->with('error', 'A seller is on this pack — deactivate it instead of deleting');
+            return back()->with('error', 'A seller is on this pack - deactivate it instead of deleting');
         }
         $package->delete();
 

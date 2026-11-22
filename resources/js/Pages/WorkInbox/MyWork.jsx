@@ -4,7 +4,7 @@ import AppLayout from '@/Layouts/AppLayout';
 import { t } from '@/lib/i18n';
 import { DoneModal, NewTaskModal, TaskCard } from './parts';
 
-// My Work — my own tasks (prototype panel wi-my). The page exists but
+// My Work - my own tasks (prototype panel wi-my). The page exists but
 // stays OFF until the shop enables it in Work Inbox Settings; the
 // controller redirects here only when the flag is on.
 export default function MyWork({ kpis, tasks, staff, sources }) {
@@ -40,7 +40,7 @@ export default function MyWork({ kpis, tasks, staff, sources }) {
                 <div className="wi-head">
                     <div>
                         <h3 style={{ fontSize: 20 }}>{t('My Work')}</h3>
-                        <p style={{ color: '#64748B', fontSize: 13.5, marginTop: 3 }}>সিস্টেম যেসব জায়গায় তোমার হাত চায়, সব এখানে। একটার পর একটা শেষ করো — কিছুই হারাবে না।</p>
+                        <p style={{ color: '#64748B', fontSize: 13.5, marginTop: 3 }}>সিস্টেম যেসব জায়গায় তোমার হাত চায়, সব এখানে। একটার পর একটা শেষ করো - কিছুই হারাবে না।</p>
                     </div>
                     <button className="btn-p" onClick={() => setNewOpen(true)}>{t('+ New Task')}</button>
                 </div>

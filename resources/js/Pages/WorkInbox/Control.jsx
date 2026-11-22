@@ -4,7 +4,7 @@ import AppLayout from '@/Layouts/AppLayout';
 import { t } from '@/lib/i18n';
 import { DoneModal, NewTaskModal, PRIORITY_CHIP, TaskCard } from './parts';
 
-// Work Control — the supervisor screen (prototype panel wi-control):
+// Work Control - the supervisor screen (prototype panel wi-control):
 // pool cards first, then everyone's tasks in one table with reassign.
 export default function Control({ kpis, poolTasks, tasks, staff, filters, sources }) {
     const [doneTask, setDoneTask] = useState(null);
@@ -23,7 +23,7 @@ export default function Control({ kpis, poolTasks, tasks, staff, filters, source
                 <div className="wi-head">
                     <div>
                         <h3 style={{ fontSize: 20 }}>{t('Work Control')}</h3>
-                        <p style={{ color: '#64748B', fontSize: 13.5, marginTop: 3 }}>{t('The supervisor screen — everyone\'s work in one place. Move stuck work to someone else.')}</p>
+                        <p style={{ color: '#64748B', fontSize: 13.5, marginTop: 3 }}>{t('The supervisor screen - everyone\'s work in one place. Move stuck work to someone else.')}</p>
                     </div>
                     <button className="btn-p" onClick={() => setNewOpen(true)}>{t('+ New Task')}</button>
                 </div>
@@ -37,7 +37,7 @@ export default function Control({ kpis, poolTasks, tasks, staff, filters, source
 
                 {poolTasks.length > 0 && (
                     <div className="pool-box">
-                        <div style={{ fontWeight: 700, color: '#92400E', marginBottom: 4 }}>{t('Not assigned to anyone — pick these up first')}</div>
+                        <div style={{ fontWeight: 700, color: '#92400E', marginBottom: 4 }}>{t('Not assigned to anyone - pick these up first')}</div>
                         <div style={{ fontSize: 13, color: '#92400E', marginBottom: 10 }}>{t('Work sitting in the pool can be picked up by whoever is free, or you can give it to someone.')}</div>
                         {poolTasks.map((task) => <TaskCard key={task.id} task={task} onDone={setDoneTask} />)}
                     </div>
@@ -82,7 +82,7 @@ export default function Control({ kpis, poolTasks, tasks, staff, filters, source
                                 <td style={{ fontWeight: 600, color: '#1E293B' }}>{task.title}</td>
                                 <td>{sources[task.source] || task.source}</td>
                                 <td>{task.assignee_label}</td>
-                                <td>{task.due ? task.due.text : (task.status === 'done' || task.status === 'auto_closed' ? '—' : t('Due today'))}</td>
+                                <td>{task.due ? task.due.text : (task.status === 'done' || task.status === 'auto_closed' ? '-' : t('Due today'))}</td>
                                 <td><span className={`chip ${PRIORITY_CHIP[task.priority] || 'chip-grey'}`}>{task.priority_label}</span></td>
                                 <td>
                                     {task.status === 'done' && <span className="chip chip-green">{t('Done')}</span>}
@@ -112,7 +112,7 @@ export default function Control({ kpis, poolTasks, tasks, staff, filters, source
                             </tr>
                         ))}
                         {tasks.length === 0 && (
-                            <tr><td colSpan="7" style={{ color: '#64748B' }}>কোনো কাজ নেই — সব পরিষ্কার।</td></tr>
+                            <tr><td colSpan="7" style={{ color: '#64748B' }}>কোনো কাজ নেই - সব পরিষ্কার।</td></tr>
                         )}
                     </tbody>
                 </table>

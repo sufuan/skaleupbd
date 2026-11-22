@@ -24,7 +24,7 @@ const I = {
 };
 
 export default function Scan({ todayEvents }) {
-    // Cross-business search is a platform-admin tool — sellers must never
+    // Cross-business search is a platform-admin tool - sellers must never
     // see the toggle (their scans only ever search their own shop).
     const isPlatformAdmin = !!usePage().props.auth?.user?.is_platform_admin;
     const [mode, setMode] = useState('shipping');
@@ -101,7 +101,7 @@ export default function Scan({ todayEvents }) {
         setCameraNote('');
         try {
             if (!('BarcodeDetector' in window)) {
-                setCameraNote('This browser cannot scan with the camera — use a USB scanner or type the code.');
+                setCameraNote('This browser cannot scan with the camera - use a USB scanner or type the code.');
                 return;
             }
             const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
@@ -127,7 +127,7 @@ export default function Scan({ todayEvents }) {
                 tick();
             }
         } catch {
-            setCameraNote('Camera could not be opened — use a USB scanner or type the code.');
+            setCameraNote('Camera could not be opened - use a USB scanner or type the code.');
         }
     };
 

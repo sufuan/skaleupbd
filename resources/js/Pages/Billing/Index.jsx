@@ -43,12 +43,12 @@ function PendingClaimCard({ claim, paymentInstructions, platformPayment }) {
     if (claim.status === 'pending_review') {
         return (
             <div style={{ background: '#EFF6FF', border: '1px solid #B9D4F5', color: '#1E3A5F', borderRadius: 10, padding: '14px 16px', marginBottom: 14 }}>
-                <div style={{ fontSize: 15.5, fontWeight: 700, marginBottom: 6 }}>{t('Payment submitted — waiting for confirmation')}</div>
+                <div style={{ fontSize: 15.5, fontWeight: 700, marginBottom: 6 }}>{t('Payment submitted - waiting for confirmation')}</div>
                 <ClaimBreakdown claim={claim} />
                 <div style={{ fontSize: 13.5, marginTop: 10 }}>
                     {t('You told us:')} {claim.method} · {t('from')} {claim.sender_number} · TrxID {claim.trx_id}
                 </div>
-                <div style={{ fontSize: 13, marginTop: 4 }}>{t('We check payments by hand — your points appear here as soon as we confirm.')}</div>
+                <div style={{ fontSize: 13, marginTop: 4 }}>{t('We check payments by hand - your points appear here as soon as we confirm.')}</div>
             </div>
         );
     }
@@ -107,11 +107,11 @@ export default function Index({ balance, pointsPerOrder, threshold, blocked, low
             <style>{`@media (max-width: 760px) { .bill-kpis, .bill-2col { grid-template-columns: 1fr !important; } }
 .claim-form .lbl { display:block; font-size:13px; font-weight:600; margin-top:10px; }
 .claim-form .fld { display:block; width:100%; height:40px; border-radius:8px; font-size:14px; border:1px solid #D9CDE4; background:#fff; padding:0 12px; margin-top:5px; font-family:inherit; color:var(--ink); box-sizing:border-box; }`}</style><h3 style={{ fontSize: 19, marginBottom: 4 }}>{t('Points & Billing')}</h3>
-            <div style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 14 }}>{t('One point is spent every time a new order enters your shop. Points are never returned — even if the order is later cancelled or returned.')}</div>
+            <div style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 14 }}>{t('One point is spent every time a new order enters your shop. Points are never returned - even if the order is later cancelled or returned.')}</div>
 
             {blocked && (
                 <div style={{ background: '#FDECEC', border: '1px solid #F3B4B4', color: '#8B1E1E', borderRadius: 10, padding: '12px 14px', marginBottom: 14, fontSize: 14 }}>
-                    <b>{t('Your shop is view-only right now.')}</b> {t('Your points are finished, so new orders and changes are paused. Buy a points pack to start again — everything you see here stays safe.')}
+                    <b>{t('Your shop is view-only right now.')}</b> {t('Your points are finished, so new orders and changes are paused. Buy a points pack to start again - everything you see here stays safe.')}
                 </div>
             )}
             {!blocked && low && (
@@ -184,7 +184,7 @@ export default function Index({ balance, pointsPerOrder, threshold, blocked, low
                             ))}
                             {packs.length === 0 && <div style={{ fontSize: 13.5, color: 'var(--muted)' }}>{t('No packs are on sale right now.')}</div>}
                         </div>
-                        {openClaim && <div style={{ fontSize: 12.5, color: 'var(--muted)', marginTop: 10 }}>{t('You already have a payment in progress — finish it above before starting another.')}</div>}
+                        {openClaim && <div style={{ fontSize: 12.5, color: 'var(--muted)', marginTop: 10 }}>{t('You already have a payment in progress - finish it above before starting another.')}</div>}
                         <div style={{ marginTop: 12 }}><Link href="/pricing" style={{ fontSize: 13.5, fontWeight: 600 }}>{t('See full pricing')} →</Link></div>
                     </div>
 
@@ -195,7 +195,7 @@ export default function Index({ balance, pointsPerOrder, threshold, blocked, low
                                 {pastClaims.map((c) => (
                                     <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13.5 }}>
                                         <div>
-                                            <div style={{ fontWeight: 600 }}>{c.pack_name} — {tk(c.total_bdt)}{Number(c.onboarding_fee_bdt) > 0 && <span style={{ fontWeight: 400, fontSize: 12, color: 'var(--muted)' }}> ({t('pack')} {tk(c.amount_bdt)} + {t('onboarding')} {tk(c.onboarding_fee_bdt)})</span>}</div>
+                                            <div style={{ fontWeight: 600 }}>{c.pack_name} - {tk(c.total_bdt)}{Number(c.onboarding_fee_bdt) > 0 && <span style={{ fontWeight: 400, fontSize: 12, color: 'var(--muted)' }}> ({t('pack')} {tk(c.amount_bdt)} + {t('onboarding')} {tk(c.onboarding_fee_bdt)})</span>}</div>
                                             <div style={{ fontSize: 12, color: 'var(--muted)' }}>{c.when}</div>
                                         </div>
                                         <span className={`pill ${(CLAIM_STATUS[c.status] || ['', ''])[1]}`} style={{ marginLeft: 'auto' }}>{t((CLAIM_STATUS[c.status] || [c.status])[0])}</span>

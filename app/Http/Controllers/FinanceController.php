@@ -247,10 +247,10 @@ class FinanceController extends Controller
             return back()->with('error', 'উল্টো entry বাতিল করা যায় না।');
         }
         if ($this->fin->monthLocked($transaction->business_id, $transaction->txn_date->toDateString())) {
-            return back()->with('error', 'এই মাস বন্ধ — বাতিল করা যাবে না।');
+            return back()->with('error', 'এই মাস বন্ধ - বাতিল করা যাবে না।');
         }
         $this->fin->void($transaction, $request->user());
-        return back()->with('success', 'Entry বাতিল হয়েছে — উল্টো entry দিয়ে হিসাব ঠিক রাখা হয়েছে।');
+        return back()->with('success', 'Entry বাতিল হয়েছে - উল্টো entry দিয়ে হিসাব ঠিক রাখা হয়েছে।');
     }
 
     /** In-place edit of a single income/expense entry (amount, date, category, note). */
@@ -277,7 +277,7 @@ class FinanceController extends Controller
         ]);
         if ($this->fin->monthLocked($transaction->business_id, $transaction->txn_date->toDateString())
             || $this->fin->monthLocked($transaction->business_id, $data['txn_date'])) {
-            return back()->with('error', 'এই মাস বন্ধ — বদলানো যাবে না।');
+            return back()->with('error', 'এই মাস বন্ধ - বদলানো যাবে না।');
         }
         $categoryId = null;
         if (! empty($data['category_id'])) {
@@ -369,7 +369,7 @@ class FinanceController extends Controller
             return back()->with('error', 'System category মোছা যায় না।');
         }
         if (FinanceTransaction::where('category_id', $category->id)->exists()) {
-            return back()->with('error', 'এই category-তে entry আছে — মোছা যাবে না।');
+            return back()->with('error', 'এই category-তে entry আছে - মোছা যাবে না।');
         }
         $category->delete();
         return back()->with('success', 'Category মোছা হয়েছে।');
@@ -437,7 +437,7 @@ class FinanceController extends Controller
         $biz = $this->biz($request);
         $month = now('Asia/Dhaka')->subMonthNoOverflow()->format('Y-m');
         app(\App\Services\SettingsService::class)->set('finance.' . $biz . '.closed_through', $month, $request->user()->id);
-        return back()->with('success', 'আগের মাস বন্ধ করা হয়েছে — ওই মাসের entry আর বদলানো/বাতিল হবে না।');
+        return back()->with('success', 'আগের মাস বন্ধ করা হয়েছে - ওই মাসের entry আর বদলানো/বাতিল হবে না।');
     }
 
     public function dailyClose(Request $request): RedirectResponse
@@ -452,8 +452,8 @@ class FinanceController extends Controller
             ['expected' => $expected, 'counted' => $data['counted'], 'difference' => $diff, 'closed_by' => $request->user()->id]
         );
         if (abs($diff) > 0.01) {
-            $this->fin->raiseMismatchEvent($biz, $account->name . ' — আশা ছিল ৳' . number_format($expected) . ', হাতে পাওয়া ৳' . number_format((float) $data['counted']) . ' (তফাত ৳' . number_format($diff) . ')।');
-            return back()->with('error', 'হিসাব মেলেনি — তফাত ৳' . number_format($diff) . '। Work Inbox-এ task তোলা হয়েছে।');
+            $this->fin->raiseMismatchEvent($biz, $account->name . ' - আশা ছিল ৳' . number_format($expected) . ', হাতে পাওয়া ৳' . number_format((float) $data['counted']) . ' (তফাত ৳' . number_format($diff) . ')।');
+            return back()->with('error', 'হিসাব মেলেনি - তফাত ৳' . number_format($diff) . '। Work Inbox-এ task তোলা হয়েছে।');
         }
         return back()->with('success', 'আজকের হিসাব মিলেছে।');
     }
@@ -461,7 +461,7 @@ class FinanceController extends Controller
     public function raisePayoutTask(Request $request): RedirectResponse
     {
         $biz = $this->biz($request);
-        $this->fin->raiseMismatchEvent($biz, '৭ দিনের বেশি পুরনো Delivered parcel-এর courier payout এখনো আসেনি — Courier Ledger-এ মিলিয়ে দেখুন।');
+        $this->fin->raiseMismatchEvent($biz, '৭ দিনের বেশি পুরনো Delivered parcel-এর courier payout এখনো আসেনি - Courier Ledger-এ মিলিয়ে দেখুন।');
         return back()->with('success', 'Work Inbox-এ task তোলা হয়েছে।');
     }
 

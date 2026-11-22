@@ -14,21 +14,21 @@ export default function Dashboard({ filters, hasFilter, result, sources, statuse
         <AppLayout>
             <Head title={t('Orders Dashboard')} />
             <h1 className="page-h">{t('Orders Dashboard')}</h1>
-            <div className="page-sub">{t('Filter first — results appear after you choose a filter.')}</div>
+            <div className="page-sub">{t('Filter first - results appear after you choose a filter.')}</div>
 
             <div className="card mb12">
                 <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill,minmax(190px,1fr))' }}>
-                    {field('Source', <select className="inp" value={f.source} onChange={(e) => setF({ ...f, source: e.target.value })}><option value="">—</option>{sources.map((s) => <option key={s.code} value={s.code}>{s.label}</option>)}</select>)}
-                    {field('Status', <select className="inp" value={f.status} onChange={(e) => setF({ ...f, status: e.target.value })}><option value="">—</option>{statuses.map((s) => <option key={s} value={s}>{t(s)}</option>)}</select>)}
+                    {field('Source', <select className="inp" value={f.source} onChange={(e) => setF({ ...f, source: e.target.value })}><option value="">-</option>{sources.map((s) => <option key={s.code} value={s.code}>{s.label}</option>)}</select>)}
+                    {field('Status', <select className="inp" value={f.status} onChange={(e) => setF({ ...f, status: e.target.value })}><option value="">-</option>{statuses.map((s) => <option key={s} value={s}>{t(s)}</option>)}</select>)}
                     {field('From Date', <input className="inp" type="date" value={f.from || ''} onChange={(e) => setF({ ...f, from: e.target.value })} />)}
                     {field('To Date', <input className="inp" type="date" value={f.to || ''} onChange={(e) => setF({ ...f, to: e.target.value })} />)}
                     {field('Invoice Search', <input className="inp" value={f.search || ''} onChange={(e) => setF({ ...f, search: e.target.value })} placeholder="OB…" />)}
                     {field('District', <input className="inp" value={f.district || ''} onChange={(e) => setF({ ...f, district: e.target.value })} />)}
                     {field('Taken By', <input className="inp" value={f.taken_by || ''} onChange={(e) => setF({ ...f, taken_by: e.target.value })} />)}
                     {field('Product / SKU Search', <input className="inp" value={f.product || ''} onChange={(e) => setF({ ...f, product: e.target.value })} />)}
-                    {field('Courier', <select className="inp" value={f.courier || ''} onChange={(e) => setF({ ...f, courier: e.target.value })}><option value="">—</option>{(couriers || []).map((c) => <option key={c} value={c}>{c}</option>)}</select>)}
-                    {field('Courier Payment Status', <select className="inp" value={f.payment_status || ''} onChange={(e) => setF({ ...f, payment_status: e.target.value })}><option value="">—</option><option value="full">{t('Paid in Full')}</option><option value="partial">{t('Partial Advance')}</option><option value="none">{t('No Advance')}</option></select>)}
-                    {field('Processing Status', <select className="inp" value={f.processing_status || ''} onChange={(e) => setF({ ...f, processing_status: e.target.value })}><option value="">—</option>{(processingStatuses || []).map((s) => <option key={s} value={s}>{t(s)}</option>)}</select>)}
+                    {field('Courier', <select className="inp" value={f.courier || ''} onChange={(e) => setF({ ...f, courier: e.target.value })}><option value="">-</option>{(couriers || []).map((c) => <option key={c} value={c}>{c}</option>)}</select>)}
+                    {field('Courier Payment Status', <select className="inp" value={f.payment_status || ''} onChange={(e) => setF({ ...f, payment_status: e.target.value })}><option value="">-</option><option value="full">{t('Paid in Full')}</option><option value="partial">{t('Partial Advance')}</option><option value="none">{t('No Advance')}</option></select>)}
+                    {field('Processing Status', <select className="inp" value={f.processing_status || ''} onChange={(e) => setF({ ...f, processing_status: e.target.value })}><option value="">-</option>{(processingStatuses || []).map((s) => <option key={s} value={s}>{t(s)}</option>)}</select>)}
                     {field('Order Tag', <input className="inp" value={f.tag || ''} onChange={(e) => setF({ ...f, tag: e.target.value })} />)}
                 </div>
                 <div className="flex">

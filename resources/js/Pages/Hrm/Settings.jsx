@@ -58,11 +58,11 @@ export default function Settings({ settings, holidays, can_manage }) {
                     </div>
 
                     <div className="x-card">
-                        <h4>{t('Payroll — salary accounts')}</h4>
+                        <h4>{t('Payroll - salary accounts')}</h4>
                         <div className="switch-row" style={{ borderBottom: 'none', padding: 0 }}>
                             <div>
                                 <b style={{ fontSize: 14 }}>{t('Turn on Payroll')}</b>
-                                <div style={{ fontSize: 13, color: '#64748B' }}>{t('It is off now. Turning it on brings the Payroll menu into the sidebar — there, every month the salary account is made from Attendance, and the total becomes an expense in Finance. While off, salary keeps running through Finance expense entries as before.')}</div>
+                                <div style={{ fontSize: 13, color: '#64748B' }}>{t('It is off now. Turning it on brings the Payroll menu into the sidebar - there, every month the salary account is made from Attendance, and the total becomes an expense in Finance. While off, salary keeps running through Finance expense entries as before.')}</div>
                             </div>
                             <input type="checkbox" checked={form.data.payroll_enabled} onChange={(e) => form.setData('payroll_enabled', e.target.checked)} disabled={!can_manage} style={{ width: 20, height: 20 }} />
                         </div>

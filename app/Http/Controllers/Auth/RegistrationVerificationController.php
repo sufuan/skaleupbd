@@ -49,7 +49,7 @@ class RegistrationVerificationController extends Controller
         $result = $this->svc->verify($request->user(), (string) $data['code']);
         if ($result === 'ok') {
             return redirect()->route('dashboard')
-                ->with('success', __('Your account is verified — welcome to SkaleUp BD.'));
+                ->with('success', __('Your account is verified - welcome to SkaleUp BD.'));
         }
         if ($result === 'none') {
             return redirect()->route('dashboard');

@@ -131,7 +131,7 @@ class CustomersController extends Controller
     {
         abort_unless($customer->business_id === $this->bizId($request), 404);
         if (Order::where('customer_id', $customer->id)->exists()) {
-            return back()->with('error', 'This customer has orders — they cannot be deleted');
+            return back()->with('error', 'This customer has orders - they cannot be deleted');
         }
         $customer->delete();
 

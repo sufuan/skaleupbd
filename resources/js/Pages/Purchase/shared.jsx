@@ -7,7 +7,7 @@ export const fmt = (n) => '৳' + Number(Math.round(Number(n) || 0)).toLocaleStr
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 export const fmtDate = (iso) => {
-    if (!iso) return '—';
+    if (!iso) return '-';
     const [y, m, d] = String(iso).slice(0, 10).split('-').map(Number);
     if (!y || !m || !d) return iso;
     return `${d} ${MONTHS[m - 1]} ${y}`;
@@ -31,7 +31,7 @@ export function GuideBtn() {
 }
 
 /**
- * Product picker — copied from New Purchase's "Click To Add Products"
+ * Product picker - copied from New Purchase's "Click To Add Products"
  * card: two search boxes (Code/sku + Name) over a scrollable product
  * list; each row shows image/No Image, name, SKU, Purchase Price, Stock.
  * Clicking a row hands the product to the parent.
@@ -106,7 +106,7 @@ export function ItemsTable({ lines, setLines }) {
 }
 
 /**
- * Pay form (modal) — same shape wherever a Pay button appears:
+ * Pay form (modal) - same shape wherever a Pay button appears:
  * amount (default = due), date, account from Finance, note. Posts to
  * the given URL; the server posts exactly one Finance entry.
  */

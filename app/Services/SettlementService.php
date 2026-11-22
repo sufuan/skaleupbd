@@ -190,7 +190,7 @@ class SettlementService
                 foreach ($group as $m) {
                     CourierSettlementAllocation::create(['settlement_id' => $settlement->id, 'order_id' => $m['order_id'], 'amount' => $m['paid_amount']]);
                     if ($method && $m['paid_amount'] < $m['expected'] - 0.01) {
-                        $this->raiseDifferenceEvent($method, 'Statement paid ৳' . number_format($m['paid_amount']) . ' for ' . $m['invoice'] . ' but ৳' . number_format($m['expected']) . ' was expected — short by ৳' . number_format($m['expected'] - $m['paid_amount']) . '.');
+                        $this->raiseDifferenceEvent($method, 'Statement paid ৳' . number_format($m['paid_amount']) . ' for ' . $m['invoice'] . ' but ৳' . number_format($m['expected']) . ' was expected - short by ৳' . number_format($m['expected'] - $m['paid_amount']) . '.');
                     }
                 }
             }
@@ -246,7 +246,7 @@ class SettlementService
         WorkEvent::create([
             'business_id' => $method?->business_id ?? auth()->user()?->business_id,
             'kind' => 'settlement_difference',
-            'title' => 'Courier money difference' . ($method ? ' — ' . $method->label() : ''),
+            'title' => 'Courier money difference' . ($method ? ' - ' . $method->label() : ''),
             'body' => $body,
             'link' => '/delivery/invoice',
         ]);

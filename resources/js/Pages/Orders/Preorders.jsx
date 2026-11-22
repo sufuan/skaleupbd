@@ -14,7 +14,7 @@ export default function Preorders({ orders, counts, tab, reasons, filters }) {
         <AppLayout>
             <Head title={t('Preorders')} />
             <h1 className="page-h">{t('Preorders')}</h1>
-            <div className="page-sub">{t('Orders taken before the product is in stock — notify the customer when it arrives.')}</div>
+            <div className="page-sub">{t('Orders taken before the product is in stock - notify the customer when it arrives.')}</div>
 
             <div className="ptabs">
                 {TABS.map(([k, label]) => (
@@ -30,8 +30,8 @@ export default function Preorders({ orders, counts, tab, reasons, filters }) {
                 <div className="flex" style={{ flexWrap: 'wrap' }}>
                     <div className="frow" style={{ margin: 0 }}><label className="fl">{t('Reason')}</label>
                         <select className="inp" style={{ width: 190 }} value={reason} onChange={(e) => setReason(e.target.value)}>
-                            <option value="">—</option>
-                            {(reasons || []).map((r) => <option key={r} value={r}>{r}</option>)}
+                            <option value="">-</option>
+                            {(reasons || []).map((r) => <option key={r} value={r}>{t(r)}</option>)}
                         </select></div>
                     <div className="frow" style={{ margin: 0 }}><label className="fl">{t('Product Code')}</label>
                         <input className="inp" style={{ width: 190 }} value={code} onChange={(e) => setCode(e.target.value)} placeholder="SKU…" /></div>
@@ -48,7 +48,7 @@ export default function Preorders({ orders, counts, tab, reasons, filters }) {
                                 <tr key={o.id}>
                                     <td className="b">{o.invoice}</td>
                                     <td><div className="b">{o.name}</div><div className="sm mut">{o.phone}</div></td>
-                                    <td>{o.items_text}</td><td>{o.reason || '—'}</td><td>{o.notify_date || '—'}</td>
+                                    <td>{o.items_text}</td><td>{o.reason ? t(o.reason) : '-'}</td><td>{o.notify_date || '-'}</td>
                                     <td><StatusPill status={o.status} /></td><td>{fmt(o.total)}</td>
                                     <td style={{ whiteSpace: 'nowrap' }}>
                                         <Link href={`/orders/${o.id}`} className="mini-link">{t('Open')}</Link>{' '}

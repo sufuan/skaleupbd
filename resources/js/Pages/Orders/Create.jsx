@@ -150,7 +150,7 @@ export default function Create({ sources, products, couriers, defaults, toggles,
                                         </div>
                                         {(mode === 'preorder') && (
                                             <label className="fld-l frow">{t('Preorder Reason')}<select className="fld" value={form.data.preorder_reason} onChange={(e) => form.setData('preorder_reason', e.target.value)}>
-                                                <option value="">{t('Select reason')}</option><option>Out of Stock</option><option>Others</option>
+                                                <option value="">{t('Select reason')}</option><option value="Out of Stock">{t('Out of Stock')}</option><option value="Others">{t('Others')}</option>
                                             </select></label>
                                         )}
                                         {(mode === 'preorder') && (
@@ -163,7 +163,7 @@ export default function Create({ sources, products, couriers, defaults, toggles,
                                 {pop === 'tag' && (
                                     <div className="pop-panel"><b>{t('Order Tags')}</b><div className="muted-sm" style={{ margin: '6px 0' }}>{t('Select Custom Tags')}</div>
                                         <div className="tag-cloud">
-                                            {allTags.length === 0 && <span className="muted-sm">{t('No tags yet — tags used on earlier orders will appear here.')}</span>}
+                                            {allTags.length === 0 && <span className="muted-sm">{t('No tags yet - tags used on earlier orders will appear here.')}</span>}
                                             {allTags.map((tag) => <span key={tag} className={(form.data.tags || []).includes(tag) ? 'on' : ''} onClick={() => toggleTag(tag)}>{tag}</span>)}
                                         </div>
                                     </div>
@@ -189,7 +189,7 @@ export default function Create({ sources, products, couriers, defaults, toggles,
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 16, marginTop: 16 }}>
                                     <label className="fld-l frow">{t('Payment Method')} <span className="opt-tag">OPTIONAL</span><select className="fld" value={form.data.payment_method} onChange={(e) => form.setData('payment_method', e.target.value)}>
                                         <option value="">{t('Select account')}</option>
-                                        {paymentMethods.map((m) => <option key={m} value={m}>{m}</option>)}
+                                        {paymentMethods.map((m) => <option key={m} value={m}>{t(m)}</option>)}
                                     </select></label>
                                     <label className="fld-l frow">{t('Order Source')}{toggles.mandatory_source ? ' *' : ''}<select className="fld" value={form.data.source} onChange={(e) => form.setData('source', e.target.value)}>
                                         <option value="">{t('Select order source')}</option>
@@ -224,7 +224,7 @@ export default function Create({ sources, products, couriers, defaults, toggles,
                                                     <button type="button" key={p.id} className="prod-card" disabled={dis} onClick={() => addProduct(p)}>
                                                         <span className="pc-name">{p.name}</span>
                                                         <span className="muted-sm">SKU: {p.sku}</span>
-                                                        <span className="muted-sm">{t('Price')}: {fmt(p.price)} · {t('Stock')}: {p.stock}{p.stock === 0 ? ` — ${t('Pre-order allowed')}` : ''}</span>
+                                                        <span className="muted-sm">{t('Price')}: {fmt(p.price)} · {t('Stock')}: {p.stock}{p.stock === 0 ? ` - ${t('Pre-order allowed')}` : ''}</span>
                                                         <span className="pc-fav" onClick={(e) => toggleFav(e, p.id)}>{favs.has(p.id) ? t('Remove from featured') : t('Mark as featured')}</span>
                                                     </button>
                                                 );
@@ -237,7 +237,7 @@ export default function Create({ sources, products, couriers, defaults, toggles,
                                         {picked.length === 0 && <div id="ordEmpty" className="empty-note" style={{ marginTop: 10 }}>{t('Search and add products from the "Click To Add Products" panel.')}</div>}
                                         {picked.map((i, ix) => (
                                             <div className="ord-row" key={ix}>
-                                                <span><b>{i.name}</b><br /><span className="muted-sm">SKU {i.sku || '—'} · {fmt(i.price)} · {t('Stock')}:{i.stock === null ? '—' : i.stock}</span></span>
+                                                <span><b>{i.name}</b><br /><span className="muted-sm">SKU {i.sku || '-'} · {fmt(i.price)} · {t('Stock')}:{i.stock === null ? '-' : i.stock}</span></span>
                                                 <span className="qty">{t('Qty')} <button type="button" onClick={() => setPicked(picked.map((x, j) => j === ix ? { ...x, qty: Math.max(1, x.qty - 1) } : x))}>−</button><b>{i.qty}</b><button type="button" onClick={() => setPicked(picked.map((x, j) => j === ix ? { ...x, qty: x.qty + 1 } : x))}>+</button></span>
                                                 <span className="qty">{t('Price')} <button type="button" onClick={() => setPicked(picked.map((x, j) => j === ix ? { ...x, price: Math.max(0, x.price - 10) } : x))}>−</button><b>{i.price}</b><button type="button" onClick={() => setPicked(picked.map((x, j) => j === ix ? { ...x, price: x.price + 10 } : x))}>+</button></span>
                                                 <b>{t('Total')} {fmt(i.price * i.qty)}</b>

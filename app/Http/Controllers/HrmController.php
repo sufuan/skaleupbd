@@ -231,7 +231,7 @@ class HrmController extends Controller
             if ($record && $record->break_started_at) {
                 $this->att->endBreak($request->user());
 
-                return back()->with('success', 'Break শেষ — কাজে ফিরেছেন।');
+                return back()->with('success', 'Break শেষ - কাজে ফিরেছেন।');
             }
             $this->att->startBreak($request->user());
 
@@ -349,7 +349,7 @@ class HrmController extends Controller
             return $this->deny();
         }
         if ($department->members()->count() > 0) {
-            return back()->with('error', 'এই Department-এ এখনো কর্মী আছে — আগে তাদের সরান, তারপর মুছুন।');
+            return back()->with('error', 'এই Department-এ এখনো কর্মী আছে - আগে তাদের সরান, তারপর মুছুন।');
         }
         $department->delete();
 
@@ -460,7 +460,7 @@ class HrmController extends Controller
             return $this->deny();
         }
         if ($shift->members()->count() > 0) {
-            return back()->with('error', 'এই Shift-এ এখনো কর্মী আছে — আগে তাদের সরান, তারপর মুছুন।');
+            return back()->with('error', 'এই Shift-এ এখনো কর্মী আছে - আগে তাদের সরান, তারপর মুছুন।');
         }
         $shift->delete();
 

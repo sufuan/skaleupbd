@@ -10,7 +10,7 @@ export default function PackingSlip({ order, shop }) {
 
     return (
         <div className="slip-page">
-            <Head title={`${t('Packing Slip')} — ${order.invoice}`} />
+            <Head title={`${t('Packing Slip')} - ${order.invoice}`} />
             <div className="no-print flex" style={{ marginBottom: 16 }}>
                 <Link href="/delivery/ready" className="btn">← {t('Back')}</Link>
                 <span className="spacer" />
@@ -30,7 +30,7 @@ export default function PackingSlip({ order, shop }) {
                 </div>
 
                 <div className="sm mut">{t('Courier')}</div>
-                <div className="b" style={{ fontSize: 18 }}>{order.courier || '—'}</div>
+                <div className="b" style={{ fontSize: 18 }}>{order.courier || '-'}</div>
                 <div className="slip-bars" aria-hidden="true">
                     {bars.map((h, i) => <i key={i} style={{ height: h + 14 }} />)}
                 </div>

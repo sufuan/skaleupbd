@@ -3,7 +3,7 @@ import { Link, router, useForm } from '@inertiajs/react';
 import AppLayout from '@/Layouts/AppLayout';
 import { t } from '@/lib/i18n';
 
-// Inbox — copied from the prototype messages.html msg-inbox panel:
+// Inbox - copied from the prototype messages.html msg-inbox panel:
 // Inbox/Report toggle, 3-pane inbox (list · chat · customer panel).
 const CH = {
     facebook: { label: 'Messenger', bg: '#dbeafe', tx: '#1d4ed8', avatar: '#411550' },
@@ -26,15 +26,15 @@ function DraftCard({ draft }) {
         <div style={{ background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 12, padding: 13, marginTop: 10 }}>
             <b style={{ fontSize: 13.5 }}>{isOrder ? t('AI Order Summary') : t('AI Suggested Reply')}</b>{' '}
             {draft.status === 'flagged'
-                ? <span style={PILL('#fee2e2', '#dc2626')}>{t('Money figures did not match — check before sending')}</span>
+                ? <span style={PILL('#fee2e2', '#dc2626')}>{t('Money figures did not match - check before sending')}</span>
                 : <span style={PILL('#fef3c7', '#92400e')}>{t('Needs your approval')}</span>}
             {editing
                 ? <textarea value={body} onChange={(e) => setBody(e.target.value)} rows={4} style={{ width: '100%', padding: '9px 11px', border: '1px solid #d1d5db', borderRadius: 9, fontSize: 13.5, margin: '8px 0' }} />
                 : <p style={{ fontSize: 13.5, margin: '8px 0', whiteSpace: 'pre-wrap' }}>{draft.body}</p>}
             <div style={{ fontSize: 12, color: '#92400e', marginBottom: 9 }}>
                 {draft.no_rule
-                    ? <>{t('No rule matched — the AI drafted this from the product description. Check it before sending.')}</>
-                    : <>{t('Rule')}: {draft.rule}{draft.ladder_step ? ` — ${t('ladder step')} ${draft.ladder_step}` : ''} · <Link href="/settings?group=ai" style={{ color: '#92400e', fontWeight: 700 }}>{t('Change the rule in Settings')}</Link></>}
+                    ? <>{t('No rule matched - the AI drafted this from the product description. Check it before sending.')}</>
+                    : <>{t('Rule')}: {draft.rule}{draft.ladder_step ? ` - ${t('ladder step')} ${draft.ladder_step}` : ''} · <Link href="/settings?group=ai" style={{ color: '#92400e', fontWeight: 700 }}>{t('Change the rule in Settings')}</Link></>}
             </div>
             <button type="button" style={BTN} onClick={approve}>{isOrder ? t('Approve & Create Order') : t('Approve & Send')}</button>{' '}
             {!isOrder && <><button type="button" style={BTN2} onClick={() => setEditing(!editing)}>{t('Edit')}</button>{' '}</>}
@@ -57,8 +57,8 @@ export default function Inbox({ conversations, selected, report, aiMode, aiPanic
     };
 
     // Live thread: pull the fresh conversation list + open chat every few
-    // seconds so a new customer message appears on its own — the same way
-    // the sidebar badges update — with no page refresh. It must NOT skip
+    // seconds so a new customer message appears on its own - the same way
+    // the sidebar badges update - with no page refresh. It must NOT skip
     // while the tab reports hidden: the badge poll never checks that, and
     // a seller who leaves the inbox open in a background tab (or a browser
     // that reports the page occluded) would otherwise never see a new
@@ -98,7 +98,7 @@ export default function Inbox({ conversations, selected, report, aiMode, aiPanic
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: 14, marginBottom: 16 }}>
                         <div className="card kpi"><div className="lbl">{t('CONVERSATIONS')}</div><div className="val">{report.conversations}</div><div className="sub">{t('All channels')}</div></div>
                         <div className="card kpi"><div className="lbl">{t('AI REPLIES')}</div><div className="val">{report.ai_replies}</div><div className="sub">{report.ai_approved} {t('approved by staff')}</div></div>
-                        <div className="card kpi"><div className="lbl">{t('DRAFTS WAITING')}</div><div className="val">{report.drafts_waiting}</div><div className="sub">{t('AI made them — you send')}</div></div>
+                        <div className="card kpi"><div className="lbl">{t('DRAFTS WAITING')}</div><div className="val">{report.drafts_waiting}</div><div className="sub">{t('AI made them - you send')}</div></div>
                         <div className="card kpi"><div className="lbl">{t('ORDERS FROM CHAT')}</div><div className="val">{report.orders_from_chat}</div><div className="sub">৳{Number(report.orders_revenue).toLocaleString()} {t('revenue')}</div></div>
                     </div>
                     <div className="card">
@@ -119,9 +119,9 @@ export default function Inbox({ conversations, selected, report, aiMode, aiPanic
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14, flexWrap: 'wrap' }}>
                         <h3 style={{ fontSize: 19 }}>{t('Inbox')}</h3>
                         {aiPanic
-                            ? <span style={PILL('#fee2e2', '#dc2626')}>{t('AI is paused — Pause all AI is on')}</span>
-                            : <span style={PILL('#dcfce7', '#15803d')}>{aiMode === 'auto' || aiMode === 'full_auto' ? t('AI is on · Auto — safe replies go by themselves') : t('AI is on · Draft only — AI writes, you send')}</span>}
-                        <span style={{ fontSize: 12.5, color: '#64748B' }}>{t('First-week rule — a wrong answer must not reach the customer')}</span>
+                            ? <span style={PILL('#fee2e2', '#dc2626')}>{t('AI is paused - Pause all AI is on')}</span>
+                            : <span style={PILL('#dcfce7', '#15803d')}>{aiMode === 'auto' || aiMode === 'full_auto' ? t('AI is on · Auto - safe replies go by themselves') : t('AI is on · Draft only - AI writes, you send')}</span>}
+                        <span style={{ fontSize: 12.5, color: '#64748B' }}>{t('First-week rule - a wrong answer must not reach the customer')}</span>
                         <button type="button" onClick={() => router.post('/messages/panic', {}, { preserveScroll: true })} style={{ ...BTN2, marginLeft: 'auto' }}>{aiPanic ? t('Resume AI') : t('Pause all AI')}</button>
                     </div>
 
@@ -169,7 +169,7 @@ export default function Inbox({ conversations, selected, report, aiMode, aiPanic
                                                     <img src={'/storage/' + m.attachment_path} alt="" style={{ maxWidth: 220, borderRadius: 8, display: 'block', marginBottom: m.body ? 6 : 0 }} />
                                                 )}
                                                 {(m.attachment_type === 'audio' || m.attachment_type === 'voice') && (
-                                                    <div style={{ fontSize: 12.5, opacity: 0.85, marginBottom: m.body ? 4 : 0 }}>{t('Voice message')}{m.transcript ? ' — ' + m.transcript : ''}</div>
+                                                    <div style={{ fontSize: 12.5, opacity: 0.85, marginBottom: m.body ? 4 : 0 }}>{t('Voice message')}{m.transcript ? ' - ' + m.transcript : ''}</div>
                                                 )}
                                                 {m.body ? <div>{m.body}</div> : null}
                                             </div>
@@ -204,7 +204,7 @@ export default function Inbox({ conversations, selected, report, aiMode, aiPanic
                                 </div>
                                 {selected.product && selected.ladder.length > 1 && (
                                     <div style={{ marginTop: 12 }}>
-                                        <b style={{ fontSize: 13 }}>{t('Negotiation — where the bargaining stands')}</b>
+                                        <b style={{ fontSize: 13 }}>{t('Negotiation - where the bargaining stands')}</b>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 9, flexWrap: 'wrap' }}>
                                             {selected.ladder.map((rung, i) => {
                                                 const isFloor = i === selected.ladder.length - 1;
@@ -217,7 +217,7 @@ export default function Inbox({ conversations, selected, report, aiMode, aiPanic
                                                 );
                                             })}
                                         </div>
-                                        <div style={{ fontSize: 12, color: '#64748B', marginTop: 7 }}>{t('The AI never goes below the floor — held back by code.')}</div>
+                                        <div style={{ fontSize: 12, color: '#64748B', marginTop: 7 }}>{t('The AI never goes below the floor - held back by code.')}</div>
                                     </div>
                                 )}
                                 {selected.orders.length > 0 && (

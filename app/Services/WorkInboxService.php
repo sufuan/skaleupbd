@@ -295,9 +295,9 @@ class WorkInboxService
         return ['mode' => 'pool', 'role' => null, 'user' => null, 'label' => 'কেউ না (পুল)'];
     }
 
-    private function notify(string $title, ?string $body, ?string $link): void
+    private function notify(string $title, ?string $body, ?string $link, int $biz): void
     {
-        AppNotification::create(['kind' => 'task', 'title' => $title, 'body' => $body, 'link' => $link]);
+        AppNotification::create(['business_id' => $biz, 'kind' => 'task', 'title' => $title, 'body' => $body, 'link' => $link]);
     }
 
     // ---------- the runner ----------
@@ -353,7 +353,7 @@ class WorkInboxService
                 ]);
                 $stats['created']++;
                 if ($notifyNew) {
-                    $this->notify('নতুন কাজ — ' . $task->title, 'নিয়ম ' . $def['num'] . ': ' . $def['name'] . ' · দায়িত্বে: ' . $who['label'], '/work-inbox/control');
+                    $this->notify('নতুন কাজ — ' . $task->title, 'নিয়ম ' . $def['num'] . ': ' . $def['name'] . ' · দায়িত্বে: ' . $who['label'], '/work-inbox/control', $biz);
                 }
             }
 
@@ -380,7 +380,7 @@ class WorkInboxService
             ->whereNotNull('due_at')->where('due_at', '<', now())->get();
         foreach ($open as $task) {
             if ($notifyOverdue && ! $task->overdue_notified_at) {
-                $this->notify('Overdue কাজ — ' . $task->title, 'নির্ধারিত সময় পার হয়ে গেছে। Work Control-এ দেখো।', '/work-inbox/control');
+                $this->notify('Overdue কাজ — ' . $task->title, 'নির্ধারিত সময় পার হয়ে গেছে। Work Control-এ দেখো।', '/work-inbox/control', $biz);
                 $task->overdue_notified_at = now();
                 $task->save();
                 $stats['overdue_notified']++;
@@ -394,7 +394,7 @@ class WorkInboxService
                     $task->update(['escalated' => true, 'escalated_at' => now(), 'priority' => $bump]);
                     $stats['escalated']++;
                     if ($notifyOverdue) {
-                        $this->notify('আটকে থাকা কাজ — ' . $task->title, 'Overdue হয়ে গুরুত্ব বেড়ে গেছে (' . self::PRIORITIES[$bump] . ')।', '/work-inbox/control');
+                        $this->notify('আটকে থাকা কাজ — ' . $task->title, 'Overdue হয়ে গুরুত্ব বেড়ে গেছে (' . self::PRIORITIES[$bump] . ')।', '/work-inbox/control', $biz);
                     }
                 }
             }

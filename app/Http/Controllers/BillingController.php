@@ -128,7 +128,7 @@ class BillingController extends Controller
             return back()->with('error', $e->getMessage());
         }
 
-        return back()->with('success', 'Payment request created — pay the total below and submit your payment details.');
+        return back()->with('success', 'Payment request created - pay the total below and submit your payment details.');
     }
 
     /** Submit the offline payment details for the open claim. */
@@ -148,6 +148,6 @@ class BillingController extends Controller
             return back()->with('error', $e->getMessage());
         }
 
-        return back()->with('success', 'Payment submitted — we will confirm it shortly.');
+        return back()->with('success', 'Payment submitted - we will confirm it shortly.');
     }
 }

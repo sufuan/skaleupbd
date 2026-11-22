@@ -29,7 +29,7 @@ function ItemRow({ item, runStatus, canManage }) {
                 <tr>
                     <td colSpan={8} style={{ background: '#FAF8FC' }}>
                         <form className="form-grid" onSubmit={(e) => { e.preventDefault(); form.patch(`/hrm/payroll/items/${item.id}`, { preserveScroll: true }); }}>
-                            <div className="fld"><label className="lbl">{t(':name — Advance cut (৳)', { name: item.name })}</label>
+                            <div className="fld"><label className="lbl">{t(':name - Advance cut (৳)', { name: item.name })}</label>
                                 <input className="inp" type="number" min="0" step="any" value={form.data.advance_cut} onChange={(e) => form.setData('advance_cut', e.target.value)} /></div>
                             <div className="fld"><label className="lbl">{t('Other additions/cuts (৳)')}</label>
                                 <input className="inp" type="number" step="any" value={form.data.other_adjust} onChange={(e) => form.setData('other_adjust', e.target.value)} /></div>
@@ -42,7 +42,7 @@ function ItemRow({ item, runStatus, canManage }) {
                 <tr>
                     <td colSpan={8} style={{ background: '#fff' }}>
                         <div style={{ border: '1px dashed #CBD5E1', borderRadius: 10, padding: '12px 16px', maxWidth: 420 }}>
-                            <b style={{ fontSize: 15 }}>{t('Payslip — :name', { name: item.name })}</b>
+                            <b style={{ fontSize: 15 }}>{t('Payslip - :name', { name: item.name })}</b>
                             <div style={{ fontSize: 13.5, lineHeight: 2, marginTop: 6 }}>
                                 {t('Basic salary:')} {fmt(item.basic)}<br />
                                 {t('Working days: :wd days · Absent: :ad days', { wd: item.working_days, ad: item.absent_days })}<br />
@@ -74,7 +74,7 @@ export default function Payroll({ month, run, runs, accounts, can_manage }) {
             <Head title={t('Payroll')} />
             <div className="hrm">
                 <div className="x-head">
-                    <h3>{t('Payroll — salary accounts')}</h3>
+                    <h3>{t('Payroll - salary accounts')}</h3>
                     <p>{t('Pick a month and the account is made on its own by looking at absences in Attendance. When the salary is paid, the total amount becomes one entry in Finance.')}</p>
                 </div>
 
@@ -85,7 +85,7 @@ export default function Payroll({ month, run, runs, accounts, can_manage }) {
                         <button type="button" className="btn-g" onClick={() => router.get('/hrm/payroll', { month: m })}>{t('View')}</button>
                         {can_manage && <button className="btn-p" type="submit">{run && run.status === 'draft' ? t('Calculate again') : t('Make the account')}</button>}
                     </form>
-                    <p className="x-note">{t("The absence account is made over the whole month's working days — so the account comes out right when it is made at the end of the month.")}</p>
+                    <p className="x-note">{t("The absence account is made over the whole month's working days - so the account comes out right when it is made at the end of the month.")}</p>
                     {runs.length > 0 && (
                         <div style={{ marginTop: 12, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                             {runs.map((r) => (
@@ -106,10 +106,10 @@ export default function Payroll({ month, run, runs, accounts, can_manage }) {
                 {run && (
                     <div className="x-card" style={{ padding: 0, overflow: 'hidden' }}>
                         <div style={{ padding: '14px 18px 4px', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
-                            <h4 style={{ margin: 0 }}>{t(':month — Total :total', { month, total: fmt(run.total) })}</h4>
+                            <h4 style={{ margin: 0 }}>{t(':month - Total :total', { month, total: fmt(run.total) })}</h4>
                             {run.status === 'paid'
                                 ? <span className="chip chip-green">{t('Salary paid')}</span>
-                                : <span className="chip chip-amber">{t('Draft — not paid yet')}</span>}
+                                : <span className="chip chip-amber">{t('Draft - not paid yet')}</span>}
                         </div>
                         <table className="x-table" style={{ border: 'none' }}>
                             <thead>
@@ -118,7 +118,7 @@ export default function Payroll({ month, run, runs, accounts, can_manage }) {
                             <tbody>
                                 {run.items.map((i) => <ItemRow key={i.id} item={i} runStatus={run.status} canManage={can_manage} />)}
                                 {run.items.length === 0 && (
-                                    <tr><td colSpan={8} style={{ color: '#94A3B8' }}>{t('No one has a monthly salary set — go to User & Role and set the salaries.')}</td></tr>
+                                    <tr><td colSpan={8} style={{ color: '#94A3B8' }}>{t('No one has a monthly salary set - go to User & Role and set the salaries.')}</td></tr>
                                 )}
                             </tbody>
                         </table>

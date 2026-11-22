@@ -1,6 +1,6 @@
 import { router, usePage } from '@inertiajs/react';
 
-/** EN | বাংলা segmented switch — posts to the locale route (TPDA pattern). */
+/** EN | বাংলা segmented switch - posts to the locale route (TPDA pattern). */
 export default function LanguageSwitcher({ className = '' }) {
     const { locale } = usePage().props;
     const current = locale || 'en';

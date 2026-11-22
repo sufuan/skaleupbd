@@ -47,7 +47,7 @@ class RedXDriver implements CourierDriver
         try {
             $area = $this->resolveArea($order, $method);
             if ($area === null) {
-                return ['ok' => false, 'error' => 'RedX needs a delivery area ID for ' . ($order->district ?: 'this order') . ' — set the Default Area ID in Settings → Courier → RedX'];
+                return ['ok' => false, 'error' => 'RedX needs a delivery area ID for ' . ($order->district ?: 'this order') . ' - set the Default Area ID in Settings → Courier → RedX'];
             }
             $weightGrams = max(1, (int) round(((float) ($c['default_weight'] ?? 0.5)) * 1000));
             $payload = [
@@ -189,7 +189,7 @@ class RedXDriver implements CourierDriver
         try {
             $res = $this->http($method)->get($this->base($method) . '/areas');
             return $res->successful()
-                ? ['ok' => true, 'message' => 'Connected — RedX accepted the access token']
+                ? ['ok' => true, 'message' => 'Connected - RedX accepted the access token']
                 : ['ok' => false, 'message' => 'RedX did not accept the access token (HTTP ' . $res->status() . ')'];
         } catch (\Throwable $e) {
             return ['ok' => false, 'message' => 'Could not reach RedX: ' . $e->getMessage()];
@@ -204,7 +204,7 @@ class RedXDriver implements CourierDriver
 
             return collect($stores)->map(fn ($s) => [
                 'store_id' => (string) ($s['id'] ?? ''),
-                'name' => ($s['name'] ?? 'RedX Store') . (isset($s['area_name']) ? ' — ' . $s['area_name'] : ''),
+                'name' => ($s['name'] ?? 'RedX Store') . (isset($s['area_name']) ? ' - ' . $s['area_name'] : ''),
                 'address' => $s['address'] ?? null,
                 'is_default' => false,
             ])->filter(fn ($s) => $s['store_id'] !== '')->values()->all();

@@ -2,7 +2,7 @@ import { Link, router } from '@inertiajs/react';
 import { useState } from 'react';
 import { t } from '@/lib/i18n';
 
-// Shared pieces of the Work Inbox pages — markup copied from the
+// Shared pieces of the Work Inbox pages - markup copied from the
 // prototype (workinbox.html): .tk task cards + the two .wi-modal boxes.
 
 export const PRIORITY_CHIP = { critical: 'chip-red', urgent: 'chip-amber', normal: 'chip-grey' };
@@ -57,27 +57,27 @@ export function DoneModal({ task, onClose }) {
     if (!task) return null;
     const save = () => {
         if (task.note_required && note.trim() === '') {
-            setErr(t('A note is required for this task — write one line.'));
+            setErr(t('A note is required for this task - write one line.'));
             return;
         }
         router.post(`/work-inbox/tasks/${task.id}/done`, { note }, {
             preserveScroll: true,
             onSuccess: () => onClose(),
-            onError: (e) => setErr(e.note || t('It did not work — try again')),
+            onError: (e) => setErr(e.note || t('It did not work - try again')),
         });
     };
     return (
         <div className="wi-modal open">
             <div className="wi-modal-box">
-                <h4 style={{ fontSize: 17, marginBottom: 4 }}>{t('Task done — how was it resolved?')}</h4>
+                <h4 style={{ fontSize: 17, marginBottom: 4 }}>{t('Task done - how was it resolved?')}</h4>
                 <p style={{ fontSize: 13, color: '#64748B' }}>
-                    {task.note_required ? t('A note is required for this task — write one line.') : t('Write one line so anyone can understand it later.')}
+                    {task.note_required ? t('A note is required for this task - write one line.') : t('Write one line so anyone can understand it later.')}
                 </p>
                 <textarea rows="3" value={note} onChange={(e) => setNote(e.target.value)} placeholder={t('e.g. sent it to the courier, CN number ...')}></textarea>
                 {err && <div style={{ color: '#DC2626', fontSize: 13, marginBottom: 8 }}>{err}</div>}
                 <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
                     <button className="btn-s" onClick={onClose}>{t('Discard')}</button>
-                    <button className="btn-p" onClick={save}>{t('Done — finish it')}</button>
+                    <button className="btn-p" onClick={save}>{t('Done - finish it')}</button>
                 </div>
             </div>
         </div>

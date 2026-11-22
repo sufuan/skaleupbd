@@ -41,7 +41,7 @@ export default function Parcels({ parcels, counts, status, analysis, entries, fi
         }
         const am = p.call_slot === '10AM' ? p.call_status : null;
         const pm = p.call_slot && p.call_slot !== '10AM' ? p.call_status : null;
-        return <span className="muted-sm">AM {am || '—'}<br />PM {pm || '—'}</span>;
+        return <span className="muted-sm">AM {am || '-'}<br />PM {pm || '-'}</span>;
     };
 
     return (
@@ -142,22 +142,22 @@ export default function Parcels({ parcels, counts, status, analysis, entries, fi
                                                 <td><Link href={`/orders/${p.id}`} style={{ color: '#2563EB', textDecoration: 'underline' }}>{p.invoice}</Link></td>
                                                 <td><span style={{ display: 'inline-flex', alignItems: 'center' }}>
                                                     <span style={{ display: 'inline-block', width: 32, height: 32, borderRadius: 6, background: '#F4EDF7', verticalAlign: 'middle', marginRight: 8, flexShrink: 0 }} />
-                                                    <span>{p.product_name || '—'}<br /><span className="muted-sm">{p.product_sku || ''}</span></span>
+                                                    <span>{p.product_name || '-'}<br /><span className="muted-sm">{p.product_sku || ''}</span></span>
                                                 </span></td>
                                                 <td>{p.customer_name} · {p.customer_phone}<br />
                                                     <span className="muted-sm">{p.address || p.district || ''}</span>{' '}
                                                     <span style={{ whiteSpace: 'nowrap' }}>{I.phone}</span></td>
                                                 <td>{callCell(p)}</td>
                                                 <td><b>{Number(p.cod).toLocaleString('en-IN')}</b></td>
-                                                <td>{p.courier || '—'}<br /><span className="muted-sm">{p.tracking_id || p.consignment_id || ''}</span></td>
+                                                <td>{p.courier || '-'}<br /><span className="muted-sm">{p.tracking_id || p.consignment_id || ''}</span></td>
                                                 <td><span className="pill green">{t('Courier age')} {p.age_days}d</span>
-                                                    {p.courier_status && <div className="muted-sm" style={{ marginTop: 4 }}>{t('Courier status')}: {p.courier_status}</div>}</td>
-                                                <td>—</td>
-                                                <td><span className="muted-sm">—</span></td>
+                                                    {p.courier_status && <div className="muted-sm" style={{ marginTop: 4 }}>{t('Courier status')}: {t(p.courier_status)}</div>}</td>
+                                                <td>-</td>
+                                                <td><span className="muted-sm">-</span></td>
                                                 <td>{(p.tags || []).length > 0
                                                     ? <span style={{ display: 'inline-flex', gap: 4, flexWrap: 'wrap' }}>{p.tags.map((tg) => <span key={tg} style={{ background: '#FCE7F3', color: '#BE185D', borderRadius: 999, padding: '3px 9px', fontSize: 12, fontWeight: 600 }}>{tg}</span>)}</span>
-                                                    : '—'}</td>
-                                                <td>{p.in_charge || '—'}</td>
+                                                    : '-'}</td>
+                                                <td>{p.in_charge || '-'}</td>
                                                 <td><span style={{ display: 'flex', gap: 4 }}>
                                                     <button className="mini-btn" title={t('Record call')} onClick={() => setEditor({ parcel: p, mode: 'call' })}>{I.phone}</button>
                                                     <Link className="mini-btn" title={t('Manage tags')} href={`/orders/${p.id}`}>{I.tag}</Link>
@@ -181,13 +181,13 @@ export default function Parcels({ parcels, counts, status, analysis, entries, fi
                                 {parcels.filter((p) => p.status === 'Returned' || p.return_tag || p.claim_status).map((p) => (
                                     <tr key={p.id}>
                                         <td><Link href={`/orders/${p.id}`} className="b" style={{ color: 'var(--acc)' }}>{p.invoice}</Link></td>
-                                        <td>{p.courier_label || p.courier || '—'}</td>
+                                        <td>{p.courier_label || p.courier || '-'}</td>
                                         <td><StatusPill status={p.status} /></td>
                                         <td><select className="inp" style={{ width: 250 }} value={p.return_tag || ''} onChange={(e) => patch(p.id, 'return_tag', e.target.value)}>
-                                            <option value="">—</option>{RETURN_TAGS.map((x) => <option key={x} value={x}>{t(x)}</option>)}
+                                            <option value="">-</option>{RETURN_TAGS.map((x) => <option key={x} value={x}>{t(x)}</option>)}
                                         </select></td>
                                         <td><select className="inp" style={{ width: 120 }} value={p.claim_status || ''} onChange={(e) => patch(p.id, 'claim_status', e.target.value)}>
-                                            <option value="">—</option>{CLAIM_STATUSES.map((x) => <option key={x} value={x}>{t(x)}</option>)}
+                                            <option value="">-</option>{CLAIM_STATUSES.map((x) => <option key={x} value={x}>{t(x)}</option>)}
                                         </select></td>
                                         <td><input className="inp" style={{ width: 110 }} type="number" defaultValue={p.claim_amount ?? ''} placeholder="৳"
                                             onBlur={(e) => patch(p.id, 'claim_amount', e.target.value === '' ? null : Number(e.target.value))} /></td>
@@ -203,7 +203,7 @@ export default function Parcels({ parcels, counts, status, analysis, entries, fi
 
                 {tab === 'analysis' && (
                     <div className="card">
-                        <h3>{t('Return Analysis')} — {t('last 30 days')}</h3>
+                        <h3>{t('Return Analysis')} - {t('last 30 days')}</h3>
                         <div className="tbl-wrap"><table className="tbl">
                             <thead><tr><th>{t('Courier')}</th><th>{t('Delivered')}</th><th>{t('Returned')}</th><th>{t('Return Rate')}</th></tr></thead>
                             <tbody>
@@ -219,16 +219,16 @@ export default function Parcels({ parcels, counts, status, analysis, entries, fi
                 {tab === 'entry' && (
                     <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
                         <div style={{ padding: '14px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <div className="b">{t('Courier Entry')} — {t('every booking attempt, kept as the audit record')}</div>
+                            <div className="b">{t('Courier Entry')} - {t('every booking attempt, kept as the audit record')}</div>
                             <a className="btn" href="/delivery/entries/export">{t('Export CSV')}</a>
                         </div>
                         <div className="tbl-wrap"><table className="tbl">
                             <thead><tr><th>{t('Invoice')}</th><th>{t('Courier')}</th><th>{t('Mode')}</th><th>{t('Booking Status')}</th><th>{t('Tracking')}</th><th>{t('When')}</th></tr></thead>
                             <tbody>
                                 {entries.map((e) => (
-                                    <tr key={e.id}><td className="b">{e.invoice || '—'}</td><td>{e.courier || '—'}</td><td>{t(e.mode)}</td>
+                                    <tr key={e.id}><td className="b">{e.invoice || '-'}</td><td>{e.courier || '-'}</td><td>{t(e.mode)}</td>
                                         <td>{t(e.booking_status)}{e.error && <div className="sm" style={{ color: 'var(--bad)' }}>{e.error}</div>}</td>
-                                        <td className="sm">{e.tracking_id || '—'}</td><td className="sm">{e.at}</td></tr>
+                                        <td className="sm">{e.tracking_id || '-'}</td><td className="sm">{e.at}</td></tr>
                                 ))}
                                 {entries.length === 0 && <tr><td colSpan={6} style={{ textAlign: 'center', padding: 26 }} className="mut">{t('No bookings yet')}</td></tr>}
                             </tbody>
@@ -239,20 +239,20 @@ export default function Parcels({ parcels, counts, status, analysis, entries, fi
                 {tab === 'settings' && (
                     <div className="card">
                         <h3>{t('Courier Settings')}</h3>
-                        <p className="mut" style={{ marginTop: 8 }}>{t('Courier permissions are managed in Settings → Security & Records and HRM → User & Role — they live in one place only.')}</p>
+                        <p className="mut" style={{ marginTop: 8 }}>{t('Courier permissions are managed in Settings → Security & Records and HRM → User & Role - they live in one place only.')}</p>
                     </div>
                 )}
 
                 {editor && (
                     <div className="overlay" onClick={() => setEditor(null)}>
                         <div className="modal" onClick={(e) => e.stopPropagation()}>
-                            <h3 style={{ marginTop: 0 }}>{editor.mode === 'call' ? t('Record call') : t('Set who is in charge')} — {editor.parcel.invoice}</h3>
+                            <h3 style={{ marginTop: 0 }}>{editor.mode === 'call' ? t('Record call') : t('Set who is in charge')} - {editor.parcel.invoice}</h3>
                             {editor.mode === 'call' ? (
                                 <>
                                     <div className="frow mt16"><label className="fl">{t('Call')}</label>
                                         <div className="flex" style={{ gap: 6 }}>
                                             <select id="cmCallSlot" className="inp" style={{ width: 100 }} defaultValue={editor.parcel.call_slot || ''}>
-                                                <option value="">—</option>{CALL_SLOTS.map((s) => <option key={s} value={s}>{s}</option>)}
+                                                <option value="">-</option>{CALL_SLOTS.map((s) => <option key={s} value={s}>{s}</option>)}
                                             </select>
                                             <select id="cmCallStatus" className="inp" style={{ width: 150 }} defaultValue={editor.parcel.call_status || 'Not called'}>
                                                 {CALL_STATUSES.map((s) => <option key={s} value={s}>{t(s)}</option>)}

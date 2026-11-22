@@ -30,9 +30,9 @@ function UserRow({ user, modules, roles, canManage }) {
                 </td>
                 <td>{user.role_label}</td>
                 <td style={{ maxWidth: 320, fontSize: 12.5, color: '#64748B' }}>
-                    {user.uses_default ? t(":role's default — ", { role: user.role_label }) : ''}{labels.join(', ') || '—'}
+                    {user.uses_default ? t(":role's default - ", { role: user.role_label }) : ''}{labels.join(', ') || '-'}
                 </td>
-                <td>{user.monthly_salary ? fmt(user.monthly_salary) : '—'}</td>
+                <td>{user.monthly_salary ? fmt(user.monthly_salary) : '-'}</td>
                 <td>{user.staff_active ? <span className="chip chip-green">{t('On')}</span> : <span className="chip chip-grey">{t('Off')}</span>}</td>
                 <td>
                     {canManage && (
@@ -92,7 +92,7 @@ export default function Users({ users, modules, roles, can_manage }) {
             <div className="hrm">
                 <div className="x-head">
                     <h3>{t('User & Role')}</h3>
-                    <p>{t('Who will have a login and which pages they can see — everything is set from here. Without permission, that page does not appear in the menu, and opening the direct link does not let them in either.')}</p>
+                    <p>{t('Who will have a login and which pages they can see - everything is set from here. Without permission, that page does not appear in the menu, and opening the direct link does not let them in either.')}</p>
                 </div>
 
                 <div className="x-card" style={{ padding: 0, overflow: 'hidden' }}>
@@ -105,7 +105,7 @@ export default function Users({ users, modules, roles, can_manage }) {
                         </tbody>
                     </table>
                 </div>
-                <p className="x-note">{t('Finance rule: Admin and Accountant can see all the accounts; the rest can only add entries. Changing the Role changes this rule on its own. A User cannot be deleted — just set the status to "Off" and they stay out of the working list.')}</p>
+                <p className="x-note">{t('Finance rule: Admin and Accountant can see all the accounts; the rest can only add entries. Changing the Role changes this rule on its own. A User cannot be deleted - just set the status to "Off" and they stay out of the working list.')}</p>
 
                 {can_manage && (
                     <div className="x-card">
@@ -126,7 +126,7 @@ export default function Users({ users, modules, roles, can_manage }) {
                                     <input className="inp" type="number" min="0" step="any" value={form.data.monthly_salary} onChange={(e) => form.setData('monthly_salary', e.target.value)} placeholder="0" /></div>
                                 <button className="btn-p" type="submit" disabled={form.processing || !form.data.name.trim() || !form.data.email.trim() || !form.data.password}>{t('Add User')}</button>
                             </div>
-                            <p className="x-note">{t('A new User gets the default permissions of their Role — later they can be raised or lowered with Edit.')}</p>
+                            <p className="x-note">{t('A new User gets the default permissions of their Role - later they can be raised or lowered with Edit.')}</p>
                             {form.errors.email && <p style={{ color: '#DC2626', fontSize: 13 }}>{form.errors.email}</p>}
                         </form>
                     </div>

@@ -5,7 +5,7 @@ import { StatusPill, fmt } from './ui';
 export default function Invoice({ order, business, template }) {
     return (
         <div className="invoice-page">
-            <Head title={`${t('Invoice')} — ${order.invoice}`} />
+            <Head title={`${t('Invoice')} - ${order.invoice}`} />
             <div className="no-print flex" style={{ marginBottom: 16 }}>
                 <Link href={`/orders/${order.id}`} className="btn">← {t('Back to Order')}</Link>
                 <span className="spacer" />

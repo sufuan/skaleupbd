@@ -72,7 +72,7 @@ class FinanceService
     {
         $date = $data['txn_date'] ?? now('Asia/Dhaka')->toDateString();
         if ($this->monthLocked($businessId, $date)) {
-            throw new \RuntimeException('এই মাস বন্ধ হয়ে গেছে — এই তারিখে entry দেওয়া যাবে না।');
+            throw new \RuntimeException('এই মাস বন্ধ হয়ে গেছে - এই তারিখে entry দেওয়া যাবে না।');
         }
         return FinanceTransaction::create([
             'business_id' => $businessId,
@@ -246,7 +246,7 @@ class FinanceService
             $this->post($businessId, [
                 'account_id' => $account->id, 'direction' => 'in', 'type' => 'advance',
                 'amount' => $amount, 'source' => 'order', 'ref_type' => 'order', 'ref_id' => $order->id,
-                'note' => 'Order ' . $order->invoice_no . ' — advance',
+                'note' => 'Order ' . $order->invoice_no . ' - advance',
                 'idempotency_key' => $postKey, 'txn_date' => now('Asia/Dhaka')->toDateString(),
             ], $actor);
         } catch (\Throwable $e) {
@@ -275,7 +275,7 @@ class FinanceService
                 'account_id' => $account->id, 'direction' => 'in', 'type' => 'courier_payout',
                 'amount' => (float) $payment->amount, 'source' => 'courier',
                 'ref_type' => 'courier_payment', 'ref_id' => $payment->id,
-                'note' => 'Courier payout — ' . ($payment->method?->name ?? ''),
+                'note' => 'Courier payout - ' . ($payment->method?->name ?? ''),
                 'idempotency_key' => $key,
                 'txn_date' => $payment->date?->toDateString() ?? now('Asia/Dhaka')->toDateString(),
             ]);

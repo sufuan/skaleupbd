@@ -39,12 +39,12 @@ export default function CustomersIndex({ customers, stats, q }) {
                         <tbody>
                             {customers.map((c) => (
                                 <tr key={c.id} onClick={() => router.get(`/customers/${c.id}`)} style={{ cursor: 'pointer' }}>
-                                    <td><div style={{ fontWeight: 600 }}>{c.name || '—'}{c.blacklisted ? <span className="pill red" style={{ marginLeft: 6 }}>{t('Blocked')}</span> : null}</div><div style={{ fontSize: 12, color: 'var(--muted)' }}>{c.address || c.district || ''}</div></td>
+                                    <td><div style={{ fontWeight: 600 }}>{c.name || '-'}{c.blacklisted ? <span className="pill red" style={{ marginLeft: 6 }}>{t('Blocked')}</span> : null}</div><div style={{ fontSize: 12, color: 'var(--muted)' }}>{c.address || c.district || ''}</div></td>
                                     <td>{c.phone}</td>
                                     <td>{c.delivered} / {c.orders}</td>
-                                    <td>{c.success_rate === null ? '—' : `${c.success_rate}%`}</td>
+                                    <td>{c.success_rate === null ? '-' : `${c.success_rate}%`}</td>
                                     <td style={{ fontWeight: 600 }}>{tk(c.spent)}</td>
-                                    <td>{c.last_order || '—'}</td>
+                                    <td>{c.last_order || '-'}</td>
                                 </tr>
                             ))}
                             {customers.length === 0 && <tr><td colSpan={6} style={{ textAlign: 'center', padding: 24, color: 'var(--muted)' }}>{t('No customers found')}</td></tr>}

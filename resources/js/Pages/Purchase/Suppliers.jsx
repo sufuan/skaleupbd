@@ -5,7 +5,7 @@ import { confirmDialog } from '@/lib/confirm';
 import { t } from '@/lib/i18n';
 import { GuideBtn, PageHead, PayModal, fmt, fmtDate } from './shared';
 
-// Suppliers — EcomDrive's Suppliers page with Supplier Ledger merged
+// Suppliers - EcomDrive's Suppliers page with Supplier Ledger merged
 // in: the same table also carries Oldest due date and the Pay button,
 // and the stat cards are the Ledger's summary figures.
 function SupplierFormModal({ supplier, onClose }) {
@@ -112,14 +112,14 @@ export default function Suppliers({ tab, q, stats, rows, reorderRows, reportRows
                                         {rows.map((r) => (
                                             <tr key={r.id}>
                                                 <td><span className="flex" style={{ gap: 8 }}><span className="ava">{r.initials}</span><span className="b">{r.name}</span></span></td>
-                                                <td>{r.phone || '—'}</td>
+                                                <td>{r.phone || '-'}</td>
                                                 <td>{r.terms_days}d</td>
                                                 <td>{r.purchases}</td>
                                                 <td>{fmt(r.total_purchased)}</td>
-                                                <td className="b">{r.due > 0 ? fmt(r.due) : '—'}</td>
-                                                <td>{r.due > 0 ? fmtDate(r.oldest_due_date) : '—'}</td>
+                                                <td className="b">{r.due > 0 ? fmt(r.due) : '-'}</td>
+                                                <td>{r.due > 0 ? fmtDate(r.oldest_due_date) : '-'}</td>
                                                 <td>{fmtDate(r.last_purchase)}</td>
-                                                <td>{r.overdue > 0 ? <span className="pill red">{t('Overdue')} {fmt(r.overdue)}</span> : '—'}</td>
+                                                <td>{r.overdue > 0 ? <span className="pill red">{t('Overdue')} {fmt(r.overdue)}</span> : '-'}</td>
                                                 <td>
                                                     <div className="flex" style={{ gap: 6, flexWrap: 'wrap' }}>
                                                         {r.due > 0 && <button type="button" className="btn" style={{ padding: '6px 12px' }} onClick={() => setPayFor(r)}>{t('Pay')}</button>}
@@ -149,7 +149,7 @@ export default function Suppliers({ tab, q, stats, rows, reorderRows, reportRows
                                             <td><span className="b">{r.name}</span><span className="sm mut" style={{ display: 'block' }}>{t('SKU:')} {r.sku}</span></td>
                                             <td className="b" style={{ color: 'var(--bad)' }}>{r.stock}</td>
                                             <td>{r.alert_qty}</td>
-                                            <td>{r.supplier || '—'}</td>
+                                            <td>{r.supplier || '-'}</td>
                                             <td>{fmt(r.last_cost)}</td>
                                             <td className="b">{r.suggested}</td>
                                         </tr>
@@ -178,7 +178,7 @@ export default function Suppliers({ tab, q, stats, rows, reorderRows, reportRows
                                                 <td className="b">{r.name}</td>
                                                 <td>{fmt(r.purchased)}</td>
                                                 <td>{fmt(r.paid)}</td>
-                                                <td className="b">{r.due > 0 ? fmt(r.due) : '—'}</td>
+                                                <td className="b">{r.due > 0 ? fmt(r.due) : '-'}</td>
                                             </tr>
                                         ))}
                                         {reportRows.length === 0 && <tr><td colSpan={4} className="mut">{t('No purchases in this period.')}</td></tr>}
@@ -191,7 +191,7 @@ export default function Suppliers({ tab, q, stats, rows, reorderRows, reportRows
 
                 {formFor !== undefined && <SupplierFormModal supplier={formFor} onClose={() => setFormFor(undefined)} />}
                 {payFor && (
-                    <PayModal title={`${t('Pay')} — ${payFor.name}`} due={payFor.due} accounts={accounts} today={today}
+                    <PayModal title={`${t('Pay')} - ${payFor.name}`} due={payFor.due} accounts={accounts} today={today}
                         action={`/suppliers/${payFor.id}/pay`} onClose={() => setPayFor(null)} />
                 )}
             </div>

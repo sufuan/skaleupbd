@@ -40,8 +40,10 @@ class HandleInertiaRequests extends Middleware
             : [];
 
         $notifications = ['items' => [], 'unread' => 0];
-        if ($request->user() && Schema::hasTable('app_notifications')) {
-            $items = AppNotification::latest()->limit(8)->get();
+        if ($request->user() && Schema::hasTable('app_notifications') && Schema::hasColumn('app_notifications', 'business_id')) {
+            // Tenant-scoped (G3): a user only ever receives their own
+            // shop's notifications (platform rows for platform admins).
+            $items = AppNotification::visibleTo($request->user())->latest()->limit(8)->get();
             $notifications = [
                 'items' => $items->map(fn ($n) => [
                     'id' => $n->id,
@@ -52,7 +54,7 @@ class HandleInertiaRequests extends Middleware
                     'read' => $n->read_at !== null,
                     'time' => $n->created_at?->diffForHumans(),
                 ])->all(),
-                'unread' => AppNotification::whereNull('read_at')->count(),
+                'unread' => AppNotification::visibleTo($request->user())->whereNull('read_at')->count(),
             ];
         }
 

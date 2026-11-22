@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import { router } from '@inertiajs/react';
 import { t } from '@/lib/i18n';
 
-// Shared Add / Edit product form sections — markup copied from the
+// Shared Add / Edit product form sections - markup copied from the
 // prototype's Add Product view (inventory.html, inv-add-product panel).
 export const CARD = 'border border-border/60 bg-card text-card-foreground shadow-xs rounded-xl';
 export const CARD_HEAD = 'mb-2 flex flex-col space-y-1.5 border-b py-4 px-4 pb-4 sm:px-6';

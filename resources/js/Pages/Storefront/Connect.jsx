@@ -22,14 +22,14 @@ export default function Connect({ endpoint, businessPublicId, apiKey, freshKey, 
             <Head title={t('Connect Website')} />
             <h3 style={{ fontSize: 19, margin: '0 0 6px' }}>{t('Connect Website')}</h3>
             <p style={{ color: 'var(--muted)', fontSize: 14, margin: '0 0 14px', maxWidth: 640 }}>
-                {t('Your own website sends its orders here with a secret key, and they land in the same Orders list as every other order. Give the key and the address below to your website maker — that is all they need.')}
+                {t('Your own website sends its orders here with a secret key, and they land in the same Orders list as every other order. Give the key and the address below to your website maker - that is all they need.')}
             </p>
 
             <div className="card sf-form" style={{ marginBottom: 12 }}>
                 <div style={{ fontWeight: 700, fontSize: 15.5, marginBottom: 8 }}>1. {t('Connection key')}</div>
                 {freshKey ? (
                     <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 10, padding: '12px 14px' }}>
-                        <div style={{ fontSize: 14, marginBottom: 6 }}>{t('Your new key — copy it now. For safety it is shown only this once.')}</div>
+                        <div style={{ fontSize: 14, marginBottom: 6 }}>{t('Your new key - copy it now. For safety it is shown only this once.')}</div>
                         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
                             <code style={{ fontWeight: 700, fontSize: 14.5, wordBreak: 'break-all', flex: '1 1 260px' }}>{freshKey}</code>
                             <button className="btn" onClick={() => copy('key', freshKey)}>{copied === 'key' ? t('Copied!') : t('Copy')}</button>
@@ -78,7 +78,7 @@ businessId: ${businessPublicId}
 
             <div className="card" style={{ marginBottom: 12 }}>
                 <div style={{ fontWeight: 700, fontSize: 15.5, marginBottom: 8 }}>3. {t('Try a test order')}</div>
-                <p style={{ fontSize: 14, color: 'var(--muted)', margin: '0 0 10px' }}>{t('Sends one real test order through the connection, so you can see it arrive in your Orders list. It uses one point like any order — delete it afterwards if you like.')}</p>
+                <p style={{ fontSize: 14, color: 'var(--muted)', margin: '0 0 10px' }}>{t('Sends one real test order through the connection, so you can see it arrive in your Orders list. It uses one point like any order - delete it afterwards if you like.')}</p>
                 <button className="btn pri" onClick={() => router.post('/storefront/connect/test-order', {}, { preserveScroll: true })}>{t('Send a test order')}</button>
             </div>
 

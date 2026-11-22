@@ -5,7 +5,7 @@ const cache = new WeakMap();
 
 /**
  * Wrap a page component so the i18n store syncs from the CURRENT page
- * props during the wrapper's render — BEFORE the wrapped page's own
+ * props during the wrapper's render - BEFORE the wrapped page's own
  * function body runs. Without this, after a language switch the layout
  * would render in the new language while the page content still showed
  * the previous one until an unrelated re-render (TPDA pattern).

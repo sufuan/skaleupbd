@@ -21,7 +21,7 @@ const TASK_TEXT = {
 const REASON_LABELS = {
     intent_price: 'Asked about the price', intent_stock: 'Asked about stock', intent_delivery: 'Asked about delivery',
     intent_bargain: 'Tried to bargain', order_intent: 'Said they will take it', contact_shared: 'Shared phone or address',
-    order_created: 'An order was created', closed_ordered: 'Closed — ordered', closed_spam: 'Closed — spam',
+    order_created: 'An order was created', closed_ordered: 'Closed - ordered', closed_spam: 'Closed - spam',
     angry: 'Sounded angry', intent_disagreement: 'Rule and AI read this differently', backfill: 'Worked out from old messages',
 };
 
@@ -60,7 +60,7 @@ export default function Growth({ summary, tasks, can_revenue }) {
         setBusy(true);
         const data = await api(`/marketing/growth/tasks/${task.id}/drafts`, { method: 'POST', body: JSON.stringify({ conversation_id: c.conversation_id }) });
         setBusy(false);
-        if (data && data.created) { markDrafted(c.conversation_id); showToast(t('Draft made — review and send it from the Inbox')); }
+        if (data && data.created) { markDrafted(c.conversation_id); showToast(t('Draft made - review and send it from the Inbox')); }
     };
     const draftAll = async (task) => {
         setBusy(true);
@@ -72,7 +72,7 @@ export default function Growth({ summary, tasks, can_revenue }) {
         }
     };
     const logCall = async (task, c) => {
-        // Logging a call never touches the draft state — and the Call
+        // Logging a call never touches the draft state - and the Call
         // button itself is never disabled: a call is always possible,
         // inside or outside the 24h messaging window.
         const data = await api(`/marketing/growth/tasks/${task.id}/calls`, { method: 'POST', body: JSON.stringify({ conversation_id: c.conversation_id }) });
@@ -91,7 +91,7 @@ export default function Growth({ summary, tasks, can_revenue }) {
 
     return (
         <AppLayout>
-            <Head title={t('Marketing — Sales Growth')} />
+            <Head title={t('Marketing - Sales Growth')} />
             <div className="mkt">
                 <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 14 }}>
                     <div>
@@ -119,7 +119,7 @@ export default function Growth({ summary, tasks, can_revenue }) {
                         </div>
 
                         {s.low_data && (
-                            <div className="gw-note">{period === '30d' ? t('Not much data in this period (:count people). Percentages would not be trustworthy yet.', { count: fmtNum(s.wrote) }) : t('Not much data in this period (:count people). Percentages would not be trustworthy — try 30 days.', { count: fmtNum(s.wrote) })}</div>
+                            <div className="gw-note">{period === '30d' ? t('Not much data in this period (:count people). Percentages would not be trustworthy yet.', { count: fmtNum(s.wrote) }) : t('Not much data in this period (:count people). Percentages would not be trustworthy - try 30 days.', { count: fmtNum(s.wrote) })}</div>
                         )}
 
                         <div className="gw-cols">
@@ -136,7 +136,7 @@ export default function Growth({ summary, tasks, can_revenue }) {
                                                     <span className="gw-stage-name"><b>{t(st.name)}</b>
                                                         <small>{i === 0 ? t('Start') : (s.step_pct && s.step_pct[i] !== null && s.step_pct[i] !== undefined ? t(':pct% of the stage before', { pct: s.step_pct[i] }) : '')}</small>
                                                     </span>
-                                                    <span className="gw-bar" style={{ width: w + '%' }}>{v ? fmtNum(v) : '—'}</span>
+                                                    <span className="gw-bar" style={{ width: w + '%' }}>{v ? fmtNum(v) : '-'}</span>
                                                 </button>
                                                 {i < 3 && reached[i] - (reached[i + 1] || 0) > 0 && (
                                                     <div className="gw-drop">{t(':count people did not move to the next stage', { count: fmtNum(reached[i] - (reached[i + 1] || 0)) })}</div>
@@ -218,9 +218,9 @@ export default function Growth({ summary, tasks, can_revenue }) {
                             <h4 style={{ margin: 0, fontSize: 16 }}>{t(TASK_TEXT[drawer.task.kind]?.title || '', { count: fmtNum(drawer.task.count) })}</h4>
                             <button type="button" className="btn-s" onClick={() => setDrawer(null)}>{t('Close')}</button>
                         </div>
-                        <p style={{ color: '#64748B', fontSize: 13, marginTop: 8 }}>{t('The AI makes a draft for each person. You review and send it from the Inbox — nothing is sent on its own.')}</p>
+                        <p style={{ color: '#64748B', fontSize: 13, marginTop: 8 }}>{t('The AI makes a draft for each person. You review and send it from the Inbox - nothing is sent on its own.')}</p>
                         <button type="button" className="btn-p" style={{ width: '100%', marginTop: 8 }} disabled={busy} onClick={() => draftAll(drawer.task)}>{t('Make drafts for everyone who can be messaged')}</button>
-                        <p style={{ color: '#64748B', fontSize: 13, marginTop: 8 }}>{t('People whose 24 hours have passed cannot be messaged — call them instead.')}</p>
+                        <p style={{ color: '#64748B', fontSize: 13, marginTop: 8 }}>{t('People whose 24 hours have passed cannot be messaged - call them instead.')}</p>
                         {drawer.customers.map((c) => (
                             <div key={c.conversation_id} className="gw-cu">
                                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'center' }}>

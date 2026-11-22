@@ -19,7 +19,7 @@ function ClaimRow({ c }) {
     const [showReject, setShowReject] = useState(false);
     const approve = async () => {
         const msg = c.seller_pending
-            ? `${t('Approve this payment, credit')} ${num(c.pack_credits)} ${t('points and activate')} ${c.shop}? ${t('Their account is still pending — this one approval opens it.')}`
+            ? `${t('Approve this payment, credit')} ${num(c.pack_credits)} ${t('points and activate')} ${c.shop}? ${t('Their account is still pending - this one approval opens it.')}`
             : `${t('Approve this payment and credit')} ${num(c.pack_credits)} ${t('points to')} ${c.shop}?`;
         if (await confirmDialog(msg)) {
             router.post(`/admin/claims/${c.id}/approve`, {}, { preserveScroll: true });
@@ -30,7 +30,7 @@ function ClaimRow({ c }) {
     return (
         <tr style={c.status === 'pending_review' ? { background: '#FFF8E6' } : undefined}>
             <td>
-                <div style={{ fontWeight: 600 }}>{c.shop || '—'}</div>
+                <div style={{ fontWeight: 600 }}>{c.shop || '-'}</div>
                 <div style={{ fontSize: 12, color: 'var(--muted)' }}>{c.when}</div>
             </td>
             <td>
@@ -43,7 +43,7 @@ function ClaimRow({ c }) {
                 {Number(c.onboarding_fee_bdt) > 0 && <div style={{ fontSize: 12, color: 'var(--muted)' }}>{tk(c.amount_bdt)} + {tk(c.onboarding_fee_bdt)} {t('onboarding')}</div>}
             </td>
             <td>
-                {c.method ? <><div>{c.method}</div><div style={{ fontSize: 12, color: 'var(--muted)' }}>{c.sender_number}</div><div style={{ fontSize: 12, color: 'var(--muted)' }}>TrxID {c.trx_id}</div></> : '—'}
+                {c.method ? <><div>{c.method}</div><div style={{ fontSize: 12, color: 'var(--muted)' }}>{c.sender_number}</div><div style={{ fontSize: 12, color: 'var(--muted)' }}>TrxID {c.trx_id}</div></> : '-'}
             </td>
             <td><span className={`pill ${(STATUS[c.status] || ['', ''])[1]}`}>{t((STATUS[c.status] || [c.status])[0])}</span>
                 {c.seller_pending && <div style={{ marginTop: 4 }}><span className="pill amber">{t('Account pending')}</span></div>}
@@ -81,7 +81,7 @@ export default function Claims({ claims, counts }) {
                 <span className="pill green">{counts.approved} {t('approved')}</span>
                 <span className="pill red">{counts.rejected} {t('rejected')}</span>
             </div>
-            <div style={{ fontSize: 13, color: 'var(--muted)', margin: '6px 0 12px' }}>{t('Sellers pay by bKash / Nagad and submit the payment here. Approving credits the pack points to their shop — and when the account is still pending, the same approval activates the seller.')}</div>
+            <div style={{ fontSize: 13, color: 'var(--muted)', margin: '6px 0 12px' }}>{t('Sellers pay by bKash / Nagad and submit the payment here. Approving credits the pack points to their shop - and when the account is still pending, the same approval activates the seller.')}</div>
 
             <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
                 <div className="tbl-wrap">

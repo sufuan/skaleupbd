@@ -30,7 +30,7 @@ export default function Register({ pack, onboardingFee, verifyEnabled = false, v
             {pack && (
                 <div style={{ border: '1px solid #E7DEF0', background: '#F6F1FA', borderRadius: 10, padding: '12px 14px', marginBottom: 16 }}>
                     <div style={{ fontSize: 12, letterSpacing: '.05em', color: '#7A6A8A', fontWeight: 700 }}>{t('YOUR CHOSEN PACK')}</div>
-                    <div style={{ fontSize: 16, fontWeight: 700, marginTop: 3 }}>{pack.name} — {tk(pack.price_bdt)}</div>
+                    <div style={{ fontSize: 16, fontWeight: 700, marginTop: 3 }}>{pack.name} - {tk(pack.price_bdt)}</div>
                     <div style={{ fontSize: 13, color: '#5D5266', marginTop: 2 }}>
                         {num(pack.credits)} {t('points')} · {pack.validity_type === 'monthly' ? t('Monthly') : t('Yearly wallet')}
                     </div>

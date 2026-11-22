@@ -4,7 +4,7 @@ import AppLayout from '@/Layouts/AppLayout';
 import { t } from '@/lib/i18n';
 import { GuideBtn, ItemsTable, PageHead, ProductPicker } from './shared';
 
-// Quick Stock — no source HTML in the EcomDrive saves; built in the
+// Quick Stock - no source HTML in the EcomDrive saves; built in the
 // same visual language: the same product picker, qty + unit cost per
 // line, a date. Saving stocks the goods in at once, with no due.
 export default function QuickStock({ products, today }) {
@@ -38,7 +38,7 @@ export default function QuickStock({ products, today }) {
                                 <label>{t('Note')}</label>
                                 <textarea className="inp" rows={3} value={form.data.note} onChange={(e) => form.setData('note', e.target.value)} />
                             </div>
-                            <div className="note-box sm" style={{ marginBottom: 14 }}>{t('Quick Stock has no supplier bill — the goods go into stock at once and nothing is owed.')}</div>
+                            <div className="note-box sm" style={{ marginBottom: 14 }}>{t('Quick Stock has no supplier bill - the goods go into stock at once and nothing is owed.')}</div>
                             <button type="submit" className="btn pri" disabled={form.processing || lines.length === 0} style={{ width: '100%', justifyContent: 'center' }}>
                                 {t('Add Stock')}
                             </button>

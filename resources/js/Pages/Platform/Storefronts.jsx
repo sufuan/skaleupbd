@@ -14,7 +14,7 @@ export default function Storefronts({ storefronts, reports, activeDomains, domai
                 <h3 style={{ fontSize: 19, margin: 0, flex: 1 }}>{t('Storefronts')}</h3>
                 <span style={{ fontSize: 14.5, color: capTone, fontWeight: activeDomains >= domainWarnAt ? 700 : 400 }}>
                     {t('Custom domains active:')} {activeDomains} / {domainCap}
-                    {activeDomains >= domainCap ? ` — ${t('cap reached, new sellers join the waitlist')}` : activeDomains >= domainWarnAt ? ` — ${t('warning level')}` : ''}
+                    {activeDomains >= domainCap ? ` - ${t('cap reached, new sellers join the waitlist')}` : activeDomains >= domainWarnAt ? ` - ${t('warning level')}` : ''}
                 </span>
             </div>
 
@@ -25,8 +25,8 @@ export default function Storefronts({ storefronts, reports, activeDomains, domai
                         {storefronts.map((s) => (
                             <tr key={s.id}>
                                 <td style={{ fontWeight: 600 }}>{s.shop}</td>
-                                <td>{s.subdomainUrl ? <a href={s.subdomainUrl} target="_blank" rel="noreferrer">{s.subdomainUrl.replace(/^https?:\/\//, '')}</a> : '—'}</td>
-                                <td>{s.customDomain ? <>{s.customDomain} <span className={`pill ${s.domainStatus === 'active' ? 'green' : 'amber'}`}>{s.domainStatus}</span></> : '—'}</td>
+                                <td>{s.subdomainUrl ? <a href={s.subdomainUrl} target="_blank" rel="noreferrer">{s.subdomainUrl.replace(/^https?:\/\//, '')}</a> : '-'}</td>
+                                <td>{s.customDomain ? <>{s.customDomain} <span className={`pill ${s.domainStatus === 'active' ? 'green' : 'amber'}`}>{s.domainStatus}</span></> : '-'}</td>
                                 <td><span className={`pill ${s.status === 'published' ? 'green' : s.status === 'taken_down' ? 'red' : 'amber'}`}>{s.status}</span></td>
                                 <td>{s.orders}</td>
                                 <td>{s.openReports > 0 ? <span className="pill red">{s.openReports}</span> : 0}</td>
@@ -53,7 +53,7 @@ export default function Storefronts({ storefronts, reports, activeDomains, domai
                                 <td style={{ whiteSpace: 'nowrap' }}>{r.when}</td>
                                 <td>{r.shop}</td>
                                 <td style={{ maxWidth: 380 }}>{r.reason}</td>
-                                <td>{r.contact || '—'}</td>
+                                <td>{r.contact || '-'}</td>
                                 <td><span className={`pill ${r.status === 'open' ? 'red' : ''}`}>{r.status}</span></td>
                                 <td style={{ whiteSpace: 'nowrap' }}>
                                     {r.status === 'open' && <>

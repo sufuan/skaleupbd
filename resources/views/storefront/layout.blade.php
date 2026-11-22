@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{{ $brand['name'] }}@isset($pageTitle) — {{ $pageTitle }}@endisset</title>
-<meta name="description" content="{{ $brand['name'] }} — order online, cash on delivery.">
-<meta property="og:title" content="{{ $brand['name'] }}@isset($pageTitle) — {{ $pageTitle }}@endisset">
-<meta property="og:description" content="{{ $brand['name'] }} — order online, cash on delivery.">
+<title>{{ $brand['name'] }}@isset($pageTitle) - {{ $pageTitle }}@endisset</title>
+<meta name="description" content="{{ $brand['name'] }} - order online, cash on delivery.">
+<meta property="og:title" content="{{ $brand['name'] }}@isset($pageTitle) - {{ $pageTitle }}@endisset">
+<meta property="og:description" content="{{ $brand['name'] }} - order online, cash on delivery.">
 <meta property="og:type" content="website">
 @if($brand['logo'])<meta property="og:image" content="{{ $brand['logo'] }}">@endif
 <link rel="preconnect" href="https://fonts.googleapis.com">

@@ -9,9 +9,9 @@ function SetupWizard() {
     const add = (name, type) => form.setData({ name, type, opening_balance: '' });
     return (
         <div className="x-card">
-            <h4>{t('First setup — 3 steps')}</h4>
+            <h4>{t('First setup - 3 steps')}</h4>
             <p style={{ fontSize: 13.5, color: '#64748B', marginBottom: 12 }}>
-                {t('1. Add the accounts where the money is kept (Cash, bKash, Bank — whatever you have) · 2. Write the opening balance of each one · 3. Categories are already arranged on their own (Ad, Packaging, Rent, Salary…).')}
+                {t('1. Add the accounts where the money is kept (Cash, bKash, Bank - whatever you have) · 2. Write the opening balance of each one · 3. Categories are already arranged on their own (Ad, Packaging, Rent, Salary…).')}
             </p>
             <div className="cat-chips" style={{ marginBottom: 12 }}>
                 <button type="button" onClick={() => add('Cash', 'cash')}>{t('Cash')}</button>
@@ -44,7 +44,7 @@ export default function Dashboard(props) {
             <div className="fin">
                 <div className="x-head">
                     <h3>{t('Finance Dashboard')}</h3>
-                    <p>{t("The full picture of the shop's money on one screen. The detailed account of courier money is in Delivery → Courier Ledger — it lives in one place only.")}</p>
+                    <p>{t("The full picture of the shop's money on one screen. The detailed account of courier money is in Delivery → Courier Ledger - it lives in one place only.")}</p>
                 </div>
 
                 {!setupDone && <SetupWizard />}
@@ -52,7 +52,7 @@ export default function Dashboard(props) {
                 {setupDone && !canSee && (
                     <>
                         <div className="x-card"><h4>{t('Add a new entry')}</h4>
-                            <p style={{ fontSize: 13.5, color: '#64748B' }}>{t('Your only job is to write down expenses and income — the owner will see the balance and profit accounts.')}</p></div>
+                            <p style={{ fontSize: 13.5, color: '#64748B' }}>{t('Your only job is to write down expenses and income - the owner will see the balance and profit accounts.')}</p></div>
                         <h4 style={{ fontSize: 16, margin: '16px 0 10px' }}>{t('Recent transactions')}</h4>
                         <RecentTable recent={recent} />
                         <FinActions accounts={accounts} categories={categories} />
@@ -74,7 +74,7 @@ export default function Dashboard(props) {
                         </div>
 
                         <div className="x-card">
-                            <h4>{t('COD money bridge — which step the money is at now')}</h4>
+                            <h4>{t('COD money bridge - which step the money is at now')}</h4>
                             <div className="bridge">
                                 <div className="bstep"><b>{fmt(bridge.sales)}</b><span>{t('Delivered sales')}</span></div>
                                 <div className="barrow">→</div>
@@ -84,7 +84,7 @@ export default function Dashboard(props) {
                                 <div className="barrow">→</div>
                                 <div className="bstep"><b>{fmt(bridge.still)}</b><span>{t('Still with the courier')}{bridge.estimate ? t(' (estimate)') : ''}</span></div>
                             </div>
-                            <div className="x-note">{t('If sales are high but cash in hand looks low, that is not a mistake — the rest is with the courier. Details:')} <Link href="/delivery/ledger" style={{ color: '#411550', fontWeight: 600 }}>{t('Courier Ledger')}</Link>
+                            <div className="x-note">{t('If sales are high but cash in hand looks low, that is not a mistake - the rest is with the courier. Details:')} <Link href="/delivery/ledger" style={{ color: '#411550', fontWeight: 600 }}>{t('Courier Ledger')}</Link>
                                 {bridge.estimate && <>{t(" · Pathao's API has no payment account, so its part is estimated by subtracting hand-written payouts from Delivered.")}</>}</div>
                         </div>
 
@@ -101,7 +101,7 @@ export default function Dashboard(props) {
 
                         {dailyClosingOn && cashAccount && (
                             <div className="x-card">
-                                <h4>{t("Today's account matching — :name", { name: cashAccount.name })}</h4>
+                                <h4>{t("Today's account matching - :name", { name: cashAccount.name })}</h4>
                                 <div style={{ display: 'flex', gap: 26, flexWrap: 'wrap', alignItems: 'center' }}>
                                     <div><div style={{ fontSize: 13, color: '#64748B' }}>{t('Should be in Cash')}</div><b style={{ fontSize: 20 }}>{fmt(cashAccount.balance)}</b></div>
                                     <div><div style={{ fontSize: 13, color: '#64748B' }}>{t('Counted in hand')}</div>
@@ -112,7 +112,7 @@ export default function Dashboard(props) {
                                         : <button className="btn-s" style={{ marginLeft: 'auto' }} disabled={!counted}
                                             onClick={() => router.post('/finance/daily-close', { account_id: cashAccount.id, counted })}>{t('Match the accounts')}</button>}
                                 </div>
-                                <div className="x-note">{t('If it does not match, a task is raised in Work Inbox on its own (rule 32) — so it catches the eye the next morning.')}</div>
+                                <div className="x-note">{t('If it does not match, a task is raised in Work Inbox on its own (rule 32) - so it catches the eye the next morning.')}</div>
                             </div>
                         )}
 
@@ -122,8 +122,8 @@ export default function Dashboard(props) {
                                 <div className="x-kpi"><b>{fmt(figures.revenue)}</b><span>{t('Delivered sales')}</span></div>
                                 <div className="x-kpi"><b>{fmt(figures.otherIncome)}</b><span>{t('Other income')}</span></div>
                                 <div className="x-kpi red"><b>{fmt(figures.rtoLoss)}</b><span>{t('Return/RTO loss')}</span></div>
-                                <div className="x-kpi red"><b>{fmt(dues.total)}</b><span>{t('Customer dues (:count orders) —', { count: dues.count })} <Link href="/orders" style={{ color: '#411550' }}>{t('List')}</Link></span></div>
-                                <div className="x-kpi red"><b>{fmt(supplierDue || 0)}</b><span>{t('Supplier due —')} <Link href="/suppliers" style={{ color: '#411550' }}>{t('Suppliers')}</Link></span></div>
+                                <div className="x-kpi red"><b>{fmt(dues.total)}</b><span>{t('Customer dues (:count orders) -', { count: dues.count })} <Link href="/orders" style={{ color: '#411550' }}>{t('List')}</Link></span></div>
+                                <div className="x-kpi red"><b>{fmt(supplierDue || 0)}</b><span>{t('Supplier due -')} <Link href="/suppliers" style={{ color: '#411550' }}>{t('Suppliers')}</Link></span></div>
                                 <div className="x-kpi"><b>{fmt(figures.productCost)}</b><span>{t('Product cost')}</span></div>
                                 <div className="x-kpi"><b>{fmt(figures.courierCharges)}</b><span>{t('Courier charge (Delivered)')}</span></div>
                                 <div className="x-kpi"><b>{fmt(inventoryValue)}</b><span>{t('Inventory value (cost)')}</span></div>

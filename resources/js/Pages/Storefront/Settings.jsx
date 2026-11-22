@@ -75,10 +75,10 @@ export default function Settings({ sf, identity: identityIn, contact: contactIn,
 
             <Section title={t('Your link')} open={open === 'link'} onToggle={() => toggle('link')}>
                 <div style={{ fontSize: 14.5, display: 'grid', gap: 8 }}>
-                    <div>{t('Your store address — share it everywhere:')}</div>
+                    <div>{t('Your store address - share it everywhere:')}</div>
                     <div style={{ fontWeight: 700, fontSize: 16, wordBreak: 'break-all', background: '#F7F2FA', border: '1px solid #E7DEF0', borderRadius: 8, padding: '9px 14px' }}>{sf.subdomainUrl || t('Not set yet')}</div>
                     <div style={{ fontWeight: 700 }}>Only one subdomain will be applied</div>
-                    <div style={{ color: 'var(--muted)' }}>{t('One store gets one address, chosen when the store is made. It never changes — so customers always find you at the same place. Pages inside the store are unlimited, and every page link is made automatically.')}</div>
+                    <div style={{ color: 'var(--muted)' }}>{t('One store gets one address, chosen when the store is made. It never changes - so customers always find you at the same place. Pages inside the store are unlimited, and every page link is made automatically.')}</div>
                     {sf.customDomainUrl && <div>{t('Your own domain:')} <b>{sf.customDomainUrl}</b></div>}
                 </div>
             </Section>
@@ -103,22 +103,22 @@ export default function Settings({ sf, identity: identityIn, contact: contactIn,
 
             <Section title={t('Orders & delivery')} open={open === 'ordering'} onToggle={() => toggle('ordering')}>
                 <div className="sf-form">
-                    <label className="lbl">{t('Delivery charge — inside Dhaka (৳)')}</label>
+                    <label className="lbl">{t('Delivery charge - inside Dhaka (৳)')}</label>
                     <input className="fld" type="number" min="0" value={ordering.data.delivery_inside} onChange={(e) => ordering.setData('delivery_inside', e.target.value)} />
-                    <label className="lbl" style={{ marginTop: 12 }}>{t('Delivery charge — outside Dhaka (৳)')}</label>
+                    <label className="lbl" style={{ marginTop: 12 }}>{t('Delivery charge - outside Dhaka (৳)')}</label>
                     <input className="fld" type="number" min="0" value={ordering.data.delivery_outside} onChange={(e) => ordering.setData('delivery_outside', e.target.value)} />
                     <button className="btn pri" style={{ marginTop: 14 }} disabled={ordering.processing} onClick={() => save(ordering)}>{t('Save')}</button>
                     <p style={{ fontSize: 13.5, color: 'var(--muted)', margin: '14px 0 0' }}>
                         {pageConnected
-                            ? t('Your Facebook Page is connected — an Order on Messenger button shows on your store by itself.')
+                            ? t('Your Facebook Page is connected - an Order on Messenger button shows on your store by itself.')
                             : t('Connect your Facebook Page (Settings → API Connection) and an Order on Messenger button will show on your store by itself.')}
                     </p>
                 </div>
             </Section>
 
-            <Section title={t('Advanced — domain & tracking')} open={open === 'advanced'} onToggle={() => toggle('advanced')}>
+            <Section title={t('Advanced - domain & tracking')} open={open === 'advanced'} onToggle={() => toggle('advanced')}>
                 <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 6 }}>{t('Your own domain')}</div>
-                <p style={{ fontSize: 14, color: 'var(--muted)', margin: '0 0 10px' }}>{t('Have your own domain (like yourshop.com)? Point it here in two steps: add it below, then add the TXT record we show at your domain provider. We check it for you — no waiting for anyone.')}</p>
+                <p style={{ fontSize: 14, color: 'var(--muted)', margin: '0 0 10px' }}>{t('Have your own domain (like yourshop.com)? Point it here in two steps: add it below, then add the TXT record we show at your domain provider. We check it for you - no waiting for anyone.')}</p>
                 <div className="sf-form" style={{ display: 'flex', gap: 8, alignItems: 'flex-end', flexWrap: 'wrap' }}>
                     <div style={{ flex: '1 1 220px' }}>
                         <label className="lbl">{t('Domain')}</label>

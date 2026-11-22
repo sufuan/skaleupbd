@@ -11,7 +11,7 @@ export default function Ledger({ rows, total, ratecard, receivables, buckets, di
 
     const recon = {};
     receivables.forEach((r) => {
-        const k = r.courier || '—';
+        const k = r.courier || '-';
         recon[k] = recon[k] || { expected: 0, settled: 0 };
         recon[k].expected += r.expected; recon[k].settled += r.settled;
     });
@@ -24,7 +24,7 @@ export default function Ledger({ rows, total, ratecard, receivables, buckets, di
                 <div className="page-head">
                     <div>
                         <h1>{t('Courier Ledger')}</h1>
-                        <p>{t('COD collected, settled to you and still with the courier — per courier')}</p>
+                        <p>{t('COD collected, settled to you and still with the courier - per courier')}</p>
                     </div>
                 </div>
 
@@ -51,7 +51,7 @@ export default function Ledger({ rows, total, ratecard, receivables, buckets, di
                                             ? <span className="pill amber">{t('Difference Found')}</span>
                                             : r.still <= 0.01
                                                 ? <span className="pill green">{t('Settled')}</span>
-                                                : <span className="muted-sm">—</span>}</td>
+                                                : <span className="muted-sm">-</span>}</td>
                                     </tr>
                                 ))}
                                 {rows.length === 0 && <tr><td colSpan={6} style={{ textAlign: 'center', padding: 26 }} className="mut">{t('No couriers configured yet')}</td></tr>}
@@ -85,7 +85,7 @@ export default function Ledger({ rows, total, ratecard, receivables, buckets, di
 
                 {tab === 'Differences' && (
                     <div className="card" style={{ padding: 24 }}>
-                        <div className="card-sub">{t('Parcels that were paid less than expected. Each one also raises a task in the Work Inbox — nothing passes silently.')}</div>
+                        <div className="card-sub">{t('Parcels that were paid less than expected. Each one also raises a task in the Work Inbox - nothing passes silently.')}</div>
                         <div className="tbl-wrap"><table className="tbl">
                             <thead><tr><th>{t('Invoice')}</th><th>{t('Courier')}</th><th>{t('Type')}</th><th>{t('Severity')}</th><th>{t('Expected')}</th><th>{t('Actual')}</th><th>{t('Difference')}</th></tr></thead>
                             <tbody>
@@ -94,7 +94,7 @@ export default function Ledger({ rows, total, ratecard, receivables, buckets, di
                                         <td><span className={`pill ${d.severity === 'High' ? 'red' : d.severity === 'Medium' ? 'amber' : ''}`}>{t(d.severity)}</span></td>
                                         <td>{fmt(d.expected)}</td><td>{fmt(d.actual)}</td><td style={{ color: 'var(--bad)' }}>{fmt(d.difference)}</td></tr>
                                 ))}
-                                {differences.length === 0 && <tr><td colSpan={7} style={{ textAlign: 'center', padding: 22 }} className="mut">{t('No differences — every parcel matches')}</td></tr>}
+                                {differences.length === 0 && <tr><td colSpan={7} style={{ textAlign: 'center', padding: 22 }} className="mut">{t('No differences - every parcel matches')}</td></tr>}
                             </tbody>
                         </table></div>
                     </div>

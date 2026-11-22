@@ -55,7 +55,7 @@ class CommentsController extends Controller
     {
         $this->guard($request, $comment);
         if ($comment->status === 'hidden') {
-            return back()->with('error', 'Hidden comment — unhide it first');
+            return back()->with('error', 'Hidden comment - unhide it first');
         }
         $data = $request->validate(['body' => ['required', 'string', 'max:2000']]);
         CommentReply::create(['business_id' => $comment->business_id, 'comment_id' => $comment->id, 'kind' => 'public', 'sender' => 'staff', 'body' => $data['body'], 'status' => 'sent']);
@@ -70,10 +70,10 @@ class CommentsController extends Controller
     {
         $this->guard($request, $comment);
         if ($comment->private_reply_at) {
-            return back()->with('error', 'Private reply already sent — one per comment within 7 days');
+            return back()->with('error', 'Private reply already sent - one per comment within 7 days');
         }
         if ($comment->status === 'hidden') {
-            return back()->with('error', 'Hidden comment — unhide it first');
+            return back()->with('error', 'Hidden comment - unhide it first');
         }
         if ($comment->created_at && $comment->created_at->lt(now()->subDays(7))) {
             return back()->with('error', 'Private reply window closed (7 days)');

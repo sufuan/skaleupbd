@@ -98,7 +98,7 @@ class PayrollService
                 'type' => 'expense',
                 'amount' => (float) $run->total,
                 'category_id' => $category?->id,
-                'note' => 'Payroll — '.$run->month,
+                'note' => 'Payroll - '.$run->month,
                 'source' => 'payroll',
                 'ref_type' => 'payroll_run',
                 'ref_id' => $run->id,

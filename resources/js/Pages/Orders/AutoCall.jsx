@@ -16,7 +16,7 @@ export default function AutoCall({ stats, waitingOrders, logs }) {
         <AppLayout>
             <Head title={t('Auto Call Center')} />
             <h1 className="page-h">{t('Auto Call Center')}</h1>
-            <div className="page-sub">{t('Call waiting customers yourself and log the outcome — calls are billed ৳1.00 per minute from the service balance.')}</div>
+            <div className="page-sub">{t('Call waiting customers yourself and log the outcome - calls are billed ৳1.00 per minute from the service balance.')}</div>
 
             <div className="kpis" style={{ gridTemplateColumns: 'repeat(auto-fill,minmax(180px,1fr))' }}>
                 {cards.map(([label, v]) => (
@@ -31,7 +31,7 @@ export default function AutoCall({ stats, waitingOrders, logs }) {
                     <div className="card-sub">{t('Pending orders waiting for a confirmation call.')}</div>
                     {waitingOrders.map((o) => (
                         <div className="conn-row" key={o.id}>
-                            <div style={{ flex: 1 }}><div className="b sm">{o.invoice} — {o.name}</div><div className="sm mut">{o.phone} · {fmt(o.total)}</div></div>
+                            <div style={{ flex: 1 }}><div className="b sm">{o.invoice} - {o.name}</div><div className="sm mut">{o.phone} · {fmt(o.total)}</div></div>
                             <a className="btn" href={`tel:${o.phone}`}>{t('Call')}</a>
                             <button className="btn" onClick={() => form.setData({ ...form.data, order_id: o.id, phone: o.phone })}>{t('Log')}</button>
                         </div>

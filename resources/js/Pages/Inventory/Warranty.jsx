@@ -4,7 +4,7 @@ import AppLayout from '@/Layouts/AppLayout';
 import { t } from '@/lib/i18n';
 import { BTN_OUTLINE, BTN_PRIMARY, INPUT, TEXTAREA } from './ProductFields';
 
-// Warranty — plan structure: tabs Claims / History & Reports / Settings.
+// Warranty - plan structure: tabs Claims / History & Reports / Settings.
 // The Settings tab form is copied from the prototype's inv-warranty panel
 // (Default Warranty Period / Warranty Type / Warranty Terms) plus the
 // configurable claim vocabularies.
@@ -36,17 +36,17 @@ export default function Warranty({ claims, counts, products, vocab, filters }) {
                         <tr key={c.id} className="border-b">
                             <td className="p-4 font-medium">{c.claim_no}</td>
                             <td className="p-4">{c.customer_name}<div className="text-xs text-muted-foreground">{c.customer_phone}</div></td>
-                            <td className="p-4">{c.product_name || '—'}</td>
-                            <td className="p-4">{c.serial_no || '—'}</td>
-                            <td className="p-4">{c.invoice_no || '—'}</td>
+                            <td className="p-4">{c.product_name || '-'}</td>
+                            <td className="p-4">{c.serial_no || '-'}</td>
+                            <td className="p-4">{c.invoice_no || '-'}</td>
                             <td className="p-4 max-w-[220px] truncate">{c.issue}</td>
                             <td className="p-4">{t(STATUS_LABEL[c.status] || c.status)}{c.overdue && <span className="ml-2 rounded-full bg-red-50 border border-red-200 text-red-700 px-2 py-0.5 text-[11px] font-semibold">{t('Overdue')}</span>}</td>
-                            <td className="p-4">{c.received_date || '—'}</td>
-                            <td className="p-4">{c.due_date || '—'}</td>
+                            <td className="p-4">{c.received_date || '-'}</td>
+                            <td className="p-4">{c.due_date || '-'}</td>
                             <td className="p-4">
                                 {showActions
                                     ? <button type="button" className={BTN_OUTLINE + ' h-8 px-2 text-xs'} onClick={() => setActFor(c)}>{t('Update')}</button>
-                                    : (c.resolution || c.reject_reason || c.cancel_reason || '—')}
+                                    : (c.resolution || c.reject_reason || c.cancel_reason || '-')}
                             </td>
                         </tr>
                     ))}
@@ -108,7 +108,7 @@ export default function Warranty({ claims, counts, products, vocab, filters }) {
 
                     {tab === 'History & Reports' && (
                         <div className="space-y-4">
-                            <div className="text-sm text-muted-foreground">{t('Closed, rejected and cancelled claims')} — {history.length}</div>
+                            <div className="text-sm text-muted-foreground">{t('Closed, rejected and cancelled claims')} - {history.length}</div>
                             <ClaimTable list={history} showActions={false} />
                         </div>
                     )}
@@ -170,7 +170,7 @@ function ClaimAction({ claim, vocab, close }) {
         <div className="overlay" onClick={close}>
             <div className="modal invx" style={{ maxWidth: 480, width: '92vw', padding: 0 }} onClick={(e) => e.stopPropagation()}>
                 <div className="flex items-center justify-between px-5 py-4 border-b">
-                    <div className="text-lg font-semibold">{claim.claim_no} — {claim.customer_name}</div>
+                    <div className="text-lg font-semibold">{claim.claim_no} - {claim.customer_name}</div>
                     <button type="button" className="text-xl leading-none" onClick={close}>×</button>
                 </div>
                 <div className="p-5 space-y-3">
@@ -184,7 +184,7 @@ function ClaimAction({ claim, vocab, close }) {
                         <div className="space-y-1">
                             <label className="text-sm font-medium">{t('Resolution')}</label>
                             <select className={INPUT} value={form.resolution} onChange={(e) => set('resolution', e.target.value)}>
-                                <option value="">—</option>
+                                <option value="">-</option>
                                 {(vocab.resolutions || []).map((x) => <option key={x} value={x}>{x}</option>)}
                             </select>
                         </div>
@@ -193,7 +193,7 @@ function ClaimAction({ claim, vocab, close }) {
                         <div className="space-y-1">
                             <label className="text-sm font-medium">{t('Reject Reason')}</label>
                             <select className={INPUT} value={form.reject_reason} onChange={(e) => set('reject_reason', e.target.value)}>
-                                <option value="">—</option>
+                                <option value="">-</option>
                                 {(vocab.reject_reasons || []).map((x) => <option key={x} value={x}>{x}</option>)}
                             </select>
                         </div>
@@ -202,7 +202,7 @@ function ClaimAction({ claim, vocab, close }) {
                         <div className="space-y-1">
                             <label className="text-sm font-medium">{t('Cancel Reason')}</label>
                             <select className={INPUT} value={form.cancel_reason} onChange={(e) => set('cancel_reason', e.target.value)}>
-                                <option value="">—</option>
+                                <option value="">-</option>
                                 {(vocab.cancel_reasons || []).map((x) => <option key={x} value={x}>{x}</option>)}
                             </select>
                         </div>

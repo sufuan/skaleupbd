@@ -17,7 +17,7 @@ export default function CustomerUpload({ history }) {
                 <div className="card" onClick={() => inputRef.current?.click()}
                     style={{ border: '2px dashed var(--border)', textAlign: 'center', padding: '38px 20px', cursor: 'pointer', marginBottom: 14 }}>
                     <div style={{ fontSize: 15, fontWeight: 600 }}>{form.data.file ? form.data.file.name : t('Drag and drop your CSV / Excel file here, or click to select')}</div>
-                    <div style={{ fontSize: 12.5, color: 'var(--muted)', marginTop: 6 }}>{t('Columns: Name, Phone, Address — duplicate phone numbers are skipped automatically')}</div>
+                    <div style={{ fontSize: 12.5, color: 'var(--muted)', marginTop: 6 }}>{t('Columns: Name, Phone, Address - duplicate phone numbers are skipped automatically')}</div>
                     <input ref={inputRef} type="file" accept=".csv,.txt" style={{ display: 'none' }} onChange={(e) => form.setData('file', e.target.files?.[0] || null)} />
                 </div>
                 <div style={{ display: 'flex', gap: 8, marginBottom: 18 }}>

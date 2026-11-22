@@ -4,7 +4,7 @@ import AppLayout from '@/Layouts/AppLayout';
 import { t } from '@/lib/i18n';
 import { GuideBtn, ItemsTable, PageHead, ProductPicker } from './shared';
 
-// New Purchase — exact copy of EcomDrive's New Purchase: the
+// New Purchase - exact copy of EcomDrive's New Purchase: the
 // "Click To Add Products" picker card beside the purchase form
 // (Supplier* · Purchase date · Note · Tags · Attachments). The
 // selected-items table + totals state has no source HTML (the save

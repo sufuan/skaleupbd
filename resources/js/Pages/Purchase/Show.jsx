@@ -4,7 +4,7 @@ import AppLayout from '@/Layouts/AppLayout';
 import { t } from '@/lib/i18n';
 import { PageHead, PayModal, dhakaToday, fmt, fmtDate } from './shared';
 
-// Purchase detail — minimal view in the same language: items with
+// Purchase detail - minimal view in the same language: items with
 // their received state, payments so far, and the bill attachments.
 export default function Show({ purchase, accounts }) {
     const [paying, setPaying] = useState(false);
@@ -84,7 +84,7 @@ export default function Show({ purchase, accounts }) {
                 )}
 
                 {paying && (
-                    <PayModal title={`${t('Pay')} — ${purchase.supplier?.name || ''}`} due={purchase.due} accounts={accounts} today={dhakaToday()}
+                    <PayModal title={`${t('Pay')} - ${purchase.supplier?.name || ''}`} due={purchase.due} accounts={accounts} today={dhakaToday()}
                         action={`/purchases/${purchase.id}/pay`} onClose={() => setPaying(false)} />
                 )}
             </div>

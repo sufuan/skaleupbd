@@ -166,8 +166,8 @@ class OrderService
 
             $order->logHistory(null, $order->status, $actor, 'Order created');
             $order->logActivity('system', "Order created via {$createdVia}", $actor);
-            $verdictText = $check['verdict'] === 'safe' ? "Fraud check — Safe (success rate {$check['rate']}%)"
-                : ($check['verdict'] === 'risky' ? "Fraud check — Risky (success rate ".($check['rate'] ?? 0)."%) — {$check['note']}" : 'Fraud check — Not checked (no delivery history)');
+            $verdictText = $check['verdict'] === 'safe' ? "Fraud check - Safe (success rate {$check['rate']}%)"
+                : ($check['verdict'] === 'risky' ? "Fraud check - Risky (success rate ".($check['rate'] ?? 0)."%) - {$check['note']}" : 'Fraud check - Not checked (no delivery history)');
             $order->logActivity('system', $verdictText, $actor);
 
             $fresh = $order->fresh(['items']);
@@ -248,7 +248,7 @@ class OrderService
         return DB::transaction(function () use ($order, $actor) {
             $short = $this->stockShortages($order);
             if ($short) {
-                throw ValidationException::withMessages(['stock' => 'Not enough stock — '.implode('; ', $short)]);
+                throw ValidationException::withMessages(['stock' => 'Not enough stock - '.implode('; ', $short)]);
             }
             $check = $this->fraud->forPhone($order->business_id, $order->customer_phone);
             $order->fraud_verdict = $check['verdict'];
@@ -286,7 +286,7 @@ class OrderService
             $order->save();
 
             $order->logHistory($from, 'Processing', $actor, 'Approved');
-            $order->logActivity('action', "Approved by {$actor->name} — {$from} → Processing", $actor);
+            $order->logActivity('action', "Approved by {$actor->name} - {$from} → Processing", $actor);
 
             return $order;
         });
@@ -347,7 +347,7 @@ class OrderService
             }
             $order->save();
             $order->logHistory($from, $to, $actor, $reason);
-            $order->logActivity('action', "Status changed by {$actor->name} — {$from} → {$to}".($reason ? " ({$reason})" : ''), $actor);
+            $order->logActivity('action', "Status changed by {$actor->name} - {$from} → {$to}".($reason ? " ({$reason})" : ''), $actor);
 
             try {
                 $auto = app(\App\Services\AutomationService::class);

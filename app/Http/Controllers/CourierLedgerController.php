@@ -134,7 +134,7 @@ class CourierLedgerController extends Controller
         $reference = ! empty($data['deposit_account']) ? 'Deposit: ' . $data['deposit_account'] : null;
         $result = $this->settlements->matchUpload($this->biz($request), $data['lines'], true, $request->user(), $data['source'] ?? 'upload', $reference);
 
-        return back()->with('success', 'Statement saved — ' . count($result['matched']) . ' parcel(s) settled' . (count($result['unmatched']) ? ', ' . count($result['unmatched']) . ' line(s) did not match' : ''));
+        return back()->with('success', 'Statement saved - ' . count($result['matched']) . ' parcel(s) settled' . (count($result['unmatched']) ? ', ' . count($result['unmatched']) . ' line(s) did not match' : ''));
     }
 
     private function parseStatement(string $path): ?array
@@ -249,7 +249,7 @@ class CourierLedgerController extends Controller
         $data = $request->validate(['method_id' => 'required|integer']);
         $method = CourierMethod::where('business_id', $this->biz($request))->findOrFail($data['method_id']);
         if ($method->courierClass() !== 'A') {
-            return back()->with('error', 'Only Steadfast (Class A) pays out through the API — other couriers use statement upload or a payment entry');
+            return back()->with('error', 'Only Steadfast (Class A) pays out through the API - other couriers use statement upload or a payment entry');
         }
         $result = $this->settlements->pullSettlements($method, $request->user());
 

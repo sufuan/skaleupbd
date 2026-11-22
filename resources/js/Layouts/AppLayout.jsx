@@ -96,11 +96,11 @@ const SEARCH_INDEX = [
 
 const ASK_TOPICS = [
     { q: 'How do I connect a courier?', a: 'Go to Settings → API Connection → Courier Integration. Open your courier (Pathao, Steadfast and others), put in the account details from your own courier account, and save. Delivery charges are set on the same card.', href: '/settings?group=api', link: 'Open Courier Integration' },
-    { q: 'How do I change the default courier?', a: 'Settings → API Connection → Courier Integration — the Default Courier choice at the bottom of the page. New orders suggest this courier first in Ready to Ship.', href: '/settings?group=api', link: 'Open Courier Integration' },
+    { q: 'How do I change the default courier?', a: 'Settings → API Connection → Courier Integration - the Default Courier choice at the bottom of the page. New orders suggest this courier first in Ready to Ship.', href: '/settings?group=api', link: 'Open Courier Integration' },
     { q: 'How does AI reply work?', a: 'Settings → AI & Auto Reply is where everything is set: Rule Brain holds your ready answers, AI Reply sets how much the AI may do alone, and Price & Negotiation sets the discount steps and the lowest price. Messages is only for daily work.', href: '/settings?group=ai', link: 'Open AI & Auto Reply' },
-    { q: 'How do I connect WhatsApp?', a: 'Settings → API Connection → Messaging Channels. WhatsApp connects through the guided sign-up — you do not need to type any long keys. One WhatsApp account per shop.', href: '/settings?group=api', link: 'Open Messaging Channels' },
+    { q: 'How do I connect WhatsApp?', a: 'Settings → API Connection → Messaging Channels. WhatsApp connects through the guided sign-up - you do not need to type any long keys. One WhatsApp account per shop.', href: '/settings?group=api', link: 'Open Messaging Channels' },
     { q: 'Where do I see low stock?', a: 'Inventory → Inventory Dashboard has a Low Stock tab with every product that is running out, so you can purchase or transfer stock in time.', href: mod('inventory'), link: 'Open Inventory' },
-    { q: 'An order is not going to the courier', a: 'Open Delivery → Ready to Ship. Approved orders wait there. Pick the courier and press Send to Courier — if a booking fails, the reason shows on the row and you can press Retry.', href: mod('delivery'), link: 'Open Ready to Ship' },
+    { q: 'An order is not going to the courier', a: 'Open Delivery → Ready to Ship. Approved orders wait there. Pick the courier and press Send to Courier - if a booking fails, the reason shows on the row and you can press Retry.', href: mod('delivery'), link: 'Open Ready to Ship' },
 ];
 
 const KIND_ICON = { order: 'box', delivery: 'truck', stock: 'layers', task: 'check', info: 'bell' };
@@ -136,7 +136,7 @@ function NavGroup({ item, current }) {
         .sort((a, b) => b.href.length - a.href.length)[0] || null;
     // Settings children are query-driven (/settings?group=api); the
     // server defaults a missing group to 'home'. Only on the settings
-    // page itself — otherwise every page would match group 'home'.
+    // page itself - otherwise every page would match group 'home'.
     const settingsGroup = item.settings && current.startsWith('/settings')
         ? (new URLSearchParams((page.url || '').split('?')[1] || '').get('group') || 'home')
         : null;
@@ -229,16 +229,30 @@ function SearchModal({ close }) {
 function NotificationsPanel({ close }) {
     const { notifications } = usePage().props;
     const items = notifications?.items || [];
+    // The bell badge is driven by the polled /sidebar-counts payload, not
+    // by page props - after a mark-read lands, tell the shell to refetch
+    // the counts at once instead of waiting for the next 15s poll.
+    const countsRefresh = () => window.dispatchEvent(new Event('skaleup:counts-refresh'));
     const openItem = (n) => {
-        if (!n.read) router.post(`/notifications/${n.id}/read`, {}, { preserveScroll: true });
         close();
-        if (n.link) router.visit(n.link);
+        if (!n.read) {
+            // Chain, never race: starting the link visit immediately
+            // would cancel this POST in flight and the notification
+            // would stay unread - navigate only once the POST finishes.
+            router.post(`/notifications/${n.id}/read`, {}, {
+                preserveScroll: true,
+                onSuccess: countsRefresh,
+                onFinish: () => { if (n.link) router.visit(n.link); },
+            });
+        } else if (n.link) {
+            router.visit(n.link);
+        }
     };
     return (
         <div className="notif-panel">
             <div className="notif-head">
                 <b>{t('Notifications')}</b><span className="spacer" />
-                <button className="auth-link" onClick={() => router.post('/notifications/read-all', {}, { preserveScroll: true })}>{t('Mark all read')}</button>
+                <button className="auth-link" onClick={() => router.post('/notifications/read-all', {}, { preserveScroll: true, onSuccess: countsRefresh })}>{t('Mark all read')}</button>
             </div>
             {items.length === 0 && <div className="sm mut" style={{ padding: '16px' }}>{t('No notifications yet')}</div>}
             {items.map((n) => (
@@ -302,6 +316,8 @@ export default function AppLayout({ children }) {
     const [searchOpen, setSearchOpen] = useState(false);
     const [sbOpen, setSbOpen] = useState(false);
     const [notifOpen, setNotifOpen] = useState(false);
+    const [userMenuOpen, setUserMenuOpen] = useState(false);
+    const userMenuRef = useRef(null);
     const [askOpen, setAskOpen] = useState(false);
     const [theme, setTheme] = useState(() => (typeof document !== 'undefined' && document.documentElement.dataset.theme) || 'light');
     const [toast, setToast] = useState(null);
@@ -327,8 +343,19 @@ export default function AppLayout({ children }) {
         };
         poll();
         const id = setInterval(poll, 15000);
-        return () => { stop = true; clearInterval(id); };
+        // Instant refresh when something in the shell changes a count
+        // (e.g. the notifications panel marks everything read).
+        window.addEventListener('skaleup:counts-refresh', poll);
+        return () => { stop = true; clearInterval(id); window.removeEventListener('skaleup:counts-refresh', poll); };
     }, []);
+    // Profile menu: close on navigation and on any click outside it.
+    useEffect(() => { setUserMenuOpen(false); }, [url]);
+    useEffect(() => {
+        if (!userMenuOpen) return undefined;
+        const onDown = (e) => { if (userMenuRef.current && !userMenuRef.current.contains(e.target)) setUserMenuOpen(false); };
+        document.addEventListener('mousedown', onDown);
+        return () => document.removeEventListener('mousedown', onDown);
+    }, [userMenuOpen]);
     const userName = props.auth?.user?.name || 'User';
     const isPlatform = !!props.auth?.user?.is_platform_admin;
     // M13 User & Role: hide modules the user has no permission for.
@@ -349,7 +376,7 @@ export default function AppLayout({ children }) {
                 // Server-computed (StorefrontService::menuState): no
                 // sub-menu before a store exists, three calm items
                 // after, Connect Website instead for own-website shops.
-                // Platform admins get ONE extra child here — the old
+                // Platform admins get ONE extra child here - the old
                 // separate Platform "Storefronts" menu was merged into
                 // this one so the name appears only once (owner order).
                 let kids = item.children;
@@ -381,7 +408,7 @@ export default function AppLayout({ children }) {
     // Depend on the flash OBJECT, not the message string: every response
     // rebuilds it, so two identical messages in a row ("Category created"
     // twice) still toast twice. Depending on the string swallowed every
-    // repeat — the second action looked like it did nothing.
+    // repeat - the second action looked like it did nothing.
     useEffect(() => {
         if (props.flash?.success) {
             setToast(props.flash.success);
@@ -512,19 +539,32 @@ export default function AppLayout({ children }) {
                         <button className="ask-btn" onClick={() => setAskOpen(true)}>✦ {t('Ask SkaleUp')}</button>
                         <Link href={mod('support')} className="icon-btn" aria-label={t('Support')}><I d={P.bulb} size={17} /></Link>
                         <span style={{ position: 'relative' }}>
-                            <button type="button" className="icon-btn" aria-label={t('Notifications')} onClick={() => setNotifOpen(!notifOpen)}>
+                            <button type="button" className="icon-btn" aria-label={t('Notifications')} onClick={() => { setNotifOpen(!notifOpen); setUserMenuOpen(false); }}>
                                 <I d={P.bell} size={17} />
                                 {unread > 0 && <span className="dot-badge">{unread}</span>}
                             </button>
                             {notifOpen && <NotificationsPanel close={() => setNotifOpen(false)} />}
                         </span>
                         <button type="button" className="icon-btn" aria-label={t('Theme')} onClick={toggleTheme}><I d={theme === 'dark' ? P.sun : P.moon} size={17} /></button>
-                        <div className="tb-ava" title={userName}>{initials}</div>
+                        <span style={{ position: 'relative' }} ref={userMenuRef}>
+                            <button type="button" className="tb-ava" title={userName} aria-label={t('My Profile')} aria-haspopup="menu" aria-expanded={userMenuOpen} onClick={() => { setUserMenuOpen(!userMenuOpen); setNotifOpen(false); }}>{initials}</button>
+                            {userMenuOpen && (
+                                <div className="user-menu" role="menu">
+                                    <div className="user-menu-head">
+                                        <div className="b" style={{ fontSize: 14 }}>{userName}</div>
+                                        {props.auth?.user?.email && <div className="sm mut">{props.auth.user.email}</div>}
+                                    </div>
+                                    <Link href="/profile" className="user-menu-item" onClick={() => setUserMenuOpen(false)}>{t('My Profile')}</Link>
+                                    {perms.includes('billing') && <Link href="/billing" className="user-menu-item" onClick={() => setUserMenuOpen(false)}>{t('Points & Billing')}</Link>}
+                                    <Link href={route('logout')} method="post" as="button" className="user-menu-item danger" onClick={() => setUserMenuOpen(false)}>{t('Log out')}</Link>
+                                </div>
+                            )}
+                        </span>
                     </div>
                 </header>
                 {props.tokenGate?.blocked && !props.tokenGate?.pending && (
                     <div style={{ background: '#FDECEC', borderBottom: '1px solid #F3B4B4', color: '#8B1E1E', padding: '10px 18px', fontSize: 13.5, display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-                        <span><b>{t('Points finished — your shop is view-only.')}</b> {t('New orders and changes are paused until you top up.')}</span>
+                        <span><b>{t('Points finished - your shop is view-only.')}</b> {t('New orders and changes are paused until you top up.')}</span>
                         <Link href="/billing" style={{ fontWeight: 700, color: '#8B1E1E', textDecoration: 'underline' }}>{t('See Points & Billing')}</Link>
                     </div>
                 )}

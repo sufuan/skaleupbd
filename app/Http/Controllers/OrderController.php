@@ -291,7 +291,7 @@ class OrderController extends Controller
             // Owner rule: creating straight into Approved must respect stock too.
             $short = $this->orders->shortagesForItems($this->businessId($request), $data['items']);
             if ($short) {
-                return back()->with('error', 'Not enough stock — '.implode('; ', $short))->withInput();
+                return back()->with('error', 'Not enough stock - '.implode('; ', $short))->withInput();
             }
         }
 
@@ -325,7 +325,7 @@ class OrderController extends Controller
             $order->logHistory('Pending', 'Processing', $request->user(), 'Created as approved');
         }
 
-        AppNotification::create(['kind' => 'order', 'title' => "New order {$order->invoice_no}",
+        AppNotification::create(['business_id' => $order->business_id, 'kind' => 'order', 'title' => "New order {$order->invoice_no}",
             'body' => "{$order->customer_name} · ৳".number_format((float) $order->grand_total), 'link' => "/orders/{$order->id}"]);
 
         return redirect()->route('orders.show', $order)->with('success', "Order {$order->invoice_no} created");
@@ -527,10 +527,10 @@ class OrderController extends Controller
         if ($request->boolean('next')) {
             $next = Order::where('business_id', $order->business_id)->where('status', 'Pending')->oldest()->first();
             if ($next) {
-                return redirect()->route('orders.show', $next)->with('success', "Order {$order->invoice_no} approved — next order loaded");
+                return redirect()->route('orders.show', $next)->with('success', "Order {$order->invoice_no} approved - next order loaded");
             }
 
-            return redirect()->route('orders.index')->with('success', "Order {$order->invoice_no} approved — no pending orders left");
+            return redirect()->route('orders.index')->with('success', "Order {$order->invoice_no} approved - no pending orders left");
         }
 
         return back()->with('success', "Order {$order->invoice_no} approved");
@@ -572,7 +572,7 @@ class OrderController extends Controller
         };
         $order->logActivity('sms', "{$label} not sent — {$reason}", $request->user());
 
-        return back()->with('error', "{$label} not sent — {$reason}");
+        return back()->with('error', "{$label} not sent - {$reason}");
     }
 
     public function block(Request $request, Order $order): RedirectResponse

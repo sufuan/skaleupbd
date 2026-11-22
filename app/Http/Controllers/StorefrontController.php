@@ -93,7 +93,7 @@ class StorefrontController extends Controller
             return back()->with('error', 'Choose your free subdomain first (Storefront → Subdomain).');
         }
         if (! $sf->phone_verified_at) {
-            return back()->with('error', 'Verify your mobile number first — publishing needs a verified phone.');
+            return back()->with('error', 'Verify your mobile number first - publishing needs a verified phone.');
         }
         $hasPage = $sf->pages()->whereNotNull('published_blocks')->exists();
         if (! $hasPage && empty($sf->blocks)) {
@@ -295,10 +295,10 @@ class StorefrontController extends Controller
             $row->save();
             $this->svc->syncDomainMirror($sf);
 
-            return back()->with('success', 'Domain verified. Our team will now connect it — you will see it active here.');
+            return back()->with('success', 'Domain verified. Our team will now connect it - you will see it active here.');
         }
 
-        return back()->with('error', 'We could not find the verification TXT record yet. DNS changes can take a while — check the record and try again.');
+        return back()->with('error', 'We could not find the verification TXT record yet. DNS changes can take a while - check the record and try again.');
     }
 
     public function primaryDomain(Request $request, $domain)
@@ -474,7 +474,7 @@ class StorefrontController extends Controller
     {
         $sf = $this->sf($request);
         if (empty($sf->subdomain)) {
-            return back()->with('error', 'Create your store first — the wizard sets your shop link.');
+            return back()->with('error', 'Create your store first - the wizard sets your shop link.');
         }
         $data = $request->validate([
             'name' => ['required', 'string', 'min:2', 'max:60'],
@@ -612,7 +612,7 @@ class StorefrontController extends Controller
         abort_unless($v, 404);
         $this->svc->restoreVersion($p, $v);
 
-        return back()->with('success', 'That version is in your draft — publish to make it live.');
+        return back()->with('success', 'That version is in your draft - publish to make it live.');
     }
 
     /** Editor preview: the SAME renderer as the public page, on the draft. */
@@ -800,7 +800,7 @@ HTML;
         ]);
 
         return redirect('/storefront/connect')->with('fresh_api_key', $plain)
-            ->with('success', 'Your new connection key is ready. Copy it now — it will not be shown in full again.');
+            ->with('success', 'Your new connection key is ready. Copy it now - it will not be shown in full again.');
     }
 
     public function connectWebhook(Request $request)

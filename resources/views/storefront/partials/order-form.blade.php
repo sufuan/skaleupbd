@@ -1,7 +1,7 @@
 {{-- M18 order form. Expects: $product (vm), $districts, $sf, optional $showQty --}}
 <div class="sf-orderbox" id="order-form-{{ $product['id'] }}">
   <h2>অর্ডার করুন</h2>
-  <p class="sf-sub">{{ $product['name'] }} — ক্যাশ অন ডেলিভারি। অর্ডারের পর আমরা কল করে নিশ্চিত করব।</p>
+  <p class="sf-sub">{{ $product['name'] }} - ক্যাশ অন ডেলিভারি। অর্ডারের পর আমরা কল করে নিশ্চিত করব।</p>
   <div class="sf-err-slot" style="display:none"></div>
   <form method="POST" action="/order" class="sf-order-form" data-inside="{{ $sf->deliveryInside() }}" data-outside="{{ $sf->deliveryOutside() }}" data-price="{{ $product['effective'] }}">
     <input type="hidden" name="_token" value="%%SF_CSRF%%">
@@ -32,7 +32,7 @@
       <label>ধরন বেছে নিন</label>
       <select name="variant_id" required>
         @foreach($product['variants'] as $v)
-          <option value="{{ $v['id'] }}" data-price="{{ $v['price'] }}" @disabled(!$v['available'])>{{ $v['name'] }} — ৳{{ number_format($v['price']) }}@if(!$v['available']) (স্টক শেষ)@endif</option>
+          <option value="{{ $v['id'] }}" data-price="{{ $v['price'] }}" @disabled(!$v['available'])>{{ $v['name'] }} - ৳{{ number_format($v['price']) }}@if(!$v['available']) (স্টক শেষ)@endif</option>
         @endforeach
       </select>
     </div>
@@ -40,7 +40,7 @@
     <div class="sf-field">
       <label>জেলা</label>
       <select name="district" required class="sf-district">
-        <option value="">— জেলা বেছে নিন —</option>
+        <option value=""> - জেলা বেছে নিন -</option>
         @foreach($districts as $d)<option value="{{ $d }}">{{ $d }}</option>@endforeach
       </select>
     </div>

@@ -84,8 +84,8 @@ class SidebarCountsService
             'delivery_ready' => $hasOrders
                 ? $this->afterWatermark(Order::where('business_id', $biz)->where('status', 'Processing'), $seen['delivery_ready'] ?? null, 'updated_at')->count()
                 : 0,
-            'notifications_unread' => Schema::hasTable('app_notifications')
-                ? AppNotification::whereNull('read_at')->count()
+            'notifications_unread' => $user && Schema::hasTable('app_notifications') && Schema::hasColumn('app_notifications', 'business_id')
+                ? AppNotification::visibleTo($user)->whereNull('read_at')->count()
                 : 0,
             'messages_inbox' => $biz && Schema::hasTable('conversations')
                 ? (int) Conversation::where('business_id', $biz)->sum('unread_count')

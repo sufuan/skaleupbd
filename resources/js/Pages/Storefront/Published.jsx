@@ -20,7 +20,7 @@ export default function Published({ url }) {
                     <path d="M7 12.5l3.2 3L17 9" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
                 <h3 style={{ fontSize: 22, margin: '0 0 6px' }}>{t('Your store is live!')}</h3>
-                <p style={{ color: 'var(--muted)', fontSize: 14.5, margin: '0 0 16px' }}>{t('Share this link with your customers — on Facebook, Messenger, anywhere.')}</p>
+                <p style={{ color: 'var(--muted)', fontSize: 14.5, margin: '0 0 16px' }}>{t('Share this link with your customers - on Facebook, Messenger, anywhere.')}</p>
                 <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap', alignItems: 'center' }}>
                     <span style={{ fontWeight: 700, fontSize: 16, wordBreak: 'break-all', background: '#F7F2FA', border: '1px solid #E7DEF0', borderRadius: 8, padding: '9px 14px' }}>{shopUrl}</span>
                     <button className="btn" onClick={copy}>{copied ? t('Copied!') : t('Copy link')}</button>

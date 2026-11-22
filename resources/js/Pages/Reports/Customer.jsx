@@ -8,9 +8,9 @@ const WORD = { today: 'Today', '7d': 'in the last 7 days', month: 'this month' }
 export default function Customer({ preset, kpis, rows }) {
     return (
         <AppLayout>
-            <Head title={t('Reports — Customer Report')} />
+            <Head title={t('Reports - Customer Report')} />
             <div className="rep">
-                <RepHead title={t('Customer Report')} sub={t('Whether customers are growing, whether they are buying again — the real strength of the business.')} preset={preset} base="/reports/customer" exportKey="customer" />
+                <RepHead title={t('Customer Report')} sub={t('Whether customers are growing, whether they are buying again - the real strength of the business.')} preset={preset} base="/reports/customer" exportKey="customer" />
                 <div className="x-kpis">
                     <div className="x-kpi"><b>{fmtNum(kpis.total)}</b><span>{t('Total customers')}</span></div>
                     <div className="x-kpi green"><b>{fmtNum(kpis.new)}</b><span>{t(':word new', { word: t(WORD[preset] || 'this month') })}</span></div>

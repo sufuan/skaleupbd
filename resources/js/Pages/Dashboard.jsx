@@ -375,7 +375,6 @@ function DecisionView({ dc }) {
             </div>
             <div className="conf-lbl">{t('Confidence')}</div>
             <p style={{ marginTop: 12 }}>{t('How much of today\'s rules are working properly (orders, stock and courier together).')}</p>
-            <p>{t('আজকের নিয়মগুলোর কতভাগ ঠিকঠাক চলছে (order, stock, courier মিলিয়ে)')}</p>
             <div className="verdict">{t(verdict)}</div>
             <div className="sub" style={{ fontSize: 13, color: 'var(--mut)' }}>
                 {dc.breaching} / {dc.live_rules} {t('rules need attention')} · {dc.open_tasks} {t('open tasks')} · {dc.critical_open} {t('critical')}
@@ -576,6 +575,7 @@ function ActivityView({ act, my }) {
 
 export default function Dashboard({ my, ov, dc, ops, prod, mkt, team, act, billing }) {
     const [view, setView] = useState('My Dashboard');
+    const [refreshing, setRefreshing] = useState(false);
     const [clock, setClock] = useState('--:--:--');
     useEffect(() => {
         const f = () => setClock(new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Dhaka', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).format(new Date()));
@@ -620,8 +620,8 @@ export default function Dashboard({ my, ov, dc, ops, prod, mkt, team, act, billi
                                 <span style={{ marginRight: 5, display: 'inline-flex', verticalAlign: -3 }}><CalSvg size={14} /></span>{t('Today')}
                             </button>
                         )}
-                        <button type="button" className="ctl-btn" title={t('Refresh')} style={{ padding: '7px 9px' }} onClick={() => router.reload()}>
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36" /><path d="M21 3v6h-6" /></svg>
+                        <button type="button" className="ctl-btn" title={t('Refresh')} disabled={refreshing} aria-busy={refreshing} onClick={() => router.reload({ onStart: () => setRefreshing(true), onFinish: () => setRefreshing(false) })}>
+                            <svg className={refreshing ? 'spin' : ''} width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36" /><path d="M21 3v6h-6" /></svg>
                         </button>
                     </div>
                 </div>

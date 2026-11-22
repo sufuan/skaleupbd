@@ -112,7 +112,7 @@ class InventoryController extends Controller
             $attention[] = ['kind' => 'negative', 'text' => "{$p->name} has negative stock ({$this->available($p)})", 'product_id' => $p->id];
         }
         foreach ($low as $p) {
-            $attention[] = ['kind' => 'low', 'text' => "{$p->name} is low — only {$this->available($p)} left", 'product_id' => $p->id];
+            $attention[] = ['kind' => 'low', 'text' => "{$p->name} is low - only {$this->available($p)} left", 'product_id' => $p->id];
         }
         $overdue = WarrantyClaim::where('business_id', $biz)
             ->whereNotIn('status', ['closed', 'rejected', 'cancelled'])

@@ -52,13 +52,13 @@ function DeptCard({ dept, staffOptions, canManage }) {
                             <input className="inp" value={form.data.name} onChange={(e) => form.setData('name', e.target.value)} required /></div>
                         <div className="fld"><label className="lbl">{t('Head (the person in charge)')}</label>
                             <select className="inp" value={form.data.head_user_id} onChange={(e) => form.setData('head_user_id', e.target.value)}>
-                                <option value="">{t('— No one —')}</option>
+                                <option value="">{t('- No one -')}</option>
                                 {staffOptions.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
                             </select></div>
                     </div>
                     <label className="lbl">{t('Staff members')}</label>
                     <MemberPicker options={staffOptions} selected={form.data.member_ids} onToggle={(id) => form.setData('member_ids', toggleIn(form.data.member_ids, id))} />
-                    <p className="x-note">{t('One staff member stays in one Department only — bringing them here from another Department moves them out of there.')}</p>
+                    <p className="x-note">{t('One staff member stays in one Department only - bringing them here from another Department moves them out of there.')}</p>
                     <button className="btn-p" type="submit" disabled={form.processing} style={{ marginTop: 8 }}>{t('Save')}</button>
                 </form>
             )}
@@ -122,7 +122,7 @@ export default function Departments({ departments, sops, staff_options, can_mana
             <div className="hrm">
                 <div className="x-head">
                     <h3>{t('Departments & SOP')}</h3>
-                    <p>{t('Who works in which team, and the rules (SOP) for every job — all here.')}</p>
+                    <p>{t('Who works in which team, and the rules (SOP) for every job - all here.')}</p>
                 </div>
 
                 {departments.map((d) => <DeptCard key={d.id} dept={d} staffOptions={staff_options} canManage={can_manage} />)}
@@ -136,7 +136,7 @@ export default function Departments({ departments, sops, staff_options, can_mana
                                     <input className="inp" value={deptForm.data.name} onChange={(e) => deptForm.setData('name', e.target.value)} placeholder={t('e.g. Delivery Team')} required /></div>
                                 <div className="fld"><label className="lbl">{t('Head (the person in charge)')}</label>
                                     <select className="inp" value={deptForm.data.head_user_id} onChange={(e) => deptForm.setData('head_user_id', e.target.value)}>
-                                        <option value="">{t('— No one —')}</option>
+                                        <option value="">{t('- No one -')}</option>
                                         {staff_options.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
                                     </select></div>
                             </div>
@@ -148,7 +148,7 @@ export default function Departments({ departments, sops, staff_options, can_mana
                 )}
 
                 <div className="x-head" style={{ marginTop: 22 }}>
-                    <h3>{t('SOP — work rules')}</h3>
+                    <h3>{t('SOP - work rules')}</h3>
                     <p>{t('How every job is done, written step by step. A new staff member reads this and understands the work.')}</p>
                 </div>
 

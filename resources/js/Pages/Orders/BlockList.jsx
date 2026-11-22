@@ -44,7 +44,7 @@ export default function BlockList({ blocks }) {
                         <tbody>
                             {rows.map((b) => (
                                 <tr key={b.id}>
-                                    <td className="b">{b.value}</td><td>{b.blocked_at}</td><td>{b.reason || '—'}</td><td>{b.added_by || '—'}</td>
+                                    <td className="b">{b.value}</td><td>{b.blocked_at}</td><td>{b.reason || '-'}</td><td>{b.added_by || '-'}</td>
                                     <td>{b.expires || t('Never')}</td>
                                     <td><span className={`pill ${b.expired ? '' : 'red'}`}>{b.expired ? t('Expired') : t('Active')}</span></td>
                                     <td><button className="mini-link" onClick={() => router.delete(`/orders/block-list/${b.id}`, { preserveScroll: true })}>{t('Unblock')}</button></td>

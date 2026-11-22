@@ -50,7 +50,7 @@ export default function EntrySheet({ open, kind, setKind, accounts = [], categor
     return (
         <Modal show={open} onClose={onClose} maxWidth="md">
             {/* The Modal portals out of the .fin page scope, so the .fin
-                .cat-chips/.lbl rules never reach it — the type buttons and
+                .cat-chips/.lbl rules never reach it - the type buttons and
                 category chips rendered jammed. Own scoped copies here. */}
             <style>{`
                 .entry-sheet .cat-chips{display:flex;gap:8px;flex-wrap:wrap}

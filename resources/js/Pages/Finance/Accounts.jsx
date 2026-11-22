@@ -20,7 +20,7 @@ export default function Accounts({ accounts = [], categories = [], canSee }) {
             <div className="fin">
                 <div className="x-head">
                     <h3>{t('Accounts & Bank')}</h3>
-                    <p>{t('Where the money is — the state of every account today. To see all transactions, go to the Cash Flow page (one single ledger).')}</p>
+                    <p>{t('Where the money is - the state of every account today. To see all transactions, go to the Cash Flow page (one single ledger).')}</p>
                 </div>
 
                 {canSee && (
@@ -40,11 +40,11 @@ export default function Accounts({ accounts = [], categories = [], canSee }) {
                                     <td>{a.name}{TYPE_LABEL[a.type] && a.name.toLowerCase() !== TYPE_LABEL[a.type].toLowerCase() && <span style={{ color: '#94A3B8' }}> · {t(TYPE_LABEL[a.type])}</span>}{!a.active && <span className="chip chip-grey" style={{ marginLeft: 6 }}>{t('Inactive')}</span>}</td>
                                     <td style={{ color: '#16A34A' }}>+ {fmt(a.today_in)}</td>
                                     <td style={{ color: '#DC2626' }}>− {fmt(a.today_out)}</td>
-                                    <td><b>{canSee ? fmt(a.balance) : '—'}</b></td>
+                                    <td><b>{canSee ? fmt(a.balance) : '-'}</b></td>
                                     <td><button className="btn-s" onClick={() => openEdit(a)}>{t('Edit')}</button></td>
                                 </tr>
                             ))}
-                            {!accounts.length && <tr><td colSpan={5}>{t('No account yet — add one from below.')}</td></tr>}
+                            {!accounts.length && <tr><td colSpan={5}>{t('No account yet - add one from below.')}</td></tr>}
                         </tbody>
                     </table>
                 </div>
@@ -71,7 +71,7 @@ export default function Accounts({ accounts = [], categories = [], canSee }) {
 
                 {edit && (
                     <div className="x-card">
-                        <h4>{t('Change Account — :name', { name: edit.name })}</h4>
+                        <h4>{t('Change Account - :name', { name: edit.name })}</h4>
                         <form onSubmit={(e) => { e.preventDefault(); editForm.patch(`/finance/accounts/${edit.id}`, { onSuccess: () => setEdit(null) }); }}
                             style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'end' }}>
                             <div><label className="lbl">{t('Name')}</label>

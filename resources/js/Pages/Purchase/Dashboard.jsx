@@ -3,7 +3,7 @@ import AppLayout from '@/Layouts/AppLayout';
 import { t } from '@/lib/i18n';
 import { GuideBtn, PageHead, fmt, fmtDate } from './shared';
 
-// Purchase Dashboard — exact copy of EcomDrive's Purchase Dashboard
+// Purchase Dashboard - exact copy of EcomDrive's Purchase Dashboard
 // content: Right now cards, This period, Top suppliers, Most bought
 // products, 6-month chart, Recent purchases, Overdue supplier payments.
 const PERIODS = [['today', 'Today'], ['yesterday', 'Yest.'], ['30d', '30D'], ['month', 'Month']];

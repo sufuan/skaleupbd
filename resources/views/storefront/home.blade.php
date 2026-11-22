@@ -1,7 +1,7 @@
 @extends('storefront.layout')
 @section('content')
 @if($reported)
-  <div class="sf-thanks">Thank you — your report has been received. Our team will review this page.</div>
+  <div class="sf-thanks">Thank you - your report has been received. Our team will review this page.</div>
 @endif
 
 @foreach($blocks as $block)
@@ -72,7 +72,7 @@
           @if(!empty($d['title']))<h2>{{ $d['title'] }}</h2>@endif
           @if(!empty($d['text']))<div>{!! $d['text'] !!}</div>@endif
           @if(!empty($r['product']))
-            <p style="margin:14px 0 0"><a class="sf-btn" style="background:#fff;color:var(--sf-accent)" href="/p/{{ $r['product']['id'] }}">{{ $r['product']['name'] }} — ৳{{ number_format($r['product']['effective']) }}</a></p>
+            <p style="margin:14px 0 0"><a class="sf-btn" style="background:#fff;color:var(--sf-accent)" href="/p/{{ $r['product']['id'] }}">{{ $r['product']['name'] }} - ৳{{ number_format($r['product']['effective']) }}</a></p>
           @endif
         </div>
       </section>
@@ -91,7 +91,7 @@
         @if(!empty($d['title']))<h2>{{ $d['title'] }}</h2>@endif
         <div class="sf-tgrid">
           @foreach($d['items'] ?? [] as $t)
-            <div class="sf-testi"><p>“{{ $t['text'] ?? '' }}”</p><div class="sf-tname">— {{ $t['name'] ?? '' }}</div></div>
+            <div class="sf-testi"><p>“{{ $t['text'] ?? '' }}”</p><div class="sf-tname"> - {{ $t['name'] ?? '' }}</div></div>
           @endforeach
         </div>
       </section>

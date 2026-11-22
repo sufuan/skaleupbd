@@ -257,7 +257,7 @@ class MetaWebhookController extends Controller
         AiActivity::create([
             'business_id' => $biz,
             'action' => 'human_takeover',
-            'detail' => $conv->customer_name . ' — staff replied from Facebook; AI paused',
+            'detail' => $conv->customer_name . ' - staff replied from Facebook; AI paused',
             'conversation_id' => $conv->id,
             'source' => 'echo',
         ]);

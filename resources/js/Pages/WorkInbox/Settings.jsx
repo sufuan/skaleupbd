@@ -3,7 +3,7 @@ import { useState } from 'react';
 import AppLayout from '@/Layouts/AppLayout';
 import { t } from '@/lib/i18n';
 
-// Work Inbox Settings — the module's OWN settings page (prototype panel
+// Work Inbox Settings - the module's OWN settings page (prototype panel
 // wi-settings): all 37 rules with switch, time, priority and assignee,
 // plus the notification behaviour switches.
 export default function Settings({ groups, toggles, staff, priorities, assignees }) {
@@ -35,7 +35,7 @@ export default function Settings({ groups, toggles, staff, priorities, assignees
                 <div className="wi-head">
                     <div>
                         <h3 style={{ fontSize: 20 }}>{t('Work Inbox Settings')}</h3>
-                        <p style={{ color: '#64748B', fontSize: 13.5, marginTop: 3 }}>সিস্টেম প্রতি ~5 মিনিটে এই নিয়মগুলো যাচাই করে। যেটা বন্ধ, সেটার task তৈরি হবে না। সময়, গুরুত্ব আর দায়িত্ব — সব এখান থেকে বদলানো যায়। মোট 37টা নিয়ম।</p>
+                        <p style={{ color: '#64748B', fontSize: 13.5, marginTop: 3 }}>সিস্টেম প্রতি ~5 মিনিটে এই নিয়মগুলো যাচাই করে। যেটা বন্ধ, সেটার task তৈরি হবে না। সময়, গুরুত্ব আর দায়িত্ব - সব এখান থেকে বদলানো যায়। মোট 37টা নিয়ম।</p>
                     </div>
                 </div>
 
@@ -108,7 +108,7 @@ export default function Settings({ groups, toggles, staff, priorities, assignees
                     <button className={`switch${tg.auto_close ? ' on' : ''}`} onClick={() => setToggle('auto_close', !tg.auto_close)}></button>
                     <div className="rule-main">
                         <div className="rule-name">সমস্যা মিটে গেলে task নিজে থেকে বন্ধ</div>
-                        <div className="rule-desc">যেমন order Delivered হয়ে গেলে "Shipped আটকে আছে" task নিজে বন্ধ হবে — ইতিহাসে কারণ লেখা থাকবে</div>
+                        <div className="rule-desc">যেমন order Delivered হয়ে গেলে "Shipped আটকে আছে" task নিজে বন্ধ হবে - ইতিহাসে কারণ লেখা থাকবে</div>
                     </div>
                 </div>
                 <div className="rule-row">

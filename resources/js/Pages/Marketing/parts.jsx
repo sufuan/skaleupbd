@@ -6,7 +6,7 @@ export const fmtNum = (n) => Number(n || 0).toLocaleString('en-IN');
 export function Verdict({ profit }) {
     return profit > 0
         ? <span className="chip chip-green">{t('Profit made')}</span>
-        : <span className="chip chip-amber">{t('Not much profit — next time send to a smaller audience')}</span>;
+        : <span className="chip chip-amber">{t('Not much profit - next time send to a smaller audience')}</span>;
 }
 
 /** SMS parts, mirroring SmsService::parts (GSM 160/153, Unicode 70/67). */

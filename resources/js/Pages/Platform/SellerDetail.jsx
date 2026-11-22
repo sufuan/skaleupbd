@@ -12,7 +12,7 @@ function ClaimActions({ c }) {
     const [showReject, setShowReject] = useState(false);
     const approve = async () => {
         const msg = c.seller_pending
-            ? `${t('Approve this payment, credit')} ${num(c.pack_credits)} ${t('points and activate this seller? Their account is still pending — this one approval opens it.')}`
+            ? `${t('Approve this payment, credit')} ${num(c.pack_credits)} ${t('points and activate this seller? Their account is still pending - this one approval opens it.')}`
             : `${t('Approve this payment and credit')} ${num(c.pack_credits)} ${t('points to this seller?')}`;
         if (await confirmDialog(msg)) {
             router.post(`/admin/claims/${c.id}/approve`, {}, { preserveScroll: true });
@@ -124,7 +124,7 @@ export default function SellerDetail({ seller, purchaseHistory = [], payments, p
                         <form onSubmit={doSubscribe}>
                             <label className="lbl">{t('Pack')}</label>
                             <select className="fld" value={sub.data.package_id} onChange={(e) => sub.setData('package_id', e.target.value)}>
-                                {packages.map((p) => <option key={p.id} value={p.id}>{p.name} — {tk(p.price)} · {num(p.credits)} {t('points')} · {p.validity_type === 'monthly' ? t('Monthly') : t('Yearly wallet')}</option>)}
+                                {packages.map((p) => <option key={p.id} value={p.id}>{p.name} - {tk(p.price)} · {num(p.credits)} {t('points')} · {p.validity_type === 'monthly' ? t('Monthly') : t('Yearly wallet')}</option>)}
                             </select>
                             <label className="lbl">{t('Amount received')} ({t('blank = pack price')}{pkgPrice ? ` ${tk(pkgPrice)}` : ''})</label>
                             <input className="fld" type="number" min="0" value={sub.data.amount} onChange={(e) => sub.setData('amount', e.target.value)} placeholder={pkgPrice || ''} />
@@ -196,7 +196,7 @@ export default function SellerDetail({ seller, purchaseHistory = [], payments, p
                                     <td style={{ whiteSpace: 'nowrap' }}>{c.when}</td>
                                     <td><div style={{ fontWeight: 600 }}>{c.pack_name}</div><div style={{ fontSize: 12, color: 'var(--muted)' }}>{num(c.pack_credits)} {t('points')}</div></td>
                                     <td style={{ fontWeight: 700 }}>{tk(c.total_bdt)}</td>
-                                    <td>{c.method ? <><div>{c.method}</div><div style={{ fontSize: 12, color: 'var(--muted)' }}>{c.sender_number} · TrxID {c.trx_id}</div></> : '—'}</td>
+                                    <td>{c.method ? <><div>{c.method}</div><div style={{ fontSize: 12, color: 'var(--muted)' }}>{c.sender_number} · TrxID {c.trx_id}</div></> : '-'}</td>
                                     <td>{c.status === 'approved' ? <span className="pill green">{t('Approved')}</span> : c.status === 'rejected' ? <span className="pill red">{t('Rejected')}</span> : c.status === 'pending_review' ? <span className="pill amber">{t('Waiting for review')}</span> : <span className="pill amber">{t('Waiting for payment')}</span>}
                                         {c.status === 'rejected' && c.admin_note && <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 4 }}>{c.admin_note}</div>}
                                     </td>
@@ -226,7 +226,7 @@ export default function SellerDetail({ seller, purchaseHistory = [], payments, p
                 <div className="tbl-wrap"><table className="tbl">
                     <thead><tr><th>{t('Customer')}</th><th>{t('Phone')}</th><th>{t('Orders')}</th><th>{t('Total Spent')}</th><th>{t('Last Order')}</th></tr></thead>
                     <tbody>
-                        {customers.map((c) => <tr key={c.id}><td><div style={{ fontWeight: 600 }}>{c.name || '—'}</div><div style={{ fontSize: 12, color: 'var(--muted)' }}>{c.address || ''}</div></td><td>{c.phone}</td><td>{c.delivered} / {c.orders}</td><td style={{ fontWeight: 600 }}>{tk(c.spent)}</td><td>{c.last_order || '—'}</td></tr>)}
+                        {customers.map((c) => <tr key={c.id}><td><div style={{ fontWeight: 600 }}>{c.name || '-'}</div><div style={{ fontSize: 12, color: 'var(--muted)' }}>{c.address || ''}</div></td><td>{c.phone}</td><td>{c.delivered} / {c.orders}</td><td style={{ fontWeight: 600 }}>{tk(c.spent)}</td><td>{c.last_order || '-'}</td></tr>)}
                         {customers.length === 0 && <tr><td colSpan={5} style={{ textAlign: 'center', padding: 24, color: 'var(--muted)' }}>{t('This seller has no customers yet')}</td></tr>}
                     </tbody>
                 </table></div>

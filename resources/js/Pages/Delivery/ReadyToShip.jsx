@@ -31,7 +31,7 @@ export default function ReadyToShip({ orders, methods, search }) {
             <div className="page-head">
                 <div>
                     <h1 style={{ fontSize: 24, fontWeight: 700 }}>{t('Ready to Ship')}</h1>
-                    <div className="mut sm" style={{ marginTop: 3 }}>{t('Approved orders being packed — print the invoice, pack the parcel, then send it to a courier.')}</div>
+                    <div className="mut sm" style={{ marginTop: 3 }}>{t('Approved orders being packed - print the invoice, pack the parcel, then send it to a courier.')}</div>
                 </div>
                 <button className="btn pri" disabled={picked.length === 0} onClick={() => setBulkOpen(true)}>{t('Send Selected')} ({picked.length})</button>
             </div>
@@ -56,7 +56,7 @@ export default function ReadyToShip({ orders, methods, search }) {
                                             <div className="sm mut">{o.date}</div>
                                         </td>
                                         <td><div className="b">{o.customer_name}</div><div className="sm mut">{o.customer_phone}</div></td>
-                                        <td>{t(o.zone)}<div className="sm mut">{o.district || '—'}</div></td>
+                                        <td>{t(o.zone)}<div className="sm mut">{o.district || '-'}</div></td>
                                         <td><span className="b">{o.items_count}</span><div className="sm mut">{o.items_label}</div></td>
                                         <td className="b">{fmt(o.cod)}</td>
                                         <td>{o.booking_status === 'failed'
@@ -91,10 +91,10 @@ export default function ReadyToShip({ orders, methods, search }) {
                         <div className="frow mt16"><label className="fl">{t('Courier')}</label>
                             <select className="inp" value={bulkMethod} onChange={(e) => setBulkMethod(e.target.value)}>
                                 <option value="">{t('Each order\'s Suggested courier')}</option>
-                                {methods.map((m) => <option key={m.id} value={m.id}>{m.label} — {m.booking_mode === 'manual' ? t('Manual') : t('Automatic')}</option>)}
+                                {methods.map((m) => <option key={m.id} value={m.id}>{m.label} - {m.booking_mode === 'manual' ? t('Manual') : t('Automatic')}</option>)}
                             </select></div>
                         {bulkMethodObj?.booking_mode === 'manual' && (
-                            <p className="sm" style={{ color: 'var(--bad)', marginTop: 10 }}>{t('A manual courier needs a CN number for every parcel — send those one by one from the row.')}</p>
+                            <p className="sm" style={{ color: 'var(--bad)', marginTop: 10 }}>{t('A manual courier needs a CN number for every parcel - send those one by one from the row.')}</p>
                         )}
                         <div className="frow" style={{ gap: 8, marginTop: 18, justifyContent: 'flex-end' }}>
                             <button className="btn" onClick={() => setBulkOpen(false)}>{t('Cancel')}</button>

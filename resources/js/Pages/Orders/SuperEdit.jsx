@@ -13,7 +13,7 @@ export default function SuperEdit({ order, searched, statuses, recent }) {
         <AppLayout>
             <Head title={t('Super Edit')} />
             <h1 className="page-h">{t('Super Edit')}</h1>
-            <div className="page-sub">{t('Admin only — override an order status outside the normal flow. Every change is written to the activity log with before and after values.')}</div>
+            <div className="page-sub">{t('Admin only - override an order status outside the normal flow. Every change is written to the activity log with before and after values.')}</div>
 
             <div className="card mb12">
                 <div className="flex">

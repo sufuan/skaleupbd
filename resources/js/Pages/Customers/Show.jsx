@@ -18,7 +18,7 @@ export default function CustomerShow({ customer, orders }) {
             <div className="cust-pg">
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                 <Link href="/customers" className="btn-ghost">← {t('Customer List')}</Link>
-                <h3 style={{ fontSize: 19 }}>{customer.name || '—'}{customer.blacklisted ? <span className="pill red" style={{ marginLeft: 8 }}>{t('Blocked')}</span> : null}</h3>
+                <h3 style={{ fontSize: 19 }}>{customer.name || '-'}{customer.blacklisted ? <span className="pill red" style={{ marginLeft: 8 }}>{t('Blocked')}</span> : null}</h3>
                 <span style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
                     <button className="btn-ghost" onClick={() => router.post(`/customers/${customer.id}/blacklist`, {}, { preserveScroll: true })}>{customer.blacklisted ? t('Unblock') : t('Block customer')}</button>
                     <button className="btn-ghost" style={{ color: '#B91C1C' }} onClick={async () => { if (await confirmDialog(t('Delete this customer?'))) router.delete(`/customers/${customer.id}`); }}>{t('Delete')}</button>
@@ -29,7 +29,7 @@ export default function CustomerShow({ customer, orders }) {
                 <div className="card"><div style={{ fontSize: 11, letterSpacing: '.06em', color: 'var(--muted)' }}>{t('TOTAL ORDERS')}</div><div style={{ fontSize: 24, fontWeight: 700, marginTop: 4 }}>{customer.orders}</div></div>
                 <div className="card"><div style={{ fontSize: 11, letterSpacing: '.06em', color: 'var(--muted)' }}>{t('DELIVERED')}</div><div style={{ fontSize: 24, fontWeight: 700, marginTop: 4 }}>{customer.delivered}</div><div style={{ fontSize: 12, color: 'var(--muted)' }}>{customer.success_rate === null ? '' : `${customer.success_rate}% ${t('success')}`}</div></div>
                 <div className="card"><div style={{ fontSize: 11, letterSpacing: '.06em', color: 'var(--muted)' }}>{t('TOTAL SPENT')}</div><div style={{ fontSize: 24, fontWeight: 700, marginTop: 4 }}>{tk(customer.spent)}</div></div>
-                <div className="card"><div style={{ fontSize: 11, letterSpacing: '.06em', color: 'var(--muted)' }}>{t('CUSTOMER SINCE')}</div><div style={{ fontSize: 24, fontWeight: 700, marginTop: 4 }}>{customer.since}</div><div style={{ fontSize: 12, color: 'var(--muted)' }}>{t('Last order')}: {customer.last_order || '—'}</div></div>
+                <div className="card"><div style={{ fontSize: 11, letterSpacing: '.06em', color: 'var(--muted)' }}>{t('CUSTOMER SINCE')}</div><div style={{ fontSize: 24, fontWeight: 700, marginTop: 4 }}>{customer.since}</div><div style={{ fontSize: 12, color: 'var(--muted)' }}>{t('Last order')}: {customer.last_order || '-'}</div></div>
             </div>
 
             <div className="cust-2col" style={{ display: 'grid', gridTemplateColumns: '340px 1fr', gap: 12, alignItems: 'start' }}>

@@ -1,10 +1,10 @@
 @extends('storefront.layout')
 @section('content')
 @if($reported)
-  <div class="sf-thanks">Thank you — your report has been received. Our team will review this page.</div>
+  <div class="sf-thanks">Thank you - your report has been received. Our team will review this page.</div>
 @endif
 @if($preview)
-  <div class="sf-thanks">Preview — this is your draft. Customers do not see these changes until you publish them.</div>
+  <div class="sf-thanks">Preview - this is your draft. Customers do not see these changes until you publish them.</div>
 @endif
 
 @foreach($sections as $section)

@@ -2,12 +2,12 @@ import { useForm } from '@inertiajs/react';
 import { t } from '@/lib/i18n';
 
 /**
- * Payment Gateway settings card — ONE component, two scopes.
+ * Payment Gateway settings card - ONE component, two scopes.
  * The seller scope (action /settings/payment-gateway) holds the
  * shop's own merchant accounts for its customers; the platform
  * scope (action /settings/payment-gateway/platform) holds the
  * platform's own accounts that sellers pay for points packs.
- * The server resolves the scope from the signed-in user — the form
+ * The server resolves the scope from the signed-in user - the form
  * itself never names a scope.
  */
 export default function PaymentGatewayForm({ title, subtitle, data, action, saveLabel }) {
@@ -55,7 +55,7 @@ export default function PaymentGatewayForm({ title, subtitle, data, action, save
                     <label className="lbl">{t('Store ID')}</label>
                     <input className="fld" value={form.data.ssl_store_id} onChange={(e) => form.setData('ssl_store_id', e.target.value)} />
                     <label className="lbl">{t('Store password')}</label>
-                    <input className="fld" type="password" autoComplete="new-password" placeholder={data?.ssl_password_set ? t('Saved — leave blank to keep') : ''} value={form.data.ssl_password} onChange={(e) => form.setData('ssl_password', e.target.value)} />
+                    <input className="fld" type="password" autoComplete="new-password" placeholder={data?.ssl_password_set ? t('Saved - leave blank to keep') : ''} value={form.data.ssl_password} onChange={(e) => form.setData('ssl_password', e.target.value)} />
                 </div>
 
                 <div style={{ padding: '12px 0', borderBottom: '1px solid var(--border, #E7DEF0)' }}>
@@ -68,7 +68,7 @@ export default function PaymentGatewayForm({ title, subtitle, data, action, save
                     <label className="lbl">{t('Username')}</label>
                     <input className="fld" value={form.data.shurjo_username} onChange={(e) => form.setData('shurjo_username', e.target.value)} />
                     <label className="lbl">{t('Password')}</label>
-                    <input className="fld" type="password" autoComplete="new-password" placeholder={data?.shurjo_password_set ? t('Saved — leave blank to keep') : ''} value={form.data.shurjo_password} onChange={(e) => form.setData('shurjo_password', e.target.value)} />
+                    <input className="fld" type="password" autoComplete="new-password" placeholder={data?.shurjo_password_set ? t('Saved - leave blank to keep') : ''} value={form.data.shurjo_password} onChange={(e) => form.setData('shurjo_password', e.target.value)} />
                 </div>
 
                 <label className="lbl" style={{ marginTop: 12 }}>{t('Payment instructions (shown to the payer)')}</label>

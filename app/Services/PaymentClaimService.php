@@ -83,6 +83,9 @@ class PaymentClaimService
             ]);
 
             $shop = $claim->business?->name ?? 'A seller';
+            // Platform notice: business_id stays NULL on purpose, so
+            // only platform admins ever see it (claims are reviewed on
+            // /admin/claims). See AppNotification::visibleTo.
             AppNotification::create([
                 'kind' => 'payment',
                 'title' => 'Payment waiting for confirmation',

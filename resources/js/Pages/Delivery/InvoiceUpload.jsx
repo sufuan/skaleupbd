@@ -36,7 +36,7 @@ export default function InvoiceUpload({ methods, history, payments, receivables 
             const data = await res.json();
             if (!data.ok) { setPreviewError(data.error || 'Could not read the file'); return; }
             setPreview(data);
-        } catch { setPreviewError('Upload failed — try again'); }
+        } catch { setPreviewError('Upload failed - try again'); }
         setBusy(false);
     };
 
@@ -93,12 +93,12 @@ export default function InvoiceUpload({ methods, history, payments, receivables 
                     <span style={{ display: 'inline-flex', flexDirection: 'column', gap: 6 }}>
                         <span style={{ fontSize: 13, fontWeight: 600, color: '#64748B' }}>{t('Select Section')}</span>
                         <select id="invSection" className="fld" style={{ width: '100%', maxWidth: 445 }} value={section} onChange={(e) => setSection(e.target.value)}>
-                            <option>Manual Entry</option>
-                            <option>Invoice History</option>
+                            <option value="Manual Entry">{t('Manual Entry')}</option>
+                            <option value="Invoice History">{t('Invoice History')}</option>
                         </select>
                     </span>
                     <button className="ctl-btn" style={{ alignSelf: 'flex-end' }} onClick={() => setSection('Invoice History')}>{t('Invoice History')}</button>
-                    <button className="ctl-btn" style={{ marginLeft: 'auto', alignSelf: 'flex-end' }} onClick={() => setGuideOpen(true)}>{t('? Invalid ফিক্স গাইড')}</button>
+                    <button className="ctl-btn" style={{ marginLeft: 'auto', alignSelf: 'flex-end' }} onClick={() => setGuideOpen(true)}>{t('Fixing invalid lines')}</button>
                 </div>
 
                 {section === 'Manual Entry' && (
@@ -165,8 +165,8 @@ export default function InvoiceUpload({ methods, history, payments, receivables 
                                             <tbody>{preview.matched.map((m, i) => <tr key={i}><td className="b">{m.invoice}</td><td>{fmt(m.paid_amount)}</td><td>{fmt(m.expected)}</td></tr>)}</tbody>
                                         </table></div>
                                     )}
-                                    {preview.unmatched.map((m, i) => <p key={'u' + i} className="sm" style={{ color: 'var(--bad)' }}>{m.invoice} — {t(m.reason)}</p>)}
-                                    {preview.duplicates.map((m, i) => <p key={'d' + i} className="sm" style={{ color: 'var(--bad)' }}>{m.invoice} — {t(m.reason)}</p>)}
+                                    {preview.unmatched.map((m, i) => <p key={'u' + i} className="sm" style={{ color: 'var(--bad)' }}>{m.invoice} - {t(m.reason)}</p>)}
+                                    {preview.duplicates.map((m, i) => <p key={'d' + i} className="sm" style={{ color: 'var(--bad)' }}>{m.invoice} - {t(m.reason)}</p>)}
                                     <div style={{ marginTop: 16 }}>
                                         <button className="btn pri" disabled={preview.matched.length === 0} onClick={confirmUpload}>{t('Confirm & Save')}</button>
                                     </div>
@@ -176,7 +176,7 @@ export default function InvoiceUpload({ methods, history, payments, receivables 
 
                         <div className="card" style={{ marginBottom: 16, padding: 24 }}>
                             <h3 className="big">{t('One-line Payment Entry')}</h3>
-                            <div className="card-sub">{t('For couriers without a settlement API: write the payment once (total + date + reference) and confirm which parcels it covers — oldest first.')}</div>
+                            <div className="card-sub">{t('For couriers without a settlement API: write the payment once (total + date + reference) and confirm which parcels it covers - oldest first.')}</div>
                             <div className="flex" style={{ gap: 8, flexWrap: 'wrap' }}>
                                 <select className="inp" style={{ maxWidth: 200 }} value={pay.method_id} onChange={(e) => setPay({ ...pay, method_id: e.target.value })}>
                                     <option value="">{t('Pick the courier')}</option>
@@ -191,7 +191,7 @@ export default function InvoiceUpload({ methods, history, payments, receivables 
                             {proposal && (
                                 <div style={{ marginTop: 14 }}>
                                     {proposal.allocations.length === 0 && <p className="sm mut">{t('No unpaid delivered parcels for this courier')}</p>}
-                                    {proposal.allocations.map((a, i) => <p key={i} className="sm">{a.invoice} — {fmt(a.amount)} {t('of')} {fmt(a.expected)}</p>)}
+                                    {proposal.allocations.map((a, i) => <p key={i} className="sm">{a.invoice} - {fmt(a.amount)} {t('of')} {fmt(a.expected)}</p>)}
                                     {proposal.leftover > 0 && <p className="sm" style={{ color: 'var(--bad)' }}>{fmt(proposal.leftover)} {t('cannot be matched to any parcel')}</p>}
                                     {proposal.allocations.length > 0 && <button className="btn pri" style={{ marginTop: 10 }} onClick={savePayment}>{t('Confirm Payment')}</button>}
                                 </div>
@@ -200,10 +200,10 @@ export default function InvoiceUpload({ methods, history, payments, receivables 
 
                         <div className="card" style={{ padding: 24 }}>
                             <h3 className="big">{t('Steadfast Payouts')}</h3>
-                            <div className="card-sub">{t('Steadfast pays through its API — pull the payouts and every parcel inside them is matched by itself. Other couriers settle by statement upload or a payment entry.')}</div>
+                            <div className="card-sub">{t('Steadfast pays through its API - pull the payouts and every parcel inside them is matched by itself. Other couriers settle by statement upload or a payment entry.')}</div>
                             {methods.filter((m) => m.class === 'A').map((m) => (
                                 <div key={m.id} className="conn-row">
-                                    <div style={{ flex: 1 }}><div className="b">{m.label}</div><div className="sm mut">{t('Class A — full API')}</div></div>
+                                    <div style={{ flex: 1 }}><div className="b">{m.label}</div><div className="sm mut">{t('Class A - full API')}</div></div>
                                     <button className="btn pri" onClick={() => router.post('/delivery/pull', { method_id: m.id })}>{t('Pull Payouts')}</button>
                                 </div>
                             ))}
@@ -218,7 +218,7 @@ export default function InvoiceUpload({ methods, history, payments, receivables 
                             <thead><tr><th>{t('Date')}</th><th>{t('Courier')}</th><th>{t('Payment')}</th><th>{t('Amount')}</th><th>{t('Parcels')}</th><th>{t('Source')}</th></tr></thead>
                             <tbody>
                                 {history.map((s) => (
-                                    <tr key={s.id}><td>{s.date}</td><td className="b">{s.courier}</td><td className="sm">{s.payment_id || s.reference || '—'}</td>
+                                    <tr key={s.id}><td>{s.date}</td><td className="b">{s.courier}</td><td className="sm">{s.payment_id || s.reference || '-'}</td>
                                         <td className="b">{fmt(s.amount)}</td>
                                         <td className="sm">{s.parcels.map((p) => (
                                             <span key={p.allocation_id} style={{ marginRight: 10 }}>{p.invoice} {fmt(p.amount)}
@@ -235,7 +235,7 @@ export default function InvoiceUpload({ methods, history, payments, receivables 
                         {payments.length > 0 && (
                             <div style={{ padding: '14px 18px' }}>
                                 <div className="b" style={{ marginBottom: 8 }}>{t('Recorded Payments')}</div>
-                                {payments.map((p) => <p key={p.id} className="sm">{p.date} · {p.courier} · {fmt(p.amount)} · {p.reference || '—'} · {t(p.status)}</p>)}
+                                {payments.map((p) => <p key={p.id} className="sm">{p.date} · {p.courier} · {fmt(p.amount)} · {p.reference || '-'} · {t(p.status)}</p>)}
                             </div>
                         )}
                     </div>
@@ -246,10 +246,10 @@ export default function InvoiceUpload({ methods, history, payments, receivables 
                         <div className="modal" onClick={(e) => e.stopPropagation()}>
                             <h3 style={{ marginTop: 0 }}>{t('Fixing invalid lines')}</h3>
                             <ul className="sm" style={{ lineHeight: 1.8, paddingLeft: 18, listStyle: 'disc' }}>
-                                <li>{t('No booked order with this invoice — check the invoice number for a typo, or book the parcel first.')}</li>
-                                <li>{t('This parcel is already settled — the money is already recorded; remove the line.')}</li>
-                                <li>{t('Same invoice twice in this file — keep one line only.')}</li>
-                                <li>{t('PDF is not accepted — download the CSV or XLSX statement from the courier panel instead.')}</li>
+                                <li>{t('No booked order with this invoice - check the invoice number for a typo, or book the parcel first.')}</li>
+                                <li>{t('This parcel is already settled - the money is already recorded; remove the line.')}</li>
+                                <li>{t('Same invoice twice in this file - keep one line only.')}</li>
+                                <li>{t('PDF is not accepted - download the CSV or XLSX statement from the courier panel instead.')}</li>
                             </ul>
                             <div style={{ textAlign: 'right', marginTop: 14 }}>
                                 <button className="btn pri" onClick={() => setGuideOpen(false)}>{t('Close')}</button>

@@ -29,7 +29,7 @@ class ResetPasswordNotification extends ResetPassword
             ->line(__('Tap the button below to choose a new password.'))
             ->action(__('Reset password'), $this->resetUrl($notifiable))
             ->line(__('This link will expire in :count minutes, so please use it soon.', ['count' => $expire]))
-            ->line(__('If you did not ask for this, you can safely ignore this email — your password will not change.'))
-            ->salutation(__('— The SkaleUp BD team'));
+            ->line(__('If you did not ask for this, you can safely ignore this email - your password will not change.'))
+            ->salutation(__('- The SkaleUp BD team'));
     }
 }

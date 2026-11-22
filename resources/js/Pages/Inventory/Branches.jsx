@@ -5,7 +5,7 @@ import AppLayout from '@/Layouts/AppLayout';
 import { t } from '@/lib/i18n';
 import { BTN_OUTLINE, BTN_PRIMARY, INPUT } from './ProductFields';
 
-// Branches — copied from the prototype's inv-branches panel:
+// Branches - copied from the prototype's inv-branches panel:
 // stats, Branch Stock master toggle, branch cards, and the Stock Transfer tab.
 const TYPE_LABEL = { store: 'Retail Store', warehouse: 'Warehouse', central: 'Central' };
 
@@ -72,7 +72,7 @@ export default function Branches({ branches, stats, branchStockEnabled, cartonsE
                                             <div className="font-semibold">{b.name}</div>
                                             <span className="rounded-full border px-2 py-0.5 text-[11px] font-semibold">{t(TYPE_LABEL[b.type] || b.type)}</span>
                                         </div>
-                                        <div className="text-xs text-muted-foreground">{b.address || '—'} · {b.phone || '—'}</div>
+                                        <div className="text-xs text-muted-foreground">{b.address || '-'} · {b.phone || '-'}</div>
                                         <div className="text-sm">{t('Products')}: <b>{b.products_count}</b> · {t('Total Qty')}: <b>{b.total_qty}</b></div>
                                         {!b.is_active && <div className="text-xs text-red-600 font-medium">{t('Inactive')}</div>}
                                         <div className="flex flex-wrap gap-2 pt-1">
@@ -162,7 +162,7 @@ function TransferForm({ branches, products, transfers, branchName, productName, 
                         <label className="text-sm font-medium">{t('Product')}</label>
                         <select className={INPUT} value={form.product_id} onChange={(e) => set('product_id', e.target.value)}>
                             <option value="">{t('Select')}</option>
-                            {products.map((p) => <option key={p.id} value={p.id}>{p.name} — {p.sku}</option>)}
+                            {products.map((p) => <option key={p.id} value={p.id}>{p.name} - {p.sku}</option>)}
                         </select>
                     </div>
                     <div className="space-y-1">

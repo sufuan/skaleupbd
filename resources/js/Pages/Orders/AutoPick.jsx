@@ -7,7 +7,7 @@ export default function AutoPick({ queues, autoOpen, myToday }) {
         <AppLayout>
             <Head title={t('Auto Pick Orders')} />
             <h1 className="page-h">{t('Auto Pick Orders')}</h1>
-            <div className="page-sub">{t('Shared queues — open the next order in a status and process it yourself. Nothing is assigned in advance.')}</div>
+            <div className="page-sub">{t('Shared queues - open the next order in a status and process it yourself. Nothing is assigned in advance.')}</div>
 
             <div className="card mb12">
                 <div className="flex">
@@ -35,7 +35,7 @@ export default function AutoPick({ queues, autoOpen, myToday }) {
 
             <div className="card mt16">
                 <h3>{t('My Daily Report')}</h3>
-                <div className="card-sub">{t('What you actually processed today — counted from the processing history.')}</div>
+                <div className="card-sub">{t('What you actually processed today - counted from the processing history.')}</div>
                 <div className="flex" style={{ gap: 14 }}>
                     <div className="stat-box" style={{ minWidth: 150 }}>
                         <div className="sm mut">{t('Orders approved by me today')}</div>

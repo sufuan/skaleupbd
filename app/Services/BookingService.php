@@ -127,7 +127,7 @@ class BookingService
         $order->consignment_id = $result['consignment_id'] ?? null;
         $order->booking_status = 'booked';
         $order->courier_status = 'Booked';
-        $order->delivery_method = $method->label() . ' — ' . (strtolower((string) $order->effectiveDistrict()) === 'dhaka' ? 'Inside Dhaka' : 'Outside Dhaka');
+        $order->delivery_method = $method->label() . ' - ' . (strtolower((string) $order->effectiveDistrict()) === 'dhaka' ? 'Inside Dhaka' : 'Outside Dhaka');
         $order->shipped_at = now();
         $order->save();
         $this->orders->changeStatus($order, 'Shipped', $actor, 'Sent via ' . $method->label() . ' · CN ' . ($order->consignment_id ?: $order->tracking_id));
@@ -163,7 +163,7 @@ class BookingService
             'tracking_id' => null, 'consignment_id' => null,
             'courier_status' => null, 'booking_status' => 'queued',
         ]);
-        $order->logActivity('action', 'Courier changed to ' . $method->label() . ' — pickup store and tracking cleared', $actor);
+        $order->logActivity('action', 'Courier changed to ' . $method->label() . ' - pickup store and tracking cleared', $actor);
 
         return ['ok' => true, 'method' => $method];
     }
@@ -256,8 +256,9 @@ class BookingService
             'link' => $link,
         ]);
         AppNotification::create([
+            'business_id' => $order->business_id,
             'kind' => 'delivery',
-            'title' => 'Booking keeps failing — ' . $order->invoice,
+            'title' => 'Booking keeps failing - ' . $order->invoice,
             'body' => $method->label() . ' booking failed ' . $failures . ' times for this order.',
             'link' => $link,
         ]);

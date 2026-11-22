@@ -207,7 +207,7 @@ class MarketingController extends Controller
         }
         $campaign->update(['recipients' => $sent, 'total_cost' => round($cost, 2), 'status' => 'sent']);
 
-        return back()->with('success', "Campaign sent — {$sent} SMS delivered, cost ৳".number_format($cost, 2));
+        return back()->with('success', "Campaign sent - {$sent} SMS delivered, cost ৳".number_format($cost, 2));
     }
 
     // ---------- SMS Report ----------

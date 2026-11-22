@@ -177,7 +177,7 @@ class InventoryOpsController extends Controller
             }
         }
 
-        return back()->with('success', $changed ? "Reconciliation saved — {$changed} product(s) adjusted" : 'Everything already matches');
+        return back()->with('success', $changed ? "Reconciliation saved - {$changed} product(s) adjusted" : 'Everything already matches');
     }
 
     // ---------------- Branches + Transfers ----------------
