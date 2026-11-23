@@ -45,7 +45,7 @@ class OrderToolsController extends Controller
 
         return Inertia::render('Orders/AutoPick', [
             'queues' => $queues,
-            'autoOpen' => (bool) $this->settings->get('orders.autopick_auto_open', true),
+            'autoOpen' => (bool) $this->settings->bizGet($biz, "orders.{$biz}.autopick_auto_open", 'orders.autopick_auto_open', true),
             'myToday' => $today,
         ]);
     }
@@ -69,7 +69,8 @@ class OrderToolsController extends Controller
 
     public function autopickToggle(Request $request): RedirectResponse
     {
-        $this->settings->set('orders.autopick_auto_open', $request->boolean('enabled'), $request->user()->id);
+        $biz = $this->biz($request);
+        $this->settings->set("orders.{$biz}.autopick_auto_open", $request->boolean('enabled'), $request->user()->id);
 
         return back();
     }
@@ -87,7 +88,7 @@ class OrderToolsController extends Controller
                 'failed' => (clone $today)->whereIn('outcome', ['failed', 'no_answer', 'phone_off', 'wrong_number'])->count(),
                 'minutes' => (int) (clone $today)->sum('minutes'),
                 'waiting' => Order::where('business_id', $biz)->where('status', 'Pending')->count(),
-                'balance' => (float) $this->settings->get('autocall.balance', 1250),
+                'balance' => (float) $this->settings->bizGet($biz, "autocall.{$biz}.balance", 'autocall.balance', 1250),
             ],
             'waitingOrders' => Order::where('business_id', $biz)->where('status', 'Pending')->oldest()
                 ->get()->map(fn ($o) => ['id' => $o->id, 'invoice' => $o->invoice_no, 'name' => $o->customer_name, 'phone' => $o->customer_phone, 'total' => (float) $o->grand_total]),
@@ -116,8 +117,8 @@ class OrderToolsController extends Controller
                 $order->logActivity('action', "Call logged by {$request->user()->name} — outcome: {$data['outcome']}", $request->user());
             }
         }
-        $balance = (float) $this->settings->get('autocall.balance', 1250);
-        $this->settings->set('autocall.balance', max(0, $balance - (float) ($data['minutes'] ?? 1) * 1.0), $request->user()->id);
+        $balance = (float) $this->settings->bizGet($biz, "autocall.{$biz}.balance", 'autocall.balance', 1250);
+        $this->settings->set("autocall.{$biz}.balance", max(0, $balance - (float) ($data['minutes'] ?? 1) * 1.0), $request->user()->id);
 
         return back()->with('success', 'Call outcome logged');
     }

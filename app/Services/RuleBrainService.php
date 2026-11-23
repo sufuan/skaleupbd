@@ -277,7 +277,7 @@ class RuleBrainService
     public function buildReply(AiRule $rule, ?Product $product, int $businessId, bool $slots = false, ?string $honorific = null): string
     {
         $tpl = (string) ($rule->reply_template ?? '');
-        $inside = (float) $this->settings->get('business.default_delivery_cost', 60);
+        $inside = (float) $this->settings->bizGet($businessId, "business.{$businessId}.default_delivery_cost", 'business.default_delivery_cost', 60);
         // With $slots, every figure stays a ⟦token⟧ until AFTER the talker
         // has phrased the text — the model never sees or writes a number,
         // and code renders the real values from the database at the end.
@@ -314,7 +314,7 @@ class RuleBrainService
     /** Fill ⟦slot⟧ tokens with the real figures from the database. */
     public function renderSlots(string $text, ?Product $product, int $businessId, array $extra = []): string
     {
-        $inside = (float) $this->settings->get('business.default_delivery_cost', 60);
+        $inside = (float) $this->settings->bizGet($businessId, "business.{$businessId}.default_delivery_cost", 'business.default_delivery_cost', 60);
         $map = [
             '⟦price⟧' => $product ? number_format($product->effectivePrice()) : '',
             '⟦stock⟧' => $product ? (string) max(0, (int) $product->stock_qty - (int) $product->reserved_qty) : '',
@@ -731,7 +731,7 @@ class RuleBrainService
     /** Every figure the business could honestly state right now. */
     public function allowedFigures(int $businessId, ?Product $product): array
     {
-        $figures = [60.0, 120.0, (float) $this->settings->get('business.default_delivery_cost', 60), $this->negotiation->config()['free_delivery_min']];
+        $figures = [60.0, 120.0, (float) $this->settings->bizGet($businessId, "business.{$businessId}.default_delivery_cost", 'business.default_delivery_cost', 60), $this->negotiation->config()['free_delivery_min']];
         foreach (Product::where('business_id', $businessId)->get() as $p) {
             $figures[] = (float) $p->price;
             $figures[] = $p->effectivePrice();
@@ -1094,7 +1094,7 @@ class RuleBrainService
                 return null;
             }
             $offer = $quote['offer'];
-            $total = $offer + (float) $this->settings->get('business.default_delivery_cost', 60);
+            $total = $offer + (float) $this->settings->bizGet($biz, "business.{$biz}.default_delivery_cost", 'business.default_delivery_cost', 60);
             $h = $this->honorific($biz, $conversation->customer_name);
             $first = match ($quote['kind']) {
                 'accept' => 'ঠিক আছে' . ($h !== '' ? ' ' . $h : '') . ', আপনার কথামতোই ⟦offer⟧ টাকায় দিচ্ছি।',

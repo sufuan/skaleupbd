@@ -9,7 +9,6 @@ use App\Models\Product;
 use App\Models\ProductBrand;
 use App\Models\ProductCategory;
 use App\Models\ProductVariant;
-use App\Models\Setting;
 use App\Models\SharedInventoryGroup;
 use App\Models\StockLedger;
 use App\Models\StockLinkGroup;
@@ -28,18 +27,11 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx as XlsxWriter;
 
 class InventoryController extends Controller
 {
-    public function __construct(private StockService $stock) {}
+    public function __construct(private StockService $stock, private readonly \App\Services\SettingsService $settings) {}
 
     private function biz(Request $request): int
     {
         return $request->user()->business_id;
-    }
-
-    private function setting(string $key, mixed $default): mixed
-    {
-        $row = Setting::where('key', $key)->first();
-
-        return $row ? $row->decodedValue() : $default;
     }
 
     private function available(Product $p): int
@@ -164,7 +156,7 @@ class InventoryController extends Controller
             'restock' => $restock,
             'branches' => $branches,
             'branchStock' => $branchStock,
-            'branchStockEnabled' => (bool) $this->setting('inventory.branch_stock_enabled', false),
+            'branchStockEnabled' => (bool) $this->settings->bizGet($biz, "inventory.{$biz}.branch_stock_enabled", 'inventory.branch_stock_enabled', false),
             'categories' => ProductCategory::where('business_id', $biz)->orderBy('name')->get(['id', 'name']),
         ]);
     }

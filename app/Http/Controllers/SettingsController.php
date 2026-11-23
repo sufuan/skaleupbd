@@ -132,21 +132,21 @@ class SettingsController extends Controller
                     'name' => $this->settings->shopName($biz),
                     'mobile' => $this->settings->shopContact($biz, 'mobile'),
                     'address' => $this->settings->shopContact($biz, 'address'),
-                    'invoice_slug' => (string) $this->settings->get('business.invoice_slug', 'OB'),
-                    'default_delivery_cost' => (float) $this->settings->get('business.default_delivery_cost', 60),
+                    'invoice_slug' => (string) $this->settings->bizGet($biz, "business.{$biz}.invoice_slug", 'business.invoice_slug', 'OB'),
+                    'default_delivery_cost' => (float) $this->settings->bizGet($biz, "business.{$biz}.default_delivery_cost", 'business.default_delivery_cost', 60),
                 ],
                 'sources' => OrderSource::where('business_id', $biz)->orderBy('sort')
                     ->get(['id', 'code', 'label', 'is_visible']),
                 'templates' => [
                     'reminder' => MessageTemplate::where('business_id', $biz)->where('key', 'reminder')->value('body') ?? '',
                     'advance' => MessageTemplate::where('business_id', $biz)->where('key', 'advance')->value('body') ?? '',
-                    'invoice_template' => (string) $this->settings->get('invoice.template', 'a4'),
+                    'invoice_template' => (string) $this->settings->bizGet($biz, "invoice.{$biz}.template", 'invoice.template', 'a4'),
                 ],
                 'inventory' => [
-                    'branch_stock_enabled' => (bool) $this->settings->get('inventory.branch_stock_enabled', false),
-                    'warehouse_cartons' => (bool) $this->settings->get('inventory.warehouse_cartons', false),
-                    'stock_management_disabled' => (bool) $this->settings->get('inventory.stock_management_disabled', false),
-                    'valuation' => (string) $this->settings->get('inventory.valuation', 'average_cost'),
+                    'branch_stock_enabled' => (bool) $this->settings->bizGet($biz, "inventory.{$biz}.branch_stock_enabled", 'inventory.branch_stock_enabled', false),
+                    'warehouse_cartons' => (bool) $this->settings->bizGet($biz, "inventory.{$biz}.warehouse_cartons", 'inventory.warehouse_cartons', false),
+                    'stock_management_disabled' => (bool) $this->settings->bizGet($biz, "inventory.{$biz}.stock_management_disabled", 'inventory.stock_management_disabled', false),
+                    'valuation' => (string) $this->settings->bizGet($biz, "inventory.{$biz}.valuation", 'inventory.valuation', 'average_cost'),
                 ],
                 'finance' => [
                     'daily_closing' => (bool) $this->settings->get('finance.' . $biz . '.daily_closing', false),
@@ -169,17 +169,23 @@ class SettingsController extends Controller
                     'has_webhook_secret' => (bool) $this->settings->get('marketing.' . $biz . '.sms_webhook_secret_enc'),
                 ],
                 'toggles' => [
-                    'show_email' => (bool) $this->settings->get('orders.show_email', true),
-                    'show_alt_number' => (bool) $this->settings->get('orders.show_alt_number', false),
-                    'mandatory_source' => (bool) $this->settings->get('orders.mandatory_source', true),
-                    'mandatory_shipping_note' => (bool) $this->settings->get('orders.mandatory_shipping_note', false),
-                    'mandatory_advance_txn' => (bool) $this->settings->get('orders.mandatory_advance_txn', true),
-                    'cross_sale' => (bool) $this->settings->get('orders.cross_sale', true),
+                    'show_email' => (bool) $this->settings->bizGet($biz, "orders.{$biz}.show_email", 'orders.show_email', true),
+                    'show_alt_number' => (bool) $this->settings->bizGet($biz, "orders.{$biz}.show_alt_number", 'orders.show_alt_number', false),
+                    'mandatory_source' => (bool) $this->settings->bizGet($biz, "orders.{$biz}.mandatory_source", 'orders.mandatory_source', true),
+                    'mandatory_shipping_note' => (bool) $this->settings->bizGet($biz, "orders.{$biz}.mandatory_shipping_note", 'orders.mandatory_shipping_note', false),
+                    'mandatory_advance_txn' => (bool) $this->settings->bizGet($biz, "orders.{$biz}.mandatory_advance_txn", 'orders.mandatory_advance_txn', true),
+                    'cross_sale' => (bool) $this->settings->bizGet($biz, "orders.{$biz}.cross_sale", 'orders.cross_sale', true),
                 ],
                 'deletionLogs' => DeletionLog::where('business_id', $biz)->latest('created_at')->limit(50)->get()
                     ->map(fn ($l) => ['ref' => $l->order_ref, 'by' => $l->deleted_by, 'reason' => $l->reason,
                         'when' => $l->created_at?->format('d M Y, h:i A')]),
-                'changeHistory' => DB::table('settings_changes')->latest('created_at')->limit(30)->get()
+                // Change History is attributed by the business_id recorded
+                // on each row: platform admins see everything, a seller
+                // sees only their own shop's changes. Rows written before
+                // attribution existed (business_id null) stay admin-only.
+                'changeHistory' => DB::table('settings_changes')
+                    ->when(! $isPlatform, fn ($q) => $q->where('business_id', $biz))
+                    ->latest('created_at')->limit(30)->get()
                     ->map(fn ($c) => ['key' => $c->key, 'old' => $this->maskHistoryValue((string) $c->key, $c->old_value), 'new' => $this->maskHistoryValue((string) $c->key, $c->new_value),
                         'by' => $c->changed_by, 'when' => \Illuminate\Support\Carbon::parse($c->created_at)->format('d M Y, h:i A')]),
             ],
@@ -226,6 +232,7 @@ class SettingsController extends Controller
     {
         DB::table('settings_changes')->insert([
             'key' => $key,
+            'business_id' => $request->user()?->business_id,
             'old_value' => is_bool($old) ? ($old ? 'On' : 'Off') : (is_array($old) ? json_encode($old) : (string) ($old ?? '')),
             'new_value' => is_bool($new) ? ($new ? 'On' : 'Off') : (is_array($new) ? json_encode($new) : (string) ($new ?? '')),
             'changed_by' => $request->user()?->name,
@@ -239,6 +246,20 @@ class SettingsController extends Controller
         $this->settings->set($key, $value, $request->user()?->id);
         if (json_encode($old) !== json_encode($value)) {
             $this->logChange($request, $key, $old, $value);
+        }
+    }
+
+    /**
+     * Save a per-business preference under its namespaced key. The logged
+     * "old" value is the EFFECTIVE one (the shop's saved value, or the
+     * legacy global it was falling back to), so the history reads true.
+     */
+    private function setLoggedBiz(Request $request, int $biz, string $scopedKey, string $legacyKey, mixed $value): void
+    {
+        $old = $this->settings->bizGet($biz, $scopedKey, $legacyKey);
+        $this->settings->set($scopedKey, $value, $request->user()?->id);
+        if (json_encode($old) !== json_encode($value)) {
+            $this->logChange($request, $scopedKey, $old, $value);
         }
     }
 
@@ -270,8 +291,8 @@ class SettingsController extends Controller
         $this->setLogged($request, "business.{$biz}.profile_name", $data['name']);
         $this->setLogged($request, "business.{$biz}.mobile", $data['mobile'] ?? '');
         $this->setLogged($request, "business.{$biz}.address", $data['address'] ?? '');
-        $this->setLogged($request, 'business.invoice_slug', strtoupper($data['invoice_slug']));
-        $this->setLogged($request, 'business.default_delivery_cost', (float) $data['default_delivery_cost']);
+        $this->setLoggedBiz($request, $biz, "business.{$biz}.invoice_slug", 'business.invoice_slug', strtoupper($data['invoice_slug']));
+        $this->setLoggedBiz($request, $biz, "business.{$biz}.default_delivery_cost", 'business.default_delivery_cost', (float) $data['default_delivery_cost']);
 
         return back()->with('success', 'Business settings saved');
     }
@@ -326,7 +347,7 @@ class SettingsController extends Controller
         $biz = (int) $request->user()->business_id;
         MessageTemplate::updateOrCreate(['business_id' => $biz, 'key' => 'reminder'], ['name' => 'Order Reminder SMS', 'body' => $data['reminder']]);
         MessageTemplate::updateOrCreate(['business_id' => $biz, 'key' => 'advance'], ['name' => 'Advance Payment SMS', 'body' => $data['advance']]);
-        $this->setLogged($request, 'invoice.template', $data['invoice_template']);
+        $this->setLoggedBiz($request, $biz, "invoice.{$biz}.template", 'invoice.template', $data['invoice_template']);
 
         return back()->with('success', 'Templates saved');
     }
@@ -339,10 +360,11 @@ class SettingsController extends Controller
             'stock_management_disabled' => ['required', 'boolean'],
             'valuation' => ['required', 'string', 'in:average_cost'],
         ]);
-        $this->setLogged($request, 'inventory.branch_stock_enabled', (bool) $data['branch_stock_enabled']);
-        $this->setLogged($request, 'inventory.warehouse_cartons', (bool) $data['warehouse_cartons']);
-        $this->setLogged($request, 'inventory.stock_management_disabled', (bool) $data['stock_management_disabled']);
-        $this->setLogged($request, 'inventory.valuation', $data['valuation']);
+        $biz = (int) $request->user()->business_id;
+        $this->setLoggedBiz($request, $biz, "inventory.{$biz}.branch_stock_enabled", 'inventory.branch_stock_enabled', (bool) $data['branch_stock_enabled']);
+        $this->setLoggedBiz($request, $biz, "inventory.{$biz}.warehouse_cartons", 'inventory.warehouse_cartons', (bool) $data['warehouse_cartons']);
+        $this->setLoggedBiz($request, $biz, "inventory.{$biz}.stock_management_disabled", 'inventory.stock_management_disabled', (bool) $data['stock_management_disabled']);
+        $this->setLoggedBiz($request, $biz, "inventory.{$biz}.valuation", 'inventory.valuation', $data['valuation']);
 
         return back()->with('success', 'Inventory settings saved');
     }
@@ -437,8 +459,9 @@ class SettingsController extends Controller
             'mandatory_advance_txn' => ['required', 'boolean'],
             'cross_sale' => ['required', 'boolean'],
         ]);
+        $biz = (int) $request->user()->business_id;
         foreach ($data as $key => $value) {
-            $this->setLogged($request, "orders.{$key}", (bool) $value);
+            $this->setLoggedBiz($request, $biz, "orders.{$biz}.{$key}", "orders.{$key}", (bool) $value);
         }
 
         return back()->with('success', 'Order settings saved');

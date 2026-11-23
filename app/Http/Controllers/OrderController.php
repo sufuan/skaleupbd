@@ -224,25 +224,26 @@ class OrderController extends Controller
                 ->flatMap(fn ($t) => is_array($t) ? $t : [])->unique()->values(),
             'paymentMethods' => ['bKash', 'Nagad', 'Rocket', 'Bank', 'Cash on Delivery'],
             'defaults' => [
-                'delivery_charge' => (float) $this->settings->get('business.default_delivery_cost', 60),
-                'invoice_slug' => (string) $this->settings->get('business.invoice_slug', 'OB'),
+                'delivery_charge' => (float) $this->settings->bizGet($biz, "business.{$biz}.default_delivery_cost", 'business.default_delivery_cost', 60),
+                'invoice_slug' => (string) $this->settings->bizGet($biz, "business.{$biz}.invoice_slug", 'business.invoice_slug', 'OB'),
             ],
             'toggles' => [
-                'show_email' => (bool) $this->settings->get('orders.show_email', true),
-                'show_alt_number' => (bool) $this->settings->get('orders.show_alt_number', false),
-                'mandatory_source' => (bool) $this->settings->get('orders.mandatory_source', true),
-                'mandatory_shipping_note' => (bool) $this->settings->get('orders.mandatory_shipping_note', false),
-                'mandatory_advance_txn' => (bool) $this->settings->get('orders.mandatory_advance_txn', true),
-                'cross_sale' => (bool) $this->settings->get('orders.cross_sale', true),
+                'show_email' => (bool) $this->settings->bizGet($biz, "orders.{$biz}.show_email", 'orders.show_email', true),
+                'show_alt_number' => (bool) $this->settings->bizGet($biz, "orders.{$biz}.show_alt_number", 'orders.show_alt_number', false),
+                'mandatory_source' => (bool) $this->settings->bizGet($biz, "orders.{$biz}.mandatory_source", 'orders.mandatory_source', true),
+                'mandatory_shipping_note' => (bool) $this->settings->bizGet($biz, "orders.{$biz}.mandatory_shipping_note", 'orders.mandatory_shipping_note', false),
+                'mandatory_advance_txn' => (bool) $this->settings->bizGet($biz, "orders.{$biz}.mandatory_advance_txn", 'orders.mandatory_advance_txn', true),
+                'cross_sale' => (bool) $this->settings->bizGet($biz, "orders.{$biz}.cross_sale", 'orders.cross_sale', true),
             ],
         ]);
     }
 
     public function store(Request $request): RedirectResponse
     {
-        $mandatorySource = (bool) $this->settings->get('orders.mandatory_source', true);
-        $mandatoryNote = (bool) $this->settings->get('orders.mandatory_shipping_note', false);
-        $mandatoryTxn = (bool) $this->settings->get('orders.mandatory_advance_txn', true);
+        $storeBiz = $this->businessId($request);
+        $mandatorySource = (bool) $this->settings->bizGet($storeBiz, "orders.{$storeBiz}.mandatory_source", 'orders.mandatory_source', true);
+        $mandatoryNote = (bool) $this->settings->bizGet($storeBiz, "orders.{$storeBiz}.mandatory_shipping_note", 'orders.mandatory_shipping_note', false);
+        $mandatoryTxn = (bool) $this->settings->bizGet($storeBiz, "orders.{$storeBiz}.mandatory_advance_txn", 'orders.mandatory_advance_txn', true);
 
         $data = $request->validate([
             'customer_name' => ['required', 'string', 'max:120'],
@@ -631,7 +632,7 @@ class OrderController extends Controller
                 'mobile' => $this->settings->shopContact($order->business_id, 'mobile'),
                 'address' => $this->settings->shopContact($order->business_id, 'address'),
             ],
-            'template' => (string) $this->settings->get('invoice.template', 'a4'),
+            'template' => (string) $this->settings->bizGet($order->business_id, "invoice.{$order->business_id}.template", 'invoice.template', 'a4'),
         ]);
     }
 }

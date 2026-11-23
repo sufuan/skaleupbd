@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Models\Customer;
 use App\Models\Order;
 use App\Models\Product;
-use App\Models\Setting;
 use App\Models\StockLedger;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -22,7 +21,7 @@ class OrderService
 
     public function nextInvoice(int $businessId, ?string $prefix = null): string
     {
-        $slug = $prefix !== null && trim($prefix) !== '' ? trim($prefix) : (string) $this->settings->get('business.invoice_slug', 'OB');
+        $slug = $prefix !== null && trim($prefix) !== '' ? trim($prefix) : (string) $this->settings->bizGet($businessId, "business.{$businessId}.invoice_slug", 'business.invoice_slug', 'OB');
         $n = (int) $this->settings->get('business.invoice_seq', 281);
         do {
             $n++;
@@ -195,11 +194,9 @@ class OrderService
     }
 
     /** Settings → Advanced: "Disable Stock Management" — orders flow without touching stock. */
-    private function stockOff(): bool
+    private function stockOff(int $businessId): bool
     {
-        $row = Setting::where('key', 'inventory.stock_management_disabled')->first();
-
-        return $row ? (bool) $row->decodedValue() : false;
+        return (bool) $this->settings->bizGet($businessId, "inventory.{$businessId}.stock_management_disabled", 'inventory.stock_management_disabled', false);
     }
 
     /**
@@ -210,7 +207,7 @@ class OrderService
      */
     public function shortagesForItems(int $businessId, array $items): array
     {
-        if ($this->stockOff()) {
+        if ($this->stockOff($businessId)) {
             return [];
         }
         $need = [];
@@ -266,7 +263,7 @@ class OrderService
                 // snapshot the current average cost for the profit engine
                 $item->cost = $product->cost;
                 $item->save();
-                if ($this->stockOff()) {
+                if ($this->stockOff($order->business_id)) {
                     continue;
                 }
                 $product->increment('reserved_qty', $item->qty);
@@ -301,7 +298,7 @@ class OrderService
             if ($to === 'Cancelled' && $from === 'Processing') {
                 $this->releaseReservations($order, 'release_reserve', 'Released on cancel');
             }
-            if ($to === 'Returned' && in_array($from, ['Shipped', 'Delivered'], true) && ! $this->stockOff()) {
+            if ($to === 'Returned' && in_array($from, ['Shipped', 'Delivered'], true) && ! $this->stockOff($order->business_id)) {
                 foreach ($order->items as $item) {
                     if (! $item->product_id) {
                         continue;
@@ -320,7 +317,7 @@ class OrderService
                         'note' => "Returned on {$order->invoice_no}"]);
                 }
             }
-            if ($to === 'Shipped' && $from === 'Processing' && ! $this->stockOff()) {
+            if ($to === 'Shipped' && $from === 'Processing' && ! $this->stockOff($order->business_id)) {
                 foreach ($order->items as $item) {
                     if (! $item->product_id) {
                         continue;
@@ -397,7 +394,7 @@ class OrderService
 
     private function releaseReservations(Order $order, string $type, string $note): void
     {
-        if ($this->stockOff()) {
+        if ($this->stockOff($order->business_id)) {
             return;
         }
         foreach ($order->items as $item) {

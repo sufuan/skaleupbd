@@ -92,7 +92,7 @@ class AutomationService
         if (! ($cfg[$flow]['enabled'] ?? false)) {
             return null;
         }
-        $body = $this->fill($this->body($biz, $flow), $vars + ['phone' => (string) $this->settings->get('business.phone', '')]);
+        $body = $this->fill($this->body($biz, $flow), $vars + ['phone' => $this->settings->shopContact($biz, 'mobile')]);
 
         return $this->sms->send($biz, $phone, $body, [
             'type' => 'automation', 'key' => $flow, 'label' => self::FLOWS[$flow]['title'], 'ref' => $ref,

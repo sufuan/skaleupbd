@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Branch;
 use App\Models\BranchStock;
 use App\Models\Product;
-use App\Models\Setting;
 use App\Models\StockLedger;
 use App\Models\StockTransfer;
 use App\Models\User;
@@ -18,25 +17,11 @@ use Inertia\Inertia;
 
 class InventoryOpsController extends Controller
 {
-    public function __construct(private StockService $stock) {}
+    public function __construct(private StockService $stock, private readonly \App\Services\SettingsService $settings) {}
 
     private function biz(Request $request): int
     {
         return $request->user()->business_id;
-    }
-
-    private function setting(string $key, mixed $default): mixed
-    {
-        $row = Setting::where('key', $key)->first();
-
-        return $row ? $row->decodedValue() : $default;
-    }
-
-    private function setSetting(string $key, mixed $value, string $type, string $group): void
-    {
-        Setting::updateOrCreate(['key' => $key], [
-            'value' => Setting::encodeValue($value, $type), 'type' => $type, 'group' => $group,
-        ]);
     }
 
     // ---------------- Stock Ledger + Integrity ----------------
@@ -82,8 +67,7 @@ class InventoryOpsController extends Controller
             ->groupBy('product_id')
             ->map(fn ($rows) => $rows->sum(fn ($r) => ($signed[$r->type] ?? 0) * $r->qty));
         $products = Product::where('business_id', $biz)->get();
-        $openingByProduct = DB::table('settings')->where('key', 'inventory.opening_balances')->value('value');
-        $openings = $openingByProduct ? (json_decode($openingByProduct, true) ?: []) : [];
+        $openings = (array) $this->settings->bizGet($biz, "inventory.{$biz}.opening_balances", 'inventory.opening_balances', []);
         $findings = [];
         $accurate = 0;
         foreach ($products as $p) {
@@ -209,8 +193,8 @@ class InventoryOpsController extends Controller
                 'warehouses' => $branches->where('type', 'warehouse')->count(),
                 'central' => $branches->where('type', 'central')->count(),
             ],
-            'branchStockEnabled' => (bool) $this->setting('inventory.branch_stock_enabled', false),
-            'cartonsEnabled' => (bool) $this->setting('inventory.warehouse_cartons', false),
+            'branchStockEnabled' => (bool) $this->settings->bizGet($biz, "inventory.{$biz}.branch_stock_enabled", 'inventory.branch_stock_enabled', false),
+            'cartonsEnabled' => (bool) $this->settings->bizGet($biz, "inventory.{$biz}.warehouse_cartons", 'inventory.warehouse_cartons', false),
             'transfers' => $transfers,
             'products' => Product::where('business_id', $biz)->orderBy('name')->get(['id', 'name', 'sku', 'stock_qty']),
         ]);
@@ -218,8 +202,9 @@ class InventoryOpsController extends Controller
 
     public function toggleBranchStock(Request $request)
     {
-        $enabled = ! (bool) $this->setting('inventory.branch_stock_enabled', false);
-        $this->setSetting('inventory.branch_stock_enabled', $enabled, 'boolean', 'inventory');
+        $biz = $this->biz($request);
+        $enabled = ! (bool) $this->settings->bizGet($biz, "inventory.{$biz}.branch_stock_enabled", 'inventory.branch_stock_enabled', false);
+        $this->settings->set("inventory.{$biz}.branch_stock_enabled", $enabled, $request->user()?->id);
 
         return back()->with('success', $enabled ? 'Branch stock turned on' : 'Branch stock turned off');
     }
@@ -325,7 +310,7 @@ class InventoryOpsController extends Controller
         ];
         $vocab = [];
         foreach ($defaults as $k => $v) {
-            $vocab[$k] = $this->setting('warranty.' . $k, $v);
+            $vocab[$k] = $this->settings->bizGet($biz, "warranty.{$biz}.{$k}", 'warranty.' . $k, $v);
         }
 
         return Inertia::render('Inventory/Warranty', [
@@ -365,7 +350,7 @@ class InventoryOpsController extends Controller
             'type' => ['nullable', 'string', 'max:120'],
             'received_date' => ['nullable', 'date'],
         ]);
-        $days = (int) $this->setting('warranty.turnaround_days', 7);
+        $days = (int) $this->settings->bizGet($biz, "warranty.{$biz}.turnaround_days", 'warranty.turnaround_days', 7);
         $received = $data['received_date'] ?? DhakaTime::today();
         $count = WarrantyClaim::where('business_id', $biz)->count();
         WarrantyClaim::create(['business_id' => $biz,
@@ -403,18 +388,19 @@ class InventoryOpsController extends Controller
             'default_period' => ['nullable', 'string', 'max:60'], 'default_type' => ['nullable', 'string', 'max:60'],
             'terms' => ['nullable', 'string'],
         ]);
+        $biz = $this->biz($request);
         foreach (['types', 'resolutions', 'reject_reasons', 'cancel_reasons'] as $k) {
             if (isset($data[$k])) {
-                $this->setSetting('warranty.' . $k, array_values(array_filter($data[$k])), 'json', 'warranty');
+                $this->settings->set("warranty.{$biz}.{$k}", array_values(array_filter($data[$k])), $request->user()?->id);
             }
         }
         foreach (['default_period', 'default_type', 'terms'] as $k) {
             if (isset($data[$k])) {
-                $this->setSetting('warranty.' . $k, $data[$k], 'string', 'warranty');
+                $this->settings->set("warranty.{$biz}.{$k}", $data[$k], $request->user()?->id);
             }
         }
         if (isset($data['turnaround_days'])) {
-            $this->setSetting('warranty.turnaround_days', $data['turnaround_days'], 'number', 'warranty');
+            $this->settings->set("warranty.{$biz}.turnaround_days", (int) $data['turnaround_days'], $request->user()?->id);
         }
 
         return back()->with('success', 'Warranty settings saved');

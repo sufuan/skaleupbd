@@ -22,6 +22,20 @@ class SettingsService
     }
 
     /**
+     * Read a per-business shop preference. The shop's own namespaced key
+     * wins; until the shop saves one, the LEGACY global key (the value
+     * every shop shared before namespacing) is the fallback, so no shop
+     * loses its current setting. Writes always go to the namespaced key
+     * via set() - the legacy rows are read-only fallbacks now.
+     */
+    public function bizGet(int $biz, string $scopedKey, string $legacyKey, mixed $default = null): mixed
+    {
+        $own = $this->get($scopedKey, null);
+
+        return $own !== null ? $own : $this->get($legacyKey, $default);
+    }
+
+    /**
      * The name a shop trades under. The profile form saves a per-business
      * override (business.{id}.profile_name); until a seller saves one,
      * their registered business name is the truth. The old global
