@@ -48,59 +48,28 @@ const P = {
 
 const mod = (slug) => `/module/${slug}`;
 
-const NAV = [
-    { sec: null, items: [
-        { label: 'Dashboard', icon: 'grid', href: '/dashboard' },
-    ]},
-    { sec: 'Operations', items: [
-        { label: 'Orders', icon: 'box', children: [{ label: 'New Order', href: '/orders/create' }, { label: 'Order List', href: '/orders', badgeKey: 'orders_list' }, { label: 'Auto Pick Orders', href: '/orders/autopick' }, { label: 'Auto Call Center', href: '/orders/autocall' }, { label: 'Order Block List', href: '/orders/block-list' }, { label: 'Preorders', href: '/orders/preorders' }, { label: 'Orders Dashboard', href: '/orders/dashboard' }], href: '/orders' },
-        { label: 'Delivery', icon: 'truck', children: [{ label: 'Ready to Ship', href: '/delivery/ready', badgeKey: 'delivery_ready' }, { label: 'Courier Management', href: '/delivery/parcels' }, { label: 'Scan To Update', href: '/delivery/scan' }, { label: 'Courier Invoice Upload', href: '/delivery/invoice' }, { label: 'Courier Ledger', href: '/delivery/ledger' }], href: '/delivery/ready' },
-        { label: 'Inventory', icon: 'layers', children: [{ label: 'Inventory Dashboard', href: '/inventory/dashboard' }, { label: 'Products', href: '/inventory/products' }, { label: 'Stock Ledger', href: '/inventory/ledger' }, { label: 'Branches', href: '/inventory/branches' }, { label: 'Warranty', href: '/inventory/warranty' }], href: '/inventory/dashboard' },
-        { label: 'Messages', icon: 'chat', children: [{ label: 'Inbox', href: '/messages/inbox', badgeKey: 'messages_inbox' }, { label: 'Comments', href: '/messages/comments' }, { label: 'AI Activity', href: '/messages/activity' }], href: '/messages/inbox' },
-        { label: 'Purchase', icon: 'cart', children: [{ label: 'Purchase Dashboard', href: '/purchase' }, { label: 'Purchases', href: '/purchases', badgeKey: 'purchases_toreceive' }, { label: 'Suppliers', href: '/suppliers' }], href: '/purchase' },
-        { label: 'Task & Follow-up', icon: 'check', children: ['Task Board', 'Agent Cockpit', 'Follow-up Management', 'My Follow-ups', 'Follow-up Performance'], href: mod('task') },
-        { label: 'Call Center', icon: 'phone', children: ['Call Dashboard', 'Call Reports', 'Contacts'], href: mod('call-center') },
-        { label: 'Work Inbox', icon: 'inbox', children: [{ label: 'Work Control', href: '/work-inbox/control', badgeKey: 'work_control' }, { label: 'Settings', href: '/work-inbox/settings' }], href: '/work-inbox/control' },
-    ]},
-    { sec: 'Growth', items: [
-        { label: 'Ads', icon: 'chart', children: ['Ads Dashboard', 'Meta Ads', 'TikTok Ads'], href: mod('ads') },
-        { label: 'Marketing', icon: 'megaphone', children: [{ label: 'Automation', href: '/marketing' }, { label: 'SMS Marketing', href: '/marketing/sms' }, { label: 'SMS Report', href: '/marketing/report' }, { label: 'Sales Growth', href: '/marketing/growth' }], href: '/marketing' },
-        { label: 'Customers', icon: 'users', children: [{ label: 'Customer List', href: '/customers' }, { label: 'Bulk Upload', href: '/customers/upload' }], href: '/customers' },
-        { label: 'Storefront', icon: 'store', children: [{ label: 'Overview', href: '/storefront' }, { label: 'My Pages', href: '/storefront/pages' }, { label: 'Store Settings', href: '/storefront/settings' }], href: '/storefront' },
-    ]},
-    { sec: 'Business Control', items: [
-        { label: 'HRM', icon: 'briefcase', children: [{ label: 'HR Dashboard', href: '/hrm' }, { label: 'Attendance', href: '/hrm/attendance' }, { label: 'Departments & SOP', href: '/hrm/departments' }, { label: 'HR Settings', href: '/hrm/settings' }], href: '/hrm' },
-        { label: 'Finance', icon: 'wallet', children: [{ label: 'Finance Dashboard', href: '/finance' }, { label: 'Accounts & Bank', href: '/finance/accounts' }, { label: 'Income & Expense', href: '/finance/income-expense' }, { label: 'Cash Flow', href: '/finance/cash-flow' }], href: '/finance' },
-        { label: 'Reports', icon: 'report', children: [{ label: 'Profit & Loss', href: '/reports' }, { label: 'Order Report', href: '/reports/order' }, { label: 'Courier Report', href: '/reports/courier' }, { label: 'Product Report', href: '/reports/product' }, { label: 'Employee Report', href: '/reports/employee' }, { label: 'Call Center Report', href: '/reports/call' }, { label: 'Customer Report', href: '/reports/customer' }], href: '/reports' },
-        { label: 'Points & Billing', icon: 'wallet', href: '/billing' },
-        { label: 'Settings', icon: 'gear', settings: true, children: [
-            { label: 'Settings Dashboard', g: 'home' }, { label: 'Business Settings', g: 'business' },
-            { label: 'API Connection', g: 'api' }, { label: 'Calls & Orders', g: 'calls' },
-            { label: 'AI & Auto Reply', g: 'ai' }, { label: 'Security & Records', g: 'security' },
-        ], href: '/settings' },
-        { label: 'Support', icon: 'help', children: ['Help Center', 'Updates'], href: mod('support') },
-    ]},
-];
-
-const SEARCH_INDEX = [
-    { label: 'Dashboard', href: '/dashboard', group: 'SkaleUp BD' },
-    ...NAV.flatMap((g) => g.items.flatMap((item) => [
+// ধাপ ২: the sidebar structure arrives server-built in props.nav
+// (RouteRegistry::menuFor), already filtered by the user's module
+// ticks. Quick Search derives its index from those same sections,
+// so a page the user cannot open is never offered here either.
+function buildSearchIndex(sections) {
+    return (sections || []).flatMap((g) => g.items.flatMap((item) => [
         { label: item.label, href: item.href, group: g.sec || 'SkaleUp BD' },
         ...(item.children || []).map((c) => item.settings
             ? { label: c.label, href: `/settings?group=${c.g}`, group: 'Settings' }
             : typeof c === 'object'
                 ? { label: c.label, href: c.href, group: item.label }
                 : { label: c, href: item.href, group: item.label }),
-    ])),
-];
+    ]));
+}
 
 const ASK_TOPICS = [
     { q: 'How do I connect a courier?', a: 'Go to Settings → API Connection → Courier Integration. Open your courier (Pathao, Steadfast and others), put in the account details from your own courier account, and save. Delivery charges are set on the same card.', href: '/settings?group=api', link: 'Open Courier Integration' },
     { q: 'How do I change the default courier?', a: 'Settings → API Connection → Courier Integration - the Default Courier choice at the bottom of the page. New orders suggest this courier first in Ready to Ship.', href: '/settings?group=api', link: 'Open Courier Integration' },
     { q: 'How does AI reply work?', a: 'Settings → AI & Auto Reply is where everything is set: Rule Brain holds your ready answers, AI Reply sets how much the AI may do alone, and Price & Negotiation sets the discount steps and the lowest price. Messages is only for daily work.', href: '/settings?group=ai', link: 'Open AI & Auto Reply' },
     { q: 'How do I connect WhatsApp?', a: 'Settings → API Connection → Messaging Channels. WhatsApp connects through the guided sign-up - you do not need to type any long keys. One WhatsApp account per shop.', href: '/settings?group=api', link: 'Open Messaging Channels' },
-    { q: 'Where do I see low stock?', a: 'Inventory → Inventory Dashboard has a Low Stock tab with every product that is running out, so you can purchase or transfer stock in time.', href: mod('inventory'), link: 'Open Inventory' },
-    { q: 'An order is not going to the courier', a: 'Open Delivery → Ready to Ship. Approved orders wait there. Pick the courier and press Send to Courier - if a booking fails, the reason shows on the row and you can press Retry.', href: mod('delivery'), link: 'Open Ready to Ship' },
+    { q: 'Where do I see low stock?', a: 'Inventory → Inventory Dashboard has a Low Stock tab with every product that is running out, so you can purchase or transfer stock in time.', href: '/inventory/dashboard', link: 'Open Inventory' },
+    { q: 'An order is not going to the courier', a: 'Open Delivery → Ready to Ship. Approved orders wait there. Pick the courier and press Send to Courier - if a booking fails, the reason shows on the row and you can press Retry.', href: '/delivery/ready', link: 'Open Ready to Ship' },
 ];
 
 const KIND_ICON = { order: 'box', delivery: 'truck', stock: 'layers', task: 'check', info: 'bell' };
@@ -186,7 +155,7 @@ function NavGroup({ item, current }) {
     );
 }
 
-function SearchModal({ close }) {
+function SearchModal({ close, index }) {
     const [q, setQ] = useState('');
     const [sel, setSel] = useState(0);
     const inputRef = useRef(null);
@@ -194,10 +163,10 @@ function SearchModal({ close }) {
     const results = useMemo(() => {
         const needle = q.trim().toLowerCase();
         const list = needle
-            ? SEARCH_INDEX.filter((x) => t(x.label).toLowerCase().includes(needle) || x.label.toLowerCase().includes(needle))
-            : SEARCH_INDEX;
+            ? index.filter((x) => t(x.label).toLowerCase().includes(needle) || x.label.toLowerCase().includes(needle))
+            : index;
         return list.slice(0, 9);
-    }, [q]);
+    }, [q, index]);
     useEffect(() => { setSel(0); }, [q]);
     const go = (item) => { if (item) { close(); router.visit(item.href); } };
     return (
@@ -358,46 +327,30 @@ export default function AppLayout({ children }) {
     }, [userMenuOpen]);
     const userName = props.auth?.user?.name || 'User';
     const isPlatform = !!props.auth?.user?.is_platform_admin;
-    // M13 User & Role: hide modules the user has no permission for.
-    const MODKEY = { Dashboard: 'dashboard', Orders: 'orders', Delivery: 'delivery', Inventory: 'inventory', Messages: 'messages', Purchase: 'purchase', 'Task & Follow-up': 'tasks', 'Call Center': 'callcenter', 'Work Inbox': 'workinbox', Ads: 'ads', Marketing: 'marketing', Customers: 'customers', HRM: 'hrm', Finance: 'finance', Reports: 'reports', Settings: 'settings', 'Points & Billing': 'billing', Storefront: 'storefront' };
     const perms = props.auth?.permissions || [];
-    const payrollOn = !!props.auth?.payroll_enabled;
-    const baseNav = NAV.map((sec) => ({ ...sec, items: sec.items
-        .filter((it) => { const k = MODKEY[it.label]; return !k || perms.includes(k); })
-        .map((it) => {
-            let item = it;
-            if (item.label === 'HRM' && payrollOn) {
-                item = { ...item, children: [...item.children, { label: 'Payroll', href: '/hrm/payroll' }] };
-            }
-            if (item.settings && isPlatform) {
-                item = { ...item, children: [...item.children, { label: 'Seller Packages', g: 'packages' }] };
-            }
-            if (item.settings && props.auth?.user?.role === 'admin' && props.auth?.user?.business_id) {
-                // Staff & Roles (ধাপ ৪) is the shop owner's alone.
-                item = { ...item, children: [...item.children, { label: 'Staff & Roles', g: 'staff' }] };
-            }
-            if (item.label === 'Storefront') {
-                // Server-computed (StorefrontService::menuState): no
-                // sub-menu before a store exists, three calm items
-                // after, Connect Website instead for own-website shops.
-                // Platform admins get ONE extra child here - the old
-                // separate Platform "Storefronts" menu was merged into
-                // this one so the name appears only once (owner order).
-                let kids = item.children;
-                if (props.sfMenu && Array.isArray(props.sfMenu.menu)) {
-                    const SF_LBL = { overview: ['Overview', '/storefront'], pages: ['My Pages', '/storefront/pages'], settings: ['Store Settings', '/storefront/settings'], connect: ['Connect Website', '/storefront/connect'] };
-                    kids = props.sfMenu.menu.map((k) => ({ label: SF_LBL[k][0], href: SF_LBL[k][1] }));
-                }
-                if (isPlatform) {
-                    kids = [...(kids || []), { label: 'All Storefronts', href: '/admin/storefronts' }];
-                }
-                item = { ...item, children: kids };
-            }
-            return item;
-        }) })).filter((sec) => sec.items.length > 0);
-    const navGroups = isPlatform ? [...baseNav, { sec: 'Platform', items: [
-        { label: 'Sellers', icon: 'users', children: [{ label: 'Seller Dashboard', href: '/admin' }, { label: 'All Sellers', href: '/admin/sellers' }, { label: 'Seller Verification', href: '/admin/claims', badgeKey: 'sellers_pending' }], href: '/admin' },
-    ] }] : baseNav;
+    // ধাপ ২: sections arrive server-built and permission-filtered in
+    // props.nav (RouteRegistry::menuFor). The only client-side merge
+    // left is the Storefront sub-menu, whose state depends on the
+    // shop's store (StorefrontService::menuState in props.sfMenu):
+    // no sub-menu before a store exists, three calm items after,
+    // Connect Website instead for own-website shops. Platform admins
+    // get ONE extra child here - the old separate Platform
+    // "Storefronts" menu was merged into this one so the name
+    // appears only once (owner order).
+    const navGroups = (props.nav?.sections || []).map((sec) => ({ ...sec, items: sec.items.map((it) => {
+        if (it.label !== 'Storefront') return it;
+        let kids = it.children;
+        if (props.sfMenu && Array.isArray(props.sfMenu.menu)) {
+            const SF_LBL = { overview: ['Overview', '/storefront'], pages: ['My Pages', '/storefront/pages'], settings: ['Store Settings', '/storefront/settings'], connect: ['Connect Website', '/storefront/connect'] };
+            kids = props.sfMenu.menu.map((k) => ({ label: SF_LBL[k][0], href: SF_LBL[k][1] }));
+        }
+        if (isPlatform) {
+            kids = [...(kids || []), { label: 'All Storefronts', href: '/admin/storefronts' }];
+        }
+        return { ...it, children: kids };
+    }) }));
+    const searchIndex = useMemo(() => buildSearchIndex(navGroups), [navGroups]);
+    const topbar = props.nav?.topbar || {};
     const initials = userName.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase();
 
     useEffect(() => {
@@ -535,9 +488,9 @@ export default function AppLayout({ children }) {
                     </button>
                     <span className="tb-item tb-hide-sm"><I d={P.grid} size={16} /></span>
                     <button type="button" className="tb-item" onClick={() => setSearchOpen(true)}><I d={P.search} size={15} /><span className="tb-hide-sm">{t('Search')}</span></button>
-                    <Link href="/orders/create" className="tb-item tb-hide-sm"><I d={P.cart} size={15} /> {t('New Order')}</Link>
-                    <Link href="/orders" className="tb-item tb-hide-sm"><I d={P.file} size={15} /> {t('Order List')}</Link>
-                    <Link href={mod('messages')} className="tb-item tb-hide-sm"><I d={P.send} size={15} /> {t('Send Message')}</Link>
+                    {topbar.new_order && <Link href="/orders/create" className="tb-item tb-hide-sm"><I d={P.cart} size={15} /> {t('New Order')}</Link>}
+                    {topbar.order_list && <Link href="/orders" className="tb-item tb-hide-sm"><I d={P.file} size={15} /> {t('Order List')}</Link>}
+                    {topbar.send_message && <Link href="/messages/inbox" className="tb-item tb-hide-sm"><I d={P.send} size={15} /> {t('Send Message')}</Link>}
                     <div className="tb-right">
                         <LanguageSwitcher />
                         <button className="ask-btn" onClick={() => setAskOpen(true)}>✦ {t('Ask SkaleUp')}</button>
@@ -580,7 +533,7 @@ export default function AppLayout({ children }) {
                 )}
                 <main className="content">{children}</main>
             </div>
-            {searchOpen && <SearchModal close={() => setSearchOpen(false)} />}
+            {searchOpen && <SearchModal close={() => setSearchOpen(false)} index={searchIndex} />}
             {askOpen && <AskDrawer close={() => setAskOpen(false)} />}
             <ConfirmHost />
             {toast && <div className="toast">{t(toast)}</div>}

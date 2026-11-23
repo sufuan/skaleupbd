@@ -10,9 +10,10 @@ use App\Models\User;
  * The platform defines the catalogue; a seller only ticks boxes. Every
  * module key carries FOUR independent ticks: view, edit (create and
  * update), delete, export. The "view" tick is what the older module
- * system understands: it maps 1:1 onto User::effectivePermissions()
- * and the ModuleAccess middleware, so a role with orders.view can
- * open the Order List exactly like the old permission list allowed.
+ * system understands: it maps 1:1 onto User::effectivePermissions(),
+ * so a role with orders.view can open the Order List exactly like
+ * the old permission list allowed. Since ধাপ ২ the RouteRegistry +
+ * PermissionGate enforce all four ticks server-side, per route.
  *
  * Owner-only, NON-delegable areas never appear as grantable ticks:
  *  - billing  (Points & Billing)

@@ -80,6 +80,14 @@ class HandleInertiaRequests extends Middleware
                     ? (bool) app(\App\Services\SettingsService::class)->get('hr.'.$request->user()->business_id.'.payroll_enabled', false)
                     : false,
             ],
+            // ধাপ ২: the sidebar menu, Quick Search source and topbar
+            // actions are built server-side from the RouteRegistry,
+            // already filtered by the user's contexts and ticks — the
+            // shell renders exactly this and never offers a page the
+            // PermissionGate would deny.
+            'nav' => ($request->user() && Schema::hasColumn('users', 'role_id'))
+                ? \App\Support\RouteRegistry::menuFor($request->user())
+                : null,
             // M18 merge: the Storefront sub-menu is computed server-side
             // from store state; the shell renders exactly this.
             'sfMenu' => ($request->user() && $request->user()->business_id && Schema::hasTable('storefronts'))

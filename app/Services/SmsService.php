@@ -203,6 +203,28 @@ class SmsService
      */
     public function webhookSecret(int $biz): ?string
     {
+        $secret = $this->ownWebhookSecret($biz);
+        if ($secret !== null) {
+            return $secret;
+        }
+
+        // Platform-dispatched sends (verification codes for a shop with no
+        // gateway of its own) go out through the platform business's
+        // account (business 1) but are logged under the shop, and their
+        // delivery events are signed with the platform account's secret.
+        // Mirror the send-side fallback, or those events can never verify
+        // (live proof 2026-11-22/23: a Wizard Test Shop storefront OTP
+        // report was rejected 8 times with "no webhook secret saved").
+        if ($biz !== 1 && ! $this->providerConfig($biz)['has_key']) {
+            return $this->ownWebhookSecret(1);
+        }
+
+        return null;
+    }
+
+    /** The shop's own saved webhook secret, or null when none is saved. */
+    private function ownWebhookSecret(int $biz): ?string
+    {
         $enc = (string) $this->setting($biz, 'sms_webhook_secret_enc', '');
         if ($enc === '') {
             return null;

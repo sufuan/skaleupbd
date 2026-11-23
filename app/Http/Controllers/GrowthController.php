@@ -12,7 +12,7 @@ use Inertia\Response as InertiaResponse;
 
 /**
  * M12 Sales Growth (বিক্রি বাড়ান) — a Marketing subsection.
- * Page access rides the existing ModuleAccess 'marketing' key;
+ * Page access rides the RouteRegistry 'marketing' key (PermissionGate);
  * mutating actions additionally pass through TokenGate (view-only
  * sellers cannot create drafts or log calls). Revenue estimates are
  * only ever sent to owner/admin roles.

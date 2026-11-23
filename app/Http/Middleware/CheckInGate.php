@@ -22,8 +22,9 @@ class CheckInGate
         if (! $user || ! $user->business_id || $user->is_platform_admin || $user->role === 'admin') {
             return $next($request);
         }
-        // The attendance page itself is self-service (ModuleAccess always lets
-        // it through), so a held user can always reach it and check in.
+        // The attendance page itself is self-service (the RouteRegistry
+        // selfService flag always lets it through), so a held user can
+        // always reach it and check in.
 
         $first = explode('/', trim($request->path(), '/'))[0] ?? '';
         if (in_array($first, self::EXEMPT_PREFIXES, true) || $first === '') {

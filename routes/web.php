@@ -21,7 +21,7 @@ Route::get('/', function () {
     }
 
     return Inertia::render('Landing');
-});
+})->name('landing');
 
 // Public: language switch (en|bn), same pattern as TPDA e-Sheba.
 Route::post('/locale/{locale}', [LocaleController::class, 'switch'])
@@ -31,8 +31,8 @@ Route::post('/locale/{locale}', [LocaleController::class, 'switch'])
 // Friendly shortcuts: the login lives at /admin/login and the inbox at
 // /messages/inbox — the short forms people type should land there too
 // instead of 404ing.
-Route::redirect('/login', '/admin/login');
-Route::redirect('/messages', '/messages/inbox');
+Route::redirect('/login', '/admin/login')->name('login.redirect');
+Route::redirect('/messages', '/messages/inbox')->name('messages.redirect');
 
 // Public pricing page (M19) — renders live from the point packs.
 Route::get('/pricing', [\App\Http\Controllers\PricingController::class, 'index'])->name('pricing');
@@ -436,10 +436,10 @@ Route::middleware(['auth', 'verified', 'totp'])->group(function () {
     // Old GET pages redirect to their new homes (nothing 404s)
     // GET-only on purpose: Route::redirect() would answer ANY verb
     // and shadow the real POST /storefront/domains route below.
-    Route::get('/storefront/subdomain', fn () => redirect('/storefront/settings'));
-    Route::get('/storefront/branding', fn () => redirect('/storefront/settings'));
-    Route::get('/storefront/builder', fn () => redirect('/storefront/pages'));
-    Route::get('/storefront/domains', fn () => redirect('/storefront/settings'));
+    Route::get('/storefront/subdomain', fn () => redirect('/storefront/settings'))->name('storefront.subdomain.page');
+    Route::get('/storefront/branding', fn () => redirect('/storefront/settings'))->name('storefront.branding.page');
+    Route::get('/storefront/builder', fn () => redirect('/storefront/pages'))->name('storefront.builder.page');
+    Route::get('/storefront/domains', fn () => redirect('/storefront/settings'))->name('storefront.domains.page');
 
     // M18 Storefront — platform admin
     Route::get('/admin/storefronts', [\App\Http\Controllers\PlatformStorefrontController::class, 'index'])->name('platform.storefronts');
@@ -451,7 +451,12 @@ Route::middleware(['auth', 'verified', 'totp'])->group(function () {
     Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead'])->name('notifications.readAll');
     Route::post('/notifications/{notification}/read', [NotificationController::class, 'markRead'])->name('notifications.read');
 
+    // Placeholder shells for the deferred modules. Only the slugs
+    // the menu actually links to render a shell — an arbitrary slug
+    // is a plain 404 (gap G-A).
     Route::get('/module/{slug}', function (string $slug) {
+        abort_unless(in_array($slug, ['task', 'call-center', 'ads', 'support'], true), 404);
+
         return Inertia::render('Module/Placeholder', [
             'title' => ucwords(str_replace('-', ' ', $slug)),
         ]);
