@@ -5,7 +5,7 @@
   <h1>Order received - thank you!</h1>
   <p>Your order number is <b>{{ $order->invoice_no }}</b>.<br>
   Total: <b>৳{{ number_format((float) $order->grand_total) }}</b> (cash on delivery).<br>
-  We will call <b>{{ $order->customer_phone }}</b> shortly to confirm your order.</p>
+  We will call you shortly to confirm your order.</p>
   @if(!empty($advanceNumbers))
   <div class="sf-advance">
     <div class="sf-advance-title">Want your order confirmed faster? Pay an advance:</div>
