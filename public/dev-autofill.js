@@ -1,7 +1,7 @@
 /*
  * dev-autofill.js - DEVELOPMENT convenience only. Loaded by the login page.
  *
- * The two buttons this file adds ("Admin Login" and "Dashboard Login")
+ * The two buttons this file adds ("Admin Login" and "Seller Login")
  * ONLY fill the email and password boxes of the login form. Nothing is
  * submitted, fetched, or redirected: the user still presses the normal
  * Login button and the standard auth flow (including TOTP when enabled)
@@ -39,12 +39,12 @@
     if (isLive) {
         accounts = [
             { label: 'Admin Login', email: 'admin@admin.com', password: LIVE_ADMIN_PASSWORD },
-            { label: 'Dashboard Login', email: 'crud.seller@scalenowbd.com', password: 'CrudSeller2026!' }
+            { label: 'Seller Login', email: 'crud.seller@scalenowbd.com', password: 'CrudSeller2026!' }
         ];
     } else {
         accounts = [
             { label: 'Admin Login', email: 'platform@skaleup.test', password: 'password' },
-            { label: 'Dashboard Login', email: 'admin@skaleup.test', password: 'password' }
+            { label: 'Seller Login', email: 'admin@skaleup.test', password: 'password' }
         ];
     }
 
