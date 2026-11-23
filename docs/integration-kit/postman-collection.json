@@ -1,0 +1,100 @@
+{
+  "info": {
+    "name": "SkaleUp BD - Website Integration API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Complete Postman collection for the SkaleUp BD website integration API. Import this file into Postman, then set the environment variables listed below."
+  },
+  "variable": [
+    { "key": "baseUrl",      "value": "https://scalenowbd.com/api/external/v1" },
+    { "key": "apiKey",       "value": "YOUR_FULL_API_KEY_HERE" },
+    { "key": "businessId",   "value": "YOUR_BUSINESS_ID_HERE" },
+    { "key": "externalRef",  "value": "ORDER_1001" }
+  ],
+  "item": [
+    {
+      "name": "Orders",
+      "item": [
+        {
+          "name": "Create order",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/orders",
+            "header": [
+              { "key": "Content-Type",      "value": "application/json" },
+              { "key": "Accept",            "value": "application/json" },
+              { "key": "x-api-key",         "value": "{{apiKey}}" },
+              { "key": "x-business-id",     "value": "{{businessId}}" },
+              { "key": "x-idempotency-key", "value": "{{externalRef}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"externalRef\": \"{{externalRef}}\",\n  \"customerName\": \"Rahim Uddin\",\n  \"customerNumber\": \"01712345678\",\n  \"customerAddress\": \"12 Mirpur Road, Dhaka\",\n  \"district\": \"Dhaka\",\n  \"deliveryCharge\": 60,\n  \"discount\": 0,\n  \"advance\": 0,\n  \"note\": \"\",\n  \"webStatus\": \"pending\",\n  \"products\": [\n    {\n      \"productId\": \"55\",\n      \"name\": \"Cotton T-Shirt\",\n      \"quantity\": 2,\n      \"price\": 450\n    }\n  ]\n}"
+            },
+            "description": "Creates a new order in the SkaleUp dashboard. Use x-idempotency-key to prevent duplicates. Sending the same key twice returns the original order."
+          }
+        },
+        {
+          "name": "Get order status by externalRef",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/orders/{{externalRef}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["orders", "{{externalRef}}"]
+            },
+            "header": [
+              { "key": "Accept",        "value": "application/json" },
+              { "key": "x-api-key",     "value": "{{apiKey}}" },
+              { "key": "x-business-id", "value": "{{businessId}}" }
+            ],
+            "description": "Returns the current status and tracking details for an order identified by your externalRef (the ID from your website)."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Products",
+      "item": [
+        {
+          "name": "Upsert products (bulk)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/products",
+            "header": [
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "Accept",        "value": "application/json" },
+              { "key": "x-api-key",     "value": "{{apiKey}}" },
+              { "key": "x-business-id", "value": "{{businessId}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"products\": [\n    {\n      \"external_id\": \"55\",\n      \"name\": \"Cotton T-Shirt\",\n      \"sku\": \"SHIRT-M-BLK\",\n      \"price\": 450,\n      \"stock\": 100\n    },\n    {\n      \"external_id\": \"56\",\n      \"name\": \"Denim Jeans\",\n      \"sku\": \"JEAN-32-BLK\",\n      \"price\": 850,\n      \"stock\": 40\n    }\n  ]\n}"
+            },
+            "description": "Creates or updates up to 100 products in one request. Matched by external_id (your product ID). Sends back unmatched product IDs."
+          }
+        },
+        {
+          "name": "Check stock",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/stock/check",
+            "header": [
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "Accept",        "value": "application/json" },
+              { "key": "x-api-key",     "value": "{{apiKey}}" },
+              { "key": "x-business-id", "value": "{{businessId}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"products\": [\"55\", \"56\"]\n}"
+            },
+            "description": "Returns current available stock for the given product IDs (your external product IDs)."
+          }
+        }
+      ]
+    }
+  ]
+}

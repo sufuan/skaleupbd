@@ -38,7 +38,9 @@ class ExternalOrderController extends Controller
         $key = (string) $request->header('x-api-key', '');
         $businessId = (string) $request->header('businessId', $request->input('businessId', ''));
 
-        $apiKey = $key !== '' ? ApiKey::where('key_hash', hash('sha256', $key))->first() : null;
+        // findByRawKey is the shared sha256 lookup; it excludes revoked
+        // keys and stamps last_used_at.
+        $apiKey = $key !== '' ? ApiKey::findByRawKey($key) : null;
         if (! $apiKey) {
             return $this->envelope(false, 401, 'Invalid API key');
         }
@@ -46,7 +48,9 @@ class ExternalOrderController extends Controller
         if (! $business || $business->public_id !== $businessId) {
             return $this->envelope(false, 404, 'Business not found');
         }
-        $apiKey->forceFill(['last_used_at' => now()])->save();
+        if (! $apiKey->grants('orders.write')) {
+            return $this->envelope(false, 403, 'This key does not have permission to write orders.');
+        }
 
         $idem = (string) $request->header('x-idempotency-key', '');
         if ($idem !== '') {
@@ -119,6 +123,50 @@ class ExternalOrderController extends Controller
 
         return $this->envelope(true, 201, 'Order created', [
             'orderId' => $order->id, 'invoice' => $order->invoice_no, 'courierId' => null,
+        ]);
+    }
+
+    /**
+     * GET /api/external/v1/orders/{externalRef} — status + tracking lookup
+     * for an order the caller's site created earlier (scope: orders.read).
+     * Same auth semantics as store(): the business comes from the key, and
+     * a businessId header, when sent, must name that same business.
+     * Zero-points rule: at zero points our services stop, reads included,
+     * so a suspended shop gets a plain 503 (its own site is unaffected).
+     */
+    public function status(Request $request, string $externalRef): JsonResponse
+    {
+        $key = (string) $request->header('x-api-key', '');
+        $apiKey = $key !== '' ? ApiKey::findByRawKey($key) : null;
+        if (! $apiKey) {
+            return $this->envelope(false, 401, 'Invalid API key');
+        }
+        $business = Business::find($apiKey->business_id);
+        $claimed = (string) $request->header('businessId', $request->input('businessId', ''));
+        if (! $business || ($claimed !== '' && $business->public_id !== $claimed)) {
+            return $this->envelope(false, 404, 'Business not found');
+        }
+        if (! $apiKey->grants('orders.read')) {
+            return $this->envelope(false, 403, 'This key does not have permission to read orders.');
+        }
+        if (! app(\App\Services\Integrations\IntegrationHost::class)->hasPoints($business->id)) {
+            return $this->envelope(false, 503, 'This connection is suspended because the shop has run out of points. The order on your side is unaffected. Please try again after the shop tops up.');
+        }
+
+        $order = Order::where('business_id', $business->id)
+            ->where('external_ref', $externalRef)
+            ->first(['id', 'invoice_no', 'status', 'delivery_method', 'tracking_id', 'consignment_id', 'updated_at']);
+        if (! $order) {
+            return $this->envelope(false, 404, 'Order not found.');
+        }
+
+        return $this->envelope(true, 200, 'Order found', [
+            'orderId' => $order->id,
+            'invoice' => $order->invoice_no,
+            'status' => $order->status,
+            'courierName' => $order->delivery_method,
+            'trackingNumber' => $order->tracking_id ?? $order->consignment_id,
+            'updatedAt' => $order->updated_at?->toIso8601String(),
         ]);
     }
 }

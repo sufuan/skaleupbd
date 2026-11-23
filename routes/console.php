@@ -11,6 +11,13 @@ Schedule::command('storefront:lapse-sweep')->daily();
 Schedule::command('growth:rollup')->everyFifteenMinutes();
 Schedule::command('growth:tasks')->hourly();
 Schedule::command('growth:reconcile')->daily();
+// Website integrations: retry outbound webhook deliveries, process
+// parked WooCommerce inbound events, reconcile WooCommerce state.
+// (The zip's integrations:prune-webhook-log line is intentionally not
+// scheduled: that command class does not exist in the kit.)
+Schedule::command('integrations:sweep-webhooks')->everyMinute()->withoutOverlapping();
+Schedule::command('integrations:sweep-woo-inbound')->everyMinute()->withoutOverlapping();
+Schedule::command('integrations:reconcile-woo')->everyFifteenMinutes()->withoutOverlapping();
 
 Artisan::command('growth:rollup', function () {
     $svc = app(\App\Services\InsightService::class);

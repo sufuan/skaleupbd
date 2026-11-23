@@ -143,7 +143,7 @@ class TokenService
             throw new DomainException('This pack is not active — pick another pack.');
         }
 
-        return DB::transaction(function () use ($businessId, $pack, $paidAmount, $method, $note, $byUserId) {
+        $wallet = DB::transaction(function () use ($businessId, $pack, $paidAmount, $method, $note, $byUserId) {
             $wallet = BusinessWallet::where('business_id', $businessId)->lockForUpdate()->first()
                 ?? $this->ensureWallet($businessId);
 
@@ -205,6 +205,10 @@ class TokenService
 
             return $wallet;
         });
+
+        $this->resumeIntegrations($businessId);
+
+        return $wallet;
     }
 
     /** Free credit granted by the platform (owner grants, corrections). */
@@ -214,7 +218,7 @@ class TokenService
             throw new DomainException('Credit amount cannot be zero.');
         }
 
-        return DB::transaction(function () use ($businessId, $amount, $note, $byUserId) {
+        $wallet = DB::transaction(function () use ($businessId, $amount, $note, $byUserId) {
             $wallet = BusinessWallet::where('business_id', $businessId)->lockForUpdate()->first()
                 ?? $this->ensureWallet($businessId);
             $this->writeRow($wallet, 'manual_credit', $amount, [
@@ -223,6 +227,29 @@ class TokenService
 
             return $wallet;
         });
+
+        $this->resumeIntegrations($businessId);
+
+        return $wallet;
+    }
+
+    /**
+     * Website integration: a top-up is the moment a suspended connection
+     * comes back to life. Wake the outbound webhook events that were
+     * parked at zero points (inbound Woo events are re-queued by the
+     * every-minute sweeper on the same balance signal). Runs after the
+     * credit transaction has committed; best-effort - a resume failure
+     * must never make a successful payment look failed.
+     */
+    private function resumeIntegrations(int $businessId): void
+    {
+        try {
+            app(\App\Services\Integrations\OutboundWebhookService::class)->resumeForBusiness($businessId);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('integration.resume_failed', [
+                'business_id' => $businessId, 'error' => $e->getMessage(),
+            ]);
+        }
     }
 
     // ---------- deduction (OrderService creation path) ----------

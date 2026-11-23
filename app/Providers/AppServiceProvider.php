@@ -21,5 +21,13 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Vite::prefetch(concurrency: 3);
+
+        // Website integration: order status changes fan out to the
+        // seller's own website (custom-site webhook + WooCommerce
+        // write-back). Both observers only queue jobs; they never send
+        // inline. Status changes made through OrderService save via
+        // Eloquent, so the observers see every transition.
+        \App\Models\Order::observe(\App\Observers\OrderWebhookObserver::class);
+        \App\Models\Order::observe(\App\Observers\WooOrderObserver::class);
     }
 }

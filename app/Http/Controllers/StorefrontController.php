@@ -789,6 +789,18 @@ HTML;
             'freshKey' => $request->session()->pull('fresh_api_key'),
             'apiOrders' => $apiOrders,
             'state' => $this->svc->menuState($biz),
+            // Website integrations (WooCommerce + custom site kit): the
+            // sections fetch their own data from the integrations JSON
+            // endpoints; these props only drive the platform chooser's
+            // default tab, the per-connection health cards and the
+            // WooCommerce status-map visibility.
+            'wooState' => (int) ($request->user()?->business_id ?? 0) === (int) $biz
+                ? app(\App\Http\Controllers\Integrations\WooConnectController::class)->show($request)->getData(true)
+                : ['configured' => false],
+            'healthConnections' => \App\Models\IntegrationConnection::where('business_id', $biz)
+                ->get(['id', 'platform'])
+                ->map(fn ($c) => ['id' => (int) $c->id, 'platform' => (string) $c->platform])->all(),
+            'topUpUrl' => '/billing',
         ]);
     }
 

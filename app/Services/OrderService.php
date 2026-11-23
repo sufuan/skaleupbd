@@ -297,6 +297,8 @@ class OrderService
             $order->logHistory($from, 'Processing', $actor, 'Approved');
             $order->logActivity('action', "Approved by {$actor->name} - {$from} → Processing", $actor);
 
+            $this->pushStockToWoo($order);
+
             return $order;
         });
     }
@@ -369,8 +371,29 @@ class OrderService
                 // Marketing must never break the lifecycle.
             }
 
+            $this->pushStockToWoo($order);
+
             return $order;
         });
+    }
+
+    /**
+     * Website integration: reserve/release/ship/return moves in approve()
+     * and changeStatus() change available stock (stock_qty - reserved_qty)
+     * directly on the product rows, bypassing StockService::adjust(), so
+     * the WooCommerce stock push is queued from here too. The job no-ops
+     * for shops without a Woo connection and skips unchanged quantities.
+     */
+    private function pushStockToWoo(Order $order): void
+    {
+        try {
+            $productIds = $order->items->pluck('product_id')->filter()->unique();
+            foreach ($productIds as $productId) {
+                \App\Jobs\Integrations\PushWooStockJob::dispatchDebounced((int) $order->business_id, (int) $productId);
+            }
+        } catch (\Throwable) {
+            // The integration layer must never break the order lifecycle.
+        }
     }
 
     /** Bangladesh's districts, longest names first for unambiguous matching. */

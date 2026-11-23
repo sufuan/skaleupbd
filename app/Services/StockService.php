@@ -23,7 +23,7 @@ class StockService
             $product->increment('stock_qty', $delta);
             $cost = $unitCost ?? (float) $product->cost;
 
-            return StockLedger::create([
+            $ledger = StockLedger::create([
                 'business_id' => $product->business_id,
                 'product_id' => $product->id,
                 'type' => $delta >= 0 ? 'adjust_in' : 'adjust_out',
@@ -37,6 +37,20 @@ class StockService
                 'reason' => $reason,
                 'note' => $note,
             ]);
+
+            // Website integration: this is the single funnel every stock
+            // change flows through (manual adjust, opening stock, CSV
+            // import, damage/reconcile/transfer, purchase receives), so
+            // the WooCommerce stock push is queued from here. The job
+            // itself no-ops for shops without a Woo connection and skips
+            // unchanged quantities.
+            try {
+                \App\Jobs\Integrations\PushWooStockJob::dispatchDebounced((int) $product->business_id, (int) $product->id);
+            } catch (\Throwable) {
+                // Stock movement must never break on the integration layer.
+            }
+
+            return $ledger;
         });
     }
 

@@ -31,6 +31,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'totp' => \App\Http\Middleware\EnsureTotpVerified::class,
+            'api.key' => \App\Http\Middleware\AuthenticateApiKey::class,
         ]);
 
         // M18: tenant host resolution must run after the session starts
