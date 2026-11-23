@@ -328,7 +328,7 @@ function Overview({ ov, dayLabel }) {
     const barRow = (f, max) => (
         <div className="funnel-row" key={f.label}>
             <span style={{ width: 130 }}>{t(f.label)}</span>
-            <div className="funnel-bar" style={{ width: `${Math.max(3, (f.v / max) * 220)}px`, background: f.color }} />
+            <div className="funnel-track"><div className="funnel-bar" style={{ width: `${(f.v / max) * 100}%`, background: f.color }} /></div>
             <b>{f.v}</b>
         </div>
     );
@@ -494,15 +494,17 @@ function TeamView({ team }) {
             <div className="card">
                 <h3>{t('Agent Performance')}</h3>
                 <div className="card-sub">{t('Last 30 days')}</div>
-                <table className="tbl" style={{ marginTop: 10 }}>
-                    <thead><tr><th>#</th><th>{t('Agent')}</th><th>{t('Processed')}</th><th>{t('Processing')}</th><th>{t('Revenue')}</th></tr></thead>
-                    <tbody>
-                        {team.agents.map((a) => (
-                            <tr key={a.rank + a.name}><td>{a.rank}</td><td>{a.name}</td><td>{a.processed}</td><td>{a.processing_pct}%</td><td>{fmt(a.revenue)}</td></tr>
-                        ))}
-                        {team.agents.length === 0 && <tr><td colSpan="5" className="mut">{t('No processed orders in this period')}</td></tr>}
-                    </tbody>
-                </table>
+                <div className="tbl-wrap" style={{ marginTop: 10 }}>
+                    <table className="tbl">
+                        <thead><tr><th>#</th><th>{t('Agent')}</th><th>{t('Processed')}</th><th>{t('Processing')}</th><th>{t('Revenue')}</th></tr></thead>
+                        <tbody>
+                            {team.agents.map((a) => (
+                                <tr key={a.rank + a.name}><td>{a.rank}</td><td>{a.name}</td><td>{a.processed}</td><td>{a.processing_pct}%</td><td>{fmt(a.revenue)}</td></tr>
+                            ))}
+                            {team.agents.length === 0 && <tr><td colSpan="5" className="mut">{t('No processed orders in this period')}</td></tr>}
+                        </tbody>
+                    </table>
+                </div>
             </div>
             <div className="card">
                 <h3>{t('Customer Details')}</h3>
