@@ -81,6 +81,7 @@ class SuccessRateService
 
         return ['rate' => $headlineRate, 'verdict' => $verdict, 'note' => $note,
             'orders' => $orders, 'delivered' => $delivered, 'returned' => $returned,
+            'blocked' => $blocked || $blacklisted,
             'network' => $network, 'headline' => $headline, 'network_pending' => $networkPending];
     }
 

@@ -41,5 +41,12 @@ class RefreshFraudCheckJob implements ShouldQueue, ShouldBeUnique
             return;
         }
         $fraud->refreshOrderSnapshot($order);
+        try {
+            // The snapshot is final now: give auto-approve its chance to
+            // move a trusted customer's order straight to Ready to Ship.
+            app(\App\Services\AutoApproveService::class)->evaluate($order);
+        } catch (\Throwable) {
+            // Auto-approve must never fail the snapshot refresh.
+        }
     }
 }

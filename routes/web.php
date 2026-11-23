@@ -100,6 +100,7 @@ Route::middleware(['auth', 'verified', 'totp'])->group(function () {
     Route::post('/settings/sources/reset', [SettingsController::class, 'resetSources'])->name('settings.sources.reset');
     Route::post('/settings/templates', [SettingsController::class, 'updateTemplates'])->name('settings.templates');
     Route::post('/settings/order-toggles', [SettingsController::class, 'updateOrderToggles'])->name('settings.orderToggles');
+    Route::post('/settings/auto-approve', [SettingsController::class, 'updateAutoApprove'])->name('settings.autoApprove');
     Route::post('/settings/inventory', [SettingsController::class, 'updateInventory'])->name('settings.inventory');
     Route::post('/settings/finance', [SettingsController::class, 'updateFinance'])->name('settings.finance');
     Route::post('/settings/marketing-sms', [SettingsController::class, 'updateMarketingSms'])->name('settings.marketingSms');

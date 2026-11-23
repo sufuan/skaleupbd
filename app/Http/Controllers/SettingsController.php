@@ -89,6 +89,10 @@ class SettingsController extends Controller
                     ->map(fn ($r) => ['id' => $r->id, 'scope' => $r->scope, 'product_id' => $r->product_id, 'category' => $r->category, 'district' => $r->district, 'area' => $r->area, 'method_id' => $r->courier_method_id, 'method_label' => $r->method?->label(), 'priority' => $r->priority])->all(),
                 'products' => \App\Models\Product::where('business_id', $biz)->orderBy('name')->get(['id', 'name', 'sku'])->all(),
             ],
+            'autoApprove' => [
+                'enabled' => (bool) $this->settings->bizGet($biz, "orders.{$biz}.auto_approve_enabled", 'orders.auto_approve_enabled', true),
+                'threshold' => (int) $this->settings->bizGet($biz, "orders.{$biz}.auto_approve_threshold", 'orders.auto_approve_threshold', 60),
+            ],
             'ai' => [
                 'rules' => \App\Models\AiRule::where('business_id', $biz)->orderBy('id')->get()
                     ->map(fn ($r) => ['id' => $r->id, 'name' => $r->name, 'trigger_type' => $r->trigger_type, 'match_text' => $r->match_text, 'action' => $r->action, 'reply_template' => $r->reply_template, 'channel' => $r->channel, 'active' => (bool) $r->active])->all(),
@@ -495,6 +499,19 @@ class SettingsController extends Controller
         }
 
         return back()->with('success', 'Order settings saved');
+    }
+
+    public function updateAutoApprove(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'auto_approve_enabled' => ['required', 'boolean'],
+            'auto_approve_threshold' => ['required', 'integer', 'min:1', 'max:100'],
+        ]);
+        $biz = (int) $request->user()->business_id;
+        $this->setLoggedBiz($request, $biz, "orders.{$biz}.auto_approve_enabled", 'orders.auto_approve_enabled', (bool) $data['auto_approve_enabled']);
+        $this->setLoggedBiz($request, $biz, "orders.{$biz}.auto_approve_threshold", 'orders.auto_approve_threshold', (int) $data['auto_approve_threshold']);
+
+        return back()->with('success', 'Auto-approve settings saved');
     }
 
     public function addCourierMethod(Request $request): RedirectResponse

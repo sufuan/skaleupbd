@@ -188,6 +188,18 @@ class OrderService
             } catch (\Throwable) {
                 // Sales Growth staging must never break order intake.
             }
+            try {
+                // Auto-approve: when the intake snapshot is already final
+                // and the customer clears the shop's minimum success rate,
+                // the order approves itself here. When the network figure
+                // is still pending, RefreshFraudCheckJob evaluates again
+                // once it lands. Never breaks intake.
+                app(\App\Services\AutoApproveService::class)->evaluate($fresh);
+            } catch (\Throwable) {
+                // Auto-approve must never break order intake.
+            }
+            // Keep the returned model truthful if auto-approve just moved it.
+            $fresh->refresh();
 
             return $fresh;
         });

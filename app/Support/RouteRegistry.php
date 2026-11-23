@@ -161,6 +161,7 @@ class RouteRegistry
         'settings.sources.reset' => ['shop', 'settings', 'edit'],
         'settings.templates' => ['shop', 'settings', 'edit'],
         'settings.orderToggles' => ['shop', 'settings', 'edit'],
+        'settings.autoApprove' => ['shop', 'settings', 'edit'],
         'settings.inventory' => ['shop', 'settings', 'edit'],
         'settings.finance' => ['shop', 'settings', 'edit'],
         'settings.marketingSms' => ['shop', 'settings', 'edit'],

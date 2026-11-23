@@ -102,7 +102,29 @@ function BusinessProfileForm({ m2 }) {
     );
 }
 
-function Api({ tab, couriers, channels, myChannels, channelsPlatform, channelsReadOnly, paymentGateway, platformPaymentGateway, integration }) {
+function AutoApproveForm({ data }) {
+    const blank = { auto_approve_enabled: data?.enabled ?? true, auto_approve_threshold: data?.threshold ?? 60 };
+    const form = useForm(blank);
+    useEffect(() => { form.setData(blank); }, [data]);
+    return (
+        <form className="card" style={{ marginBottom: 16 }} onSubmit={(e) => { e.preventDefault(); form.post('/settings/auto-approve', { preserveScroll: true }); }}>
+            <div className="conn-row">
+                <div style={{ flex: 1 }}>
+                    <div className="b">{t('Auto-approve trusted customers')}</div>
+                    <div className="sm mut">{t('Orders from customers at or above this rate go straight to Ready to Ship. Others wait in the Order List for manual confirmation.')}</div>
+                </div>
+                <button type="button" className={`switch ${form.data.auto_approve_enabled ? 'on' : ''}`} aria-label="toggle auto-approve"
+                    onClick={() => form.setData('auto_approve_enabled', !form.data.auto_approve_enabled)} />
+            </div>
+            <div className="frow"><label className="fl">{t('Minimum success rate %')}</label>
+                <input className="inp" type="number" min="1" max="100" style={{ maxWidth: 140 }} value={form.data.auto_approve_threshold}
+                    onChange={(e) => form.setData('auto_approve_threshold', e.target.value)} /></div>
+            <div className="flex mt16"><span className="spacer" /><button className="btn pri" disabled={form.processing}>{t('Save Changes')}</button></div>
+        </form>
+    );
+}
+
+function Api({ tab, couriers, autoApprove, channels, myChannels, channelsPlatform, channelsReadOnly, paymentGateway, platformPaymentGateway, integration }) {
     if (tab === 'channels') return (
         <>
             {channelsPlatform && <ChannelsForm channels={channels} />}
@@ -148,7 +170,12 @@ function Api({ tab, couriers, channels, myChannels, channelsPlatform, channelsRe
             <ConnRow name="WooCommerce" desc={integration?.api_key ? t('Your shop API key is active - the plugin can send orders to the endpoint above') : t('No API key yet - the plugin cannot send orders until a key is issued')}
                 status={integration?.api_key ? (integration.api_key.last_used_at ? t('Connected') : t('Key active')) : t('Not connected')} pillCls={integration?.api_key ? 'green' : 'amber'} /></div>
     );
-    return <CourierSettings couriers={couriers} />;
+    return (
+        <>
+            <AutoApproveForm data={autoApprove} />
+            <CourierSettings couriers={couriers} />
+        </>
+    );
 }
 
 function ChannelsForm({ channels }) {
@@ -1018,7 +1045,7 @@ function RegistrationVerificationForm({ registration }) {
     );
 }
 
-export default function SettingsIndex({ group: initial = 'home', totpEnabled = false, totpEnrolled = false, m2, couriers, ai, isPlatform = false, packagesData = null, channels = null, myChannels = null, channelsPlatform = false, paymentGateway = null, platformPaymentGateway = null, home = null, integration = null, staffRoles = null }) {
+export default function SettingsIndex({ group: initial = 'home', totpEnabled = false, totpEnrolled = false, m2, couriers, autoApprove = null, ai, isPlatform = false, packagesData = null, channels = null, myChannels = null, channelsPlatform = false, paymentGateway = null, platformPaymentGateway = null, home = null, integration = null, staffRoles = null }) {
     const viewing = !!usePage().props.viewAs;
     const groups = [
         ...GROUPS,
@@ -1049,7 +1076,7 @@ export default function SettingsIndex({ group: initial = 'home', totpEnabled = f
                     )}
                     {group === 'home' && <Home home={home} onSetup={(label) => { const [gid, tid] = SETUP_TARGETS[label] || []; if (gid) { setGroup(gid); setTab(tid); } }} />}
                     {group === 'business' && <Business tab={tab} m2={m2} />}
-                    {group === 'api' && <Api tab={tab} couriers={couriers} channels={channels} myChannels={myChannels} channelsPlatform={channelsPlatform} channelsReadOnly={viewing} paymentGateway={paymentGateway} platformPaymentGateway={platformPaymentGateway} integration={integration} />}
+                    {group === 'api' && <Api tab={tab} couriers={couriers} autoApprove={autoApprove} channels={channels} myChannels={myChannels} channelsPlatform={channelsPlatform} channelsReadOnly={viewing} paymentGateway={paymentGateway} platformPaymentGateway={platformPaymentGateway} integration={integration} />}
                     {group === 'calls' && <Calls tab={tab} m2={m2} />}
                     {group === 'ai' && <Ai tab={tab} ai={ai} />}
                     {group === 'security' && <Security tab={tab} totpEnabled={totpEnabled} totpEnrolled={totpEnrolled} m2={m2} />}
