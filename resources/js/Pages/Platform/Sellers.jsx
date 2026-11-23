@@ -46,7 +46,7 @@ export default function Sellers({ sellers, q, pendingApprovals }) {
                                     <td>{s.orders}</td>
                                     <td style={{ fontWeight: 600 }}>{tk(s.revenue)}</td>
                                     <td>{s.customers}</td>
-                                    <td><Link className="btn-ghost" href={`/admin/sellers/${s.id}`}>{t('View')}</Link></td>
+                                    <td style={{ whiteSpace: 'nowrap' }}><Link className="btn-ghost" href={`/admin/sellers/${s.id}`}>{t('View')}</Link> <button type="button" className="btn-ghost" onClick={() => router.post(`/admin/sellers/${s.id}/view`)}>{t('View shop')}</button></td>
                                 </tr>
                             ))}
                             {sellers.length === 0 && <tr><td colSpan={11} style={{ textAlign: 'center', padding: 24, color: 'var(--muted)' }}>{t('No sellers found')}</td></tr>}

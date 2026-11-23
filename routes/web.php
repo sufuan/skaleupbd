@@ -72,7 +72,10 @@ Route::middleware(['auth', 'verified', 'totp'])->group(function () {
     // them onto a collapsed parent. Watermarked keys clear when the user
     // visits the owning page (POST /sidebar-counts/seen).
     Route::get('/sidebar-counts', function (\Illuminate\Http\Request $request) {
-        return response()->json(app(\App\Services\SidebarCountsService::class)->countsFor($request->user()));
+        return response()->json(app(\App\Services\SidebarCountsService::class)->countsFor(
+            $request->user(),
+            \App\Support\ShopContext::viewingAs($request),
+        ));
     })->name('sidebar.counts');
 
     Route::post('/sidebar-counts/seen', function (\Illuminate\Http\Request $request) {
@@ -370,6 +373,8 @@ Route::middleware(['auth', 'verified', 'totp'])->group(function () {
     Route::post('/admin/sellers/{business}/subscribe', [\App\Http\Controllers\PlatformController::class, 'subscribe'])->name('platform.seller.subscribe');
     Route::post('/admin/sellers/{business}/refund-first-purchase', [\App\Http\Controllers\PlatformController::class, 'refundFirstPurchase'])->name('platform.seller.refund');
     Route::post('/admin/sellers/{business}/payments', [\App\Http\Controllers\PlatformController::class, 'storePayment'])->name('platform.seller.payment');
+    Route::post('/admin/sellers/{business}/view', [\App\Http\Controllers\ViewAsController::class, 'enter'])->name('platform.viewAs.enter');
+    Route::post('/admin/view-as/exit', [\App\Http\Controllers\ViewAsController::class, 'exit'])->name('platform.viewAs.exit');
     Route::post('/admin/sellers/{business}/approve', [\App\Http\Controllers\PlatformController::class, 'approveSeller'])->name('platform.seller.approve');
     Route::post('/admin/sellers/{business}/reject', [\App\Http\Controllers\PlatformController::class, 'rejectSeller'])->name('platform.seller.reject');
     Route::get('/admin/packages', [\App\Http\Controllers\PlatformController::class, 'packages'])->name('platform.packages');

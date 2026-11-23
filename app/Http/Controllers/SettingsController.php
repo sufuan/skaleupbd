@@ -22,8 +22,12 @@ class SettingsController extends Controller
 
     public function index(Request $request): Response
     {
-        $biz = (int) ($request->user()?->business_id ?? 0);
+        // Shop scope resolves through ShopContext (ধাপ ৩): a seller
+        // sees his own shop; a platform admin inside view-as-seller
+        // sees the VIEWED shop, with the redactions below applied.
+        $biz = \App\Support\ShopContext::id($request);
         $isPlatform = (bool) ($request->user()?->is_platform_admin);
+        $viewing = \App\Support\ShopContext::isViewMode($request);
 
         // Settings Home is computed from the shop's REAL state — the
         // checklist and cards must never show hardcoded prototype copy.
@@ -70,7 +74,7 @@ class SettingsController extends Controller
             'group' => $request->query('group', 'home'),
             'couriers' => [
                 'methods' => \App\Models\CourierMethod::where('business_id', $biz)->with('pickupStores')->orderBy('name')->get()
-                    ->map(fn ($m) => \App\Http\Controllers\CourierSettingsController::methodView($m))->all(),
+                    ->map(fn ($m) => \App\Http\Controllers\CourierSettingsController::methodView($m, $viewing))->all(),
                 'rules' => \App\Models\CourierAssignmentRule::where('business_id', $biz)->with('method')->orderBy('priority')->get()
                     ->map(fn ($r) => ['id' => $r->id, 'scope' => $r->scope, 'product_id' => $r->product_id, 'category' => $r->category, 'district' => $r->district, 'area' => $r->area, 'method_id' => $r->courier_method_id, 'method_label' => $r->method?->label(), 'priority' => $r->priority])->all(),
                 'products' => \App\Models\Product::where('business_id', $biz)->orderBy('name')->get(['id', 'name', 'sku'])->all(),
@@ -96,24 +100,29 @@ class SettingsController extends Controller
             'isPlatform' => (bool) ($request->user()?->is_platform_admin),
             // Payment Gateway: seller scope for the caller's own shop;
             // platform scope only for platform admins. Same form, both.
-            'paymentGateway' => $biz ? app(\App\Services\PaymentGatewayService::class)->view($biz) : null,
-            'platformPaymentGateway' => ($request->user()?->is_platform_admin)
+            'paymentGateway' => $biz ? app(\App\Services\PaymentGatewayService::class)->view($biz, $viewing) : null,
+            // The platform scope is a platform surface: it never
+            // renders inside a viewed shop (ধাপ ৩).
+            'platformPaymentGateway' => ($request->user()?->is_platform_admin && ! $viewing)
                 ? app(\App\Services\PaymentGatewayService::class)->view(null) : null,
             // The Meta connection is the PLATFORM's single connection,
             // not the shop's: its values (the verify token above all)
             // are shared with platform admins only. Sellers receive the
             // same shape, empty, so the tab still renders. The secret
             // VALUE is never shared with anyone — only app_secret_set.
+            // In view-as-seller the channels block takes the empty
+            // (seller) shape: the Meta connection is the PLATFORM's
+            // own surface and must not render inside a viewed shop.
             'channels' => [
                 'webhook_url' => url('/api/webhooks/meta'),
-                'verify_token' => $isPlatform ? (string) $this->settings->get('meta.verify_token', '') : '',
-                'app_id' => $isPlatform ? (string) $this->settings->get('meta.app_id', '') : '',
-                'app_secret_set' => $isPlatform && ! empty($this->settings->get('meta.app_secret_enc')),
-                'facebook' => $isPlatform ? $this->channelView('facebook', ['page_name']) : $this->emptyChannelView(['page_name']),
-                'whatsapp' => $isPlatform ? $this->channelView('whatsapp', ['waba_id', 'phone_number']) : $this->emptyChannelView(['waba_id', 'phone_number']),
-                'instagram' => $isPlatform ? $this->channelView('instagram', ['username']) : $this->emptyChannelView(['username']),
+                'verify_token' => $isPlatform && ! $viewing ? (string) $this->settings->get('meta.verify_token', '') : '',
+                'app_id' => $isPlatform && ! $viewing ? (string) $this->settings->get('meta.app_id', '') : '',
+                'app_secret_set' => $isPlatform && ! $viewing && ! empty($this->settings->get('meta.app_secret_enc')),
+                'facebook' => $isPlatform && ! $viewing ? $this->channelView('facebook', ['page_name']) : $this->emptyChannelView(['page_name']),
+                'whatsapp' => $isPlatform && ! $viewing ? $this->channelView('whatsapp', ['waba_id', 'phone_number']) : $this->emptyChannelView(['waba_id', 'phone_number']),
+                'instagram' => $isPlatform && ! $viewing ? $this->channelView('instagram', ['username']) : $this->emptyChannelView(['username']),
             ],
-            'packagesData' => ($request->user()?->is_platform_admin) ? [
+            'packagesData' => ($request->user()?->is_platform_admin && ! $viewing) ? [
                 'packs' => \App\Models\PointPack::orderBy('sort')->orderBy('id')->get()->map(fn ($p) => [
                     'id' => $p->id, 'name' => $p->name, 'price_bdt' => (float) $p->price_bdt, 'credits' => (int) $p->credits,
                     'validity_type' => $p->validity_type, 'rate' => round($p->rate(), 2), 'active' => (bool) $p->is_active,
@@ -188,7 +197,7 @@ class SettingsController extends Controller
                 // sees only their own shop's changes. Rows written before
                 // attribution existed (business_id null) stay admin-only.
                 'changeHistory' => DB::table('settings_changes')
-                    ->when(! $isPlatform, fn ($q) => $q->where('business_id', $biz))
+                    ->when(! $isPlatform || $viewing, fn ($q) => $q->where('business_id', $biz))
                     ->latest('created_at')->limit(30)->get()
                     ->map(fn ($c) => ['key' => $c->key, 'old' => $this->maskHistoryValue((string) $c->key, $c->old_value), 'new' => $this->maskHistoryValue((string) $c->key, $c->new_value),
                         'by' => $c->changed_by, 'when' => \Illuminate\Support\Carbon::parse($c->created_at)->format('d M Y, h:i A')]),

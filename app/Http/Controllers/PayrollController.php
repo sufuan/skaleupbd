@@ -21,7 +21,7 @@ class PayrollController extends Controller
 
     private function biz(Request $request): int
     {
-        return (int) $request->user()->business_id;
+        return \App\Support\ShopContext::id($request);
     }
 
     private function guard(Request $request): ?RedirectResponse

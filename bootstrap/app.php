@@ -22,6 +22,7 @@ return Application::configure(basePath: dirname(__DIR__))
             \App\Http\Middleware\SetLocale::class,
             \App\Http\Middleware\HandleInertiaRequests::class,
             \App\Http\Middleware\PermissionGate::class,
+            \App\Http\Middleware\ViewAsReadOnly::class,
             \App\Http\Middleware\CheckInGate::class,
             \App\Http\Middleware\TokenGate::class,
             \App\Http\Middleware\SellerApprovalGate::class,

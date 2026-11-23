@@ -26,7 +26,17 @@ class DashboardController extends Controller
      */
     public function index(Request $request): Response
     {
-        $biz = (int) ($request->user()?->business_id ?? 0);
+        // ধাপ ৩: one /dashboard, two faces. A platform admin who is
+        // not viewing a shop gets Platform Home (the platform
+        // aggregates, one definition in PlatformHomeService - the
+        // same data /admin renders). Sellers, and an admin inside a
+        // shop through view-as-seller, get the shop face for the
+        // resolved shop.
+        if (\App\Support\ShopContext::isPlatformContext($request)) {
+            return Inertia::render('Platform/Dashboard', app(\App\Services\PlatformHomeService::class)->dashboardData());
+        }
+
+        $biz = \App\Support\ShopContext::id($request);
         $dayStr = $request->query('day');
         $dayStr = is_string($dayStr) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $dayStr) ? $dayStr : DhakaTime::today();
         $basis = array_key_exists((string) $request->query('basis'), DashboardStatsService::BASES)
@@ -65,7 +75,7 @@ class DashboardController extends Controller
     /** Earning Reports are loaded only when asked for (prototype behaviour). */
     public function earnings(Request $request): \Illuminate\Http\JsonResponse
     {
-        $biz = (int) ($request->user()?->business_id ?? 0);
+        $biz = \App\Support\ShopContext::id($request);
         // Months are Dhaka calendar months, like every other money figure:
         // whereYear/whereMonth on the stored UTC instants would put the
         // first six Dhaka hours of each month into the previous month.

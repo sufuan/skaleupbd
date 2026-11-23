@@ -38,22 +38,33 @@ class PaymentGatewayService
         return $businessId === null ? 'payment.platform' : "payment.{$businessId}";
     }
 
-    /** Form props for one scope — secrets appear only as *_set flags. */
-    public function view(?int $businessId): array
+    /**
+     * Form props for one scope — secrets appear only as *_set flags.
+     * In view-as-seller (ধাপ ৩, $redact) the payment numbers and
+     * account ids are also hidden: only *_set flags remain, because a
+     * read-only support view does not need the shop's numbers.
+     */
+    public function view(?int $businessId, bool $redact = false): array
     {
         $p = $this->prefix($businessId);
+        $hide = fn (string $key) => $redact ? '' : (string) $this->settings->get("{$p}.{$key}", '');
 
         return [
-            'bkash_number' => (string) $this->settings->get("{$p}.bkash_number", ''),
+            'bkash_number_set' => (string) $this->settings->get("{$p}.bkash_number", '') !== '',
+            'bkash_number' => $hide('bkash_number'),
             'bkash_enabled' => (bool) $this->settings->get("{$p}.bkash_enabled", false),
-            'nagad_number' => (string) $this->settings->get("{$p}.nagad_number", ''),
+            'nagad_number_set' => (string) $this->settings->get("{$p}.nagad_number", '') !== '',
+            'nagad_number' => $hide('nagad_number'),
             'nagad_enabled' => (bool) $this->settings->get("{$p}.nagad_enabled", false),
-            'rocket_number' => (string) $this->settings->get("{$p}.rocket_number", ''),
+            'rocket_number_set' => (string) $this->settings->get("{$p}.rocket_number", '') !== '',
+            'rocket_number' => $hide('rocket_number'),
             'rocket_enabled' => (bool) $this->settings->get("{$p}.rocket_enabled", false),
-            'ssl_store_id' => (string) $this->settings->get("{$p}.ssl_store_id", ''),
+            'ssl_store_id_set' => (string) $this->settings->get("{$p}.ssl_store_id", '') !== '',
+            'ssl_store_id' => $hide('ssl_store_id'),
             'ssl_enabled' => (bool) $this->settings->get("{$p}.ssl_enabled", false),
             'ssl_password_set' => (string) $this->settings->get("{$p}.ssl_password_enc", '') !== '',
-            'shurjo_username' => (string) $this->settings->get("{$p}.shurjo_username", ''),
+            'shurjo_username_set' => (string) $this->settings->get("{$p}.shurjo_username", '') !== '',
+            'shurjo_username' => $hide('shurjo_username'),
             'shurjo_enabled' => (bool) $this->settings->get("{$p}.shurjo_enabled", false),
             'shurjo_password_set' => (string) $this->settings->get("{$p}.shurjo_password_enc", '') !== '',
             'instructions' => (string) $this->settings->get("{$p}.instructions", ''),

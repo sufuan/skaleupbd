@@ -16,11 +16,17 @@ class CourierSettingsController extends Controller
 
     private function businessId(Request $request): int
     {
-        return $request->user()->business_id;
+        return \App\Support\ShopContext::id($request);
     }
 
-    /** Masked view of a method for the Settings page — secrets never leave the server. */
-    public static function methodView(CourierMethod $m): array
+    /**
+     * Masked view of a method for the Settings page — secrets never
+     * leave the server. In view-as-seller (ধাপ ৩, $redact) the whole
+     * credentials block is redacted wholesale: no last-two-chars
+     * masked suffix and no clear non-secret values either - a
+     * read-only support view needs set/not-set only.
+     */
+    public static function methodView(CourierMethod $m, bool $redact = false): array
     {
         $secretKeys = ['api_key', 'api_secret', 'client_secret', 'password', 'account_password', 'access_token', 'webhook_token', 'webhook_secret', 'client_context'];
         $creds = [];
@@ -28,8 +34,8 @@ class CourierSettingsController extends Controller
             $isSecret = in_array($k, $secretKeys, true);
             $creds[$k] = [
                 'set' => filled($v),
-                'masked' => filled($v) ? '••••' . substr((string) $v, -2) : '',
-                'value' => $isSecret ? null : (string) $v,
+                'masked' => ! $redact && filled($v) ? '••••' . substr((string) $v, -2) : '',
+                'value' => $redact || $isSecret ? null : (string) $v,
             ];
         }
 

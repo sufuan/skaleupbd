@@ -21,7 +21,7 @@ class InventoryOpsController extends Controller
 
     private function biz(Request $request): int
     {
-        return $request->user()->business_id;
+        return \App\Support\ShopContext::id($request);
     }
 
     // ---------------- Stock Ledger + Integrity ----------------

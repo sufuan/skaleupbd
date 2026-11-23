@@ -168,6 +168,23 @@ class StorefrontService
         return empty($sf->subdomain) && $sf->domain_status !== 'active';
     }
 
+    /**
+     * Read-only twin of ensureFor() for view-as-seller (ধাপ ৩): the
+     * existing storefront, or an UNSAVED draft carrying the same
+     * defaults ensureFor would persist - never a write.
+     */
+    public function findOrDraft(int $businessId): Storefront
+    {
+        return Storefront::where('business_id', $businessId)->first()
+            ?? new Storefront([
+                'business_id' => $businessId,
+                'status' => 'draft',
+                'blocks' => $this->defaultBlocks(),
+                'branding' => $this->defaultBranding($businessId),
+                'settings' => ['delivery_inside' => 60, 'delivery_outside' => 120],
+            ]);
+    }
+
     public function ensureFor(int $businessId): Storefront
     {
         return Storefront::firstOrCreate(

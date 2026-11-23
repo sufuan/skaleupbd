@@ -58,14 +58,22 @@ class HandleInertiaRequests extends Middleware
             ];
         }
 
+        // ধাপ ৩: the shell's context. 'platform' = a platform admin
+        // acting as the platform (NOT viewing a shop); 'shop' =
+        // everyone else, including an admin inside view-as-seller.
+        // The workspace business resolves through ShopContext: the
+        // viewed shop in view mode, the user's own shop otherwise -
+        // the banner (viewAs prop below) is what marks the difference.
+        $viewState = $request->user() ? \App\Support\ShopContext::viewState($request) : null;
+        $contextBiz = $request->user() ? \App\Support\ShopContext::id($request) : 0;
+
         return [
             ...parent::share($request),
             'auth' => [
                 'user' => $request->user(),
-                // The signed-in user's OWN shop — the workspace label in
-                // the shell must name their business, never another one.
-                'business' => ($request->user() && $request->user()->business_id && Schema::hasTable('businesses'))
-                    ? \App\Models\Business::whereKey($request->user()->business_id)
+                'context' => ($request->user()?->is_platform_admin && ! $viewState) ? 'platform' : 'shop',
+                'business' => ($request->user() && $contextBiz && Schema::hasTable('businesses'))
+                    ? \App\Models\Business::whereKey($contextBiz)
                         ->first(['id', 'name', 'public_id'])?->only(['id', 'name', 'public_id'])
                     : null,
                 'permissions' => ($request->user() && Schema::hasColumn('users', 'role'))
@@ -86,13 +94,30 @@ class HandleInertiaRequests extends Middleware
             // shell renders exactly this and never offers a page the
             // PermissionGate would deny.
             'nav' => ($request->user() && Schema::hasColumn('users', 'role_id'))
-                ? \App\Support\RouteRegistry::menuFor($request->user())
+                ? \App\Support\RouteRegistry::menuFor($request->user(), $viewState['business_id'] ?? null)
                 : null,
             // M18 merge: the Storefront sub-menu is computed server-side
-            // from store state; the shell renders exactly this.
-            'sfMenu' => ($request->user() && $request->user()->business_id && Schema::hasTable('storefronts'))
-                ? app(\App\Services\StorefrontService::class)->menuState((int) $request->user()->business_id)
+            // from store state; the shell renders exactly this. In view
+            // mode it is the VIEWED shop's store state (ধাপ ৩).
+            'sfMenu' => ($request->user() && $contextBiz && Schema::hasTable('storefronts'))
+                ? app(\App\Services\StorefrontService::class)->menuState($contextBiz)
                 : null,
+            // View-as-seller (ধাপ ৩): present on EVERY response while a
+            // view is open, so the shell's read-only banner can never be
+            // forgotten by a page. Null outside view mode.
+            'viewAs' => $viewState ? (function () use ($viewState) {
+                $shop = \App\Models\Business::whereKey($viewState['business_id'])
+                    ->first(['id', 'name', 'owner_name']);
+
+                return $shop ? [
+                    'business_id' => (int) $shop->id,
+                    'shop_name' => $shop->name,
+                    'owner_name' => $shop->owner_name,
+                    'started_at' => $viewState['started_at'],
+                    'expires_at' => $viewState['expires_at'],
+                    'seconds_left' => $viewState['seconds_left'],
+                ] : null;
+            })() : null,
             'locale' => $locale,
             'translations' => $translations,
             'translations_version' => file_exists($langPath) ? md5_file($langPath) : null,
@@ -100,7 +125,7 @@ class HandleInertiaRequests extends Middleware
             // Sidebar badge counts (same SidebarCountsService the shell
             // polls) so the first paint already shows watermarked values.
             'sidebarCounts' => $request->user()
-                ? app(\App\Services\SidebarCountsService::class)->countsFor($request->user())
+                ? app(\App\Services\SidebarCountsService::class)->countsFor($request->user(), $viewState['business_id'] ?? null)
                 : null,
             'tokenGate' => ($request->user() && $request->user()->business_id && Schema::hasTable('business_wallets'))
                 ? (function () use ($request) {

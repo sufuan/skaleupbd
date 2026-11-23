@@ -328,6 +328,12 @@ export default function AppLayout({ children }) {
     const userName = props.auth?.user?.name || 'User';
     const isPlatform = !!props.auth?.user?.is_platform_admin;
     const perms = props.auth?.permissions || [];
+    // ধাপ ৩: the shell context arrives from the server (auth.context):
+    // 'platform' renders the platform shell (labelled band, platform
+    // menu only); a view-as session (props.viewAs) renders the viewed
+    // shop's shell under the read-only banner.
+    const viewAs = props.viewAs || null;
+    const shellContext = props.auth?.context || ((isPlatform && !viewAs) ? 'platform' : 'shop');
     // ধাপ ২: sections arrive server-built and permission-filtered in
     // props.nav (RouteRegistry::menuFor). The only client-side merge
     // left is the Storefront sub-menu, whose state depends on the
@@ -344,7 +350,7 @@ export default function AppLayout({ children }) {
             const SF_LBL = { overview: ['Overview', '/storefront'], pages: ['My Pages', '/storefront/pages'], settings: ['Store Settings', '/storefront/settings'], connect: ['Connect Website', '/storefront/connect'] };
             kids = props.sfMenu.menu.map((k) => ({ label: SF_LBL[k][0], href: SF_LBL[k][1] }));
         }
-        if (isPlatform) {
+        if (isPlatform && !viewAs) {
             kids = [...(kids || []), { label: 'All Storefronts', href: '/admin/storefronts' }];
         }
         return { ...it, children: kids };
@@ -458,14 +464,21 @@ export default function AppLayout({ children }) {
         setTheme(next);
     };
 
+    // Workspace header: platform context is labelled as the platform
+    // (never a shop); view mode names the viewed shop and carries the
+    // read-only marker as a second signal under the banner.
+    const wsName = shellContext === 'platform' ? t('Platform Admin') : (props.auth?.business?.name || userName);
+    const wsCaption = shellContext === 'platform' ? t('Not a shop') : viewAs ? t('Read-only view') : t('Workspace');
+    const wsInitial = shellContext === 'platform' ? 'P' : (props.auth?.business?.name || userName).trim().charAt(0).toUpperCase();
+
     return (
         <CountsContext.Provider value={counts}>
-        <div className="shell">
+        <div className={`shell ${shellContext === 'platform' ? 'shell-platform' : ''}`}>
             {sbOpen && <div className="sb-overlay" onClick={() => setSbOpen(false)} />}
             <aside ref={sbRef} className={`sb ${sbOpen ? 'open' : ''}`}>
                 <div className="sb-ws">
-                    <div className="sb-ava">{(props.auth?.business?.name || userName).trim().charAt(0).toUpperCase()}</div>
-                    <div><div className="nm">{props.auth?.business?.name || userName}</div><div className="rl">{t('Workspace')}</div></div>
+                    <div className="sb-ava">{wsInitial}</div>
+                    <div><div className="nm">{wsName}</div><div className="rl">{wsCaption}</div></div>
                     <span className="chev" style={{ marginLeft: 'auto', color: '#b3a6cc' }}>⌄</span>
                 </div>
                 <button type="button" className="sb-search" style={{ width: 'calc(100% - 28px)', textAlign: 'left' }} onClick={() => setSearchOpen(true)}>
@@ -512,13 +525,22 @@ export default function AppLayout({ children }) {
                                         {props.auth?.user?.email && <div className="sm mut">{props.auth.user.email}</div>}
                                     </div>
                                     <Link href="/profile" className="user-menu-item" onClick={() => setUserMenuOpen(false)}>{t('My Profile')}</Link>
-                                    {perms.includes('billing') && <Link href="/billing" className="user-menu-item" onClick={() => setUserMenuOpen(false)}>{t('Points & Billing')}</Link>}
+                                    {perms.includes('billing') && props.auth?.business && !viewAs && <Link href="/billing" className="user-menu-item" onClick={() => setUserMenuOpen(false)}>{t('Points & Billing')}</Link>}
                                     <Link href={route('logout')} method="post" as="button" className="user-menu-item danger" onClick={() => setUserMenuOpen(false)}>{t('Log out')}</Link>
                                 </div>
                             )}
                         </span>
                     </div>
                 </header>
+                {viewAs && (
+                    <div className="viewas-banner">
+                        <span><b>{viewAs.shop_name}</b> - {t('You are viewing this shop read-only')}</span>
+                        <span style={{ opacity: .85 }}>{Math.max(1, Math.ceil((viewAs.seconds_left || 0) / 60))} {t('minutes left')}</span>
+                        <span style={{ marginLeft: 'auto' }}>
+                            <button type="button" className="btn-exit" onClick={() => router.post('/admin/view-as/exit')}>{t('Exit view')}</button>
+                        </span>
+                    </div>
+                )}
                 {props.tokenGate?.blocked && !props.tokenGate?.pending && (
                     <div style={{ background: '#FDECEC', borderBottom: '1px solid #F3B4B4', color: '#8B1E1E', padding: '10px 18px', fontSize: 13.5, display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
                         <span><b>{t('Points finished - your shop is view-only.')}</b> {t('New orders and changes are paused until you top up.')}</span>

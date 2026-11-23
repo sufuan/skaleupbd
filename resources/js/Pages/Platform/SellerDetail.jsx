@@ -88,6 +88,7 @@ export default function SellerDetail({ seller, purchaseHistory = [], payments, p
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                 <Link href="/admin/sellers" className="btn-ghost">← {t('Sellers')}</Link>
                 <h3 style={{ fontSize: 19 }}>{seller.name}</h3>
+                <button type="button" className="btn-ghost" onClick={() => router.post(`/admin/sellers/${seller.id}/view`)}>{t('View shop')}</button>
                 {seller.status === 'active' ? <span className="pill green">{t('Active')}</span> : seller.status === 'expired' ? <span className="pill red">{t('Expired')}</span> : <span className="pill amber">{t('No package')}</span>}
             </div>
 

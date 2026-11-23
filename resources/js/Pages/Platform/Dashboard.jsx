@@ -36,6 +36,14 @@ export default function SellerDashboard({ stats, recentPayments, topSellers, exp
                 <Kpi label={t('EXPIRING SOON')} value={stats.expiring_soon} sub={t('Within 7 days')} />
             </div>
 
+            <div className="plat-kpis" style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: 12, margin: '0 0 14px' }}>
+                <Kpi label={t('PENDING APPROVALS')} value={stats.pending_approvals} sub={t('Shops waiting for approval')} />
+                <Kpi label={t('NEW SELLERS TODAY')} value={stats.new_today} sub={t('Joined today')} />
+                <Kpi label={t('TOTAL ORDERS')} value={stats.orders_total} sub={t('Across all shops')} />
+                <Kpi label={t('TOTAL SALES')} value={tk(stats.sales_total)} sub={t('Across all shops')} />
+                <Kpi label={t('POINTS SOLD')} value={Number(stats.points_sold || 0).toLocaleString('en-IN')} sub={t('Points bought by sellers')} />
+            </div>
+
             <div className="plat-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, alignItems: 'start' }}>
                 <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
                     <h4 style={{ fontSize: 15, padding: '14px 14px 6px' }}>{t('Top sellers by sales')}</h4>

@@ -13,7 +13,7 @@ class CommentsController extends Controller
 {
     private function biz(Request $request): int
     {
-        return (int) ($request->user()?->business_id ?? 0);
+        return \App\Support\ShopContext::id($request);
     }
 
     private function guard(Request $request, Comment $comment): void

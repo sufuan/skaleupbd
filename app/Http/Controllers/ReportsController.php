@@ -27,7 +27,7 @@ class ReportsController extends Controller
 
     private function biz(Request $request): int
     {
-        return (int) $request->user()->business_id;
+        return \App\Support\ShopContext::id($request);
     }
 
     /** @return array{0:string,1:Carbon,2:Carbon} */

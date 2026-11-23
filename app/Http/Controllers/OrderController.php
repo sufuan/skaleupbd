@@ -31,7 +31,7 @@ class OrderController extends Controller
 
     private function businessId(Request $request): int
     {
-        return (int) $request->user()->business_id;
+        return \App\Support\ShopContext::id($request);
     }
 
     private function own(Request $request, Order $order): Order

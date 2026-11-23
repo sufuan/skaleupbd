@@ -3271,5 +3271,22 @@
  "Delete this role? Staff who have it must be moved to another role first.": "এই রোলটা মুছবেন? যেসব স্টাফের এই রোল আছে, আগে তাদের অন্য রোল দিতে হবে।",
  "Courier permissions are managed in Settings → Staff & Roles - they live in one place only.": "কুরিয়ারের permission ঠিক হয় Settings → Staff & Roles থেকে - এগুলো এক জায়গাতেই থাকে।",
  "The account for this month has not been made yet. Pick a month above and press \"Make the account\". Only the staff whose monthly salary is set in Settings → Staff & Roles come into this account.": "এই মাসের হিসাব এখনো তৈরি হয়নি। উপরে মাস বেছে \"Make the account\" চাপুন। শুধু যেসব স্টাফের মাসিক বেতন Settings → Staff & Roles এ ঠিক করা আছে, তারাই এই হিসাবে আসে।",
- "No one has a monthly salary set - go to Settings → Staff & Roles and set the salaries.": "কারো মাসিক বেতন ঠিক করা নেই - Settings → Staff & Roles এ গিয়ে বেতন ঠিক করুন।"
+ "No one has a monthly salary set - go to Settings → Staff & Roles and set the salaries.": "কারো মাসিক বেতন ঠিক করা নেই - Settings → Staff & Roles এ গিয়ে বেতন ঠিক করুন।",
+ "Not a shop": "এটি কোনো দোকান নয়",
+ "Read-only view": "শুধু দেখার view",
+ "You are viewing this shop read-only": "আপনি এই দোকানটি শুধু দেখছেন",
+ "minutes left": "মিনিট বাকি",
+ "Exit view": "View থেকে বের হোন",
+ "Platform Home": "প্ল্যাটফর্ম হোম",
+ "PENDING APPROVALS": "অনুমোদনের অপেক্ষায়",
+ "NEW SELLERS TODAY": "আজকের নতুন সেলার",
+ "TOTAL SALES": "মোট বিক্রি",
+ "POINTS SOLD": "বিক্রি হওয়া পয়েন্ট",
+ "Shops waiting for approval": "অনুমোদনের অপেক্ষায় থাকা দোকান",
+ "Joined today": "আজ যোগ দিয়েছে",
+ "Across all shops": "সব দোকান মিলিয়ে",
+ "Points bought by sellers": "সেলারদের কেনা পয়েন্ট",
+ "You are now viewing this shop read-only.": "আপনি এখন এই দোকানটি শুধু দেখছেন।",
+ "Read-only view closed.": "শুধু দেখার view বন্ধ হয়েছে।",
+ "The read-only view ended after 30 minutes.": "৩০ মিনিট শেষে শুধু দেখার view বন্ধ হয়ে গেছে।"
 }

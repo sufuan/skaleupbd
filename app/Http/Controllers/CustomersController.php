@@ -20,7 +20,7 @@ class CustomersController extends Controller
 {
     private function bizId(Request $request): int
     {
-        return (int) $request->user()->business_id;
+        return \App\Support\ShopContext::id($request);
     }
 
     private function aggregates(int $bizId, Customer $c): array

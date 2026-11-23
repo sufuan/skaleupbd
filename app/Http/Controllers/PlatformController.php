@@ -32,91 +32,15 @@ class PlatformController extends Controller
         return redirect('/settings?group=packages');
     }
 
-    private function currentSub(int $businessId): ?SellerSubscription
-    {
-        return SellerSubscription::where('business_id', $businessId)->with('package')
-            ->orderByDesc('id')->first();
-    }
-
+    /** The platform aggregates live in PlatformHomeService (ধাপ ৩) so /admin and the /dashboard platform face share one definition. */
     private function sellerRow(Business $b): array
     {
-        $sub = $this->currentSub($b->id);
-        $orders = Order::where('business_id', $b->id);
-        $live = $sub && $sub->isLive();
-        $wallet = \App\Models\BusinessWallet::where('business_id', $b->id)->first();
-
-        // M19 truth: the points wallet decides the pack display. The
-        // legacy subscription only fills the gap for a shop that has a
-        // subscription but never bought points (pre-M19 records).
-        $packName = $sub?->package?->name;
-        $status = $sub ? ($live ? 'active' : ($sub->status === 'cancelled' ? 'cancelled' : 'expired')) : 'none';
-        $expiresAt = $sub?->expires_at?->format('d M Y');
-        $daysLeft = $sub ? (int) today()->diffInDays($sub->expires_at, false) : null;
-        if ($wallet && $wallet->first_purchase_at) {
-            $until = $wallet->cycle_end ?? $wallet->wallet_expires_at;
-            $packName = $wallet->packName() ?? $packName;
-            $status = ($until && $until->isPast()) ? 'expired' : 'active';
-            $expiresAt = $until?->format('d M Y');
-            $daysLeft = $until ? (int) today()->diffInDays($until, false) : null;
-        }
-
-        return [
-            'id' => $b->id,
-            'name' => $b->name,
-            'public_id' => $b->public_id,
-            'approval_status' => $b->status ?: 'approved',
-            'status_note' => $b->status_note,
-            'approved_at' => $b->approved_at?->format('d M Y, h:i A'),
-            'owner_name' => $b->owner_name,
-            'phone' => $b->phone,
-            'email' => $b->email,
-            'address' => $b->address,
-            'joined' => DhakaTime::fmt($b->created_at, 'd M Y'),
-            'package' => $packName,
-            'package_price' => $sub ? (float) $sub->amount : null,
-            'status' => $status,
-            'expires_at' => $expiresAt,
-            'days_left' => $daysLeft,
-            'paid_total' => (float) SellerPayment::where('business_id', $b->id)->sum('amount'),
-            'token_balance' => $wallet ? (int) $wallet->balance : 0,
-            'token_pack' => $wallet?->packName(),
-            'token_until' => ($wallet?->cycle_end ?? $wallet?->wallet_expires_at)?->format('d M Y'),
-            'orders' => (clone $orders)->count(),
-            // "Sales" = the shop's booked order value, cancelled excluded —
-            // the same definition as the seller's Order Report. Delivered-only
-            // made every active seller read ৳0 until parcels completed.
-            'revenue' => (float) (clone $orders)->whereNotIn('status', ['Cancelled'])->sum('grand_total'),
-            'customers' => Customer::where('business_id', $b->id)->count(),
-        ];
+        return app(\App\Services\PlatformHomeService::class)->sellerRow($b);
     }
 
     public function dashboard(): Response
     {
-        $sellers = Business::orderBy('name')->get()->map(fn ($b) => $this->sellerRow($b));
-        $payments = SellerPayment::with('business')->latest('paid_at')->limit(10)->get();
-        $monthIncome = (float) SellerPayment::whereYear('paid_at', now()->year)->whereMonth('paid_at', now()->month)->sum('amount');
-
-        return Inertia::render('Platform/Dashboard', [
-            'stats' => [
-                'sellers' => $sellers->count(),
-                'active' => $sellers->where('status', 'active')->count(),
-                'expired' => $sellers->where('status', 'expired')->count(),
-                'income_total' => (float) SellerPayment::sum('amount'),
-                'income_month' => $monthIncome,
-                'expiring_soon' => $sellers->filter(fn ($s) => $s['status'] === 'active' && $s['days_left'] !== null && $s['days_left'] <= 7)->count(),
-            ],
-            'sellers' => $sellers->all(),
-            'recentPayments' => $payments->map(fn ($p) => [
-                'id' => $p->id, 'seller' => $p->business?->name, 'amount' => (float) $p->amount,
-                'method' => $p->method, 'note' => $p->note, 'when' => $p->paid_at?->format('d M Y, h:i A'),
-            ])->all(),
-            'topSellers' => $sellers->sortByDesc('revenue')->take(5)->values()->all(),
-            'expiring' => $sellers->filter(fn ($s) => $s['status'] === 'active' && $s['days_left'] !== null && $s['days_left'] <= 7)->values()->all(),
-            'packages' => \App\Models\PointPack::where('is_active', true)->orderBy('sort')->get()->map(fn ($p) => [
-                'name' => $p->name, 'price' => (float) $p->price_bdt,
-                'sellers' => \App\Models\BusinessWallet::where('pack_id', $p->id)->count(),
-            ])->all(),
-        ]);
+        return Inertia::render('Platform/Dashboard', app(\App\Services\PlatformHomeService::class)->dashboardData());
     }
 
     public function sellers(Request $request): Response

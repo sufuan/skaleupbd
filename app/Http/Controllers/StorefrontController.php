@@ -24,9 +24,16 @@ class StorefrontController extends Controller
 
     private function sf(Request $request): Storefront
     {
-        abort_unless($request->user()?->business_id, 403);
+        $biz = \App\Support\ShopContext::id($request);
+        abort_unless($biz, 403);
 
-        return $this->svc->ensureFor((int) $request->user()->business_id);
+        // View-as-seller (ধাপ ৩) must not write: a shop with no
+        // storefront yet resolves to an unsaved draft instead of
+        // ensureFor's firstOrCreate. The owner's own visit keeps the
+        // creating behaviour, exactly as before.
+        return \App\Support\ShopContext::isViewMode($request)
+            ? $this->svc->findOrDraft($biz)
+            : $this->svc->ensureFor($biz);
     }
 
     private function view(Request $request, Storefront $sf): array
@@ -151,7 +158,7 @@ class StorefrontController extends Controller
     public function availability(Request $request)
     {
         $slug = strtolower(trim((string) $request->query('slug', '')));
-        $res = $this->svc->availability($slug, (int) ($request->user()?->business_id ?? 0));
+        $res = $this->svc->availability($slug, \App\Support\ShopContext::id($request));
 
         return response()->json($res + ['slug' => $slug]);
     }

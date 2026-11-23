@@ -28,7 +28,7 @@ class MessagesController extends Controller
 
     private function biz(Request $request): int
     {
-        return (int) ($request->user()?->business_id ?? 0);
+        return \App\Support\ShopContext::id($request);
     }
 
     public function inbox(Request $request): Response

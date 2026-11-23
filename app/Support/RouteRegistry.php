@@ -117,6 +117,10 @@ class RouteRegistry
         'platform.seller.payment' => ['platform', null, 'edit'],
         'platform.seller.approve' => ['platform', null, 'edit'],
         'platform.seller.reject' => ['platform', null, 'edit'],
+        // View-as-seller (ধাপ ৩): enter/exit are platform actions;
+        // the read-only guard itself is ViewAsReadOnly middleware.
+        'platform.viewAs.enter' => ['platform', null, 'edit'],
+        'platform.viewAs.exit' => ['platform', null, 'edit'],
         'platform.packages' => ['platform', null, 'view'],
         'platform.claims' => ['platform', null, 'view'],
         'platform.claims.approve' => ['platform', null, 'edit'],
@@ -667,16 +671,77 @@ class RouteRegistry
     ];
 
     /**
-     * The navigation for one user: sidebar sections already filtered
-     * by the registry (the shell renders exactly this), plus the
-     * topbar action switches. Quick Search derives its index from
-     * these same sections client-side, so search can no longer offer
-     * a page the user cannot open (gap G-I / G-J).
+     * The navigation for one user, in one of three contexts (ধাপ ৩):
+     *
+     *  - platform: a platform admin who is not viewing a shop gets
+     *    the platform menu ONLY (Platform Home, Sellers, All
+     *    Storefronts, the platform Settings groups) and no topbar
+     *    actions - shop pages are not offered in platform context.
+     *  - view: a platform admin inside a shop (view-as-seller) gets
+     *    that shop's full menu, read-only: no Platform section (the
+     *    banner's Exit is the way back), no topbar actions, and the
+     *    Settings children lose the platform groups and Staff & Roles.
+     *  - shop: everyone else - the permission-filtered shop menu, as
+     *    before. The topbar switches follow the same declarations.
+     *
+     * Quick Search derives its index from these same sections, so a
+     * page the user cannot open is never offered (gap G-I / G-J).
      */
-    public static function menuFor(User $user): array
+    public static function menuFor(User $user, ?int $viewAsBusinessId = null): array
     {
-        $payrollOn = $user->business_id && Schema::hasTable('settings')
-            && (bool) app(\App\Services\SettingsService::class)->get('hr.'.$user->business_id.'.payroll_enabled', false);
+        if ($user->isPlatformAdmin()) {
+            if ($viewAsBusinessId !== null) {
+                return [
+                    'sections' => self::shopSections($user, $viewAsBusinessId, 'view'),
+                    'topbar' => ['new_order' => false, 'order_list' => false, 'send_message' => false],
+                ];
+            }
+
+            return self::platformMenu($user);
+        }
+
+        return [
+            'sections' => self::shopSections($user, $user->business_id ? (int) $user->business_id : null, 'shop'),
+            'topbar' => [
+                'new_order' => self::allows($user, 'orders.create'),
+                'order_list' => self::allows($user, 'orders.index'),
+                'send_message' => self::allows($user, 'messages.inbox'),
+            ],
+        ];
+    }
+
+    /** The platform shell's menu (ধাপ ৩ prep map section 3.3). */
+    private static function platformMenu(User $user): array
+    {
+        return [
+            'sections' => [
+                ['sec' => null, 'items' => [
+                    ['label' => 'Platform Home', 'icon' => 'grid', 'href' => '/dashboard'],
+                ]],
+                ['sec' => 'Platform', 'items' => [
+                    ['label' => 'Sellers', 'icon' => 'users', 'href' => '/admin', 'children' => [
+                        ['label' => 'Seller Dashboard', 'href' => '/admin'],
+                        ['label' => 'All Sellers', 'href' => '/admin/sellers'],
+                        ['label' => 'Seller Verification', 'href' => '/admin/claims', 'badgeKey' => 'sellers_pending'],
+                    ]],
+                    ['label' => 'All Storefronts', 'icon' => 'store', 'href' => '/admin/storefronts'],
+                    ['label' => 'Settings', 'icon' => 'gear', 'href' => '/settings', 'settings' => true, 'children' => self::settingsChildren($user, 'platform')],
+                ]],
+            ],
+            'topbar' => ['new_order' => false, 'order_list' => false, 'send_message' => false],
+        ];
+    }
+
+    /**
+     * The shop menu sections, filtered by the user's module ticks.
+     * $payrollBiz is the shop whose payroll switch adds the Payroll
+     * child (the user's own shop, or the viewed shop in view mode);
+     * $context picks the Settings children variant.
+     */
+    private static function shopSections(User $user, ?int $payrollBiz, string $context): array
+    {
+        $payrollOn = $payrollBiz && Schema::hasTable('settings')
+            && (bool) app(\App\Services\SettingsService::class)->get('hr.'.$payrollBiz.'.payroll_enabled', false);
 
         $sections = [];
         foreach (self::MENU as $section) {
@@ -689,7 +754,7 @@ class RouteRegistry
                     $item['children'][] = ['label' => 'Payroll', 'href' => '/hrm/payroll'];
                 }
                 if (! empty($item['settings'])) {
-                    $item['children'] = self::settingsChildren($user);
+                    $item['children'] = self::settingsChildren($user, $context);
                 }
                 unset($item['key']);
                 $items[] = $item;
@@ -699,29 +764,24 @@ class RouteRegistry
             }
         }
 
-        if ($user->isPlatformAdmin()) {
-            $sections[] = ['sec' => 'Platform', 'items' => [
-                ['label' => 'Sellers', 'icon' => 'users', 'href' => '/admin', 'children' => [
-                    ['label' => 'Seller Dashboard', 'href' => '/admin'],
-                    ['label' => 'All Sellers', 'href' => '/admin/sellers'],
-                    ['label' => 'Seller Verification', 'href' => '/admin/claims', 'badgeKey' => 'sellers_pending'],
-                ]],
-            ]];
-        }
-
-        return [
-            'sections' => $sections,
-            'topbar' => [
-                'new_order' => self::allows($user, 'orders.create'),
-                'order_list' => self::allows($user, 'orders.index'),
-                'send_message' => self::allows($user, 'messages.inbox'),
-            ],
-        ];
+        return $sections;
     }
 
-    /** Settings sub-menu groups, with the two conditional children. */
-    private static function settingsChildren(User $user): array
+    /** Settings sub-menu groups, per context (ধাপ ৩). */
+    private static function settingsChildren(User $user, string $context = 'shop'): array
     {
+        if ($context === 'platform') {
+            // Only the platform-scope groups: the global Meta
+            // connection and platform gateway (inside API Connection),
+            // AI & Auto Reply, Security & Records, Seller Packages.
+            return [
+                ['label' => 'API Connection', 'g' => 'api'],
+                ['label' => 'AI & Auto Reply', 'g' => 'ai'],
+                ['label' => 'Security & Records', 'g' => 'security'],
+                ['label' => 'Seller Packages', 'g' => 'packages'],
+            ];
+        }
+
         $children = [
             ['label' => 'Settings Dashboard', 'g' => 'home'],
             ['label' => 'Business Settings', 'g' => 'business'],
@@ -730,6 +790,12 @@ class RouteRegistry
             ['label' => 'AI & Auto Reply', 'g' => 'ai'],
             ['label' => 'Security & Records', 'g' => 'security'],
         ];
+        if ($context === 'view') {
+            // A viewed shop's Settings: no platform groups (Seller
+            // Packages) and no Staff & Roles (owner-identity surface,
+            // its data keys off the signed-in user, not the shop).
+            return $children;
+        }
         if ($user->isPlatformAdmin()) {
             $children[] = ['label' => 'Seller Packages', 'g' => 'packages'];
         }

@@ -3271,5 +3271,22 @@
  "Delete this role? Staff who have it must be moved to another role first.": "Delete this role? Staff who have it must be moved to another role first.",
  "Courier permissions are managed in Settings → Staff & Roles - they live in one place only.": "Courier permissions are managed in Settings → Staff & Roles - they live in one place only.",
  "The account for this month has not been made yet. Pick a month above and press \"Make the account\". Only the staff whose monthly salary is set in Settings → Staff & Roles come into this account.": "The account for this month has not been made yet. Pick a month above and press \"Make the account\". Only the staff whose monthly salary is set in Settings → Staff & Roles come into this account.",
- "No one has a monthly salary set - go to Settings → Staff & Roles and set the salaries.": "No one has a monthly salary set - go to Settings → Staff & Roles and set the salaries."
+ "No one has a monthly salary set - go to Settings → Staff & Roles and set the salaries.": "No one has a monthly salary set - go to Settings → Staff & Roles and set the salaries.",
+ "Not a shop": "Not a shop",
+ "Read-only view": "Read-only view",
+ "You are viewing this shop read-only": "You are viewing this shop read-only",
+ "minutes left": "minutes left",
+ "Exit view": "Exit view",
+ "Platform Home": "Platform Home",
+ "PENDING APPROVALS": "PENDING APPROVALS",
+ "NEW SELLERS TODAY": "NEW SELLERS TODAY",
+ "TOTAL SALES": "TOTAL SALES",
+ "POINTS SOLD": "POINTS SOLD",
+ "Shops waiting for approval": "Shops waiting for approval",
+ "Joined today": "Joined today",
+ "Across all shops": "Across all shops",
+ "Points bought by sellers": "Points bought by sellers",
+ "You are now viewing this shop read-only.": "You are now viewing this shop read-only.",
+ "Read-only view closed.": "Read-only view closed.",
+ "The read-only view ended after 30 minutes.": "The read-only view ended after 30 minutes."
 }

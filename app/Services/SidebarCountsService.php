@@ -63,10 +63,16 @@ class SidebarCountsService
         });
     }
 
-    /** @return array<string, int> */
-    public function countsFor(?User $user): array
+    /**
+     * @param  ?int  $bizOverride  the viewed shop in view-as-seller
+     *                             (ধাপ ৩): shop counts resolve that
+     *                             shop, while the seen watermarks stay
+     *                             the signed-in user's own rows.
+     * @return array<string, int>
+     */
+    public function countsFor(?User $user, ?int $bizOverride = null): array
     {
-        $biz = $user?->business_id;
+        $biz = $bizOverride ?? $user?->business_id;
         $seen = ($user && Schema::hasTable('sidebar_seen'))
             ? SidebarSeen::where('user_id', $user->id)->get()->keyBy('key')
             : collect();
