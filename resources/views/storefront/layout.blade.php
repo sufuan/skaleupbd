@@ -21,12 +21,16 @@
 <script>
 !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
 fbq('init','{{ $brand['pixel'] }}');
-window.sfEventId=function(){return 'sf.'+Date.now()+'.'+Math.random().toString(36).slice(2,12)};
 fbq('track','PageView',{},{eventID:window.sfEventId()});
 </script>
 <noscript><img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id={{ $brand['pixel'] }}&ev=PageView&noscript=1"></noscript>
 @endif
 <script>
+// Event ids are needed by the order forms even when the shop has no
+// Meta Pixel configured (sfEventId used to live inside the pixel
+// block, so pixel-less shops threw "sfEventId is not a function" and
+// the order-form totals/qty handlers never attached).
+window.sfEventId=function(){return 'sf.'+Date.now()+'.'+Math.random().toString(36).slice(2,12)};
 window.sfTrack=function(ev,params,eventID){
   if(window.fbq) fbq('track',ev,params||{},{eventID:eventID||window.sfEventId()});
   if(window.gtag) gtag('event',ev.toLowerCase(),params||{});

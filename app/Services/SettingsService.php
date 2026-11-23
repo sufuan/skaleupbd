@@ -49,12 +49,15 @@ class SettingsService
     public function set(string $key, mixed $value, ?int $userId = null): void
     {
         $setting = Setting::where('key', $key)->first();
-        // A numeric STRING is only stored as a number when it is the
-        // canonical form — '017…' phone numbers and other leading-zero
-        // codes must stay strings or they lose the zero on read-back.
-        $numeric = is_int($value) || is_float($value)
-            || (is_string($value) && is_numeric($value) && (string) ($value + 0) === $value);
-        $type = $setting?->type ?? (is_bool($value) ? 'boolean' : (is_array($value) ? 'json' : ($numeric ? 'number' : 'string')));
+        // The stored type follows the VALUE's type, never the row's old
+        // type and never a guess from the string's shape: a numeric
+        // STRING is an identifier (Meta app id, account id, phone
+        // number) and must read back as the same string. Coercing
+        // '1122334455' to number 1122334455 broke strict reads of
+        // identifiers, while every real number in the app is cast to
+        // int/float by its caller before set(), so nothing numeric is
+        // lost by this rule.
+        $type = is_bool($value) ? 'boolean' : (is_array($value) ? 'json' : ((is_int($value) || is_float($value)) ? 'number' : 'string'));
 
         Setting::updateOrCreate(
             ['key' => $key],

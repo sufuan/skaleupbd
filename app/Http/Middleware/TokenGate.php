@@ -31,6 +31,9 @@ class TokenGate
                 || $name === 'notifications.read' || $name === 'notifications.readAll' // same: marking read is view state
                 || $name === 'registration.verify.store' || $name === 'registration.verify.resend'
                 || $name === 'billing.claims.store' || $name === 'billing.claims.submit'
+                || $name === 'storefront.onboarding.save' // wizard draft steps: an unpaid seller must be able to walk onboarding; publish stays refused by the service (Rule 2)
+                || $name === 'storefront.otp.send' || $name === 'storefront.otp.verify' // phone verification, same class as registration verify
+                || $name === 'storefront.wizard.publish' // reaches the service so the Rule 2 refusal (not the generic block) surfaces; changes nothing while unpaid
                 || str_starts_with($name, 'totp.');
             if (! $exempt && $this->tokens->blocked((int) $user->business_id)) {
                 if ($request->expectsJson() || $request->is('api/*')) {
