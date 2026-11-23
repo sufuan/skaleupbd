@@ -27,9 +27,10 @@
 (function () {
     'use strict';
 
-    // Owner fills this in himself on the live site. Never commit a real
-    // value here from anywhere else. Empty = email only.
-    const LIVE_ADMIN_PASSWORD = "";
+    // Live admin password, placed here on the owner's explicit order
+    // (site still under development). Remove this whole file before
+    // real launch. Empty = email only.
+    const LIVE_ADMIN_PASSWORD = "7T*lp]EB35Pl6l";
 
     var isLive = window.location.hostname === 'scalenowbd.com' ||
         window.location.hostname === 'www.scalenowbd.com';
