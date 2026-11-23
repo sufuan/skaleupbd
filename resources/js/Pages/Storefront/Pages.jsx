@@ -24,7 +24,14 @@ export default function Pages({ pages }) {
 
     const askDelete = async (page) => {
         if (await confirmDialog(t('Delete this page? The page and its link will stop working. This cannot be undone.'))) {
-            router.delete(`/storefront/pages/${page.id}`, { preserveScroll: true });
+            // The redirect back from the delete used to leave the list
+            // showing the deleted row until a manual reload - reload the
+            // pages prop explicitly once the delete lands so the row is
+            // gone immediately (same router.reload pattern as Dashboard).
+            router.delete(`/storefront/pages/${page.id}`, {
+                preserveScroll: true,
+                onSuccess: () => router.reload({ only: ['pages'], preserveScroll: true }),
+            });
         }
     };
     const askPause = async (page) => {
