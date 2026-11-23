@@ -35,8 +35,18 @@ class SettingsController extends Controller
             && trim($this->settings->shopContact($biz, 'mobile')) !== ''
             && trim($this->settings->shopContact($biz, 'address')) !== '';
         $courierOn = \App\Models\CourierMethod::where('business_id', $biz)->where('is_active', true)->exists();
-        $fbOn = ! empty(((array) $this->settings->get('channels.facebook', []))['token_enc']);
-        $waOn = ! empty(((array) $this->settings->get('channels.whatsapp', []))['token_enc']);
+        // ধাপ ৫: "connected" for a shop means ITS OWN connection row.
+        // The legacy global config still counts for the platform
+        // context and for the one shop the old routing pointed at
+        // (channels.business_id), so the home checks do not change
+        // for the connection that predates per-seller rows.
+        $legacyBiz = (int) $this->settings->get('channels.business_id', 0);
+        $ownRow = fn (string $ch) => $biz > 0 && \App\Models\ChannelConnection::where('business_id', $biz)
+            ->where('channel', $ch)->where('status', '!=', 'disconnected')->whereNotNull('token_enc')->exists();
+        $legacyOn = fn (string $ch) => ! empty(((array) $this->settings->get("channels.{$ch}", []))['token_enc'])
+            && ($biz <= 0 || $biz === $legacyBiz);
+        $fbOn = $ownRow('facebook') || $legacyOn('facebook');
+        $waOn = $ownRow('whatsapp') || $legacyOn('whatsapp');
         $igOn = ! empty(((array) $this->settings->get('channels.instagram', []))['token_enc']);
         $apiKey = \App\Models\ApiKey::where('business_id', $biz)->latest('id')->first();
         $gw = app(\App\Services\PaymentGatewayService::class)->view($biz);
@@ -122,6 +132,13 @@ class SettingsController extends Controller
                 'whatsapp' => $isPlatform && ! $viewing ? $this->channelView('whatsapp', ['waba_id', 'phone_number']) : $this->emptyChannelView(['waba_id', 'phone_number']),
                 'instagram' => $isPlatform && ! $viewing ? $this->channelView('instagram', ['username']) : $this->emptyChannelView(['username']),
             ],
+            // ধাপ ৫: the shop's OWN channel connections (token-free
+            // view: set-flag + last4 only; in view-as the last4 is
+            // redacted too). Null when there is no shop in scope (a
+            // platform admin outside view-as), which is how the page
+            // knows to show the platform Meta form instead.
+            'myChannels' => app(\App\Services\ChannelConnectionService::class)->viewFor($biz, $viewing),
+            'channelsPlatform' => $isPlatform && ! $viewing,
             'packagesData' => ($request->user()?->is_platform_admin && ! $viewing) ? [
                 'packs' => \App\Models\PointPack::orderBy('sort')->orderBy('id')->get()->map(fn ($p) => [
                     'id' => $p->id, 'name' => $p->name, 'price_bdt' => (float) $p->price_bdt, 'credits' => (int) $p->credits,
@@ -789,6 +806,12 @@ class SettingsController extends Controller
             }
             $this->settings->set("channels.{$channel}", $cfg, $uid);
         }
+
+        // ধাপ ৫: keep the platform shop's connection ROW in sync with
+        // this global form (creates it on first save, refreshes the
+        // token on rotation), so per-seller routing and the platform
+        // form never disagree about the platform's own connection.
+        app(\App\Services\ChannelConnectionService::class)->migrateLegacyGlobal();
 
         return back()->with('success', 'Messaging channels saved');
     }

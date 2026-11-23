@@ -96,7 +96,7 @@ class ProcessVoiceMessageJob implements ShouldQueue
         $headers = [];
         $conv = $msg->conversation;
         if ($conv && $conv->channel === 'whatsapp' && !empty($meta['media_id'])) {
-            $cfg = $graph->channelConfig('whatsapp');
+            $cfg = $graph->configForConversation($conv);
             if (empty($cfg['token'])) {
                 return null;
             }

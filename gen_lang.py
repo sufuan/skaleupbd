@@ -3523,6 +3523,21 @@ BN.update([
     ("You are now viewing this shop read-only.", "আপনি এখন এই দোকানটি শুধু দেখছেন।"),
     ("Read-only view closed.", "শুধু দেখার view বন্ধ হয়েছে।"),
     ("The read-only view ended after 30 minutes.", "৩০ মিনিট শেষে শুধু দেখার view বন্ধ হয়ে গেছে।"),
+    # ---- ধাপ ৫: per-seller channel connections ----
+    ("Facebook Page (Messenger) - your shop", "Facebook Page (Messenger) - আপনার দোকান"),
+    ("WhatsApp - your shop", "WhatsApp - আপনার দোকান"),
+    ("Customers who message your Facebook Page appear in your Inbox, and replies go out from here.", "আপনার Facebook Page-এ message পাঠানো customer-রা আপনার Inbox-এ আসে, আর উত্তর এখান থেকেই যায়।"),
+    ("Customers who message your WhatsApp number appear in your Inbox, and replies go out from here.", "আপনার WhatsApp number-এ message পাঠানো customer-রা আপনার Inbox-এ আসে, আর উত্তর এখান থেকেই যায়।"),
+    ("Instagram", "Instagram"),
+    ("Instagram connection is not available yet.", "Instagram connection এখনো আসেনি।"),
+    ("Connect", "Connect করুন"),
+    ("Disconnect", "Disconnect করুন"),
+    ("Disconnect this channel?", "এই channel-টা disconnect করবেন?"),
+    ("Reconnect", "আবার Connect করুন"),
+    ("Not working", "কাজ করছে না"),
+    ("Token saved", "Token সেভ করা আছে"),
+    ("Last checked", "শেষ যাচাই"),
+    ("Meta said:", "Meta বলেছে:"),
 ])
 
 EN = {k: k for k in BN}

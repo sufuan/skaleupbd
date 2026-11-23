@@ -440,6 +440,13 @@ class StorefrontService
     /** The shop's connected Facebook Page ID (Settings → Messaging Channels), if any. */
     public function facebookPageId(int $businessId): ?string
     {
+        // ধাপ ৫: the shop's OWN Facebook Page (its connection row);
+        // the legacy global config remains the fallback for the shop
+        // the old single connection belonged to.
+        $conn = \App\Models\ChannelConnection::forBusiness($businessId, 'facebook');
+        if ($conn && trim((string) $conn->external_id) !== '') {
+            return trim((string) $conn->external_id);
+        }
         $cfg = (array) $this->settings->get('channels.facebook', []);
         $page = trim((string) ($cfg['account_id'] ?? ''));
 

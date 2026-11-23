@@ -167,6 +167,12 @@ class RouteRegistry
         'settings.smsCheck' => ['shop', 'settings', 'edit'],
         'settings.smsTest' => ['shop', 'settings', 'edit'],
         'settings.paymentGateway' => ['shop', 'settings', 'edit'],
+        // ধাপ ৫: a seller's OWN channel connections. API Connection
+        // keys sit in the owner's non-delegable set, so these carry
+        // the ownerOnly flag like Staff & Roles.
+        'settings.myChannels.store' => ['shop', 'settings', 'edit', ['ownerOnly']],
+        'settings.myChannels.check' => ['shop', 'settings', 'edit', ['ownerOnly']],
+        'settings.myChannels.disconnect' => ['shop', 'settings', 'edit', ['ownerOnly']],
         'settings.courierMethods' => ['shop', 'settings', 'edit'],
         'settings.couriers.store' => ['shop', 'settings', 'edit'],
         'settings.couriers.update' => ['shop', 'settings', 'edit'],

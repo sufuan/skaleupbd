@@ -3288,5 +3288,19 @@
  "Points bought by sellers": "Points bought by sellers",
  "You are now viewing this shop read-only.": "You are now viewing this shop read-only.",
  "Read-only view closed.": "Read-only view closed.",
- "The read-only view ended after 30 minutes.": "The read-only view ended after 30 minutes."
+ "The read-only view ended after 30 minutes.": "The read-only view ended after 30 minutes.",
+ "Facebook Page (Messenger) - your shop": "Facebook Page (Messenger) - your shop",
+ "WhatsApp - your shop": "WhatsApp - your shop",
+ "Customers who message your Facebook Page appear in your Inbox, and replies go out from here.": "Customers who message your Facebook Page appear in your Inbox, and replies go out from here.",
+ "Customers who message your WhatsApp number appear in your Inbox, and replies go out from here.": "Customers who message your WhatsApp number appear in your Inbox, and replies go out from here.",
+ "Instagram": "Instagram",
+ "Instagram connection is not available yet.": "Instagram connection is not available yet.",
+ "Connect": "Connect",
+ "Disconnect": "Disconnect",
+ "Disconnect this channel?": "Disconnect this channel?",
+ "Reconnect": "Reconnect",
+ "Not working": "Not working",
+ "Token saved": "Token saved",
+ "Last checked": "Last checked",
+ "Meta said:": "Meta said:"
 }

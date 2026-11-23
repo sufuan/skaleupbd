@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\ChannelConnection;
 use App\Models\ChatMessage;
 use App\Models\Comment;
 use App\Models\Conversation;
@@ -11,14 +12,21 @@ use Illuminate\Support\Facades\Log;
 
 /**
  * Talks to Meta's Graph API for Messenger, WhatsApp and Instagram.
- * Channel credentials live in Settings (API Connection → Messaging
- * Channels); tokens are stored encrypted. Sending only happens for
- * conversations that carry a real external id (a PSID / WhatsApp
- * number / IG id) — demo and seeded conversations are skipped.
+ * Since ধাপ ৫ each shop sends through its OWN channel connection
+ * (channel_connections row, token encrypted); the platform's original
+ * global config in Settings (channels.*) remains only as a transition
+ * fallback for rows that predate a stamped connection. Sending only
+ * happens for conversations that carry a real external id (a PSID /
+ * WhatsApp number / IG id) — demo and seeded conversations are skipped.
  */
 class MetaGraphService
 {
     private const API = 'https://graph.facebook.com/v21.0';
+
+    /** Meta error codes that mean the access token itself is dead (invalid / expired / invalidated). */
+    private const AUTH_ERROR_CODES = [102, 190, 463, 467, 2500];
+
+    private const NOT_CONNECTED = 'Channel is not connected - connect it in Settings, Messaging Channels';
 
     public function __construct(private readonly SettingsService $settings) {}
 
@@ -45,6 +53,82 @@ class MetaGraphService
         $cfg['token'] = self::decrypt($cfg['token_enc'] ?? null);
 
         return $cfg;
+    }
+
+    /**
+     * Connection-first resolution (ধাপ ৫): the conversation's own
+     * stamped connection, else the shop's current connection for the
+     * channel, else the legacy global config. Returns the config array
+     * plus the connection row it came from (null for the legacy path),
+     * so a dead token can be marked on the row that owns it.
+     *
+     * @return array{0: array, 1: ?ChannelConnection}
+     */
+    private function resolveForConversation(Conversation $conv): array
+    {
+        $conn = null;
+        if ($conv->channel_connection_id) {
+            $candidate = ChannelConnection::find($conv->channel_connection_id);
+            if ($candidate && (int) $candidate->business_id === (int) $conv->business_id && $candidate->isLive()) {
+                $conn = $candidate;
+            }
+        }
+        if (! $conn) {
+            $conn = ChannelConnection::forBusiness((int) $conv->business_id, (string) $conv->channel);
+        }
+        if ($conn && $conn->token()) {
+            return [$conn->config(), $conn];
+        }
+
+        return [$this->channelConfig((string) $conv->channel), $conn];
+    }
+
+    /** @return array{0: array, 1: ?ChannelConnection} */
+    private function resolveForComment(Comment $comment): array
+    {
+        $conn = null;
+        if ($comment->channel_connection_id) {
+            $candidate = ChannelConnection::find($comment->channel_connection_id);
+            if ($candidate && (int) $candidate->business_id === (int) $comment->business_id && $candidate->isLive()) {
+                $conn = $candidate;
+            }
+        }
+        if (! $conn) {
+            $conn = ChannelConnection::forBusiness((int) $comment->business_id, (string) $comment->channel);
+        }
+        if ($conn && $conn->token()) {
+            return [$conn->config(), $conn];
+        }
+
+        return [$this->channelConfig((string) $comment->channel), $conn];
+    }
+
+    /** The send config for a conversation: its own shop's connection first (ধাপ ৫). */
+    public function configForConversation(Conversation $conv): array
+    {
+        return $this->resolveForConversation($conv)[0];
+    }
+
+    /**
+     * A send rejected with an auth-class Meta error means the
+     * connection's token is dead: mark the row so the Settings card
+     * and the Work Inbox channel_broken rule can surface it. Only a
+     * row currently marked connected is flipped (never resurrect or
+     * re-mark a row a human already handled).
+     */
+    private function noteConnectionFailure(?ChannelConnection $conn, mixed $code, ?string $error): void
+    {
+        if (! $conn || $conn->status !== 'connected') {
+            return;
+        }
+        if (! in_array((int) $code, self::AUTH_ERROR_CODES, true)) {
+            return;
+        }
+        $conn->forceFill([
+            'status' => 'error',
+            'last_error' => $error,
+            'last_checked_at' => now(),
+        ])->save();
     }
 
     public function isConnected(string $channel): bool
@@ -87,9 +171,9 @@ class MetaGraphService
     /** @return array{0: bool, 1: ?string, 2: ?string} ok, error, Meta message id */
     public function sendText(Conversation $conv, string $text): array
     {
-        $cfg = $this->channelConfig($conv->channel);
+        [$cfg, $conn] = $this->resolveForConversation($conv);
         if (empty($cfg['token']) || empty($cfg['account_id'])) {
-            return [false, 'Channel is not connected in Settings', null];
+            return [false, self::NOT_CONNECTED, null];
         }
         try {
             if ($conv->channel === 'whatsapp') {
@@ -117,7 +201,10 @@ class MetaGraphService
                 return [true, null, $mid !== '' ? $mid : null];
             }
 
-            return [false, (string) ($res->json('error.message') ?? ('HTTP ' . $res->status())), null];
+            $error = (string) ($res->json('error.message') ?? ('HTTP ' . $res->status()));
+            $this->noteConnectionFailure($conn, $res->json('error.code'), $error);
+
+            return [false, $error, null];
         } catch (\Throwable $e) {
             return [false, $e->getMessage(), null];
         }
@@ -131,9 +218,9 @@ class MetaGraphService
      */
     public function sendQuickReplies(Conversation $conv, string $text, array $options): array
     {
-        $cfg = $this->channelConfig($conv->channel);
+        [$cfg, $conn] = $this->resolveForConversation($conv);
         if (empty($cfg['token']) || empty($cfg['account_id'])) {
-            return [false, 'Channel is not connected in Settings', null];
+            return [false, self::NOT_CONNECTED, null];
         }
         if ($conv->channel === 'whatsapp') {
             // WhatsApp has no quick replies in this shape — plain text.
@@ -155,7 +242,10 @@ class MetaGraphService
                 return [true, null, $mid !== '' ? $mid : null];
             }
 
-            return [false, (string) ($res->json('error.message') ?? ('HTTP ' . $res->status())), null];
+            $error = (string) ($res->json('error.message') ?? ('HTTP ' . $res->status()));
+            $this->noteConnectionFailure($conn, $res->json('error.code'), $error);
+
+            return [false, $error, null];
         } catch (\Throwable $e) {
             return [false, $e->getMessage(), null];
         }
@@ -198,16 +288,21 @@ class MetaGraphService
         if (! $comment->external_id) {
             return [true, null];
         }
-        $cfg = $this->channelConfig($comment->channel);
+        [$cfg, $conn] = $this->resolveForComment($comment);
         if (empty($cfg['token'])) {
-            return [false, 'Channel is not connected in Settings'];
+            return [false, self::NOT_CONNECTED];
         }
         try {
             $res = Http::timeout(12)->post(self::API . "/{$comment->external_id}/comments?access_token=" . urlencode($cfg['token']), [
                 'message' => $text,
             ]);
+            if ($res->successful()) {
+                return [true, null];
+            }
+            $error = (string) ($res->json('error.message') ?? ('HTTP ' . $res->status()));
+            $this->noteConnectionFailure($conn, $res->json('error.code'), $error);
 
-            return $res->successful() ? [true, null] : [false, (string) ($res->json('error.message') ?? ('HTTP ' . $res->status()))];
+            return [false, $error];
         } catch (\Throwable $e) {
             return [false, $e->getMessage()];
         }
@@ -219,9 +314,9 @@ class MetaGraphService
         if (! $comment->external_id) {
             return [true, null];
         }
-        $cfg = $this->channelConfig($comment->channel);
+        [$cfg, $conn] = $this->resolveForComment($comment);
         if (empty($cfg['token']) || empty($cfg['account_id'])) {
-            return [false, 'Channel is not connected in Settings'];
+            return [false, self::NOT_CONNECTED];
         }
         try {
             if ($comment->channel === 'instagram') {
@@ -239,7 +334,13 @@ class MetaGraphService
                 ]);
             }
 
-            return $res->successful() ? [true, null] : [false, (string) ($res->json('error.message') ?? ('HTTP ' . $res->status()))];
+            if ($res->successful()) {
+                return [true, null];
+            }
+            $error = (string) ($res->json('error.message') ?? ('HTTP ' . $res->status()));
+            $this->noteConnectionFailure($conn, $res->json('error.code'), $error);
+
+            return [false, $error];
         } catch (\Throwable $e) {
             return [false, $e->getMessage()];
         }
@@ -250,27 +351,42 @@ class MetaGraphService
         if (! $comment->external_id) {
             return [true, null];
         }
-        $cfg = $this->channelConfig($comment->channel);
+        [$cfg, $conn] = $this->resolveForComment($comment);
         if (empty($cfg['token'])) {
-            return [false, 'Channel is not connected in Settings'];
+            return [false, self::NOT_CONNECTED];
         }
         try {
             $res = Http::timeout(12)->post(self::API . "/{$comment->external_id}?access_token=" . urlencode($cfg['token']), [
                 'is_hidden' => $hidden,
             ]);
+            if ($res->successful()) {
+                return [true, null];
+            }
+            $error = (string) ($res->json('error.message') ?? ('HTTP ' . $res->status()));
+            $this->noteConnectionFailure($conn, $res->json('error.code'), $error);
 
-            return $res->successful() ? [true, null] : [false, (string) ($res->json('error.message') ?? ('HTTP ' . $res->status()))];
+            return [false, $error];
         } catch (\Throwable $e) {
             return [false, $e->getMessage()];
         }
     }
 
-    /** Live check used by the Settings "Check connection" button. */
+    /** Live check used by the Settings "Check connection" button (platform global config). */
     public function check(string $channel): array
     {
-        $cfg = $this->channelConfig($channel);
+        return $this->checkConfig($channel, $this->channelConfig($channel));
+    }
+
+    /**
+     * The same check against an explicit config (a shop's own
+     * channel_connections row). Also returns the display name / phone
+     * number Meta answered with, so a connection row can show Meta's
+     * own name for the Page/number instead of typed text.
+     */
+    public function checkConfig(string $channel, array $cfg): array
+    {
         if (empty($cfg['token']) || empty($cfg['account_id'])) {
-            return ['ok' => false, 'detail' => 'Token or account id is missing'];
+            return ['ok' => false, 'detail' => 'Token or account id is missing', 'name' => null, 'phone' => null];
         }
         try {
             if ($channel === 'facebook') {
@@ -281,10 +397,10 @@ class MetaGraphService
                     'access_token' => $cfg['token'],
                 ]);
                 if ($res->successful()) {
-                    return ['ok' => true, 'detail' => 'Connected — Messenger is reachable'];
+                    return ['ok' => true, 'detail' => 'Connected - Messenger is reachable', 'name' => null, 'phone' => null];
                 }
 
-                return ['ok' => false, 'detail' => (string) ($res->json('error.message') ?? ('HTTP ' . $res->status()))];
+                return ['ok' => false, 'detail' => (string) ($res->json('error.message') ?? ('HTTP ' . $res->status())), 'name' => null, 'phone' => null];
             }
             $fields = $channel === 'whatsapp' ? 'display_phone_number,verified_name' : 'username,name';
             $res = Http::timeout(12)->get(self::API . "/{$cfg['account_id']}", [
@@ -292,23 +408,25 @@ class MetaGraphService
                 'access_token' => $cfg['token'],
             ]);
             if ($res->successful()) {
-                $name = $res->json('name') ?? $res->json('verified_name') ?? $res->json('username') ?? $res->json('display_phone_number');
+                $name = $res->json('verified_name') ?? $res->json('name') ?? $res->json('username');
+                $phone = $channel === 'whatsapp' ? $res->json('display_phone_number') : null;
+                $label = $name ?? $phone;
 
-                return ['ok' => true, 'detail' => 'Connected' . ($name ? " — {$name}" : '')];
+                return ['ok' => true, 'detail' => 'Connected' . ($label ? " - {$label}" : ''), 'name' => $name, 'phone' => $phone];
             }
 
-            return ['ok' => false, 'detail' => (string) ($res->json('error.message') ?? ('HTTP ' . $res->status()))];
+            return ['ok' => false, 'detail' => (string) ($res->json('error.message') ?? ('HTTP ' . $res->status())), 'name' => null, 'phone' => null];
         } catch (\Throwable $e) {
-            return ['ok' => false, 'detail' => $e->getMessage()];
+            return ['ok' => false, 'detail' => $e->getMessage(), 'name' => null, 'phone' => null];
         }
     }
 
     /** Send an image by public URL (photo confirmation). Returns [ok, error]. */
     public function sendImage(Conversation $conv, string $url): array
     {
-        $cfg = $this->channelConfig($conv->channel);
+        [$cfg, $conn] = $this->resolveForConversation($conv);
         if (empty($cfg['token']) || empty($cfg['account_id']) || !$conv->external_id) {
-            return [false, 'Channel is not connected in Settings'];
+            return [false, self::NOT_CONNECTED];
         }
         try {
             if ($conv->channel === 'whatsapp') {
@@ -328,16 +446,26 @@ class MetaGraphService
                 ]);
             }
 
-            return $res->successful() ? [true, null] : [false, (string) ($res->json('error.message') ?? ('HTTP ' . $res->status()))];
+            if ($res->successful()) {
+                return [true, null];
+            }
+            $error = (string) ($res->json('error.message') ?? ('HTTP ' . $res->status()));
+            $this->noteConnectionFailure($conn, $res->json('error.code'), $error);
+
+            return [false, $error];
         } catch (\Throwable $e) {
             return [false, $e->getMessage()];
         }
     }
 
-    /** Best-effort display name for a Messenger/IG sender id. */
-    public function senderName(string $channel, string $externalId): ?string
+    /**
+     * Best-effort display name for a Messenger/IG sender id. Pass the
+     * receiving connection's config when the caller has one (webhook
+     * intake), so the lookup uses the owning shop's own token.
+     */
+    public function senderName(string $channel, string $externalId, ?array $cfg = null): ?string
     {
-        $cfg = $this->channelConfig($channel);
+        $cfg = $cfg ?? $this->channelConfig($channel);
         if (empty($cfg['token']) || $channel === 'whatsapp') {
             return null;
         }

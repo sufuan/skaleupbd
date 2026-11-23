@@ -384,6 +384,9 @@ Route::middleware(['auth', 'verified', 'totp'])->group(function () {
     Route::post('/settings/packages', [SettingsController::class, 'storePackage'])->name('settings.packages.store');
     Route::post('/settings/channels', [SettingsController::class, 'updateChannels'])->name('settings.channels');
     Route::post('/settings/channels/check', [SettingsController::class, 'checkChannel'])->name('settings.channels.check');
+    Route::post('/settings/my-channels', [\App\Http\Controllers\ChannelConnectionsController::class, 'store'])->name('settings.myChannels.store');
+    Route::post('/settings/my-channels/check', [\App\Http\Controllers\ChannelConnectionsController::class, 'check'])->name('settings.myChannels.check');
+    Route::post('/settings/my-channels/disconnect', [\App\Http\Controllers\ChannelConnectionsController::class, 'disconnect'])->name('settings.myChannels.disconnect');
     Route::patch('/settings/packages/{package}', [SettingsController::class, 'updatePackage'])->name('settings.packages.update');
     Route::delete('/settings/packages/{package}', [SettingsController::class, 'deletePackage'])->name('settings.packages.destroy');
     Route::post('/settings/pricing', [SettingsController::class, 'updatePricing'])->name('settings.pricing');

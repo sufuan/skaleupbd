@@ -3,7 +3,7 @@ import PaymentGatewayForm from './PaymentGatewayForm';
 import StaffRoles from './StaffRoles';
 import AppLayout from '@/Layouts/AppLayout';
 import { t } from '@/lib/i18n';
-import { Head, Link, router, useForm } from '@inertiajs/react';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 import { confirmDialog } from '@/lib/confirm';
 
@@ -102,8 +102,13 @@ function BusinessProfileForm({ m2 }) {
     );
 }
 
-function Api({ tab, couriers, channels, paymentGateway, platformPaymentGateway, integration }) {
-    if (tab === 'channels') return <ChannelsForm channels={channels} />;
+function Api({ tab, couriers, channels, myChannels, channelsPlatform, channelsReadOnly, paymentGateway, platformPaymentGateway, integration }) {
+    if (tab === 'channels') return (
+        <>
+            {channelsPlatform && <ChannelsForm channels={channels} />}
+            {myChannels && <SellerChannelsForm data={myChannels} readOnly={channelsReadOnly} />}
+        </>
+    );
     if (tab === 'gateway') return (
         <>
             {paymentGateway && (
@@ -225,6 +230,99 @@ function ChannelsForm({ channels }) {
 
             <div className="flex mt16"><span className="spacer" /><button className="btn pri" disabled={form.processing}>{t('Save Changes')}</button></div>
         </form>
+    );
+}
+
+function SellerChannelCard({ channel, title, intro, conn, fields, readOnly }) {
+    const form = useForm({
+        channel,
+        external_id: conn?.external_id || '',
+        parent_external_id: conn?.parent_external_id || '',
+        phone_number: conn?.phone_number || '',
+        token: '',
+    });
+    const [checkMsg, setCheckMsg] = useState('');
+    const save = (e) => { e.preventDefault(); form.post('/settings/my-channels', { preserveScroll: true }); };
+    const check = async () => {
+        setCheckMsg(t('Checking...'));
+        try {
+            const csrf = document.querySelector('meta[name="csrf-token"]')?.content || '';
+            const res = await fetch('/settings/my-channels/check', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, Accept: 'application/json' }, body: JSON.stringify({ channel }) });
+            const j = await res.json();
+            setCheckMsg(j.detail || (j.ok ? t('Connected') : t('Not connected')));
+        } catch { setCheckMsg(t('Check failed - try again')); }
+    };
+    const disconnect = async () => { if (await confirmDialog(t('Disconnect this channel?'))) router.post('/settings/my-channels/disconnect', { channel }, { preserveScroll: true }); };
+    const broken = conn?.status === 'error';
+
+    if (readOnly) {
+        return (
+            <div className="card" style={{ marginBottom: 12 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <h3 style={{ margin: 0 }}>{t(title)}</h3>
+                    <span style={{ marginLeft: 'auto' }}>{conn ? (broken ? <span className="pill red">{t('Not working')}</span> : <span className="pill green">{t('Connected')}</span>) : <span className="pill amber">{t('Not connected')}</span>}</span>
+                </div>
+                {conn ? (<>
+                    <Field label={fields[0].label} value={conn.external_id} />
+                    {conn.display_name ? <Field label="Name" value={conn.display_name} /> : null}
+                    <div className="sm mut">{conn.token_set ? t('Token saved') : t('Not saved yet')}{conn.last_checked_at ? ` · ${t('Last checked')} ${conn.last_checked_at}` : ''}</div>
+                </>) : <div className="card-sub">{t(intro)}</div>}
+            </div>
+        );
+    }
+
+    return (
+        <form onSubmit={save}>
+            <div className="card" style={{ marginBottom: 12 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <h3 style={{ margin: 0 }}>{t(title)}</h3>
+                    <span style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
+                        {checkMsg ? <span style={{ fontSize: 12.5 }}>{checkMsg}</span> : null}
+                        {conn ? <button type="button" className="btn" onClick={check}>{t('Check connection')}</button> : null}
+                    </span>
+                </div>
+                <div className="card-sub">{t(intro)}</div>
+                {conn && (broken
+                    ? <div className="sm" style={{ color: 'var(--bad)', marginBottom: 8 }}>{t('Not working')}{conn.last_error ? ` - ${t('Meta said:')} ${conn.last_error}` : ''}</div>
+                    : <div className="sm mut" style={{ marginBottom: 8 }}><span className="pill green">{t('Connected')}</span> {conn.display_name || conn.external_id}{conn.phone_number ? ` · ${conn.phone_number}` : ''}{conn.last_checked_at ? ` · ${t('Last checked')} ${conn.last_checked_at}` : ''}</div>)}
+                {fields.map((f) => (
+                    <div className="frow" key={f.key}><label className="fl">{t(f.label)}</label><input className="inp" type={f.password ? 'password' : 'text'} autoComplete={f.password ? 'new-password' : undefined} value={form.data[f.key]} onChange={(e) => form.setData(f.key, e.target.value)} placeholder={f.password ? (conn?.token_set ? t('Saved - leave blank to keep it') : '') : undefined} /></div>
+                ))}
+                {conn?.token_set ? <div className="sm mut">{t('Token saved')}{conn.token_last4 ? ` (••••${conn.token_last4})` : ''}</div> : null}
+                <div className="flex mt16">
+                    {conn ? <button type="button" className="btn" onClick={disconnect}>{t('Disconnect')}</button> : null}
+                    <span className="spacer" />
+                    <button className="btn pri" disabled={form.processing}>{conn ? (broken ? t('Reconnect') : t('Save Changes')) : t('Connect')}</button>
+                </div>
+            </div>
+        </form>
+    );
+}
+
+function SellerChannelsForm({ data, readOnly = false }) {
+    return (
+        <>
+            <SellerChannelCard channel="facebook" title="Facebook Page (Messenger) - your shop"
+                intro="Customers who message your Facebook Page appear in your Inbox, and replies go out from here."
+                conn={data?.facebook} readOnly={readOnly}
+                fields={[
+                    { key: 'external_id', label: 'Page ID' },
+                    { key: 'token', label: 'Page Access Token', password: true },
+                ]} />
+            <SellerChannelCard channel="whatsapp" title="WhatsApp - your shop"
+                intro="Customers who message your WhatsApp number appear in your Inbox, and replies go out from here."
+                conn={data?.whatsapp} readOnly={readOnly}
+                fields={[
+                    { key: 'external_id', label: 'Phone Number ID' },
+                    { key: 'parent_external_id', label: 'WhatsApp Business Account ID' },
+                    { key: 'phone_number', label: 'Phone number' },
+                    { key: 'token', label: 'Permanent Access Token', password: true },
+                ]} />
+            <div className="card">
+                <h3>{t('Instagram')}</h3>
+                <div className="card-sub">{t('Instagram connection is not available yet.')}</div>
+            </div>
+        </>
     );
 }
 
@@ -920,7 +1018,8 @@ function RegistrationVerificationForm({ registration }) {
     );
 }
 
-export default function SettingsIndex({ group: initial = 'home', totpEnabled = false, totpEnrolled = false, m2, couriers, ai, isPlatform = false, packagesData = null, channels = null, paymentGateway = null, platformPaymentGateway = null, home = null, integration = null, staffRoles = null }) {
+export default function SettingsIndex({ group: initial = 'home', totpEnabled = false, totpEnrolled = false, m2, couriers, ai, isPlatform = false, packagesData = null, channels = null, myChannels = null, channelsPlatform = false, paymentGateway = null, platformPaymentGateway = null, home = null, integration = null, staffRoles = null }) {
+    const viewing = !!usePage().props.viewAs;
     const groups = [
         ...GROUPS,
         ...(staffRoles?.can_manage ? [{ id: 'staff', label: 'Staff & Roles', tabs: [] }] : []),
@@ -950,7 +1049,7 @@ export default function SettingsIndex({ group: initial = 'home', totpEnabled = f
                     )}
                     {group === 'home' && <Home home={home} onSetup={(label) => { const [gid, tid] = SETUP_TARGETS[label] || []; if (gid) { setGroup(gid); setTab(tid); } }} />}
                     {group === 'business' && <Business tab={tab} m2={m2} />}
-                    {group === 'api' && <Api tab={tab} couriers={couriers} channels={channels} paymentGateway={paymentGateway} platformPaymentGateway={platformPaymentGateway} integration={integration} />}
+                    {group === 'api' && <Api tab={tab} couriers={couriers} channels={channels} myChannels={myChannels} channelsPlatform={channelsPlatform} channelsReadOnly={viewing} paymentGateway={paymentGateway} platformPaymentGateway={platformPaymentGateway} integration={integration} />}
                     {group === 'calls' && <Calls tab={tab} m2={m2} />}
                     {group === 'ai' && <Ai tab={tab} ai={ai} />}
                     {group === 'security' && <Security tab={tab} totpEnabled={totpEnabled} totpEnrolled={totpEnrolled} m2={m2} />}

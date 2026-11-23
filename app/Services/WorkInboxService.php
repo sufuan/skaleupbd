@@ -86,6 +86,7 @@ class WorkInboxService
         'negative_stock' => 'stock ঠিক হয়ে যাওয়ায় task নিজে থেকে বন্ধ হয়েছে',
         'sms_balance_low' => 'balance recharge করায় task নিজে থেকে বন্ধ হয়েছে',
         'token_balance_low' => 'points recharge করায় task নিজে থেকে বন্ধ হয়েছে',
+        'channel_broken' => 'connection আবার ঠিক হয়ে যাওয়ায় task নিজে থেকে বন্ধ হয়েছে',
     ];
 
     /**
@@ -93,9 +94,11 @@ class WorkInboxService
      * (trigger delay for state rules, fix-it window for event rules).
      * 'dedupe': open = one open task per fingerprint, may recur after
      * resolution; ever = one task per fingerprint for good.
-     * Rules whose source module is not built yet (Purchase, follow-up
-     * callbacks, channel health) have no evaluator and never fire —
-     * they still show in Settings exactly as the design lists them.
+     * Rules whose source module is not built yet (follow-up
+     * callbacks, channel data expiry) have no evaluator and never
+     * fire — they still show in Settings exactly as the design lists
+     * them. Channel health (rule 21) got its evaluator in ধাপ ৫, when
+     * per-seller channel_connections landed.
      */
     public static function catalog(): array
     {
@@ -1050,6 +1053,34 @@ class WorkInboxService
                     'source_label' => 'Finance · ' . ($d->account?->name ?? 'Cash'), 'link' => '/finance',
                 ];
             });
+
+        return $out;
+    }
+
+    /**
+     * ধাপ ৫: one open task per channel connection of this shop whose
+     * status is error (a dead/expired token, found by a failed check
+     * or an auth-class send failure). The fingerprint is the
+     * connection id, so the task auto-closes the moment the same
+     * connection checks healthy again.
+     */
+    private function ruleChannelBroken(int $biz, array $def, array $c): array
+    {
+        $labels = ['facebook' => 'Facebook Page', 'whatsapp' => 'WhatsApp', 'instagram' => 'Instagram'];
+        $out = [];
+        $broken = \App\Models\ChannelConnection::where('business_id', $biz)
+            ->where('status', 'error')->orderBy('id')->get();
+        foreach ($broken as $conn) {
+            $label = $labels[$conn->channel] ?? $conn->channel;
+            $name = trim((string) ($conn->display_name ?? '')) ?: (string) $conn->external_id;
+            $out[] = [
+                'fingerprint' => 'channel:' . $conn->id,
+                'title' => $label . '-এর connection ভেঙে গেছে (' . $name . ') — Settings থেকে আবার connect করো',
+                'detail' => $conn->last_error,
+                'source_type' => 'system', 'source_id' => $conn->id,
+                'source_label' => 'Messaging Channels · ' . $label, 'link' => '/settings?group=api',
+            ];
+        }
 
         return $out;
     }
