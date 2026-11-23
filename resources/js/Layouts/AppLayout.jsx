@@ -87,7 +87,7 @@ let SB_SCROLL_TOP = 0;
 // carry a badgeKey into the counts object). A parent with children shows
 // the SUM of its own + its children's counts, but only while collapsed —
 // once the dropdown opens, the badge moves down to the owning child.
-function NavGroup({ item, current }) {
+function NavGroup({ item, current, winHref }) {
     const page = usePage();
     const pageProps = page.props;
     const counts = useContext(CountsContext);
@@ -95,14 +95,14 @@ function NavGroup({ item, current }) {
     const childVal = (c) => (c && typeof c === 'object' ? val(c.badgeKey) : 0);
     const ownVal = val(item.badgeKey);
     const total = ownVal + (item.children || []).reduce((s, c) => s + childVal(c), 0);
-    // Child-aware active detection: the group is active when the current
-    // path matches the parent href OR any child href. Among matching
-    // children the LONGEST href wins (same rule as the badge
-    // seen-watcher), so /orders/create highlights New Order, not the
-    // /orders prefix of Order List.
-    const activeChild = (item.children || [])
-        .filter((c) => c && typeof c === 'object' && c.href && (current === c.href || current.startsWith(c.href + '/')))
-        .sort((a, b) => b.href.length - a.href.length)[0] || null;
+    // Active arbitration is GLOBAL, not per group: AppLayout computes
+    // winHref - the single longest href in the whole sidebar matching
+    // the current path - and a child is active only when it IS that
+    // winner. The old per-group longest-prefix rule let a short child
+    // href claim every page under it, so Seller Dashboard (/admin)
+    // lit up next to the real page on /admin/storefronts and
+    // /admin/audit-log, where no sibling of its group matched.
+    const childIsWinner = (c) => !!c && typeof c === 'object' && !!c.href && winHref != null && c.href === winHref;
     // Settings children are query-driven (/settings?group=api); the
     // server defaults a missing group to 'home'. Only on the settings
     // page itself - otherwise every page would match group 'home'.
@@ -112,7 +112,15 @@ function NavGroup({ item, current }) {
     const activeSettingsChild = settingsGroup
         ? (item.children || []).find((c) => c.g === settingsGroup) || null
         : null;
-    const active = current.startsWith(item.href) || !!activeChild || !!activeSettingsChild;
+    // The group header is active when the winning page lives inside
+    // the group (or is the group href itself, or its settings child).
+    // The startsWith fallback only fires when NO href in the whole
+    // sidebar matched the path (a page the nav does not know), where
+    // the old prefix behaviour is harmless.
+    const active = !!activeSettingsChild
+        || (item.children || []).some(childIsWinner)
+        || (winHref != null && item.href === winHref)
+        || (winHref == null && current.startsWith(item.href));
     // Open on arrival when this group holds the current page (even if it
     // was closed by hand earlier in the session) or when the user opened
     // it manually before; toggling keeps the Set in sync.
@@ -124,7 +132,10 @@ function NavGroup({ item, current }) {
             return next;
         });
     };
-    if (!item.children) {
+    // No children - or an EMPTY children list, which is truthy in JS:
+    // a plain link to the group's own page, never a toggle that opens
+    // onto nothing.
+    if (!item.children || item.children.length === 0) {
         return (
             <Link href={item.href} className={`nav-item ${active ? 'act' : ''}`}>
                 <I d={P[item.icon]} />{t(item.label)}
@@ -144,12 +155,12 @@ function NavGroup({ item, current }) {
                 <div className="sub-items">
                     {item.children.map((c) => item.settings ? (
                         c.href ? (
-                            <Link key={c.label} href={c.href} className={`nav-item ${activeChild === c ? 'act' : ''}`}>{t(c.label)}</Link>
+                            <Link key={c.label} href={c.href} className={`nav-item ${childIsWinner(c) ? 'act' : ''}`}>{t(c.label)}</Link>
                         ) : (
                             <Link key={c.g} href={`/settings?group=${c.g}`} className={`nav-item ${activeSettingsChild === c ? 'act' : ''}`}>{t(c.label)}</Link>
                         )
                     ) : typeof c === 'object' ? (
-                        <Link key={c.label} href={c.href} className={`nav-item ${activeChild === c ? 'act' : ''}`}>{t(c.label)}{childVal(c) > 0 && <span className="badge">{childVal(c)}</span>}</Link>
+                        <Link key={c.label} href={c.href} className={`nav-item ${childIsWinner(c) ? 'act' : ''}`}>{t(c.label)}{childVal(c) > 0 && <span className="badge">{childVal(c)}</span>}</Link>
                     ) : (
                         <Link key={c} href={item.href} className="nav-item">{t(c)}</Link>
                     ))}
@@ -360,6 +371,19 @@ export default function AppLayout({ children }) {
         return { ...it, children: kids };
     }) }));
     const searchIndex = useMemo(() => buildSearchIndex(navGroups), [navGroups]);
+    // Sidebar active arbitration: exactly ONE href in the whole
+    // sidebar may claim the current page - the longest one that
+    // matches it (exact, or as a path prefix). NavGroup highlights
+    // only that winner, so a short href like /admin can no longer
+    // light up next to /admin/storefronts or /admin/audit-log.
+    const winHref = (() => {
+        const hrefs = [];
+        navGroups.forEach((g) => g.items.forEach((it) => {
+            if (it.href) hrefs.push(it.href);
+            (it.children || []).forEach((c) => { if (c && typeof c === 'object' && c.href) hrefs.push(c.href); });
+        }));
+        return hrefs.filter((h) => current === h || current.startsWith(h + '/')).sort((a, b) => b.length - a.length)[0] || null;
+    })();
     const topbar = props.nav?.topbar || {};
     const initials = userName.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase();
 
@@ -392,6 +416,35 @@ export default function AppLayout({ children }) {
             return () => clearTimeout(id);
         }
     }, [props.flash]);
+
+    // View-as-seller feedback: the server already blocks every write
+    // with a 403 (ViewAsReadOnly) and nothing persists, but Inertia
+    // presented that bare 403 as a full-screen framework error modal.
+    // In view mode, stop form submits before they fire and turn any
+    // 403 response into the shell's own error toast carrying the
+    // read-only message instead. Server enforcement is untouched.
+    useEffect(() => {
+        if (!viewAs) return undefined;
+        let timer = null;
+        const showReadOnly = () => {
+            setToastErr('You are viewing this shop read-only. Exit the view to make changes.');
+            if (timer) clearTimeout(timer);
+            timer = setTimeout(() => setToastErr(null), 6000);
+        };
+        const onSubmit = (e) => { e.preventDefault(); e.stopPropagation(); showReadOnly(); };
+        document.addEventListener('submit', onSubmit, true);
+        const removeInvalid = router.on('invalid', (event) => {
+            if (event.detail?.response?.status === 403) {
+                event.preventDefault();
+                showReadOnly();
+            }
+        });
+        return () => {
+            document.removeEventListener('submit', onSubmit, true);
+            removeInvalid();
+            if (timer) clearTimeout(timer);
+        };
+    }, [viewAs]);
 
     useEffect(() => { setSbOpen(false); }, [current]);
 
@@ -477,7 +530,7 @@ export default function AppLayout({ children }) {
 
     return (
         <CountsContext.Provider value={counts}>
-        <div className={`shell ${shellContext === 'platform' ? 'shell-platform' : ''}`}>
+        <div className={`shell ${shellContext === 'platform' ? 'shell-platform' : ''} ${viewAs ? 'view-mode' : ''}`}>
             {sbOpen && <div className="sb-overlay" onClick={() => setSbOpen(false)} />}
             <aside ref={sbRef} className={`sb ${sbOpen ? 'open' : ''}`}>
                 <div className="sb-ws">
@@ -491,7 +544,7 @@ export default function AppLayout({ children }) {
                 {navGroups.map((group, gi) => (
                     <div key={gi}>
                         {group.sec && <div className="nav-sec">{t(group.sec).toUpperCase()}</div>}
-                        {group.items.map((item) => <NavGroup key={item.label} item={item} current={current} />)}
+                        {group.items.map((item) => <NavGroup key={item.label} item={item} current={current} winHref={winHref} />)}
                     </div>
                 ))}
                 <div style={{ marginTop: 'auto', padding: '10px 8px', borderTop: '1px solid var(--line)' }}>

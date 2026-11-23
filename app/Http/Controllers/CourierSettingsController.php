@@ -16,7 +16,14 @@ class CourierSettingsController extends Controller
 
     private function businessId(Request $request): int
     {
-        return \App\Support\ShopContext::id($request);
+        $biz = \App\Support\ShopContext::id($request);
+        // Every endpoint in this controller writes courier rows for one
+        // shop. With no shop in scope (a platform admin outside
+        // view-as) the old code created business_id 0 rows - refuse
+        // before anything touches the database.
+        abort_if($biz <= 0, 403, 'These settings belong to a shop. Sign in as a shop user to change them.');
+
+        return $biz;
     }
 
     /**

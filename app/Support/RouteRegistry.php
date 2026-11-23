@@ -163,6 +163,7 @@ class RouteRegistry
         // ------------------------------------------------ shop: settings
         'settings' => ['shop', 'settings', 'view'],
         'settings.business' => ['shop', 'settings', 'edit'],
+        'settings.merchant' => ['shop', 'settings', 'edit'],
         'settings.sources' => ['shop', 'settings', 'edit'],
         'settings.sources.reset' => ['shop', 'settings', 'edit'],
         'settings.templates' => ['shop', 'settings', 'edit'],

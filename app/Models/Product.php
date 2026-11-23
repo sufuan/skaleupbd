@@ -30,6 +30,35 @@ class Product extends Model
     }
 
     /**
+     * The product photo as a URL the browser can load from any page.
+     * Stored uploads live on the public disk under /storage/; a pasted
+     * link (or an already-rooted path) passes through untouched. This is
+     * the ONE resolution every surface uses - the pickers used to each
+     * improvise their own (an APP_URL absolute URL in Purchase, nothing
+     * at all in New Order) and the photo silently broke there.
+     */
+    public function imageUrl(): ?string
+    {
+        if (empty($this->image)) {
+            return null;
+        }
+
+        return str_starts_with($this->image, 'http') || str_starts_with($this->image, '/')
+            ? $this->image
+            : '/storage/' . $this->image;
+    }
+
+    /**
+     * Stock that can still be promised: on hand minus what confirmed
+     * orders already reserved. The one definition behind the Inventory
+     * list's "available" and every product picker's Stock figure.
+     */
+    public function available(): int
+    {
+        return (int) $this->stock_qty - (int) $this->reserved_qty;
+    }
+
+    /**
      * How ready this product is for the AI to sell it (brief §8): the AI can
      * only answer well about products that have a photo, a price, a written
      * description, the other names customers use, and recorded stock.

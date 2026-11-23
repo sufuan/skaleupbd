@@ -22,7 +22,7 @@ function Thumb({ src }) {
     if (!src || bad) {
         return <div className="flex items-center justify-center border border-gray-200 bg-gray-50 h-10 w-10 rounded-md text-gray-400 text-xs">IMG</div>;
     }
-    return <img src={src.startsWith('http') ? src : '/storage/' + src} alt="" className="h-10 w-10 rounded-md border object-cover" onError={() => setBad(true)} />;
+    return <img src={src.startsWith('http') || src.startsWith('/') ? src : '/storage/' + src} alt="" className="h-10 w-10 rounded-md border object-cover" onError={() => setBad(true)} />;
 }
 
 function Pill({ on }) {

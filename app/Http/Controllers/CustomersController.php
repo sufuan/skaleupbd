@@ -51,7 +51,11 @@ class CustomersController extends Controller
         $q = trim((string) $request->query('q', ''));
         $customers = Customer::where('business_id', $bizId)
             ->when($q !== '', fn ($x) => $x->where(fn ($w) => $w->where('name', 'like', "%{$q}%")->orWhere('phone', 'like', "%{$q}%")))
-            ->orderByDesc('lifetime_value')->get();
+            // Sort by lifetime value computed live (sum of DELIVERED order
+            // totals - Customer::lifetimeValue()). The stored column of
+            // that name is never written, so sorting by it sorted by 0.
+            ->withSum(['orders as lifetime_value_live' => fn ($x) => $x->where('status', 'Delivered')], 'grand_total')
+            ->orderByDesc('lifetime_value_live')->get();
         $rows = $customers->map(fn ($c) => array_merge([
             'id' => $c->id, 'name' => $c->name, 'phone' => $c->phone, 'address' => $c->address,
             'district' => $c->district, 'blacklisted' => (bool) $c->is_blacklisted,

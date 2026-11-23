@@ -96,6 +96,7 @@ Route::middleware(['auth', 'verified', 'totp'])->group(function () {
     Route::patch('/settings/staff/{user}', [\App\Http\Controllers\StaffRolesController::class, 'updateStaff'])->name('settings.staff.update');
     Route::post('/settings/totp', [SettingsController::class, 'updateTotp'])->name('settings.totp');
     Route::post('/settings/business', [SettingsController::class, 'updateBusiness'])->name('settings.business');
+    Route::post('/settings/merchant', [SettingsController::class, 'updateMerchant'])->name('settings.merchant');
     Route::post('/settings/sources', [SettingsController::class, 'updateSources'])->name('settings.sources');
     Route::post('/settings/sources/reset', [SettingsController::class, 'resetSources'])->name('settings.sources.reset');
     Route::post('/settings/templates', [SettingsController::class, 'updateTemplates'])->name('settings.templates');

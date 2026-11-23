@@ -218,7 +218,7 @@ class OrderController extends Controller
                 ->get(['code', 'label']),
             'products' => Product::where('business_id', $biz)->where('is_active', true)->orderBy('name')
                 ->get()->map(fn ($p) => ['id' => $p->id, 'name' => $p->name, 'sku' => $p->sku,
-                    'price' => (float) $p->price, 'stock' => $p->stock_qty - $p->reserved_qty]),
+                    'price' => (float) $p->price, 'stock' => $p->available(), 'image' => $p->imageUrl()]),
             'couriers' => app(\App\Services\DeliveryMethodList::class)->forBusiness($biz),
             'allTags' => Order::where('business_id', $biz)->pluck('tags')->filter()
                 ->flatMap(fn ($t) => is_array($t) ? $t : [])->unique()->values(),
@@ -420,7 +420,7 @@ class OrderController extends Controller
             'sources' => OrderSource::where('business_id', $biz)->where('is_visible', true)->orderBy('sort')->get(['code', 'label']),
             'products' => Product::where('business_id', $biz)->where('is_active', true)->orderBy('name')
                 ->get()->map(fn ($p) => ['id' => $p->id, 'name' => $p->name, 'sku' => $p->sku,
-                    'price' => (float) $p->price, 'stock' => $p->stock_qty - $p->reserved_qty]),
+                    'price' => (float) $p->price, 'stock' => $p->available()]),
             'processingStatuses' => Order::PROCESSING_STATUSES,
             'cancelReasons' => Order::CANCEL_REASONS,
             'pendingCount' => Order::where('business_id', $biz)->where('status', 'Pending')->count(),

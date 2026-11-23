@@ -54,6 +54,9 @@ button{font:inherit;cursor:pointer;background:none;border:none;color:inherit}
 .shell-platform .topbar{border-bottom:2px solid var(--acc)}
 .viewas-banner{background:var(--acc);color:#fff;padding:10px 18px;font-size:13.5px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .viewas-banner .btn-exit{background:#fff;color:var(--acc);font-weight:700;border-radius:8px;padding:5px 12px;font-size:13px;border:none;cursor:pointer}
+/* View-as-seller: save buttons inside forms read as disabled - the
+   shell intercepts the submit and explains instead (AppLayout). */
+.view-mode .content form .btn.pri{opacity:.55}
 button.tb-ava{border:none;cursor:pointer;font-family:inherit;padding:0}
 .user-menu{position:absolute;top:48px;right:0;width:264px;max-width:92vw;background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:0 18px 50px rgba(34,16,53,.22);z-index:60;overflow:hidden;padding:6px}
 .user-menu-head{padding:10px 12px;border-bottom:1px solid var(--line);margin-bottom:6px}
@@ -595,6 +598,9 @@ label.fl{display:block;font-size:12.5px;font-weight:600;color:#55496e;margin:0 0
   .ord-grid{grid-template-columns:1fr}
   .set-wrap{flex-direction:column}
   .set-menu{width:100%;position:static}
+  /* definite width stops wide inner content (staff table, permission matrix)
+     from stretching the settings body past the phone; it scrolls in its card */
+  .set-body{flex:none;width:100%;min-width:0}
   .topbar{padding:0 10px}
   .ask-btn{padding:6px 10px}
 }
@@ -619,6 +625,9 @@ label.fl{display:block;font-size:12.5px;font-weight:600;color:#55496e;margin:0 0
   .lang-switch button{padding:4px 8px;font-size:12px}
   .icon-btn{width:32px;height:32px}
   .kpis{grid-template-columns:1fr 1fr}
+  /* the bell is not the last topbar item, so right:0 anchoring pushed the
+     panel off the left edge; pin it to the viewport instead */
+  .notif-panel{position:fixed;top:60px;right:10px;width:min(360px,calc(100vw - 20px))}
   .page-h{font-size:20px}
   .modal{padding:18px}
   .inv-head{flex-direction:column}
@@ -658,6 +667,9 @@ label.fl{display:block;font-size:12.5px;font-weight:600;color:#55496e;margin:0 0
 .ord-form{max-width:1400px;margin-left:auto;margin-right:auto}
 .ord-form .ord-grid{display:grid;grid-template-columns:minmax(0,1fr) clamp(16rem,25%,28rem);gap:16px;align-items:start}
 .ord-form .ord-grid.layout-full,.ord-form .ord-grid.layout-classic{grid-template-columns:1fr}
+.ord-form .pick-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);gap:16px;margin-top:16px}
+.ord-form .pay-grid{display:grid;grid-template-columns:1fr 2fr;gap:16px;margin-top:16px}
+.ord-form .pick-search{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;margin:12px 0;align-items:end}
 .ord-form .card{background:#fff;border:1px solid #EEF2F7;border-radius:16px;padding:20px;box-shadow:0 1px 2px rgba(17,24,39,.04),0 1px 3px rgba(17,24,39,.06)}
 .ord-form .seg{display:inline-flex;background:#F8F7FB;border:1px solid #EEF2F7;border-radius:8px;padding:4px;gap:2px}
 .ord-form .seg button{padding:6px 12px;font-size:12px;font-weight:500;border-radius:6px;color:#64748B;background:transparent;border:none;cursor:pointer;font-family:inherit}
@@ -694,6 +706,7 @@ label.fl{display:block;font-size:12.5px;font-weight:600;color:#55496e;margin:0 0
 .ord-form .pc-name{font-size:13.5px;font-weight:500;color:#111827;display:block}
 .ord-form .prod-card .muted-sm{display:block;font-size:12px}
 .ord-form .prod-card::before{content:'No Image';position:absolute;left:4px;top:50%;transform:translateY(-50%);width:85px;height:85px;border:1px solid #EEF2F7;border-radius:8px;color:#94A3B8;font-size:11px;display:flex;align-items:center;justify-content:center;background:#F8F7FB}
+.ord-form .prod-card .pc-photo{position:absolute;left:4px;top:50%;transform:translateY(-50%);width:85px;height:85px;border:1px solid #EEF2F7;border-radius:8px;object-fit:cover;background:#F8F7FB}
 .ord-form .prod-card::after{content:'';position:absolute;right:8px;top:16px;width:20px;height:20px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23FFB900' stroke='none' stroke-width='2'%3E%3Cpolygon points='12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26'/%3E%3C/svg%3E") no-repeat center/contain}
 .ord-form .pc-fav{font-size:11px;color:#94A3B8;display:block;background:none;border:none;padding:0;cursor:pointer;font-family:inherit;text-align:left}
 .ord-form .ord-row{display:flex;align-items:center;gap:16px;padding:11px 0;border-bottom:1px solid #f3f4f6;flex-wrap:wrap}
@@ -704,6 +717,17 @@ label.fl{display:block;font-size:12.5px;font-weight:600;color:#55496e;margin:0 0
 .ord-form .pick-btn{background:#F8F7FB;border:1px solid #E8D8EF;border-radius:8px;padding:7px 12px;font-size:13px;font-weight:600;color:#374151;cursor:pointer;display:inline-flex;align-items:center;gap:5px;font-family:inherit}
 @media (max-width:1024px){
   .ord-form .ord-grid{grid-template-columns:1fr}
+}
+@media (max-width:900px){
+  /* picker and ordered panels stack full-width like the New Purchase picker */
+  .ord-form .pick-grid{grid-template-columns:1fr}
+}
+@media (max-width:640px){
+  .ord-form .pay-grid{grid-template-columns:1fr}
+  /* Code field full row, Name field shares its row with the star button */
+  .ord-form .pick-search{display:flex;flex-wrap:wrap}
+  .ord-form .pick-search .fld-l{flex:1 1 100%}
+  .ord-form .pick-search .fld-l + .fld-l{flex:1 1 calc(100% - 50px)}
 }
 
 /* ===== Order List — the prototype's page, copied from orders.html ===== */
@@ -734,6 +758,29 @@ label.fl{display:block;font-size:12.5px;font-weight:600;color:#55496e;margin:0 0
 .ord-list .ord-tbl th:last-child{background:#E8E3EA;border-left:1px solid #D9D2E0;box-shadow:-8px 0 10px -8px rgba(65,21,80,.35)}
 .ord-list .ord-tbl td:last-child{background:#fff;border-left:1px solid #EDE8F2;box-shadow:-8px 0 10px -8px rgba(65,21,80,.22)}
 .ord-list .ord-tbl tr:hover td:last-child{background:#F7F2F8}
+.ord-list .ord-m-total{display:none}
+@media (max-width:640px){
+  /* phone: only the key columns stay - Invoice (with date + total),
+     Customer, Status, Actions - fitted to the card like Ready to Ship;
+     the rest remain on the order detail page and on desktop */
+  .ord-list table.ord-tbl{width:100%}
+  /* hidden cells leave the grid, so the four visible cells take the first
+     four column slots in order: Invoice, Customer, Status, Actions */
+  .ord-list .ord-tbl col:nth-child(1){width:90px !important}
+  .ord-list .ord-tbl col:nth-child(2){width:auto !important}
+  .ord-list .ord-tbl col:nth-child(3){width:78px !important}
+  .ord-list .ord-tbl col:nth-child(4){width:80px !important}
+  .ord-list .ord-tbl col:nth-child(n+5){width:0 !important}
+  .ord-list .ord-tbl th:nth-child(1),.ord-list .ord-tbl th:nth-child(3),.ord-list .ord-tbl th:nth-child(5),.ord-list .ord-tbl th:nth-child(6),.ord-list .ord-tbl th:nth-child(7),.ord-list .ord-tbl th:nth-child(8),.ord-list .ord-tbl th:nth-child(10),.ord-list .ord-tbl th:nth-child(11),
+  .ord-list .ord-tbl td:nth-child(1):not(:only-child),.ord-list .ord-tbl td:nth-child(3),.ord-list .ord-tbl td:nth-child(5),.ord-list .ord-tbl td:nth-child(6),.ord-list .ord-tbl td:nth-child(7),.ord-list .ord-tbl td:nth-child(8),.ord-list .ord-tbl td:nth-child(10),.ord-list .ord-tbl td:nth-child(11){display:none}
+  .ord-list .ord-tbl th,.ord-list .ord-tbl td{padding:10px 4px}
+  .ord-list .ord-tbl td:nth-child(2)>span{white-space:normal !important}
+  .ord-list .ord-m-total{display:block;font-weight:700;font-size:12.5px;margin-top:2px}
+  .ord-list .ord-tbl .pill{font-size:11px;padding:2px 7px}
+  .ord-list .ord-tbl td:last-child .mini-btn{display:none}
+  .ord-list .ord-tbl .open-btn{width:auto;padding:0 10px}
+  .ord-list .ord-tbl th:last-child,.ord-list .ord-tbl td:last-child{box-shadow:none}
+}
 .ord-list .thumb{width:32px;height:32px;border-radius:6px;background:#F4EDF7;flex-shrink:0;display:inline-block}
 .ord-list .tag-plus{width:22px;height:22px;border-radius:6px;border:1px solid #E5E7EB;background:#fff;color:#42174F;cursor:pointer;font-size:14px;line-height:1;display:inline-flex;align-items:center;justify-content:center;text-decoration:none}
 
@@ -1037,7 +1084,11 @@ label.fl{display:block;font-size:12.5px;font-weight:600;color:#55496e;margin:0 0
 
 /* M6 Messages — responsiveness only: the 3-pane inbox stacks on phones */
 .msg-panes{display:flex;gap:14px;align-items:flex-start}
-@media (max-width: 900px){.msg-panes{flex-direction:column}.msg-panes>*{width:100%!important;flex:none!important}}
+@media (max-width: 900px){.msg-panes{flex-direction:column}.msg-panes>*{width:100%!important;flex:none!important}
+/* phone: the opened thread becomes one screen - header and composer stay
+   put, only the messages scroll (the JS scrolls the card into view) */
+.msg-panes .msg-thread{display:flex;flex-direction:column;max-height:calc(100vh - 76px);max-height:calc(100dvh - 76px);scroll-margin-top:66px}
+.msg-panes .msg-scroll{flex:1;min-height:0 !important;overflow-y:auto}}
 /* M7 grids: stack on small screens (responsiveness only) */
 @media (max-width: 900px){
   .cust-kpis,.plat-kpis{grid-template-columns:repeat(2,1fr)!important}

@@ -77,6 +77,12 @@ class SettingsController extends Controller
 
         return Inertia::render('Settings/Index', [
             'home' => $homeStats,
+            // False only for a platform admin outside view-as: there is
+            // no shop in scope, so every shop-scoped group/tab renders
+            // the "belongs to a shop" notice instead of a form whose
+            // values would be a phantom business 0 (or worse, another
+            // shop's legacy globals).
+            'hasShop' => $biz > 0,
             'integration' => [
                 'endpoint' => url('/api/external/v1/orders'),
                 'api_key' => $apiKey ? ['last4' => (string) $apiKey->last4, 'label' => (string) $apiKey->label, 'last_used_at' => $apiKey->last_used_at?->format('d M Y, h:i A')] : null,
@@ -99,7 +105,7 @@ class SettingsController extends Controller
                 'autonomy' => app(\App\Services\RuleBrainService::class)->autonomy(),
                 'talker' => app(\App\Services\AiTalkerService::class)->config(),
                 'behavior' => (array) $this->settings->get('ai.behavior', []),
-                'working_hours' => (string) $this->settings->get('ai.working_hours', 'সকাল 9টা — রাত 11টা'),
+                'working_hours' => (string) $this->settings->get('ai.working_hours', app()->getLocale() === 'bn' ? 'সকাল ৯টা - রাত ১১টা' : '9 AM - 11 PM'),
                 'negotiation' => app(\App\Services\NegotiationService::class)->config(),
                 'knowledge' => \App\Models\KnowledgeEntry::where('business_id', $biz)->orderBy('id')->get(['id', 'title', 'body'])->all(),
                 'proposals' => \App\Models\AiRuleProposal::where('business_id', $biz)->orderByRaw("CASE WHEN status = 'pending' THEN 0 ELSE 1 END")->orderByDesc('id')->get()
@@ -168,6 +174,16 @@ class SettingsController extends Controller
                     'address' => $this->settings->shopContact($biz, 'address'),
                     'invoice_slug' => (string) $this->settings->bizGet($biz, "business.{$biz}.invoice_slug", 'business.invoice_slug', 'OB'),
                     'default_delivery_cost' => (float) $this->settings->bizGet($biz, "business.{$biz}.default_delivery_cost", 'business.default_delivery_cost', 60),
+                ],
+                // Merchant Profile: the shop's own verification details,
+                // stored per business like the profile above (the tab
+                // previously showed hard-coded stub values to every shop).
+                'merchant' => [
+                    'trade_licence' => (string) $this->settings->get("business.{$biz}.merchant_trade_licence", ''),
+                    'tin' => (string) $this->settings->get("business.{$biz}.merchant_tin", ''),
+                    'bank_account_name' => (string) $this->settings->get("business.{$biz}.merchant_bank_account_name", ''),
+                    'bank_branch' => (string) $this->settings->get("business.{$biz}.merchant_bank_branch", ''),
+                    'account_number' => (string) $this->settings->get("business.{$biz}.merchant_account_number", ''),
                 ],
                 'sources' => OrderSource::where('business_id', $biz)->orderBy('sort')
                     ->get(['id', 'code', 'label', 'is_visible']),
@@ -297,6 +313,24 @@ class SettingsController extends Controller
         }
     }
 
+    /**
+     * The shop a shop-scoped Settings save belongs to. These saves key
+     * everything by the signed-in user's own business; a platform admin
+     * has none, and writing under business 0 silently buried the values
+     * where no shop would ever read them (the platform admin's Business
+     * Settings "saved" a delivery charge no shop ever saw). Refuse
+     * instead. View-as writes never reach here - ViewAsReadOnly blocks
+     * them first - and identity surfaces (Billing, Staff & Roles) do
+     * not use this helper.
+     */
+    private function shopBiz(Request $request): int
+    {
+        $biz = (int) ($request->user()?->business_id ?? 0);
+        abort_if($biz <= 0, 403, 'These settings belong to a shop. Sign in as a shop user to change them.');
+
+        return $biz;
+    }
+
     /** Master switch for two-factor authentication (Settings → Security & Records). */
     public function updateTotp(Request $request): RedirectResponse
     {
@@ -321,7 +355,7 @@ class SettingsController extends Controller
         ]);
         // Saved per business: the old global keys made every seller share
         // (and overwrite) one shop profile.
-        $biz = (int) $request->user()->business_id;
+        $biz = $this->shopBiz($request);
         $this->setLogged($request, "business.{$biz}.profile_name", $data['name']);
         $this->setLogged($request, "business.{$biz}.mobile", $data['mobile'] ?? '');
         $this->setLogged($request, "business.{$biz}.address", $data['address'] ?? '');
@@ -329,6 +363,29 @@ class SettingsController extends Controller
         $this->setLoggedBiz($request, $biz, "business.{$biz}.default_delivery_cost", 'business.default_delivery_cost', (float) $data['default_delivery_cost']);
 
         return back()->with('success', 'Business settings saved');
+    }
+
+    /** Merchant Profile tab: the shop's own licence / TIN / bank details. */
+    public function updateMerchant(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'trade_licence' => ['nullable', 'string', 'max:120'],
+            'tin' => ['nullable', 'string', 'max:60'],
+            'bank_account_name' => ['nullable', 'string', 'max:120'],
+            'bank_branch' => ['nullable', 'string', 'max:120'],
+            'account_number' => ['nullable', 'string', 'max:60'],
+        ]);
+        // Per business, like the profile: each shop keeps its own
+        // verification details (the tab previously showed one hard-coded
+        // stub - including another shop's name - to every seller).
+        $biz = $this->shopBiz($request);
+        $this->setLogged($request, "business.{$biz}.merchant_trade_licence", $data['trade_licence'] ?? '');
+        $this->setLogged($request, "business.{$biz}.merchant_tin", $data['tin'] ?? '');
+        $this->setLogged($request, "business.{$biz}.merchant_bank_account_name", $data['bank_account_name'] ?? '');
+        $this->setLogged($request, "business.{$biz}.merchant_bank_branch", $data['bank_branch'] ?? '');
+        $this->setLogged($request, "business.{$biz}.merchant_account_number", $data['account_number'] ?? '');
+
+        return back()->with('success', 'Merchant settings saved');
     }
 
     public function updateSources(Request $request): RedirectResponse
@@ -339,7 +396,7 @@ class SettingsController extends Controller
             'sources.*.label' => ['required', 'string', 'max:60'],
             'sources.*.is_visible' => ['required', 'boolean'],
         ]);
-        $biz = (int) $request->user()->business_id;
+        $biz = $this->shopBiz($request);
         foreach ($data['sources'] as $row) {
             $source = OrderSource::where('business_id', $biz)->find($row['id']);
             if (! $source) {
@@ -356,7 +413,7 @@ class SettingsController extends Controller
 
     public function resetSources(Request $request): RedirectResponse
     {
-        $biz = (int) $request->user()->business_id;
+        $biz = $this->shopBiz($request);
         $defaults = [
             'FB' => 'Facebook', 'WEB' => 'Website', 'DIRECT' => 'Direct', 'UNKNOWN' => 'Unknown',
             'INSTAGRAM' => 'Instagram', 'TIKTOK' => 'TikTok', 'WHATSAPP' => 'WhatsApp', 'EXCHANGE' => 'Exchange',
@@ -378,7 +435,7 @@ class SettingsController extends Controller
             'advance' => ['required', 'string', 'max:1000'],
             'invoice_template' => ['required', 'string', 'max:20'],
         ]);
-        $biz = (int) $request->user()->business_id;
+        $biz = $this->shopBiz($request);
         MessageTemplate::updateOrCreate(['business_id' => $biz, 'key' => 'reminder'], ['name' => 'Order Reminder SMS', 'body' => $data['reminder']]);
         MessageTemplate::updateOrCreate(['business_id' => $biz, 'key' => 'advance'], ['name' => 'Advance Payment SMS', 'body' => $data['advance']]);
         $this->setLoggedBiz($request, $biz, "invoice.{$biz}.template", 'invoice.template', $data['invoice_template']);
@@ -394,7 +451,7 @@ class SettingsController extends Controller
             'stock_management_disabled' => ['required', 'boolean'],
             'valuation' => ['required', 'string', 'in:average_cost'],
         ]);
-        $biz = (int) $request->user()->business_id;
+        $biz = $this->shopBiz($request);
         $this->setLoggedBiz($request, $biz, "inventory.{$biz}.branch_stock_enabled", 'inventory.branch_stock_enabled', (bool) $data['branch_stock_enabled']);
         $this->setLoggedBiz($request, $biz, "inventory.{$biz}.warehouse_cartons", 'inventory.warehouse_cartons', (bool) $data['warehouse_cartons']);
         $this->setLoggedBiz($request, $biz, "inventory.{$biz}.stock_management_disabled", 'inventory.stock_management_disabled', (bool) $data['stock_management_disabled']);
@@ -405,7 +462,7 @@ class SettingsController extends Controller
 
     public function updateFinance(Request $request): RedirectResponse
     {
-        $biz = (int) $request->user()->business_id;
+        $biz = $this->shopBiz($request);
         $data = $request->validate([
             'daily_closing' => ['required', 'boolean'],
             'advance_account_id' => ['nullable', 'integer'],
@@ -418,7 +475,7 @@ class SettingsController extends Controller
 
     public function updateMarketingSms(Request $request): RedirectResponse
     {
-        $biz = (int) $request->user()->business_id;
+        $biz = $this->shopBiz($request);
         $data = $request->validate([
             'rate' => ['required', 'numeric', 'min:0', 'max:100'],
             'cap_day' => ['required', 'integer', 'min:0', 'max:50'],
@@ -458,7 +515,7 @@ class SettingsController extends Controller
     /** Settings → Marketing SMS "Check connection": provider balance as JSON. */
     public function checkSmsConnection(Request $request): \Illuminate\Http\JsonResponse
     {
-        $biz = (int) ($request->user()?->business_id ?? 0);
+        $biz = $this->shopBiz($request);
         $data = $request->validate(['key' => ['nullable', 'string', 'max:255']]);
         // A key typed into the form is tested as typed; blank tests the saved one.
         $result = app(\App\Services\SmsService::class)->testConnection($biz, $data['key'] ?? null);
@@ -469,7 +526,7 @@ class SettingsController extends Controller
     /** Settings → Marketing SMS "Send test SMS": one send in the current mode. */
     public function sendTestSms(Request $request): RedirectResponse
     {
-        $biz = (int) $request->user()->business_id;
+        $biz = $this->shopBiz($request);
         $data = $request->validate([
             'phone' => ['required', 'string', 'max:20'],
             'message' => ['nullable', 'string', 'max:500'],
@@ -493,7 +550,7 @@ class SettingsController extends Controller
             'mandatory_advance_txn' => ['required', 'boolean'],
             'cross_sale' => ['required', 'boolean'],
         ]);
-        $biz = (int) $request->user()->business_id;
+        $biz = $this->shopBiz($request);
         foreach ($data as $key => $value) {
             $this->setLoggedBiz($request, $biz, "orders.{$biz}.{$key}", "orders.{$key}", (bool) $value);
         }
@@ -507,7 +564,7 @@ class SettingsController extends Controller
             'auto_approve_enabled' => ['required', 'boolean'],
             'auto_approve_threshold' => ['required', 'integer', 'min:1', 'max:100'],
         ]);
-        $biz = (int) $request->user()->business_id;
+        $biz = $this->shopBiz($request);
         $this->setLoggedBiz($request, $biz, "orders.{$biz}.auto_approve_enabled", 'orders.auto_approve_enabled', (bool) $data['auto_approve_enabled']);
         $this->setLoggedBiz($request, $biz, "orders.{$biz}.auto_approve_threshold", 'orders.auto_approve_threshold', (int) $data['auto_approve_threshold']);
 
@@ -518,7 +575,7 @@ class SettingsController extends Controller
     {
         $data = $request->validate(['name' => ['required', 'string', 'max:120']]);
         // Delivery-method names are per shop — never one global list.
-        $biz = (int) ($request->user()?->business_id ?? 0);
+        $biz = $this->shopBiz($request);
         $list = app(\App\Services\DeliveryMethodList::class);
         $methods = $list->forBusiness($biz);
         $exists = collect($methods)->contains(fn ($m) => strtolower((string) $m) === strtolower($data['name']));
@@ -534,7 +591,7 @@ class SettingsController extends Controller
 
     public function storeAiRule(Request $request): RedirectResponse
     {
-        $biz = (int) ($request->user()?->business_id ?? 0);
+        $biz = $this->shopBiz($request);
         $data = $request->validate([
             'name' => ['required', 'string', 'max:120'],
             'trigger_type' => ['required', 'string', 'in:intent,keyword'],
@@ -573,7 +630,7 @@ class SettingsController extends Controller
 
     public function testAiRule(Request $request): \Illuminate\Http\JsonResponse
     {
-        $biz = (int) ($request->user()?->business_id ?? 0);
+        $biz = $this->shopBiz($request);
         $data = $request->validate(['text' => ['required', 'string', 'max:500']]);
         $brain = app(\App\Services\RuleBrainService::class);
         $rule = $brain->matchRule($biz, $data['text']);
@@ -694,7 +751,7 @@ class SettingsController extends Controller
 
     public function storeKnowledge(Request $request): RedirectResponse
     {
-        $biz = (int) ($request->user()?->business_id ?? 0);
+        $biz = $this->shopBiz($request);
         $data = $request->validate(['title' => ['required', 'string', 'max:160'], 'body' => ['required', 'string', 'max:4000']]);
         \App\Models\KnowledgeEntry::create($data + ['business_id' => $biz]);
 
@@ -720,7 +777,7 @@ class SettingsController extends Controller
 
     public function approveProposal(Request $request, \App\Models\AiRuleProposal $proposal): RedirectResponse
     {
-        $biz = (int) ($request->user()?->business_id ?? 0);
+        $biz = $this->shopBiz($request);
         abort_unless((int) $proposal->business_id === $biz, 403);
         $data = $proposal->rule_data ?? [];
         if (! empty($data['new_rule'])) {

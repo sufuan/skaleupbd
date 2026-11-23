@@ -87,7 +87,8 @@ export default function Index({ rows, counts, filters, pagination, pendingCount,
                                     <tr key={o.id}>
                                         <td><input type="checkbox" checked={selected.includes(o.id)} onChange={() => toggleSel(o.id)} /></td>
                                         <td><b style={{ fontSize: 13, whiteSpace: 'nowrap' }}>{o.invoice}</b><br />
-                                            <span style={{ fontSize: 12, color: '#64748B', whiteSpace: 'nowrap' }}>{o.created.replace(/ \d{4}$/, '')}, {o.created_time.replace(/^0/, '').toLowerCase()}</span></td>
+                                            <span style={{ fontSize: 12, color: '#64748B', whiteSpace: 'nowrap' }}>{o.created.replace(/ \d{4}$/, '')}, {o.created_time.replace(/^0/, '').toLowerCase()}</span>
+                                            <span className="ord-m-total">{fmt(o.total)}</span></td>
                                         <td>{o.auto_call && o.auto_call !== 'off'
                                             ? <span className={`pill ${o.auto_call === 'answered' ? 'green' : 'amber'}`}>{t(o.auto_call === 'answered' ? 'Answered' : 'No Answer')}</span>
                                             : <span style={{ color: '#64748B' }}>-</span>}</td>

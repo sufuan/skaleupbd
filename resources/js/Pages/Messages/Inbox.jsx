@@ -82,6 +82,21 @@ export default function Inbox({ conversations, selected, report, aiMode, aiPanic
         return () => clearInterval(id);
     }, []);
 
+    // Phone only: the panes stack, so a newly opened conversation sits below
+    // the whole list - bring its card into view. Fires only when the open
+    // conversation actually changes, never on the 8-second poll reload.
+    const threadRef = useRef(null);
+    const prevSelRef = useRef(null);
+    useEffect(() => {
+        const selId = selected?.id ?? null;
+        if (selId === prevSelRef.current) return;
+        prevSelRef.current = selId;
+        if (selId && window.matchMedia('(max-width: 900px)').matches) {
+            const tm = setTimeout(() => threadRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
+            return () => clearTimeout(tm);
+        }
+    }, [selected?.id]);
+
     const toggleBtn = (active) => ({ background: active ? 'var(--acc-fill)' : 'var(--tgl-bg)', color: active ? '#fff' : 'var(--tgl-ink)', border: 'none', padding: '8px 18px', borderRadius: 99, fontWeight: 700, cursor: 'pointer', fontSize: 13 });
     const chip = (active) => ({ display: 'inline-block', fontSize: 11, fontWeight: 700, borderRadius: 99, background: active ? 'var(--acc-fill)' : 'var(--tgl-bg)', color: active ? '#fff' : 'var(--tgl-ink)', cursor: 'pointer', padding: '5px 12px' });
 
@@ -153,7 +168,7 @@ export default function Inbox({ conversations, selected, report, aiMode, aiPanic
                         </div>
 
                         {selected && (
-                            <div className="card" style={{ flex: 1, minWidth: 0, padding: 18 }}>
+                            <div className="card msg-thread" ref={threadRef} style={{ flex: 1, minWidth: 0, padding: 18 }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6, flexWrap: 'wrap' }}>
                                     <b style={{ fontSize: 15.5 }}>{selected.customer_name}</b>
                                     <span style={PILL(ch.bg, ch.tx)}>{ch.label}</span>
@@ -161,7 +176,7 @@ export default function Inbox({ conversations, selected, report, aiMode, aiPanic
                                     <button type="button" onClick={() => router.post(`/messages/conversations/${selected.id}/toggle-ai`, {}, { preserveScroll: true })} style={{ ...BTN2, marginLeft: 'auto', padding: '6px 12px' }}>{selected.ai_paused ? t('AI: Off for this chat') : t('AI: On for this chat')}</button>
                                     <Link href="/orders/create" style={{ ...BTN, padding: '7px 13px', textDecoration: 'none' }}>{t('Create Order')}</Link>
                                 </div>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: 9, padding: '12px 2px', minHeight: 300 }}>
+                                <div className="msg-scroll" style={{ display: 'flex', flexDirection: 'column', gap: 9, padding: '12px 2px', minHeight: 300 }}>
                                     {selected.messages.map((m) => (
                                         <div key={m.id} style={{ display: 'contents' }}>
                                             <div style={m.direction === 'in' ? BUB_C : BUB_B}>

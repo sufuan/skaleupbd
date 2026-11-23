@@ -983,6 +983,13 @@ class StorefrontService
             $menu = ['overview', 'pages', 'settings'];
         } elseif ($mode === 'connect') {
             $menu = ['overview', 'connect'];
+        } else {
+            // No store yet and no path chosen: the Overview child is
+            // the door to the wizard / path choice. Never return an
+            // empty menu for this state - the shell renders an empty
+            // children list as a toggle that opens onto nothing, and
+            // a new seller would have no sidebar path to the wizard.
+            $menu = ['overview'];
         }
 
         return [

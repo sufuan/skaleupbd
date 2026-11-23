@@ -30,6 +30,16 @@ export function GuideBtn() {
     return <button type="button" className="btn">{t('Guide')}</button>;
 }
 
+/** Picker thumbnail: a stored path whose file is missing falls back to
+ *  the No Image label instead of a broken-image glyph (same pattern as
+ *  the Inventory list's Thumb). */
+function PickImg({ src }) {
+    const [bad, setBad] = useState(false);
+    if (!src || bad) return t('No Image');
+
+    return <img src={src} alt="" onError={() => setBad(true)} />;
+}
+
 /**
  * Product picker - copied from New Purchase's "Click To Add Products"
  * card: two search boxes (Code/sku + Name) over a scrollable product
@@ -58,7 +68,7 @@ export function ProductPicker({ products, onPick, pickedIds = [] }) {
             <div style={{ maxHeight: 380, overflowY: 'auto' }}>
                 {rows.map((p) => (
                     <button key={p.id} type="button" className="pick-row" disabled={pickedIds.includes(p.id)} style={pickedIds.includes(p.id) ? { opacity: 0.45 } : undefined} onClick={() => onPick(p)}>
-                        <span className="pick-img">{p.image ? <img src={p.image} alt="" /> : t('No Image')}</span>
+                        <span className="pick-img"><PickImg src={p.image} /></span>
                         <span style={{ flex: 1, minWidth: 0 }}>
                             <span className="b" style={{ display: 'block', fontSize: 13.5 }}>{p.name}</span>
                             <span className="sm mut" style={{ display: 'block' }}>

@@ -186,7 +186,7 @@ export default function Create({ sources, products, couriers, defaults, toggles,
                                     <div className="pop-panel"><label className="fld-l frow">{t('Invoice prefix')}<input className="fld" placeholder={t('Optional invoice prefix')} value={form.data.invoice_prefix} onChange={(e) => form.setData('invoice_prefix', e.target.value)} /></label></div>
                                 )}
 
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 16, marginTop: 16 }}>
+                                <div className="pay-grid">
                                     <label className="fld-l frow">{t('Payment Method')} <span className="opt-tag">OPTIONAL</span><select className="fld" value={form.data.payment_method} onChange={(e) => form.setData('payment_method', e.target.value)}>
                                         <option value="">{t('Select account')}</option>
                                         {paymentMethods.map((m) => <option key={m} value={m}>{t(m)}</option>)}
@@ -208,10 +208,10 @@ export default function Create({ sources, products, couriers, defaults, toggles,
                                     <button type="button" className="pick-btn" onClick={() => skuRef.current && skuRef.current.focus()}>{PLUS} {t('Scan Barcode')}</button>
                                     <button type="button" className="pick-btn" onClick={() => setCustomOpen(true)}>{PLUS} {t('Add Custom Product')}</button>
                                 </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,1.4fr)', gap: 16, marginTop: 16 }}>
+                                <div className="pick-grid">
                                     <div style={{ border: '1px solid #EEF2F7', borderRadius: 12, padding: 16 }}>
                                         <h3>{t('Click To Add Products')} <button type="button" className="ctl-btn" style={{ padding: '2px 8px' }} onClick={() => skuRef.current && skuRef.current.focus()}>?</button></h3>
-                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: 10, margin: '12px 0', alignItems: 'end' }}>
+                                        <div className="pick-search">
                                             <label className="fld-l">{t('Code/sku')}<input ref={skuRef} className="fld" placeholder={t('Type to Search..')} value={qSku} onChange={(e) => setQSku(e.target.value)} /></label>
                                             <label className="fld-l">{t('Name')}<input className="fld" placeholder={t('Type to Search..')} value={qName} onChange={(e) => setQName(e.target.value)} /></label>
                                             <button type="button" className="fav-btn" title={t('Favourites only')} onClick={() => setFavOnly(!favOnly)}>★</button>
@@ -222,6 +222,7 @@ export default function Create({ sources, products, couriers, defaults, toggles,
                                                 const dis = added || (p.stock === 0 && mode !== 'preorder');
                                                 return (
                                                     <button type="button" key={p.id} className="prod-card" disabled={dis} onClick={() => addProduct(p)}>
+                                                        {p.image && <img className="pc-photo" src={p.image} alt="" onError={(e) => { e.currentTarget.style.display = 'none'; }} />}
                                                         <span className="pc-name">{p.name}</span>
                                                         <span className="muted-sm">SKU: {p.sku}</span>
                                                         <span className="muted-sm">{t('Price')}: {fmt(p.price)} · {t('Stock')}: {p.stock}{p.stock === 0 ? ` - ${t('Pre-order allowed')}` : ''}</span>

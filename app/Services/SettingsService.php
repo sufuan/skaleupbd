@@ -30,6 +30,13 @@ class SettingsService
      */
     public function bizGet(int $biz, string $scopedKey, string $legacyKey, mixed $default = null): mixed
     {
+        // Business 0 is not a shop: a platform admin outside view-as
+        // must never read a real shop's legacy global as if it were a
+        // phantom shop's own value (that is how one shop's phone and
+        // delivery charge appeared on the platform admin's Settings).
+        if ($biz <= 0) {
+            return $default;
+        }
         $own = $this->get($scopedKey, null);
 
         return $own !== null ? $own : $this->get($legacyKey, $default);
@@ -44,6 +51,9 @@ class SettingsService
      */
     public function shopName(int $biz): string
     {
+        if ($biz <= 0) {
+            return '';
+        }
         $saved = trim((string) $this->get("business.{$biz}.profile_name", ''));
         if ($saved !== '') {
             return $saved;
@@ -55,6 +65,11 @@ class SettingsService
     /** Per-business profile contact field (mobile|address), legacy global as fallback. */
     public function shopContact(int $biz, string $field): string
     {
+        // No shop in scope (platform admin): never surface the legacy
+        // global, which holds a real shop's contact details.
+        if ($biz <= 0) {
+            return '';
+        }
         $v = $this->get("business.{$biz}.{$field}", null);
 
         return (string) ($v ?? $this->get("business.{$field}", ''));

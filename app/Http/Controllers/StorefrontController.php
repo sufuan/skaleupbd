@@ -22,6 +22,21 @@ class StorefrontController extends Controller
 {
     public function __construct(private readonly StorefrontService $svc) {}
 
+    /** The label connectKey() stamps on the website connection key. */
+    private const CONNECTION_KEY_LABEL = 'Storefront Connect Website';
+
+    /**
+     * The business's website connection key - the one connectKey()
+     * makes - never a scoped key from the API keys table, however
+     * new that scoped key happens to be.
+     */
+    private function connectionKey(int $biz): ?\App\Models\ApiKey
+    {
+        return \App\Models\ApiKey::where('business_id', $biz)
+            ->where('label', self::CONNECTION_KEY_LABEL)
+            ->latest('id')->first();
+    }
+
     private function sf(Request $request): Storefront
     {
         $biz = \App\Support\ShopContext::id($request);
@@ -776,7 +791,7 @@ HTML;
     {
         $sf = $this->sf($request);
         $biz = $sf->business_id;
-        $key = \App\Models\ApiKey::where('business_id', $biz)->latest('id')->first();
+        $key = $this->connectionKey($biz);
         $apiOrders = Order::where('business_id', $biz)
             ->where(fn ($q) => $q->where('source', 'WEB')->orWhereNotNull('external_ref'))
             ->latest('id')->take(5)->get()
@@ -812,12 +827,16 @@ HTML;
     {
         $sf = $this->sf($request);
         $plain = 'sk_'.Str::random(40);
-        \App\Models\ApiKey::where('business_id', $sf->business_id)->delete();
+        // Rotation replaces ONLY the connection key. Scoped keys the
+        // seller made in the API keys table belong to other
+        // integrations and must survive untouched.
+        \App\Models\ApiKey::where('business_id', $sf->business_id)
+            ->where('label', self::CONNECTION_KEY_LABEL)->delete();
         \App\Models\ApiKey::create([
             'business_id' => $sf->business_id,
             'key_hash' => hash('sha256', $plain),
             'last4' => substr($plain, -4),
-            'label' => 'Storefront Connect Website',
+            'label' => self::CONNECTION_KEY_LABEL,
             'webhook_secret_enc' => Crypt::encryptString(Str::random(32)),
         ]);
 
@@ -829,7 +848,7 @@ HTML;
     {
         $sf = $this->sf($request);
         $data = $request->validate(['webhook_url' => ['nullable', 'string', 'max:300', 'url']]);
-        $key = \App\Models\ApiKey::where('business_id', $sf->business_id)->latest('id')->first();
+        $key = $this->connectionKey($sf->business_id);
         if (! $key) {
             return back()->with('error', 'Create your connection key first.');
         }

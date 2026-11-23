@@ -89,7 +89,11 @@ class PlatformController extends Controller
     public function sellerShow(Business $business): Response
     {
         $row = $this->sellerRow($business);
-        $customers = Customer::where('business_id', $business->id)->orderByDesc('lifetime_value')->limit(50)->get()
+        $customers = Customer::where('business_id', $business->id)
+            // Lifetime value computed live (sum of DELIVERED order totals);
+            // the stored column of that name is never written.
+            ->withSum(['orders as lifetime_value_live' => fn ($x) => $x->where('status', 'Delivered')], 'grand_total')
+            ->orderByDesc('lifetime_value_live')->limit(50)->get()
             ->map(function ($c) use ($business) {
                 $orders = Order::where('business_id', $business->id)->where('customer_id', $c->id);
                 $total = (clone $orders)->count();

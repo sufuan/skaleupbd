@@ -36,7 +36,7 @@ class InventoryController extends Controller
 
     private function available(Product $p): int
     {
-        return $p->stock_qty - $p->reserved_qty;
+        return $p->available();
     }
 
     private function productRow(Product $p): array
@@ -63,7 +63,7 @@ class InventoryController extends Controller
             'alert_qty' => $p->alert_qty,
             'featured' => (bool) $p->featured,
             'type' => $p->type,
-            'image' => $p->image,
+            'image' => $p->imageUrl(),
             'gallery' => $p->gallery ?? [],
             'category_id' => $p->category_id,
             'brand_id' => $p->brand_id,

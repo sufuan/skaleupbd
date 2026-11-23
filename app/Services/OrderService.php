@@ -160,6 +160,39 @@ class OrderService
                 ]);
             }
 
+            // An order created already in Processing (the WooCommerce
+            // importer maps Woo 'processing' to our 'Processing') never
+            // passes through approve(), the only other place stock is
+            // reserved - so reserve here, inside the same transaction,
+            // in the same per-item shape as approve(). Without this,
+            // available stock is overstated and the lifecycle's release
+            // (cancel) and ship decrements drive reserved_qty negative.
+            // Deliberately NO shortage rejection (approve() has one):
+            // intake must never fail - the order already exists on the
+            // seller's own website - so reserve in full and let
+            // availability tell the truth, even when it goes negative.
+            if ($order->status === 'Processing' && ! $this->stockOff($businessId)) {
+                foreach ($order->items as $item) {
+                    if (! $item->product_id) {
+                        continue;
+                    }
+                    $product = Product::where('business_id', $businessId)->find($item->product_id);
+                    if (! $product) {
+                        continue;
+                    }
+                    // snapshot the current average cost for the profit engine
+                    $item->cost = $product->cost;
+                    $item->save();
+                    $product->increment('reserved_qty', $item->qty);
+                    StockLedger::create(['business_id' => $businessId, 'product_id' => $product->id,
+                        'order_id' => $order->id, 'type' => 'reserve', 'qty' => $item->qty,
+                        'prev_stock' => $product->stock_qty, 'new_stock' => $product->stock_qty,
+                        'unit_cost' => $product->cost, 'value_impact' => 0,
+                        'reference' => $order->invoice_no, 'user_id' => $actor?->id ?? auth()->id(),
+                        'note' => "Reserved on create of {$order->invoice_no}"]);
+                }
+            }
+
             // M19: spend the order's tokens now (idempotent per order).
             $this->tokens->deductForOrder($order);
 

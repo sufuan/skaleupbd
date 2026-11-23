@@ -23,6 +23,16 @@ function Sw({ on = false }) {
 function SaveBar() {
     return <div className="flex mt16"><span className="spacer" /><button className="btn pri">{t('Save Changes')}</button></div>;
 }
+// Shown in place of a shop-scoped form when there is no shop in scope
+// (a platform admin outside view-as): the honest state, with no save
+// path into a phantom business 0.
+function ShopScopeNotice() {
+    return (
+        <div className="card"><h3>{t('These settings belong to a shop')}</h3>
+            <div className="card-sub">{t('You are signed in as the platform admin, so there is no shop here to change. Open a shop from All Sellers and use View shop to see its settings.')}</div>
+        </div>
+    );
+}
 function Field({ label, value, type = 'text', area = false }) {
     // Display-only values (issued keys, endpoints): readOnly so the box
     // never pretends an edit here would save anywhere.
@@ -77,13 +87,23 @@ function Home({ home, onSetup }) {
 }
 
 function Business({ tab, m2 }) {
-    if (tab === 'merchant') return (
-        <div className="card"><h3>{t('Merchant Profile')}</h3><div className="card-sub">{t('Verification details for courier and payment')}</div>
-            <Field label="Trade Licence No." value="TRAD/DNCC/012345/2023" /><Field label="TIN" value="123456789012" />
-            <Field label="Bank Account Name" value="Demo Shop" /><Field label="Bank / Branch" value="Sonali Bank - Mirpur 10" />
-            <Field label="Account Number" value="•••• •••• 4832" /><SaveBar /></div>
-    );
+    if (tab === 'merchant') return <MerchantProfileForm m2={m2} />;
     return <BusinessProfileForm m2={m2} />;
+}
+
+function MerchantProfileForm({ m2 }) {
+    const form = useForm({ ...(m2.merchant || {}) });
+    return (
+        <form className="card" onSubmit={(e) => { e.preventDefault(); form.post('/settings/merchant', { preserveScroll: true }); }}>
+            <h3>{t('Merchant Profile')}</h3><div className="card-sub">{t('Verification details for courier and payment')}</div>
+            <div className="frow"><label className="fl">{t('Trade Licence No.')}</label><input className="inp" value={form.data.trade_licence || ''} onChange={(e) => form.setData('trade_licence', e.target.value)} /></div>
+            <div className="frow"><label className="fl">{t('TIN')}</label><input className="inp" value={form.data.tin || ''} onChange={(e) => form.setData('tin', e.target.value)} /></div>
+            <div className="frow"><label className="fl">{t('Bank Account Name')}</label><input className="inp" value={form.data.bank_account_name || ''} onChange={(e) => form.setData('bank_account_name', e.target.value)} /></div>
+            <div className="frow"><label className="fl">{t('Bank / Branch')}</label><input className="inp" value={form.data.bank_branch || ''} onChange={(e) => form.setData('bank_branch', e.target.value)} /></div>
+            <div className="frow"><label className="fl">{t('Account Number')}</label><input className="inp" value={form.data.account_number || ''} onChange={(e) => form.setData('account_number', e.target.value)} /></div>
+            <div className="flex mt16"><span className="spacer" /><button type="submit" className="btn pri" disabled={form.processing}>{t('Save Changes')}</button></div>
+        </form>
+    );
 }
 
 function BusinessProfileForm({ m2 }) {
@@ -124,7 +144,7 @@ function AutoApproveForm({ data }) {
     );
 }
 
-function Api({ tab, couriers, autoApprove, channels, myChannels, channelsPlatform, channelsReadOnly, paymentGateway, platformPaymentGateway, integration }) {
+function Api({ tab, couriers, autoApprove, channels, myChannels, channelsPlatform, channelsReadOnly, paymentGateway, platformPaymentGateway, integration, hasShop = true }) {
     if (tab === 'channels') return (
         <>
             {channelsPlatform && <ChannelsForm channels={channels} />}
@@ -155,21 +175,28 @@ function Api({ tab, couriers, autoApprove, channels, myChannels, channelsPlatfor
             )}
         </>
     );
-    if (tab === 'app') return (
+    if (tab === 'app') {
+        if (!hasShop) return <ShopScopeNotice />;
+        return (
         <div className="card"><h3>{t('App Integration')}</h3><div className="card-sub">{t('External API for outside apps and AI systems')}</div>
             <Field label="API endpoint" value={integration?.endpoint || ''} />
             <Field label="API Key (sk_…)" value={integration?.api_key ? `sk_••••••••${integration.api_key.last4}` : t('No key yet')} />
             <div className="sm mut">{integration?.api_key
                 ? `${t('A key is active for this shop')}${integration.api_key.last_used_at ? ` · ${t('Last used')} ${integration.api_key.last_used_at}` : ''}. ${t('A key is shown in full only once, when it is created.')}`
                 : t('No API key has been issued for this shop yet. Ask the platform team to issue one.')}</div></div>
-    );
-    if (tab === 'website') return (
+        );
+    }
+    if (tab === 'website') {
+        if (!hasShop) return <ShopScopeNotice />;
+        return (
         <div className="card"><h3>{t('Website Integration')}</h3><div className="card-sub">{t('Orders will come in from your own website / WooCommerce')}</div>
             <Field label="Order endpoint" value={integration?.endpoint || ''} />
             <Field label="Platform" value="WooCommerce / WordPress" />
             <ConnRow name="WooCommerce" desc={integration?.api_key ? t('Your shop API key is active - the plugin can send orders to the endpoint above') : t('No API key yet - the plugin cannot send orders until a key is issued')}
                 status={integration?.api_key ? (integration.api_key.last_used_at ? t('Connected') : t('Key active')) : t('Not connected')} pillCls={integration?.api_key ? 'green' : 'amber'} /></div>
-    );
+        );
+    }
+    if (!hasShop) return <ShopScopeNotice />;
     return (
         <>
             <AutoApproveForm data={autoApprove} />
@@ -477,7 +504,7 @@ function TemplatesForm({ m2 }) {
     );
 }
 
-function Ai({ tab, ai }) {
+function Ai({ tab, ai, hasShop = true }) {
     const rules = ai?.rules || [];
     const proposals = (ai?.proposals || []).filter((p) => p.status === 'pending');
     const [testText, setTestText] = useState('');
@@ -494,8 +521,10 @@ function Ai({ tab, ai }) {
         return <NegotiationForm ai={ai} />;
     }
     if (tab === 'knowledge') {
+        if (!hasShop) return <ShopScopeNotice />;
         return <KnowledgeForm ai={ai} />;
     }
+    if (!hasShop) return <ShopScopeNotice />;
     return (
         <div className="card"><h3>{t('Rule Brain')}</h3><div className="card-sub">{t('When a rule matches, the AI gives that answer - every number comes from live data')}</div>
             {rules.map((r) => <RuleRow key={r.id} rule={r} />)}
@@ -762,7 +791,7 @@ function KnowledgeRow({ entry }) {
     );
 }
 
-function Security({ tab, totpEnabled, totpEnrolled, m2 }) {
+function Security({ tab, totpEnabled, totpEnrolled, m2, hasShop = true }) {
     if (tab === 'records') return (
         <>
             <div className="card mb12"><h3>{t('Deletion Logs')}</h3><div className="card-sub">{t('Records of deleted items are kept for 7 days')}</div>
@@ -794,22 +823,20 @@ function Security({ tab, totpEnabled, totpEnrolled, m2 }) {
                         {totpEnabled && !totpEnrolled && <Link href="/totp/setup" className="btn pri">{t('Set up authenticator')}</Link>}
                         <button className={`switch ${totpEnabled ? 'on' : ''}`} onClick={toggleTotp} aria-label="toggle two-factor login" />
                     </div>
-                    <div className="conn-row"><div style={{ flex: 1 }}><div className="b">{t('Require Device Approval')}</div><div className="sm mut">{t('A new device cannot enter until an admin approves it')}</div></div><Sw on /></div>
-                    <div className="conn-row"><div style={{ flex: 1 }}><div className="b" style={{ color: 'var(--bad)' }}>{t('Reset Shop Data')}</div><div className="sm mut">{t('Every order and product will be deleted - this cannot be undone')}</div></div><button className="btn" style={{ color: 'var(--bad)', borderColor: '#f0caca' }}>{t('Reset')}</button></div>
+                    <div className="conn-row"><div style={{ flex: 1 }}><div className="b">{t('Require Device Approval')}</div><div className="sm mut">{t('A new device cannot enter until an admin approves it')}</div><div className="sm mut">{t('Module is not developed yet')}</div></div><button className="switch" disabled aria-label="toggle require device approval" style={{ opacity: .5, cursor: 'not-allowed' }} /></div>
+                    <div className="conn-row"><div style={{ flex: 1 }}><div className="b" style={{ color: 'var(--bad)' }}>{t('Reset Shop Data')}</div><div className="sm mut">{t('Every order and product will be deleted - this cannot be undone')}</div><div className="sm mut">{t('Module is not developed yet')}</div></div><button className="btn" disabled style={{ color: 'var(--bad)', borderColor: '#f0caca', opacity: .5, cursor: 'not-allowed' }}>{t('Reset')}</button></div>
                 </div>
-                <OrderTogglesForm m2={m2} />
-                <InventorySettingsForm m2={m2} />
-                <FinanceSettingsForm m2={m2} />
+                {hasShop ? <><OrderTogglesForm m2={m2} /><InventorySettingsForm m2={m2} /><FinanceSettingsForm m2={m2} /></> : <ShopScopeNotice />}
             </>
         );
     }
+    // Device Approvals has no backend yet: show the honest empty
+    // state instead of the hard-coded device rows that used to sit
+    // here (invented "pending devices" with Approve buttons that
+    // fired nothing, identical for every admin).
     return (
-        <div className="card"><h3>{t('Device Approvals')}</h3><div className="card-sub">{t('When someone logs in from a new device, approve it here')}</div>
-            {[['Chrome - Windows (Dhaka)', 'Pending'], ['bKash App - Android', 'Pending'], ['Chrome - Mac (this device)', 'Approved']].map(([d, s2]) => (
-                <div className="conn-row" key={d}><div style={{ flex: 1 }} className="b">{d}</div>
-                    <span className={`pill ${s2 === 'Pending' ? 'amber' : 'green'}`}>{t(s2)}</span>
-                    {s2 === 'Pending' && <button className="btn pri">{t('Approve')}</button>}</div>
-            ))}<SaveBar /></div>
+        <div className="card"><h3>{t('Device Approvals')}</h3><div className="card-sub">{t('Module is not developed yet')}</div>
+            <div className="sm mut">{t('No pending device requests')}</div></div>
     );
 }
 
@@ -1045,7 +1072,7 @@ function RegistrationVerificationForm({ registration }) {
     );
 }
 
-export default function SettingsIndex({ group: initial = 'home', totpEnabled = false, totpEnrolled = false, m2, couriers, autoApprove = null, ai, isPlatform = false, packagesData = null, channels = null, myChannels = null, channelsPlatform = false, paymentGateway = null, platformPaymentGateway = null, home = null, integration = null, staffRoles = null }) {
+export default function SettingsIndex({ group: initial = 'home', totpEnabled = false, totpEnrolled = false, m2, couriers, autoApprove = null, ai, isPlatform = false, hasShop = true, packagesData = null, channels = null, myChannels = null, channelsPlatform = false, paymentGateway = null, platformPaymentGateway = null, home = null, integration = null, staffRoles = null }) {
     const viewing = !!usePage().props.viewAs;
     const groups = [
         ...GROUPS,
@@ -1074,12 +1101,12 @@ export default function SettingsIndex({ group: initial = 'home', totpEnabled = f
                             {g.tabs.map(([id, label]) => <span key={id} className={`ptab ${tab === id ? 'act' : ''}`} onClick={() => setTab(id)}>{t(label)}</span>)}
                         </div>
                     )}
-                    {group === 'home' && <Home home={home} onSetup={(label) => { const [gid, tid] = SETUP_TARGETS[label] || []; if (gid) { setGroup(gid); setTab(tid); } }} />}
-                    {group === 'business' && <Business tab={tab} m2={m2} />}
-                    {group === 'api' && <Api tab={tab} couriers={couriers} autoApprove={autoApprove} channels={channels} myChannels={myChannels} channelsPlatform={channelsPlatform} channelsReadOnly={viewing} paymentGateway={paymentGateway} platformPaymentGateway={platformPaymentGateway} integration={integration} />}
-                    {group === 'calls' && <Calls tab={tab} m2={m2} />}
-                    {group === 'ai' && <Ai tab={tab} ai={ai} />}
-                    {group === 'security' && <Security tab={tab} totpEnabled={totpEnabled} totpEnrolled={totpEnrolled} m2={m2} />}
+                    {group === 'home' && (hasShop ? <Home home={home} onSetup={(label) => { const [gid, tid] = SETUP_TARGETS[label] || []; if (gid) { setGroup(gid); setTab(tid); } }} /> : <ShopScopeNotice />)}
+                    {group === 'business' && (hasShop ? <Business tab={tab} m2={m2} /> : <ShopScopeNotice />)}
+                    {group === 'api' && <Api tab={tab} couriers={couriers} autoApprove={autoApprove} channels={channels} myChannels={myChannels} channelsPlatform={channelsPlatform} channelsReadOnly={viewing} paymentGateway={paymentGateway} platformPaymentGateway={platformPaymentGateway} integration={integration} hasShop={hasShop} />}
+                    {group === 'calls' && (hasShop ? <Calls tab={tab} m2={m2} /> : <ShopScopeNotice />)}
+                    {group === 'ai' && <Ai tab={tab} ai={ai} hasShop={hasShop} />}
+                    {group === 'security' && <Security tab={tab} totpEnabled={totpEnabled} totpEnrolled={totpEnrolled} m2={m2} hasShop={hasShop} />}
                     {group === 'packages' && isPlatform && <PackagesSettings data={packagesData} />}
                     {group === 'staff' && staffRoles?.can_manage && <StaffRoles data={staffRoles} />}
                 </div>

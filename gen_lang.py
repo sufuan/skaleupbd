@@ -3514,6 +3514,12 @@ BN.update([
     ("Not a shop", "এটি কোনো দোকান নয়"),
     ("Read-only view", "শুধু দেখার view"),
     ("You are viewing this shop read-only", "আপনি এই দোকানটি শুধু দেখছেন"),
+    ("You are viewing this shop read-only. Exit the view to make changes.", "আপনি এই দোকানটি শুধু দেখছেন। বদলাতে চাইলে ভিউ থেকে বেরিয়ে আসুন।"),
+    # ---- CRUD-night admin fixes: shop-scope notice, merchant, devices ----
+    ("These settings belong to a shop", "এই সেটিংস একটি দোকানের"),
+    ("You are signed in as the platform admin, so there is no shop here to change. Open a shop from All Sellers and use View shop to see its settings.", "আপনি প্ল্যাটফর্ম অ্যাডমিন হিসেবে সাইন ইন করেছেন, তাই এখানে বদলানোর মতো কোনো দোকান নেই। All Sellers থেকে একটি দোকান খুলে View shop দিয়ে তার সেটিংস দেখুন।"),
+    ("Merchant settings saved", "মার্চেন্ট তথ্য সেভ হয়েছে"),
+    ("No pending device requests", "কোনো ডিভাইস অনুমোদনের অনুরোধ ঝুলে নেই"),
     ("minutes left", "মিনিট বাকি"),
     ("Exit view", "View থেকে বের হোন"),
     ("Platform Home", "প্ল্যাটফর্ম হোম"),

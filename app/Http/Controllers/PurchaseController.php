@@ -46,11 +46,16 @@ class PurchaseController extends Controller
     private function productOptions(int $biz): array
     {
         return Product::where('business_id', $biz)->where('is_active', true)
-            ->orderBy('name')->get(['id', 'name', 'sku', 'cost', 'stock_qty', 'image', 'alert_qty'])
+            ->orderBy('name')->get(['id', 'name', 'sku', 'cost', 'stock_qty', 'reserved_qty', 'image', 'alert_qty'])
             ->map(fn (Product $p) => [
                 'id' => $p->id, 'name' => $p->name, 'sku' => $p->sku,
-                'cost' => (float) $p->cost, 'stock' => (int) $p->stock_qty,
-                'image' => $p->image ? Storage::disk('public')->url($p->image) : null,
+                // Stock is AVAILABLE (on hand minus reserved), the same
+                // figure the New Order picker shows - raw stock_qty here
+                // made the two pickers disagree by the reserved amount.
+                'cost' => (float) $p->cost, 'stock' => $p->available(),
+                // The shared photo resolution; Storage::url() built an
+                // APP_URL absolute URL that broke off-origin.
+                'image' => $p->imageUrl(),
                 'alert_qty' => (int) $p->alert_qty,
             ])->all();
     }

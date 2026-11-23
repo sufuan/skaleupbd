@@ -162,8 +162,8 @@ export default function Show({ order, customer, couriers, courierMethods = [], s
                                 </label>
                             )}
                             <div className="fld-l frow" style={{ marginTop: 12 }}>{t('Delivery Method')}
-                                <span style={{ display: 'flex', gap: 8 }}>
-                                    <select className="fld" style={{ flex: 1 }} value={form.data.delivery_method} onChange={(e) => form.setData('delivery_method', e.target.value)}>
+                                <span style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                                    <select className="fld" style={{ flex: '1 1 170px' }} value={form.data.delivery_method} onChange={(e) => form.setData('delivery_method', e.target.value)}>
                                         <option value="">-</option>
                                         {couriers.map((c) => <option key={c} value={c}>{c}</option>)}
                                     </select>
@@ -227,8 +227,8 @@ export default function Show({ order, customer, couriers, courierMethods = [], s
                                     </div>
                                     {order.courier_method_id && (
                                         <label className="fld-l frow" style={{ marginTop: 12 }}>{t('Change courier to…')}
-                                            <span style={{ display: 'flex', gap: 8 }}>
-                                                <select className="fld inp" style={{ flex: 1 }} value={changeMethodId} onChange={(e) => setChangeMethodId(e.target.value)}>
+                                            <span style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                                                <select className="fld inp" style={{ flex: '1 1 170px' }} value={changeMethodId} onChange={(e) => setChangeMethodId(e.target.value)}>
                                                     <option value="">{t('Change courier to…')}</option>
                                                     {courierMethods.filter((m) => m.id !== order.courier_method_id).map((m) => <option key={m.id} value={m.id}>{m.label}</option>)}
                                                 </select>
