@@ -69,6 +69,10 @@ class RouteRegistry
         // Machine endpoints (API key / provider signature checked in
         // the controllers; no session permission applies).
         'api.external.orders' => ['public'],
+        'api.external.orders.show' => ['public'],
+        'api.external.products' => ['public'],
+        'api.external.stock.check' => ['public'],
+        'api.webhooks.woocommerce' => ['public'],
         'api.webhooks.meta.verify' => ['public'],
         'api.webhooks.meta' => ['public'],
         'api.webhooks.steadfast' => ['public'],
@@ -122,6 +126,7 @@ class RouteRegistry
         'platform.viewAs.enter' => ['platform', null, 'edit'],
         'platform.viewAs.exit' => ['platform', null, 'edit'],
         'platform.packages' => ['platform', null, 'view'],
+        'platform.auditLog' => ['platform', null, 'view'],
         'platform.claims' => ['platform', null, 'view'],
         'platform.claims.approve' => ['platform', null, 'edit'],
         'platform.claims.reject' => ['platform', null, 'edit'],
@@ -464,6 +469,30 @@ class RouteRegistry
         'storefront.connect.key' => ['shop', 'storefront', 'edit'],
         'storefront.connect.webhook' => ['shop', 'storefront', 'edit'],
         'storefront.connect.test' => ['shop', 'storefront', 'edit'],
+        // Website integrations (Connect page sections). Credential
+        // mutations are ownerOnly: API keys, the outbound webhook URL
+        // and the WooCommerce connection hold shop credentials.
+        'integrations.api-keys.index' => ['shop', 'storefront', 'view'],
+        'integrations.api-keys.store' => ['shop', 'storefront', 'edit', ['ownerOnly']],
+        'integrations.api-keys.destroy' => ['shop', 'storefront', 'delete', ['ownerOnly']],
+        'integrations.webhook-settings.show' => ['shop', 'storefront', 'view'],
+        'integrations.webhook-settings.update' => ['shop', 'storefront', 'edit', ['ownerOnly']],
+        'integrations.webhook-settings.test' => ['shop', 'storefront', 'edit'],
+        'integrations.webhook-settings.secret' => ['shop', 'storefront', 'edit', ['ownerOnly']],
+        'integrations.webhook-settings.enable' => ['shop', 'storefront', 'edit'],
+        'integrations.webhook-settings.disable' => ['shop', 'storefront', 'edit'],
+        'integrations.woo.show' => ['shop', 'storefront', 'view'],
+        'integrations.woo.events' => ['shop', 'storefront', 'view'],
+        'integrations.woo.store' => ['shop', 'storefront', 'edit', ['ownerOnly']],
+        'integrations.woo.destroy' => ['shop', 'storefront', 'delete', ['ownerOnly']],
+        'integrations.woo.status-map.show' => ['shop', 'storefront', 'view'],
+        'integrations.woo.status-map.update' => ['shop', 'storefront', 'edit'],
+        'integrations.product-mapping.index' => ['shop', 'storefront', 'view'],
+        'integrations.product-mapping.search' => ['shop', 'storefront', 'view'],
+        'integrations.product-mapping.match' => ['shop', 'storefront', 'edit'],
+        'integrations.product-mapping.auto-match' => ['shop', 'storefront', 'edit'],
+        'integrations.product-mapping.summary' => ['shop', 'storefront', 'view'],
+        'integrations.connections.health' => ['shop', 'storefront', 'view'],
         'storefront.availability' => ['shop', 'storefront', 'view'],
         'storefront.subdomain.save' => ['shop', 'storefront', 'edit'],
         'storefront.branding.save' => ['shop', 'storefront', 'edit'],
@@ -785,6 +814,11 @@ class RouteRegistry
                 ['label' => 'API Connection', 'g' => 'api'],
                 ['label' => 'AI & Auto Reply', 'g' => 'ai'],
                 ['label' => 'Security & Records', 'g' => 'security'],
+                // The Audit Log is a standalone platform page (like All
+                // Storefronts), not a Settings group: its menu child
+                // carries an href, which AppLayout renders as a direct
+                // link inside this Settings group.
+                ['label' => 'Audit Log', 'href' => '/admin/audit-log'],
                 ['label' => 'Seller Packages', 'g' => 'packages'],
             ];
         }

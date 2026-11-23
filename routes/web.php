@@ -379,6 +379,7 @@ Route::middleware(['auth', 'verified', 'totp'])->group(function () {
     Route::post('/admin/sellers/{business}/approve', [\App\Http\Controllers\PlatformController::class, 'approveSeller'])->name('platform.seller.approve');
     Route::post('/admin/sellers/{business}/reject', [\App\Http\Controllers\PlatformController::class, 'rejectSeller'])->name('platform.seller.reject');
     Route::get('/admin/packages', [\App\Http\Controllers\PlatformController::class, 'packages'])->name('platform.packages');
+    Route::get('/admin/audit-log', [\App\Http\Controllers\PlatformController::class, 'auditLog'])->name('platform.auditLog');
     Route::get('/admin/claims', [\App\Http\Controllers\PlatformController::class, 'claims'])->name('platform.claims');
     Route::post('/admin/claims/{claim}/approve', [\App\Http\Controllers\PlatformController::class, 'approveClaim'])->name('platform.claims.approve');
     Route::post('/admin/claims/{claim}/reject', [\App\Http\Controllers\PlatformController::class, 'rejectClaim'])->name('platform.claims.reject');
@@ -432,6 +433,30 @@ Route::middleware(['auth', 'verified', 'totp'])->group(function () {
     Route::post('/storefront/connect/key', [\App\Http\Controllers\StorefrontController::class, 'connectKey'])->name('storefront.connect.key');
     Route::post('/storefront/connect/webhook', [\App\Http\Controllers\StorefrontController::class, 'connectWebhook'])->name('storefront.connect.webhook');
     Route::post('/storefront/connect/test-order', [\App\Http\Controllers\StorefrontController::class, 'connectTestOrder'])->name('storefront.connect.test');
+    // Website integrations (WooCommerce + custom site): JSON endpoints
+    // backing the Connect page sections. The business always comes from
+    // the logged-in seller's session, never from the request.
+    Route::get('/storefront/integrations/keys', [\App\Http\Controllers\Integrations\ApiKeyController::class, 'index'])->name('integrations.api-keys.index');
+    Route::post('/storefront/integrations/keys', [\App\Http\Controllers\Integrations\ApiKeyController::class, 'store'])->name('integrations.api-keys.store');
+    Route::delete('/storefront/integrations/keys/{id}', [\App\Http\Controllers\Integrations\ApiKeyController::class, 'revoke'])->whereNumber('id')->name('integrations.api-keys.destroy');
+    Route::get('/storefront/integrations/webhook', [\App\Http\Controllers\Integrations\WebhookSettingsController::class, 'show'])->name('integrations.webhook-settings.show');
+    Route::put('/storefront/integrations/webhook', [\App\Http\Controllers\Integrations\WebhookSettingsController::class, 'save'])->name('integrations.webhook-settings.update');
+    Route::post('/storefront/integrations/webhook/test', [\App\Http\Controllers\Integrations\WebhookSettingsController::class, 'test'])->name('integrations.webhook-settings.test');
+    Route::post('/storefront/integrations/webhook/secret', [\App\Http\Controllers\Integrations\WebhookSettingsController::class, 'rotateSecret'])->name('integrations.webhook-settings.secret');
+    Route::post('/storefront/integrations/webhook/enable', [\App\Http\Controllers\Integrations\WebhookSettingsController::class, 'enable'])->name('integrations.webhook-settings.enable');
+    Route::post('/storefront/integrations/webhook/disable', [\App\Http\Controllers\Integrations\WebhookSettingsController::class, 'disable'])->name('integrations.webhook-settings.disable');
+    Route::get('/storefront/integrations/woo', [\App\Http\Controllers\Integrations\WooConnectController::class, 'show'])->name('integrations.woo.show');
+    Route::get('/storefront/integrations/woo/events', [\App\Http\Controllers\Integrations\WooConnectController::class, 'events'])->name('integrations.woo.events');
+    Route::post('/storefront/integrations/woo', [\App\Http\Controllers\Integrations\WooConnectController::class, 'store'])->name('integrations.woo.store');
+    Route::delete('/storefront/integrations/woo', [\App\Http\Controllers\Integrations\WooConnectController::class, 'destroy'])->name('integrations.woo.destroy');
+    Route::get('/storefront/integrations/woo/status-map', [\App\Http\Controllers\Integrations\WooStatusMapController::class, 'show'])->name('integrations.woo.status-map.show');
+    Route::put('/storefront/integrations/woo/status-map', [\App\Http\Controllers\Integrations\WooStatusMapController::class, 'update'])->name('integrations.woo.status-map.update');
+    Route::get('/storefront/integrations/products/unmatched', [\App\Http\Controllers\Integrations\ProductMappingController::class, 'unmatched'])->name('integrations.product-mapping.index');
+    Route::get('/storefront/integrations/products/local', [\App\Http\Controllers\Integrations\ProductMappingController::class, 'localSearch'])->name('integrations.product-mapping.search');
+    Route::post('/storefront/integrations/products/match', [\App\Http\Controllers\Integrations\ProductMappingController::class, 'match'])->name('integrations.product-mapping.match');
+    Route::post('/storefront/integrations/products/auto-match', [\App\Http\Controllers\Integrations\ProductMappingController::class, 'autoMatch'])->name('integrations.product-mapping.auto-match');
+    Route::get('/storefront/integrations/products/summary', [\App\Http\Controllers\Integrations\ProductMappingController::class, 'summary'])->name('integrations.product-mapping.summary');
+    Route::get('/storefront/integrations/connections/{connection}/health', [\App\Http\Controllers\Integrations\ConnectionHealthController::class, 'show'])->whereNumber('connection')->name('integrations.connections.health');
     // Kept endpoints (availability, branding save, images, domains CRUD)
     Route::get('/storefront/availability', [\App\Http\Controllers\StorefrontController::class, 'availability'])->name('storefront.availability');
     Route::post('/storefront/subdomain', [\App\Http\Controllers\StorefrontController::class, 'saveSubdomain'])->name('storefront.subdomain.save');
@@ -480,6 +505,15 @@ Route::middleware('auth')->group(function () {
 
 // External API intake for sellers' websites (API-key auth, no session).
 Route::post('/api/external/v1/orders', [ExternalOrderController::class, 'store'])->name('api.external.orders');
+Route::get('/api/external/v1/orders/{externalRef}', [ExternalOrderController::class, 'status'])->name('api.external.orders.show');
+// Custom-site product + stock endpoints (API-key auth via the api.key
+// middleware; the business is derived from the key alone).
+Route::post('/api/external/v1/products', [\App\Http\Controllers\Integrations\ExternalProductController::class, 'upsert'])->middleware('api.key')->name('api.external.products');
+Route::post('/api/external/v1/stock/check', [\App\Http\Controllers\Integrations\ExternalProductController::class, 'stockCheck'])->middleware('api.key')->name('api.external.stock.check');
+// WooCommerce webhook receiver: always answers 200 after storing the
+// raw event; HMAC is verified inside the controller. The URL shape is
+// the one WooCommerceConnectService registers on the seller's site.
+Route::post('/api/webhooks/woo/{token}/{type}/{event}', [\App\Http\Controllers\Integrations\WooWebhookController::class, 'receive'])->name('api.webhooks.woocommerce');
 Route::get('/api/webhooks/meta', [\App\Http\Controllers\MetaWebhookController::class, 'verify'])->name('api.webhooks.meta.verify');
 Route::post('/api/webhooks/meta', [\App\Http\Controllers\MetaWebhookController::class, 'receive'])->name('api.webhooks.meta');
 Route::post('/api/webhooks/steadfast/dm/{method}', [WebhookController::class, 'steadfast'])->name('api.webhooks.steadfast');

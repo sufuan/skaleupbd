@@ -220,6 +220,132 @@ class PlatformController extends Controller
         ];
     }
 
+    /**
+     * Platform Audit Log — the view-as-seller trail (platform_view_logs,
+     * ধাপ ৩). The table stores one row per event (enter / exit /
+     * expired / write_blocked); this page pairs each enter with its
+     * closing event per admin + shop so the admin reads SESSIONS:
+     * who viewed which shop, when they went in, when they came out
+     * (or that the 30-minute view auto-expired), and how long it
+     * lasted. Read-only; platform context only (constructor guard).
+     */
+    public function auditLog(Request $request): Response
+    {
+        // Newest 1000 events are more than any real pairing window;
+        // pairing walks them oldest first.
+        $events = \App\Models\PlatformViewLog::with(['admin:id,name,email', 'business:id,name'])
+            ->orderByDesc('created_at')->orderByDesc('id')->limit(1000)->get();
+
+        $sessions = [];
+        $open = [];
+        $close = function (array $s, $exitedAt, string $state) use (&$sessions) {
+            $s['exited_at'] = $exitedAt;
+            $s['state'] = $state;
+            $sessions[] = $s;
+        };
+        foreach ($events->reverse() as $e) {
+            $key = $e->admin_id . ':' . $e->business_id;
+            if ($e->action === 'enter') {
+                if (isset($open[$key])) {
+                    // A second enter with no closing event in between:
+                    // the earlier view was superseded (its TTL had run
+                    // out, or the admin re-entered from another tab).
+                    $close($open[$key], $e->created_at, 'replaced');
+                    unset($open[$key]);
+                }
+                $open[$key] = [
+                    'admin_name' => $e->admin?->name ?? 'Unknown admin',
+                    'admin_email' => $e->admin?->email ?? '',
+                    'shop' => $e->detail['shop_name'] ?? $e->business?->name ?? 'Unknown shop',
+                    'entered_at' => $e->created_at,
+                    'exited_at' => null,
+                    'state' => 'open',
+                    'blocked' => 0,
+                ];
+            } elseif ($e->action === 'exit' || $e->action === 'expired') {
+                $state = $e->action === 'expired' ? 'expired'
+                    : ((($e->detail['reason'] ?? null) === 'replaced') ? 'replaced' : 'closed');
+                if (isset($open[$key])) {
+                    $close($open[$key], $e->created_at, $state);
+                    unset($open[$key]);
+                } else {
+                    // A closing event whose enter fell outside the
+                    // fetched window: still show the event itself.
+                    $sessions[] = [
+                        'admin_name' => $e->admin?->name ?? 'Unknown admin',
+                        'admin_email' => $e->admin?->email ?? '',
+                        'shop' => $e->detail['shop_name'] ?? $e->business?->name ?? 'Unknown shop',
+                        'entered_at' => null,
+                        'exited_at' => $e->created_at,
+                        'state' => $state,
+                        'blocked' => 0,
+                    ];
+                }
+            } elseif ($e->action === 'write_blocked' && isset($open[$key])) {
+                $open[$key]['blocked']++;
+            }
+        }
+        $now = now();
+        foreach ($open as $s) {
+            // No closing event: still inside the 30-minute window, or
+            // the window ran out and no later request recorded the
+            // expiry - either way the view is over at entry + TTL.
+            $s['state'] = $s['entered_at']->diffInSeconds($now) >= \App\Support\ShopContext::TTL ? 'expired' : 'open';
+            $sessions[] = $s;
+        }
+
+        // Newest session first (by entry, falling back to exit).
+        usort($sessions, fn ($a, $b) => ($b['entered_at'] ?? $b['exited_at']) <=> ($a['entered_at'] ?? $a['exited_at']));
+
+        $total = count($sessions);
+        $perPage = 25;
+        $page = max(1, (int) $request->query('page', 1));
+        $lastPage = max(1, (int) ceil($total / $perPage));
+        $page = min($page, $lastPage);
+        $rows = [];
+        foreach (array_slice($sessions, ($page - 1) * $perPage, $perPage) as $s) {
+            $end = $s['exited_at'] ?? ($s['state'] === 'expired' && $s['entered_at'] ? $s['entered_at']->copy()->addSeconds(\App\Support\ShopContext::TTL) : $now);
+            // Carbon 3 diffs are signed (from $this towards the
+            // argument), so the diff runs from entry to end.
+            $seconds = $s['entered_at'] ? (int) max(0, $s['entered_at']->diffInSeconds($end)) : null;
+            $rows[] = [
+                'admin_name' => $s['admin_name'],
+                'admin_email' => $s['admin_email'],
+                'shop' => $s['shop'],
+                'entered_at' => DhakaTime::fmt($s['entered_at'], 'd M Y, h:i A'),
+                'exited_at' => DhakaTime::fmt($s['exited_at'], 'd M Y, h:i A'),
+                'state' => $s['state'],
+                'duration' => $seconds === null ? null : self::auditDuration($seconds),
+                'blocked' => $s['blocked'],
+            ];
+        }
+
+        return Inertia::render('Platform/AuditLog', [
+            'rows' => $rows,
+            'pagination' => [
+                'page' => $page,
+                'last_page' => $lastPage,
+                'total' => $total,
+                'from' => $total === 0 ? 0 : ($page - 1) * $perPage + 1,
+                'to' => min($total, $page * $perPage),
+            ],
+        ]);
+    }
+
+    /** Human duration for an audit session: "38 sec", "12 min", "1 h 5 min". */
+    private static function auditDuration(int $seconds): string
+    {
+        if ($seconds < 60) {
+            return $seconds . ' sec';
+        }
+        $minutes = intdiv($seconds, 60);
+        if ($minutes < 60) {
+            return $minutes . ' min';
+        }
+
+        return intdiv($minutes, 60) . ' h ' . ($minutes % 60) . ' min';
+    }
+
     /** Payment claims inbox — submitted payments wait here for a decision. */
     public function claims(): Response
     {

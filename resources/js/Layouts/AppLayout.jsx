@@ -56,7 +56,7 @@ function buildSearchIndex(sections) {
     return (sections || []).flatMap((g) => g.items.flatMap((item) => [
         { label: item.label, href: item.href, group: g.sec || 'SkaleUp BD' },
         ...(item.children || []).map((c) => item.settings
-            ? { label: c.label, href: `/settings?group=${c.g}`, group: 'Settings' }
+            ? { label: c.label, href: c.href || `/settings?group=${c.g}`, group: 'Settings' }
             : typeof c === 'object'
                 ? { label: c.label, href: c.href, group: item.label }
                 : { label: c, href: item.href, group: item.label }),
@@ -143,7 +143,11 @@ function NavGroup({ item, current }) {
             {open && (
                 <div className="sub-items">
                     {item.children.map((c) => item.settings ? (
-                        <Link key={c.g} href={`/settings?group=${c.g}`} className={`nav-item ${activeSettingsChild === c ? 'act' : ''}`}>{t(c.label)}</Link>
+                        c.href ? (
+                            <Link key={c.label} href={c.href} className={`nav-item ${activeChild === c ? 'act' : ''}`}>{t(c.label)}</Link>
+                        ) : (
+                            <Link key={c.g} href={`/settings?group=${c.g}`} className={`nav-item ${activeSettingsChild === c ? 'act' : ''}`}>{t(c.label)}</Link>
+                        )
                     ) : typeof c === 'object' ? (
                         <Link key={c.label} href={c.href} className={`nav-item ${activeChild === c ? 'act' : ''}`}>{t(c.label)}{childVal(c) > 0 && <span className="badge">{childVal(c)}</span>}</Link>
                     ) : (
