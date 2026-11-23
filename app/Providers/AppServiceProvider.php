@@ -2,6 +2,9 @@
 
 namespace App\Providers;
 
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
 
@@ -21,6 +24,17 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Vite::prefetch(concurrency: 3);
+
+        // External API (api/external/*): 60 requests per minute per API
+        // key. The bucket is keyed by a hash of the presented key, never
+        // the key itself; keyless calls fall back to a per-IP bucket.
+        RateLimiter::for('external-api', function (Request $request) {
+            $key = trim((string) $request->header('x-api-key', ''));
+
+            return $key !== ''
+                ? Limit::perMinute(60)->by('api-key:'.hash('sha256', $key))
+                : Limit::perMinute(60)->by('ip:'.$request->ip());
+        });
 
         // Website integration: order status changes fan out to the
         // seller's own website (custom-site webhook + WooCommerce

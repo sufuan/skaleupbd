@@ -20,6 +20,14 @@ use Illuminate\Validation\ValidationException;
  */
 class StorefrontService
 {
+    // Phone-OTP guards (ধাপ ৭ Stage A), mirroring the registration
+    // OTP numbers in RegistrationVerificationService.
+    public const OTP_MAX_ATTEMPTS = 5;
+
+    public const OTP_TTL_MINUTES = 10;
+
+    public const OTP_RESEND_COOLDOWN_SECONDS = 60;
+
     public function __construct(
         private readonly SettingsService $settings,
         private readonly SmsService $sms,
@@ -453,19 +461,40 @@ class StorefrontService
         return $page !== '' ? $page : null;
     }
 
+    /** Seconds left before another code may be sent to this shop (0 = send now). */
+    public function otpCooldownSeconds(Storefront $sf): int
+    {
+        if (! $sf->otp_last_sent_at) {
+            return 0;
+        }
+
+        return max(0, self::OTP_RESEND_COOLDOWN_SECONDS - (int) $sf->otp_last_sent_at->diffInSeconds(now()));
+    }
+
     /**
      * Send a 6-digit publish-verification code to the seller's mobile.
      * Uses the seller's own SMS setup; if that cannot send, the platform's
      * own (business 1) SMS setup sends it instead — the code must arrive
      * or the seller can never publish.
+     *
+     * One code per minute: inside the resend cooldown nothing is sent
+     * and the live code stays untouched; the result then carries
+     * 'cooldown' => seconds remaining. A fresh send always issues a NEW
+     * code (the old one stops working) and resets the attempt count.
      */
     public function sendOtp(Storefront $sf, string $phone): array
     {
         $phone = PhoneNormalizer::normalize($phone);
+        $wait = $this->otpCooldownSeconds($sf);
+        if ($wait > 0) {
+            return ['sent' => false, 'via' => (int) $sf->business_id, 'phone' => $phone, 'error' => null, 'cooldown' => $wait];
+        }
         $code = (string) random_int(100000, 999999);
         $sf->phone_to_verify = $phone;
         $sf->otp_hash = Hash::make($code);
-        $sf->otp_expires_at = now()->addMinutes(10);
+        $sf->otp_expires_at = now()->addMinutes(self::OTP_TTL_MINUTES);
+        $sf->otp_attempts = 0;
+        $sf->otp_last_sent_at = now();
         $sf->save();
 
         $body = "Your SkaleUp storefront verification code is {$code}. It is valid for 10 minutes.";
@@ -496,12 +525,26 @@ class StorefrontService
         if (! $sf->otp_hash || ! $sf->otp_expires_at || $sf->otp_expires_at->isPast()) {
             return false;
         }
+        // Attempt cap (ধাপ ৭ Stage A): after OTP_MAX_ATTEMPTS wrong
+        // tries the code is dead, even for the right code — the seller
+        // asks for a fresh one (subject to the resend cooldown).
+        if ((int) $sf->otp_attempts >= self::OTP_MAX_ATTEMPTS) {
+            return false;
+        }
         if (! Hash::check(trim($code), $sf->otp_hash)) {
+            $sf->increment('otp_attempts');
+            if ((int) $sf->otp_attempts >= self::OTP_MAX_ATTEMPTS) {
+                $sf->otp_hash = null;
+                $sf->otp_expires_at = null;
+                $sf->save();
+            }
+
             return false;
         }
         $sf->phone_verified_at = now();
         $sf->otp_hash = null;
         $sf->otp_expires_at = null;
+        $sf->otp_attempts = 0;
         $sf->save();
 
         return true;

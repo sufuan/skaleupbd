@@ -58,9 +58,9 @@ Route::middleware('auth')->group(function () {
 // middleware exempts these routes itself).
 Route::middleware('auth')->group(function () {
     Route::get('/totp/setup', [TotpController::class, 'setup'])->name('totp.setup');
-    Route::post('/totp/setup', [TotpController::class, 'confirmSetup'])->name('totp.setup.confirm');
+    Route::post('/totp/setup', [TotpController::class, 'confirmSetup'])->middleware('throttle:6,1')->name('totp.setup.confirm');
     Route::get('/totp/challenge', [TotpController::class, 'challenge'])->name('totp.challenge');
-    Route::post('/totp/challenge', [TotpController::class, 'verifyChallenge'])->name('totp.challenge.verify');
+    Route::post('/totp/challenge', [TotpController::class, 'verifyChallenge'])->middleware('throttle:6,1')->name('totp.challenge.verify');
 });
 
 Route::middleware(['auth', 'verified', 'totp'])->group(function () {
@@ -504,12 +504,15 @@ Route::middleware('auth')->group(function () {
 });
 
 // External API intake for sellers' websites (API-key auth, no session).
-Route::post('/api/external/v1/orders', [ExternalOrderController::class, 'store'])->name('api.external.orders');
-Route::get('/api/external/v1/orders/{externalRef}', [ExternalOrderController::class, 'status'])->name('api.external.orders.show');
+// All four endpoints share the 'external-api' rate limiter (per API key,
+// defined in AppServiceProvider) so a leaked or abused key cannot flood
+// order intake.
+Route::post('/api/external/v1/orders', [ExternalOrderController::class, 'store'])->middleware('throttle:external-api')->name('api.external.orders');
+Route::get('/api/external/v1/orders/{externalRef}', [ExternalOrderController::class, 'status'])->middleware('throttle:external-api')->name('api.external.orders.show');
 // Custom-site product + stock endpoints (API-key auth via the api.key
 // middleware; the business is derived from the key alone).
-Route::post('/api/external/v1/products', [\App\Http\Controllers\Integrations\ExternalProductController::class, 'upsert'])->middleware('api.key')->name('api.external.products');
-Route::post('/api/external/v1/stock/check', [\App\Http\Controllers\Integrations\ExternalProductController::class, 'stockCheck'])->middleware('api.key')->name('api.external.stock.check');
+Route::post('/api/external/v1/products', [\App\Http\Controllers\Integrations\ExternalProductController::class, 'upsert'])->middleware(['api.key', 'throttle:external-api'])->name('api.external.products');
+Route::post('/api/external/v1/stock/check', [\App\Http\Controllers\Integrations\ExternalProductController::class, 'stockCheck'])->middleware(['api.key', 'throttle:external-api'])->name('api.external.stock.check');
 // WooCommerce webhook receiver: always answers 200 after storing the
 // raw event; HMAC is verified inside the controller. The URL shape is
 // the one WooCommerceConnectService registers on the seller's site.

@@ -12,6 +12,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Session password-hash validation: a password change (which
+        // calls Auth::logoutOtherDevices) ends every other session on
+        // its next request, while the session that changed it stays in.
+        $middleware->authenticateSessions();
         $middleware->validateCsrfTokens(except: ['api/external/*', 'api/webhooks/*']);
         // sf_err carries a plain-language shop error message that the
         // storefront layout reads from document.cookie — it must not

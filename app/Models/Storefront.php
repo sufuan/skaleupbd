@@ -20,6 +20,7 @@ class Storefront extends Model
         'branding' => 'array',
         'settings' => 'array',
         'otp_expires_at' => 'datetime',
+        'otp_last_sent_at' => 'datetime',
         'phone_verified_at' => 'datetime',
         'published_at' => 'datetime',
         'domain_verified_at' => 'datetime',

@@ -133,6 +133,9 @@ class StorefrontController extends Controller
         $sf = $this->sf($request);
         $data = $request->validate(['phone' => ['required', 'string', 'max:20']]);
         $res = $this->svc->sendOtp($sf, $data['phone']);
+        if (! empty($res['cooldown'])) {
+            return back()->with('error', __('Please wait :count seconds before asking for a new code.', ['count' => $res['cooldown']]));
+        }
         if (! $res['sent']) {
             $reason = ! empty($res['error']) ? ' Reason: '.$res['error'].'.' : '';
 
