@@ -152,7 +152,17 @@ class WorkInboxController extends Controller
             'assignee' => (string) $request->query('assignee', ''),
             'due' => (string) $request->query('due', ''),
             'q' => (string) $request->query('q', ''),
+            'rule' => (string) $request->query('rule', ''),
         ];
+
+        // Dashboard stuck boxes link here with ?rule=<rule_key,...> so the box
+        // opens pre-filtered to its own work. Unknown keys are ignored.
+        $catalog = WorkInboxService::catalog();
+        $ruleKeys = array_values(array_intersect(
+            array_filter(explode(',', $filters['rule'])),
+            array_keys($catalog),
+        ));
+        $ruleLabel = implode(' · ', array_map(fn ($k) => $catalog[$k]['name'], $ruleKeys));
 
         $open = WorkTask::where('business_id', $biz)->open();
         // "Not assigned" means no PERSON holds the task — the same
@@ -170,6 +180,7 @@ class WorkInboxController extends Controller
 
         $pool = WorkTask::where('business_id', $biz)->open()
             ->whereNull('assignee_user_id')
+            ->when($ruleKeys !== [], fn ($q) => $q->whereIn('rule_key', $ruleKeys))
             ->with(['assignee', 'doneBy'])->orderByRaw("CASE priority WHEN 'critical' THEN 0 WHEN 'urgent' THEN 1 ELSE 2 END")
             ->oldest('due_at')->get();
 
@@ -198,6 +209,9 @@ class WorkInboxController extends Controller
             $needle = '%' . $filters['q'] . '%';
             $q->where(fn ($w) => $w->where('title', 'like', $needle)->orWhere('source_label', 'like', $needle));
         }
+        if ($ruleKeys !== []) {
+            $q->whereIn('rule_key', $ruleKeys);
+        }
         $tasks = $q->orderByRaw("CASE WHEN status IN ('open','in_progress') THEN 0 ELSE 1 END")
             ->orderByRaw("CASE priority WHEN 'critical' THEN 0 WHEN 'urgent' THEN 1 ELSE 2 END")
             ->oldest('due_at')->latest('id')->limit(300)->get();
@@ -208,6 +222,7 @@ class WorkInboxController extends Controller
             'tasks' => $this->presentMany($tasks),
             'staff' => $this->staff($biz),
             'filters' => $filters,
+            'ruleLabel' => $ruleLabel,
             'sources' => WorkInboxService::GROUPS + ['manual' => 'Manual'],
         ]);
     }

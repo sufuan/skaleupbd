@@ -1,7 +1,7 @@
 import AppLayout from '@/Layouts/AppLayout';
 import { t } from '@/lib/i18n';
 import { Head, router } from '@inertiajs/react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 const VIEWS = ['My Dashboard', 'Overview', 'Decision', 'Operations', 'Products', 'Marketing', 'Customers & Team', 'Activity'];
 
@@ -66,7 +66,7 @@ function DashKpi({ label, k, money, pill, hint, basis, onBasis }) {
 const SRC_PALETTE = ['#4f46e5', '#2563eb', '#16A34A', '#D97706', '#DC2626', '#7C3AED', '#0891B2'];
 const HOURS = ['12 AM', '1 AM', '2 AM', '3 AM', '4 AM', '5 AM', '6 AM', '7 AM', '8 AM', '9 AM', '10 AM', '11 AM', '12 PM', '1 PM', '2 PM', '3 PM', '4 PM', '5 PM', '6 PM', '7 PM', '8 PM', '9 PM', '10 PM', '11 PM'];
 
-function MyDashboard({ my, onBasis }) {
+function MyDashboard({ my, onBasis, onHourlyToday }) {
     const pill = my.is_today ? t('Today') : my.day_short;
     const [worTab, setWorTab] = useState('web');
     const worVals = my.web_series.map((d) => (worTab === 'web' ? d.web : d.inc));
@@ -252,7 +252,7 @@ function MyDashboard({ my, onBasis }) {
                             <option value="combined">{t('Combined')}</option><option value="web">{t('Web Orders')}</option><option value="inc">{t('Incomplete Orders')}</option>
                         </select>
                         <span className="seg">
-                            <button type="button" className={hDay === 'day' ? 'on' : ''} onClick={() => setHDay('day')}>{my.is_today ? t('Today') : my.day_short}</button>
+                            <button type="button" className={hDay === 'day' ? 'on' : ''} onClick={() => { setHDay('day'); onHourlyToday(); }}>{my.is_today ? t('Today') : my.day_short}</button>
                             <button type="button" className={hDay === 'prev' ? 'on' : ''} onClick={() => setHDay('prev')}>{my.is_today ? t('Yesterday') : my.prev_short}</button>
                         </span>
                     </div>
@@ -351,7 +351,7 @@ function Overview({ ov, dayLabel }) {
             <div className="dash-2col">
                 <div className="card">
                     <h3>{t('Order Funnel')}</h3>
-                    <div className="card-sub">{t('Last 30 days')}</div>
+                    <div className="card-sub">{t('Last 30 days')} · {t('Web orders only')}</div>
                     <div style={{ marginTop: 10 }}>{funnel.map((f) => barRow(f, fMax))}</div>
                 </div>
                 <div className="card">
@@ -392,12 +392,15 @@ function OperationsView({ ops }) {
                 <h3>{t('Stuck Orders')}</h3>
                 <div className="card-sub">{t('Open a box to see the work in Work Inbox')}</div>
                 <div className="stuck-grid">
-                    {ops.stuck.map((s) => (
-                        <a key={s.label} className="stuck" href="/work-inbox/control">
-                            <span className="stuck-n">{s.count}</span>
-                            <span className="stuck-l">{t(s.label)}</span>
-                        </a>
-                    ))}
+                    {ops.stuck.map((s) => {
+                        const href = s.rules ? `/work-inbox/control?rule=${s.rules.join(',')}` : (s.assignee ? `/work-inbox/control?assignee=${s.assignee}` : '/work-inbox/control');
+                        return (
+                            <a key={s.label} className="stuck" href={href}>
+                                <span className="stuck-n">{s.count}</span>
+                                <span className="stuck-l">{t(s.label)}</span>
+                            </a>
+                        );
+                    })}
                 </div>
             </div>
             <div className="card">
@@ -584,10 +587,65 @@ export default function Dashboard({ my, ov, dc, ops, prod, mkt, team, act, billi
         return () => clearInterval(id);
     }, []);
     const todayIso = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Dhaka' }).format(new Date());
-    const navDay = (iso) => router.get('/dashboard', {
-        ...(iso ? { day: iso } : {}),
-        ...(my.basis !== 'approved' ? { basis: my.basis } : {}),
-    }, { preserveScroll: true });
+    // The date field is a draft: typing never navigates. Chrome pads a single
+    // typed digit to a full date ("2" in the day segment reads as -02) and
+    // fires `change` for every typed digit, so a keystroke must never drive
+    // navigation - the old onChange handler did, which is why typing "22"
+    // landed on the 2nd and the second digit was lost. A date is committed
+    // only when the user finishes it: a calendar pick or a fill (no keystroke
+    // behind the change), the Enter key, or leaving the field with a complete,
+    // valid date while not heading for a button. The draft is also what the
+    // field shows while a reload runs, so a click reflects immediately.
+    const [draftDay, setDraftDay] = useState(my.day);
+    const draftRef = useRef(my.day);
+    const committedRef = useRef(my.day);
+    const typedRef = useRef(false);
+    useEffect(() => { draftRef.current = my.day; committedRef.current = my.day; setDraftDay(my.day); }, [my.day]);
+    const setDraft = (v) => { draftRef.current = v; setDraftDay(v); };
+    const isCompleteValidDay = (v) => {
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(v || '')) return false;
+        const [y, m, d] = v.split('-').map(Number);
+        const dt = new Date(Date.UTC(y, m - 1, d));
+        return dt.getUTCFullYear() === y && dt.getUTCMonth() === m - 1 && dt.getUTCDate() === d && v <= todayIso;
+    };
+    const navDay = (iso) => {
+        setDraft(iso);
+        committedRef.current = iso;
+        typedRef.current = false;
+        router.get('/dashboard', {
+            day: iso,
+            ...(my.basis !== 'approved' ? { basis: my.basis } : {}),
+        }, { preserveScroll: true });
+    };
+    // Today is always computed fresh from the clock - never from the input.
+    const goToday = () => navDay(todayIso);
+    // The Hourly "Today" button only says Today while viewing today: discard
+    // any uncommitted typed date and stay on today (no server trip needed).
+    const hourlyToday = () => { if (my.is_today) setDraft(todayIso); };
+    const commitDraft = () => {
+        const v = draftRef.current;
+        if (isCompleteValidDay(v) && v !== committedRef.current) navDay(v);
+    };
+    const onDateInput = (e) => {
+        setDraft(e.target.value);
+        // No keystroke behind this change: a calendar pick or a fill.
+        if (!typedRef.current) commitDraft();
+    };
+    const onDateKeyDown = (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); commitDraft(); return; }
+        if (e.key !== 'Tab' && e.key !== 'Escape') typedRef.current = true;
+    };
+    const onDateBlur = (e) => {
+        const v = draftRef.current;
+        const ae = e.relatedTarget;
+        if (isCompleteValidDay(v) && v !== committedRef.current && !(ae && ae.tagName === 'BUTTON')) {
+            // Left the field with a finished date: commit it. (Heading for a
+            // button instead: that button's own action wins, so drop the draft.)
+            navDay(v);
+        } else if (v !== committedRef.current) {
+            setDraft(committedRef.current);
+        }
+    };
     const navBasis = (b) => router.get('/dashboard', {
         ...(!my.is_today ? { day: my.day } : {}),
         ...(b !== 'approved' ? { basis: b } : {}),
@@ -613,10 +671,10 @@ export default function Dashboard({ my, ov, dc, ops, prod, mkt, team, act, billi
                     <div className="dash-tools">
                         <div className="dhaka-box"><div className="dhaka-lbl">{t('DHAKA TIME')}</div><div className="dhaka-clock">{clock}</div></div>
                         <button type="button" className="ctl-btn" title={t('Previous day')} onClick={() => navDay(my.prev_iso)}>‹</button>
-                        <input type="date" className="ctl-btn date-pick" aria-label={t('Pick a date')} value={my.day} max={todayIso}
-                            onChange={(e) => { if (e.target.value) navDay(e.target.value); }} />
-                        {!my.is_today && (
-                            <button type="button" className="ctl-btn" onClick={() => navDay(null)}>
+                        <input type="date" className="ctl-btn date-pick" aria-label={t('Pick a date')} value={draftDay} max={todayIso}
+                            onChange={onDateInput} onKeyDown={onDateKeyDown} onFocus={() => { typedRef.current = false; }} onBlur={onDateBlur} />
+                        {draftDay !== todayIso && (
+                            <button type="button" className="ctl-btn" onClick={goToday}>
                                 <span style={{ marginRight: 5, display: 'inline-flex', verticalAlign: -3 }}><CalSvg size={14} /></span>{t('Today')}
                             </button>
                         )}
@@ -625,7 +683,7 @@ export default function Dashboard({ my, ov, dc, ops, prod, mkt, team, act, billi
                         </button>
                     </div>
                 </div>
-                {view === 'My Dashboard' && <MyDashboard my={my} onBasis={navBasis} />}
+                {view === 'My Dashboard' && <MyDashboard my={my} onBasis={navBasis} onHourlyToday={hourlyToday} />}
                 {view === 'Overview' && <Overview ov={ov} dayLabel={my.is_today ? t('Today') : my.day_short} />}
                 {view === 'Decision' && <DecisionView dc={dc} />}
                 {view === 'Operations' && <OperationsView ops={ops} />}

@@ -6,7 +6,7 @@ import { DoneModal, NewTaskModal, PRIORITY_CHIP, TaskCard } from './parts';
 
 // Work Control - the supervisor screen (prototype panel wi-control):
 // pool cards first, then everyone's tasks in one table with reassign.
-export default function Control({ kpis, poolTasks, tasks, staff, filters, sources }) {
+export default function Control({ kpis, poolTasks, tasks, staff, filters, ruleLabel, sources }) {
     const [doneTask, setDoneTask] = useState(null);
     const [newOpen, setNewOpen] = useState(false);
     const [f, setF] = useState(filters);
@@ -34,6 +34,13 @@ export default function Control({ kpis, poolTasks, tasks, staff, filters, source
                     <div className="wi-kpi red"><b>{kpis.overdue}</b><span>Overdue</span></div>
                     <div className="wi-kpi"><b>{kpis.done_today}</b><span>{t('Finished today')}</span></div>
                 </div>
+
+                {f.rule !== '' && (
+                    <div className="pool-box" style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                        <div style={{ fontWeight: 700, color: '#92400E' }}>{t('Filtered')}: {ruleLabel || f.rule}</div>
+                        <button type="button" className="btn-s" onClick={() => apply({ ...f, rule: '' })}>{t('Show all work')}</button>
+                    </div>
+                )}
 
                 {poolTasks.length > 0 && (
                     <div className="pool-box">

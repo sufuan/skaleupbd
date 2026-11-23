@@ -238,16 +238,16 @@ class DashboardStatsService
         $byRules = fn (array $keys) => (clone $open)->whereIn('rule_key', $keys)->count();
 
         $stuck = [
-            ['label' => 'Web orders stuck', 'count' => $byRules(['pending_stuck'])],
-            ['label' => 'RTS not sent', 'count' => $byRules(['ready_to_ship'])],
-            ['label' => 'Courier hold', 'count' => $byRules(['courier_hold'])],
-            ['label' => 'Pending return', 'count' => $byRules(['return_undecided'])],
-            ['label' => 'Shipped too long', 'count' => $byRules(['shipped_stuck'])],
-            ['label' => 'Callback missed', 'count' => $byRules(['callback_missed'])],
-            ['label' => 'Unassigned work', 'count' => (clone $open)->where('assignee_mode', 'pool')->whereNull('assignee_user_id')->count()],
-            ['label' => 'Chat follow-up', 'count' => $byRules(['ai_handover', 'window_closing', 'ai_draft_stuck', 'comment_reply'])],
-            ['label' => 'Warranty overdue', 'count' => $byRules(['warranty_overdue'])],
-            ['label' => 'Courier issue', 'count' => $byRules(['booking_failing', 'parcel_lost_damaged'])],
+            ['label' => 'Web orders stuck', 'count' => $byRules(['pending_stuck']), 'rules' => ['pending_stuck']],
+            ['label' => 'RTS not sent', 'count' => $byRules(['ready_to_ship']), 'rules' => ['ready_to_ship']],
+            ['label' => 'Courier hold', 'count' => $byRules(['courier_hold']), 'rules' => ['courier_hold']],
+            ['label' => 'Pending return', 'count' => $byRules(['return_undecided']), 'rules' => ['return_undecided']],
+            ['label' => 'Shipped too long', 'count' => $byRules(['shipped_stuck']), 'rules' => ['shipped_stuck']],
+            ['label' => 'Callback missed', 'count' => $byRules(['callback_missed']), 'rules' => ['callback_missed']],
+            ['label' => 'Unassigned work', 'count' => (clone $open)->where('assignee_mode', 'pool')->whereNull('assignee_user_id')->count(), 'assignee' => 'pool'],
+            ['label' => 'Chat follow-up', 'count' => $byRules(['ai_handover', 'window_closing', 'ai_draft_stuck', 'comment_reply']), 'rules' => ['ai_handover', 'window_closing', 'ai_draft_stuck', 'comment_reply']],
+            ['label' => 'Warranty overdue', 'count' => $byRules(['warranty_overdue']), 'rules' => ['warranty_overdue']],
+            ['label' => 'Courier issue', 'count' => $byRules(['booking_failing', 'parcel_lost_damaged']), 'rules' => ['booking_failing', 'parcel_lost_damaged']],
         ];
 
         $notSentQ = $this->base($biz)->whereIn('status', ['Pending', 'Processing']);
