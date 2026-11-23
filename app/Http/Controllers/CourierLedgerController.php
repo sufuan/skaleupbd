@@ -258,6 +258,11 @@ class CourierLedgerController extends Controller
 
     public function markDisputed(Request $request, CourierSettlementAllocation $allocation)
     {
+        // The allocation carries no business_id of its own — scope through its
+        // settlement, the same way sibling methods scope by the signed-in
+        // user's business. Another shop's allocation 404s.
+        $allocation = CourierSettlementAllocation::whereHas('settlement', fn ($q) => $q->where('business_id', $this->biz($request)))
+            ->findOrFail($allocation->id);
         $allocation->update(['disputed' => true]);
 
         return back()->with('success', 'Marked as disputed');

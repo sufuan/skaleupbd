@@ -107,7 +107,7 @@ export default function Growth({ summary, tasks, can_revenue }) {
 
                 {s.data_check ? (
                     <div className="gw-card" style={{ textAlign: 'center', padding: '34px 20px' }}>
-                        <div style={{ fontSize: 16, fontWeight: 700, color: '#411550' }}>{t('Data check in progress')}</div>
+                        <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--acc-ink)' }}>{t('Data check in progress')}</div>
                         <p style={{ color: '#64748B', fontSize: 13.5, marginTop: 6 }}>{t('The numbers are being verified. They will appear again when everything adds up.')}</p>
                     </div>
                 ) : (
@@ -201,7 +201,7 @@ export default function Growth({ summary, tasks, can_revenue }) {
                                 ))}
                             </div>
                             <details style={{ marginTop: 10, fontSize: 13 }}>
-                                <summary style={{ cursor: 'pointer', color: '#411550', fontWeight: 600 }}>{t('How the numbers add up')}</summary>
+                                <summary style={{ cursor: 'pointer', color: 'var(--acc-ink)', fontWeight: 600 }}>{t('How the numbers add up')}</summary>
                                 <p style={{ color: '#64748B', marginTop: 6 }}>
                                     {fmtNum(s.wrote)} = {stuckTotal.map((v) => fmtNum(v)).join(' + ')}. {t('The stage numbers on the left mean "reached this stage", so each one is smaller than the one before. This split means "is here now".')}
                                 </p>

@@ -180,7 +180,7 @@ export default function Parcels({ parcels, counts, status, analysis, entries, fi
                             <tbody>
                                 {parcels.filter((p) => p.status === 'Returned' || p.return_tag || p.claim_status).map((p) => (
                                     <tr key={p.id}>
-                                        <td><Link href={`/orders/${p.id}`} className="b" style={{ color: 'var(--acc)' }}>{p.invoice}</Link></td>
+                                        <td><Link href={`/orders/${p.id}`} className="b" style={{ color: 'var(--acc-ink)' }}>{p.invoice}</Link></td>
                                         <td>{p.courier_label || p.courier || '-'}</td>
                                         <td><StatusPill status={p.status} /></td>
                                         <td><select className="inp" style={{ width: 250 }} value={p.return_tag || ''} onChange={(e) => patch(p.id, 'return_tag', e.target.value)}>
@@ -239,7 +239,7 @@ export default function Parcels({ parcels, counts, status, analysis, entries, fi
                 {tab === 'settings' && (
                     <div className="card">
                         <h3>{t('Courier Settings')}</h3>
-                        <p className="mut" style={{ marginTop: 8 }}>{t('Courier permissions are managed in Settings → Security & Records and HRM → User & Role - they live in one place only.')}</p>
+                        <p className="mut" style={{ marginTop: 8 }}>{t('Courier permissions are managed in Settings → Staff & Roles - they live in one place only.')}</p>
                     </div>
                 )}
 

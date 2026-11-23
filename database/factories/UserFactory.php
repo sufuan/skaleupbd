@@ -42,4 +42,22 @@ class UserFactory extends Factory
             'email_verified_at' => null,
         ]);
     }
+
+    /** A shop owner: pair with a business_id when creating. */
+    public function owner(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => 'admin',
+            'is_owner' => true,
+        ]);
+    }
+
+    /** A platform admin: never belongs to a business. */
+    public function platformAdmin(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'business_id' => null,
+            'is_platform_admin' => true,
+        ]);
+    }
 }

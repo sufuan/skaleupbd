@@ -1,13 +1,8 @@
-import InputError from '@/Components/InputError';
-import InputLabel from '@/Components/InputLabel';
-import PrimaryButton from '@/Components/PrimaryButton';
-import TextInput from '@/Components/TextInput';
-import { Transition } from '@headlessui/react';
 import { useForm } from '@inertiajs/react';
 import { useRef } from 'react';
 import { t } from '@/lib/i18n';
 
-export default function UpdatePasswordForm({ className = '' }) {
+export default function UpdatePasswordForm() {
     const passwordInput = useRef();
     const currentPasswordInput = useRef();
 
@@ -45,96 +40,94 @@ export default function UpdatePasswordForm({ className = '' }) {
         });
     };
 
+    const err = (msg) =>
+        msg ? (
+            <div style={{ color: 'var(--bad)', fontSize: 12.5, marginTop: 4 }}>
+                {msg}
+            </div>
+        ) : null;
+
     return (
-        <section className={className}>
-            <header>
-                <h2 className="text-lg font-medium text-gray-900">
-                    {t('Update Password')}
-                </h2>
+        <section className="card">
+            <h3>{t('Update Password')}</h3>
+            <div className="card-sub">
+                {t('Ensure your account is using a long, random password to stay secure.')}
+            </div>
 
-                <p className="mt-1 text-sm text-gray-600">
-                    {t('Ensure your account is using a long, random password to stay secure.')}
-                </p>
-            </header>
-
-            <form onSubmit={updatePassword} className="mt-6 space-y-6">
-                <div>
-                    <InputLabel
-                        htmlFor="current_password"
-                        value={t('Current Password')}
-                    />
-
-                    <TextInput
+            <form onSubmit={updatePassword}>
+                <div className="frow">
+                    <label className="fl" htmlFor="current_password">
+                        {t('Current Password')}
+                    </label>
+                    <input
                         id="current_password"
                         ref={currentPasswordInput}
+                        type="password"
+                        className="inp"
                         value={data.current_password}
                         onChange={(e) =>
                             setData('current_password', e.target.value)
                         }
-                        type="password"
-                        className="mt-1 block w-full"
                         autoComplete="current-password"
                     />
-
-                    <InputError
-                        message={errors.current_password}
-                        className="mt-2"
-                    />
+                    {err(errors.current_password)}
                 </div>
 
-                <div>
-                    <InputLabel htmlFor="password" value={t('New Password')} />
-
-                    <TextInput
+                <div className="frow mt16">
+                    <label className="fl" htmlFor="password">
+                        {t('New Password')}
+                    </label>
+                    <input
                         id="password"
                         ref={passwordInput}
+                        type="password"
+                        className="inp"
                         value={data.password}
                         onChange={(e) => setData('password', e.target.value)}
-                        type="password"
-                        className="mt-1 block w-full"
                         autoComplete="new-password"
                     />
-
-                    <InputError message={errors.password} className="mt-2" />
+                    {err(errors.password)}
                 </div>
 
-                <div>
-                    <InputLabel
-                        htmlFor="password_confirmation"
-                        value={t('Confirm Password')}
-                    />
-
-                    <TextInput
+                <div className="frow mt16">
+                    <label className="fl" htmlFor="password_confirmation">
+                        {t('Confirm Password')}
+                    </label>
+                    <input
                         id="password_confirmation"
+                        type="password"
+                        className="inp"
                         value={data.password_confirmation}
                         onChange={(e) =>
                             setData('password_confirmation', e.target.value)
                         }
-                        type="password"
-                        className="mt-1 block w-full"
                         autoComplete="new-password"
                     />
-
-                    <InputError
-                        message={errors.password_confirmation}
-                        className="mt-2"
-                    />
+                    {err(errors.password_confirmation)}
                 </div>
 
-                <div className="flex items-center gap-4">
-                    <PrimaryButton disabled={processing}>{t('Save')}</PrimaryButton>
-
-                    <Transition
-                        show={recentlySuccessful}
-                        enter="transition ease-in-out"
-                        enterFrom="opacity-0"
-                        leave="transition ease-in-out"
-                        leaveTo="opacity-0"
-                    >
-                        <p className="text-sm text-gray-600">
+                <div
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 12,
+                        marginTop: 18,
+                    }}
+                >
+                    <button className="btn pri" disabled={processing}>
+                        {t('Save')}
+                    </button>
+                    {recentlySuccessful && (
+                        <span
+                            style={{
+                                fontSize: 13.5,
+                                fontWeight: 600,
+                                color: 'var(--ok)',
+                            }}
+                        >
                             {t('Saved.')}
-                        </p>
-                    </Transition>
+                        </span>
+                    )}
                 </div>
             </form>
         </section>

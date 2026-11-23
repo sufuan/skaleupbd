@@ -18,9 +18,18 @@ class ProfileController extends Controller
      */
     public function edit(Request $request): Response
     {
+        $user = $request->user();
+
         return Inertia::render('Profile/Edit', [
-            'mustVerifyEmail' => $request->user() instanceof MustVerifyEmail,
+            'mustVerifyEmail' => $user instanceof MustVerifyEmail,
             'status' => session('status'),
+            // Read-only account facts shown on the profile page: the
+            // user's own shop (null for the platform team) and the
+            // plain label of their role.
+            'shopName' => $user->business?->name,
+            'roleLabel' => $user->is_platform_admin
+                ? 'Platform Admin'
+                : (\App\Support\Permissions::roles()[$user->role] ?? $user->role),
         ]);
     }
 

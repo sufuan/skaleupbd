@@ -113,7 +113,7 @@ function MyDashboard({ my, onBasis, onHourlyToday }) {
                 <div className="card">
                     <div style={{ display: 'flex', alignItems: 'center' }}><h3>{t('Web Order Report')}</h3>
                         <span style={{ marginLeft: 'auto' }}><TodayPill label={pill} /></span></div>
-                    <div style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: 10, padding: '2px 12px', margin: '12px 0 14px' }}>
+                    <div style={{ background: 'var(--track-bg)', border: '1px solid var(--track-line)', borderRadius: 10, padding: '2px 12px', margin: '12px 0 14px' }}>
                         <div className="ptabs" style={{ borderBottom: 'none', margin: 0 }}>
                             <span className={`ptab ${worTab === 'web' ? 'act' : ''}`} onClick={() => setWorTab('web')}>{t('Web Orders')}</span>
                             <span className={`ptab ${worTab === 'inc' ? 'act' : ''}`} onClick={() => setWorTab('inc')}>{t('Incomplete Orders')}</span>

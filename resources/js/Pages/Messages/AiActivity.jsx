@@ -46,7 +46,7 @@ export default function AiActivity({ stats, metrics, draftQueue, handed, ruleSta
                     <div key={d.kind + d.id} className="card" style={{ padding: '13px 15px', marginBottom: 10 }}>
                         <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
                             <b>{d.customer}</b>
-                            <span style={PILL('#f3f4f6', '#374151')}>{CH[d.channel] || d.channel}</span>
+                            <span style={PILL('var(--tgl-bg)', 'var(--tgl-ink)')}>{CH[d.channel] || d.channel}</span>
                             {d.status === 'flagged' && <span style={PILL('#fee2e2', '#dc2626')}>{t('Money figures did not match')}</span>}
                         </div>
                         {d.customer_text && <div style={{ fontSize: 13, color: '#64748B', marginTop: 5 }}>{t('Customer')}: "{d.customer_text}"</div>}
@@ -69,7 +69,7 @@ export default function AiActivity({ stats, metrics, draftQueue, handed, ruleSta
                 <h4 style={{ fontSize: 15, margin: '18px 0 10px' }}>{t('Handed to a human - why?')}</h4>
                 {handed.map((h) => (
                     <div key={h.id} className="card" style={{ padding: '13px 15px', marginBottom: 10 }}>
-                        <b>{h.customer}</b> <span style={PILL('#f3f4f6', '#374151')}>{CH[h.channel] || h.channel}</span>
+                        <b>{h.customer}</b> <span style={PILL('var(--tgl-bg)', 'var(--tgl-ink)')}>{CH[h.channel] || h.channel}</span>
                         <div style={{ fontSize: 13.5, marginTop: 5 }}>{h.reason}</div>
                         {h.last && <div style={{ fontSize: 13, color: '#64748B', marginTop: 3 }}>"{h.last}" - {t('the AI stopped and called you.')}</div>}
                         <div style={{ marginTop: 9 }}><Link href={`/messages/inbox?c=${h.id}`} className="ctl-btn" style={{ textDecoration: 'none' }}>{t('Open chat')}</Link></div>
@@ -82,7 +82,7 @@ export default function AiActivity({ stats, metrics, draftQueue, handed, ruleSta
                     <table className="tbl"><thead><tr><th>{t('Rule')}</th><th>{t('Times run')}</th><th>{t('Last ran')}</th><th></th></tr></thead>
                         <tbody>
                             {ruleStats.map((r) => (
-                                <tr key={r.name}><td>{r.name}</td><td>{r.count}</td><td>{r.last}</td><td><Link href="/settings?group=ai" style={{ color: '#411550', fontWeight: 600 }}>{t('See the rule in Settings')}</Link></td></tr>
+                                <tr key={r.name}><td>{r.name}</td><td>{r.count}</td><td>{r.last}</td><td><Link href="/settings?group=ai" style={{ color: 'var(--acc-ink)', fontWeight: 600 }}>{t('See the rule in Settings')}</Link></td></tr>
                             ))}
                             {ruleStats.length === 0 && <tr><td colSpan={4} className="mut">{t('No rules yet')}</td></tr>}
                         </tbody></table>

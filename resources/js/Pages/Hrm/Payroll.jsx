@@ -99,7 +99,7 @@ export default function Payroll({ month, run, runs, accounts, can_manage }) {
 
                 {!run && (
                     <div className="x-card">
-                        <p style={{ fontSize: 13.5, color: '#64748B', margin: 0 }}>{t('The account for this month has not been made yet. Pick a month above and press "Make the account". Only the staff whose monthly salary is set in User & Role come into this account.')}</p>
+                        <p style={{ fontSize: 13.5, color: '#64748B', margin: 0 }}>{t('The account for this month has not been made yet. Pick a month above and press "Make the account". Only the staff whose monthly salary is set in Settings → Staff & Roles come into this account.')}</p>
                     </div>
                 )}
 
@@ -118,7 +118,7 @@ export default function Payroll({ month, run, runs, accounts, can_manage }) {
                             <tbody>
                                 {run.items.map((i) => <ItemRow key={i.id} item={i} runStatus={run.status} canManage={can_manage} />)}
                                 {run.items.length === 0 && (
-                                    <tr><td colSpan={8} style={{ color: '#94A3B8' }}>{t('No one has a monthly salary set - go to User & Role and set the salaries.')}</td></tr>
+                                    <tr><td colSpan={8} style={{ color: '#94A3B8' }}>{t('No one has a monthly salary set - go to Settings → Staff & Roles and set the salaries.')}</td></tr>
                                 )}
                             </tbody>
                         </table>

@@ -54,8 +54,8 @@ class WebhookController extends Controller
                 })
                 ->first();
             if ($order) {
-                // Lifecycle changes need an actor; the business's admin stands in for the system.
-                $actor = User::where('business_id', $method->business_id)->where('is_admin', true)->first();
+                // Lifecycle changes need an actor; the shop's owner stands in for the system.
+                $actor = User::shopOwner((int) $method->business_id);
                 $booking->applyCourierStatus($order, (string) $payload['status'], $actor);
             }
         }
@@ -111,7 +111,7 @@ class WebhookController extends Controller
                     };
                 }
                 if ($status !== '') {
-                    $actor = User::where('business_id', $method->business_id)->where('is_admin', true)->first();
+                    $actor = User::shopOwner((int) $method->business_id);
                     $booking->applyCourierStatus($order, $status, $actor);
                 }
             }
@@ -156,7 +156,7 @@ class WebhookController extends Controller
                 'order.returned', 'order.returned-to-merchant', 'order.paid-return' => 'returned',
                 default => $event,
             };
-            $actor = User::where('business_id', $method->business_id)->where('is_admin', true)->first();
+            $actor = User::shopOwner((int) $method->business_id);
             app(BookingService::class)->applyCourierStatus($order, $status, $actor);
         }
 
@@ -195,7 +195,7 @@ class WebhookController extends Controller
                 'order.returned' => 'returned',
                 default => (string) ($request->input('status') ?: $event),
             };
-            $actor = User::where('business_id', $method->business_id)->where('is_admin', true)->first();
+            $actor = User::shopOwner((int) $method->business_id);
             app(BookingService::class)->applyCourierStatus($order, $status, $actor);
         }
 
@@ -230,7 +230,7 @@ class WebhookController extends Controller
             if (str_contains((string) $request->input('delivery_type', ''), 'partial')) {
                 $status = 'partial_' . $status;
             }
-            $actor = User::where('business_id', $method->business_id)->where('is_admin', true)->first();
+            $actor = User::shopOwner((int) $method->business_id);
             app(BookingService::class)->applyCourierStatus($order, $status, $actor);
         }
 

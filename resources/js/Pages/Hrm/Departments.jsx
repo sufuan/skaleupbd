@@ -40,7 +40,7 @@ function DeptCard({ dept, staffOptions, canManage }) {
                 )}
             </div>
             <p style={{ fontSize: 13.5, color: '#64748B', margin: '8px 0' }}>
-                {t('Head:')} <b style={{ color: '#1E293B' }}>{dept.head ? dept.head.name : t('Not set')}</b> · {t(':count staff', { count: dept.members.length })}
+                {t('Head:')} <b style={{ color: 'var(--head-ink)' }}>{dept.head ? dept.head.name : t('Not set')}</b> · {t(':count staff', { count: dept.members.length })}
             </p>
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                 {dept.members.map((m) => <span key={m.id} className="chip chip-grey">{m.name}</span>)}

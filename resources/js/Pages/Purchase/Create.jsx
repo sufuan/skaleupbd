@@ -59,7 +59,7 @@ export default function Create({ products, suppliers, today }) {
                             <div className="fld">
                                 <label>{t('Attachments (Optional)')}</label>
                                 <div className="upload-zone" onClick={() => fileRef.current?.click()}>
-                                    <span className="b" style={{ color: 'var(--acc)' }}>{t('Click to upload')}</span> {t('or drag and drop')}
+                                    <span className="b" style={{ color: 'var(--acc-ink)' }}>{t('Click to upload')}</span> {t('or drag and drop')}
                                     <div className="sm" style={{ marginTop: 4 }}>{t('Images or PDF, up to 5MB')} · {files.length}/10</div>
                                 </div>
                                 <input ref={fileRef} type="file" multiple accept="image/*,.pdf" style={{ display: 'none' }}

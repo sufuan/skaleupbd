@@ -289,13 +289,25 @@ class OrderToolsController extends Controller
     }
 
     // ---------- Super Edit ----------
+    // Gate (ধাপ ১): the shop's owner, or the platform admin as a support
+    // tool across shops. ধাপ ৪ turns this into the split orders.super_edit
+    // permission tick; owner-or-platform is the gate until then.
+    private function superEditGate(Request $request): void
+    {
+        $user = $request->user();
+        abort_unless($user && ($user->isPlatformAdmin() || $user->isShopOwner()), 403);
+    }
+
     public function superEdit(Request $request): Response
     {
-        abort_unless($request->user()->is_admin, 403);
+        $this->superEditGate($request);
+        $user = $request->user();
         $biz = $this->biz($request);
         $order = null;
         if ($invoice = $request->query('invoice')) {
-            $found = Order::where('business_id', $biz)->where('invoice_no', strtoupper(trim($invoice)))->with('items')->first();
+            $found = Order::where('invoice_no', strtoupper(trim($invoice)))
+                ->when(! $user->isPlatformAdmin(), fn ($q) => $q->where('business_id', $biz))
+                ->with('items')->first();
             if ($found) {
                 $order = ['id' => $found->id, 'invoice' => $found->invoice_no, 'name' => $found->customer_name,
                     'phone' => $found->customer_phone, 'status' => $found->status, 'total' => (float) $found->grand_total,
@@ -303,7 +315,7 @@ class OrderToolsController extends Controller
             }
         }
         $recent = OrderActivity::where('kind', 'super_edit')
-            ->whereHas('order', fn ($q) => $q->where('business_id', $biz))
+            ->when(! $user->isPlatformAdmin(), fn ($q) => $q->whereHas('order', fn ($o) => $o->where('business_id', $biz)))
             ->latest('created_at')->limit(15)->get()
             ->map(fn ($a) => ['text' => $a->text, 'time' => DhakaTime::fmt($a->created_at, 'd M, h:i A'), 'by' => $a->actor_name]);
 
@@ -315,8 +327,8 @@ class OrderToolsController extends Controller
 
     public function superEditSave(Request $request, Order $order): RedirectResponse
     {
-        abort_unless($request->user()->is_admin, 403);
-        abort_unless($order->business_id === $this->biz($request), 404);
+        $this->superEditGate($request);
+        abort_unless($request->user()->isPlatformAdmin() || $order->business_id === $this->biz($request), 404);
         $to = $request->validate(['status' => ['required', 'string']])['status'];
         $from = $order->status;
         $this->orders->changeStatus($order, $to, $request->user(), 'Super Edit override');

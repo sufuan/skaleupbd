@@ -9,10 +9,8 @@ use App\Models\Shift;
 use App\Models\Sop;
 use App\Models\User;
 use App\Services\AttendanceService;
-use App\Support\Permissions;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response as InertiaResponse;
@@ -485,90 +483,9 @@ class HrmController extends Controller
         return back()->with('success', 'Shift-এর কর্মী ঠিক করা হয়েছে।');
     }
 
-    // ---------- User & Role ----------
-
-    public function users(Request $request): InertiaResponse
-    {
-        $biz = $this->biz($request);
-        $showSalary = $this->adminOnly($request);
-
-        return Inertia::render('Hrm/Users', [
-            'users' => User::where('business_id', $biz)->orderBy('name')->get()
-                ->map(fn (User $u) => [
-                    'id' => $u->id,
-                    'name' => $u->name,
-                    'email' => $u->email,
-                    'role' => $u->role,
-                    'role_label' => Permissions::roles()[$u->role] ?? $u->role,
-                    'permissions' => $u->effectivePermissions(),
-                    'uses_default' => ! is_array($u->permissions) || $u->permissions === [],
-                    'monthly_salary' => $showSalary ? (float) $u->monthly_salary : 0,
-                    'staff_active' => (bool) $u->staff_active,
-                    'is_self' => $u->id === $request->user()->id,
-                ])->all(),
-            'modules' => Permissions::LABELS,
-            'roles' => Permissions::roles(),
-            'can_manage' => $this->adminOnly($request),
-        ]);
-    }
-
-    public function storeUser(Request $request): RedirectResponse
-    {
-        if (! $this->adminOnly($request)) {
-            return $this->deny();
-        }
-        $data = $request->validate([
-            'name' => 'required|string|max:120',
-            'email' => 'required|email|max:190|unique:users,email',
-            'password' => 'required|string|min:8',
-            'role' => ['required', Rule::in(array_keys(Permissions::roles()))],
-            'monthly_salary' => 'nullable|numeric|min:0',
-        ]);
-        $user = User::create([
-            'business_id' => $this->biz($request),
-            'name' => $data['name'],
-            'email' => $data['email'],
-            'password' => Hash::make($data['password']),
-            'role' => $data['role'],
-            'monthly_salary' => $data['monthly_salary'] ?? 0,
-            'email_verified_at' => now(),
-        ]);
-        $user->finance_access = in_array($data['role'], ['admin', 'accountant'], true) ? 'full' : 'entry';
-        $user->save();
-
-        return back()->with('success', 'নতুন User তৈরি হয়েছে।');
-    }
-
-    public function updateUser(Request $request, User $user): RedirectResponse
-    {
-        if (! $this->adminOnly($request) || $user->business_id !== $this->biz($request)) {
-            return $this->deny();
-        }
-        $data = $request->validate([
-            'name' => 'required|string|max:120',
-            'role' => ['required', Rule::in(array_keys(Permissions::roles()))],
-            'permissions' => 'nullable|array',
-            'permissions.*' => ['string', Rule::in(Permissions::ALL)],
-            'use_default' => 'boolean',
-            'monthly_salary' => 'nullable|numeric|min:0',
-            'staff_active' => 'boolean',
-        ]);
-        if ($user->id === $request->user()->id && $data['role'] !== 'admin') {
-            return back()->with('error', 'নিজের Role Admin থেকে বদলানো যাবে না।');
-        }
-        if ($user->id === $request->user()->id && ! ($data['staff_active'] ?? true)) {
-            return back()->with('error', 'নিজেকে বন্ধ করা যাবে না।');
-        }
-        $user->name = $data['name'];
-        $user->role = $data['role'];
-        $user->permissions = ($data['use_default'] ?? false) ? null : ($data['permissions'] ?? []);
-        $user->monthly_salary = $data['monthly_salary'] ?? 0;
-        $user->staff_active = $data['staff_active'] ?? true;
-        $user->finance_access = in_array($data['role'], ['admin', 'accountant'], true) ? 'full' : 'entry';
-        $user->save();
-
-        return back()->with('success', 'User বদলানো হয়েছে।');
-    }
+    // Staff logins and roles live in Settings → Staff & Roles
+    // (StaffRolesController) since ধাপ ৪ - the old User & Role
+    // page was removed from HRM on purpose (single-home rule).
 
     // ---------- HR Settings ----------
 

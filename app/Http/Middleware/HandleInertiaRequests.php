@@ -71,6 +71,11 @@ class HandleInertiaRequests extends Middleware
                 'permissions' => ($request->user() && Schema::hasColumn('users', 'role'))
                     ? $request->user()->effectivePermissions()
                     : \App\Support\Permissions::ALL,
+                // Four-tick map (view/edit/delete/export per module,
+                // ধাপ ৪) for shells that want action-level checks.
+                'permission_ticks' => ($request->user() && Schema::hasColumn('users', 'role_id'))
+                    ? $request->user()->permissionTicks()
+                    : [],
                 'payroll_enabled' => ($request->user() && $request->user()->business_id && Schema::hasTable('settings'))
                     ? (bool) app(\App\Services\SettingsService::class)->get('hr.'.$request->user()->business_id.'.payroll_enabled', false)
                     : false,

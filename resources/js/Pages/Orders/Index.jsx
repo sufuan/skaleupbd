@@ -130,17 +130,17 @@ export default function Index({ rows, counts, filters, pagination, pendingCount,
                     <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '12px 6px 4px', flexWrap: 'wrap' }}>
                         <span style={{ fontSize: 13.5 }}>{t('Page')} {pagination.current}</span>
                         {selected.length > 0 && <span className="sm mut">{selected.length} {t('selected')}</span>}
-                        <span style={{ fontSize: 13.5, color: '#374151' }}>{t('Rows per page')}
+                        <span style={{ fontSize: 13.5, color: 'var(--tgl-ink)' }}>{t('Rows per page')}
                             <select value={filters.per_page} onChange={(e) => go({ per_page: e.target.value, page: 1 })}
-                                style={{ marginLeft: 8, height: 30, border: '1px solid #E5E7EB', borderRadius: 6, background: '#fff', fontFamily: 'inherit' }}>
+                                style={{ marginLeft: 8, height: 30, border: '1px solid var(--track-line)', borderRadius: 6, background: 'var(--field-bg)', color: 'var(--ink)', fontFamily: 'inherit' }}>
                                 {[20, 50, 100].map((n) => <option key={n} value={n}>{n}</option>)}
                             </select>
                         </span>
                         <span style={{ marginLeft: 'auto', display: 'inline-flex', gap: 14, alignItems: 'center', fontSize: 13.5 }}>
                             <b>{t('Page')} {pagination.current} {t('of')} {pagination.last}</b>
-                            <button className="mini-btn" style={{ width: 'auto', height: 'auto', border: 'none', background: 'transparent', fontSize: 13.5, color: pagination.current <= 1 ? '#94A3B8' : '#42174F', fontWeight: 500 }}
+                            <button className="mini-btn" style={{ width: 'auto', height: 'auto', border: 'none', background: 'transparent', fontSize: 13.5, color: pagination.current <= 1 ? 'var(--faint-ink)' : 'var(--pg-ink)', fontWeight: 500 }}
                                 disabled={pagination.current <= 1} onClick={() => go({ page: pagination.current - 1 })}><span aria-hidden="true">‹ </span>{t('Previous')}</button>
-                            <button className="mini-btn" style={{ width: 'auto', height: 'auto', border: 'none', background: 'transparent', fontSize: 13.5, color: pagination.current >= pagination.last ? '#94A3B8' : '#42174F', fontWeight: 500 }}
+                            <button className="mini-btn" style={{ width: 'auto', height: 'auto', border: 'none', background: 'transparent', fontSize: 13.5, color: pagination.current >= pagination.last ? 'var(--faint-ink)' : 'var(--pg-ink)', fontWeight: 500 }}
                                 disabled={pagination.current >= pagination.last} onClick={() => go({ page: pagination.current + 1 })}>{t('Next')}<span aria-hidden="true"> ›</span></button>
                         </span>
                     </div>

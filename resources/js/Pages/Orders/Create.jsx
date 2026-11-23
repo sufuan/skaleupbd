@@ -103,7 +103,7 @@ export default function Create({ sources, products, couriers, defaults, toggles,
                 <form onSubmit={submit}>
                     <div className={`ord-grid layout-${opts.layout}`}>
                         <div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16, flexWrap: 'wrap', background: '#fff', border: '1px solid #EEF2F7', borderRadius: 16, padding: '10px 16px', boxShadow: '0 1px 2px rgba(17,24,39,.04),0 1px 3px rgba(17,24,39,.06)' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16, flexWrap: 'wrap', background: 'var(--card)', border: '1px solid var(--card-line)', borderRadius: 16, padding: '10px 16px', boxShadow: '0 1px 2px rgba(17,24,39,.04),0 1px 3px rgba(17,24,39,.06)' }}>
                                 <span className="seg" style={{ fontSize: 13.5 }}>
                                     <button type="button" className={mode === 'manual' ? 'on' : ''} onClick={() => setMode('manual')}>{t('Manual')}</button>
                                     <button type="button" className={mode === 'approved' ? 'on' : ''} onClick={() => setMode('approved')}>{t('Approved')}</button>

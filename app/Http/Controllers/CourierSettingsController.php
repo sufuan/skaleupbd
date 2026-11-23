@@ -22,7 +22,7 @@ class CourierSettingsController extends Controller
     /** Masked view of a method for the Settings page — secrets never leave the server. */
     public static function methodView(CourierMethod $m): array
     {
-        $secretKeys = ['api_key', 'api_secret', 'client_secret', 'password', 'account_password', 'access_token', 'webhook_token', 'client_context'];
+        $secretKeys = ['api_key', 'api_secret', 'client_secret', 'password', 'account_password', 'access_token', 'webhook_token', 'webhook_secret', 'client_context'];
         $creds = [];
         foreach (($m->credentials ?? []) as $k => $v) {
             $isSecret = in_array($k, $secretKeys, true);

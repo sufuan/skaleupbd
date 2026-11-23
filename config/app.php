@@ -30,20 +30,6 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Dev Quick Login
-    |--------------------------------------------------------------------------
-    |
-    | One-click platform-admin login from the login page (owner-approved for
-    | the pre-launch period). Always on when APP_ENV=local; on any other
-    | environment it needs DEV_LOGIN_ENABLED=true in .env. Kill switch:
-    | remove that line and run optimize:clear — no code change needed.
-    |
-    */
-
-    'dev_login_enabled' => (bool) env('DEV_LOGIN_ENABLED', false),
-
-    /*
-    |--------------------------------------------------------------------------
     | Application Debug Mode
     |--------------------------------------------------------------------------
     |

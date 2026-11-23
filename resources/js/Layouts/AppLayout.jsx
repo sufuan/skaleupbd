@@ -69,7 +69,7 @@ const NAV = [
         { label: 'Storefront', icon: 'store', children: [{ label: 'Overview', href: '/storefront' }, { label: 'My Pages', href: '/storefront/pages' }, { label: 'Store Settings', href: '/storefront/settings' }], href: '/storefront' },
     ]},
     { sec: 'Business Control', items: [
-        { label: 'HRM', icon: 'briefcase', children: [{ label: 'HR Dashboard', href: '/hrm' }, { label: 'Attendance', href: '/hrm/attendance' }, { label: 'Departments & SOP', href: '/hrm/departments' }, { label: 'User & Role', href: '/hrm/users' }, { label: 'HR Settings', href: '/hrm/settings' }], href: '/hrm' },
+        { label: 'HRM', icon: 'briefcase', children: [{ label: 'HR Dashboard', href: '/hrm' }, { label: 'Attendance', href: '/hrm/attendance' }, { label: 'Departments & SOP', href: '/hrm/departments' }, { label: 'HR Settings', href: '/hrm/settings' }], href: '/hrm' },
         { label: 'Finance', icon: 'wallet', children: [{ label: 'Finance Dashboard', href: '/finance' }, { label: 'Accounts & Bank', href: '/finance/accounts' }, { label: 'Income & Expense', href: '/finance/income-expense' }, { label: 'Cash Flow', href: '/finance/cash-flow' }], href: '/finance' },
         { label: 'Reports', icon: 'report', children: [{ label: 'Profit & Loss', href: '/reports' }, { label: 'Order Report', href: '/reports/order' }, { label: 'Courier Report', href: '/reports/courier' }, { label: 'Product Report', href: '/reports/product' }, { label: 'Employee Report', href: '/reports/employee' }, { label: 'Call Center Report', href: '/reports/call' }, { label: 'Customer Report', href: '/reports/customer' }], href: '/reports' },
         { label: 'Points & Billing', icon: 'wallet', href: '/billing' },
@@ -371,6 +371,10 @@ export default function AppLayout({ children }) {
             }
             if (item.settings && isPlatform) {
                 item = { ...item, children: [...item.children, { label: 'Seller Packages', g: 'packages' }] };
+            }
+            if (item.settings && props.auth?.user?.role === 'admin' && props.auth?.user?.business_id) {
+                // Staff & Roles (ধাপ ৪) is the shop owner's alone.
+                item = { ...item, children: [...item.children, { label: 'Staff & Roles', g: 'staff' }] };
             }
             if (item.label === 'Storefront') {
                 // Server-computed (StorefrontService::menuState): no

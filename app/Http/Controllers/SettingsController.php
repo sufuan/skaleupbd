@@ -87,6 +87,10 @@ class SettingsController extends Controller
                 'proposals' => \App\Models\AiRuleProposal::where('business_id', $biz)->orderByRaw("CASE WHEN status = 'pending' THEN 0 ELSE 1 END")->orderByDesc('id')->get()
                     ->map(fn ($p) => ['id' => $p->id, 'title' => $p->title, 'detail' => $p->detail, 'status' => $p->status])->all(),
             ],
+            // Staff & Roles group (ধাপ ৪): staff logins and seller-
+            // defined roles live here now, not in HRM. Null for
+            // platform admins and anyone without a shop.
+            'staffRoles' => app(\App\Http\Controllers\StaffRolesController::class)->pageData($request),
             'totpEnabled' => $this->totp->enabled(),
             'totpEnrolled' => (bool) $request->user()?->hasTotpEnabled(),
             'isPlatform' => (bool) ($request->user()?->is_platform_admin),
@@ -607,6 +611,7 @@ class SettingsController extends Controller
 
     public function testAiTalker(Request $request): \Illuminate\Http\JsonResponse
     {
+        abort_unless((bool) ($request->user()?->is_platform_admin), 403);
         $data = $request->validate([
             'provider' => ['required', 'string', 'in:gemini,claude'],
             'key' => ['nullable', 'string', 'max:300'],
@@ -781,6 +786,7 @@ class SettingsController extends Controller
 
     public function checkChannel(Request $request): \Illuminate\Http\JsonResponse
     {
+        abort_unless((bool) ($request->user()?->is_platform_admin), 403);
         $channel = (string) $request->input('channel', '');
         abort_unless(in_array($channel, ['facebook', 'whatsapp', 'instagram'], true), 422);
 

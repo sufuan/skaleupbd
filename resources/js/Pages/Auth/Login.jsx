@@ -1,13 +1,28 @@
 import GuestLayout from '@/Layouts/GuestLayout';
 import { t } from '@/lib/i18n';
-import { Head, Link, router, useForm } from '@inertiajs/react';
+import { Head, Link, useForm } from '@inertiajs/react';
+import { useEffect } from 'react';
 
-export default function Login({ status, canResetPassword, devLogin }) {
+export default function Login({ status, canResetPassword }) {
     const { data, setData, post, processing, errors, reset } = useForm({
         email: '',
         password: '',
         remember: false,
     });
+
+    // Local dev convenience: public/dev-autofill.js adds "Admin Login" /
+    // "Dashboard Login" buttons that only fill this form with test
+    // accounts. Purely client-side, no backend involved. Deleting that
+    // one file removes the feature and this page works exactly the same.
+    useEffect(() => {
+        const script = document.createElement('script');
+        script.src = '/dev-autofill.js';
+        script.async = true;
+        document.body.appendChild(script);
+        return () => {
+            script.remove();
+        };
+    }, []);
 
     const submit = (e) => {
         e.preventDefault();
@@ -45,16 +60,6 @@ export default function Login({ status, canResetPassword, devLogin }) {
                     {t('Log in')}
                 </button>
             </form>
-            {devLogin && (
-                <button
-                    type="button"
-                    className="btn sec"
-                    style={{ width: '100%', justifyContent: 'center', padding: '11px 16px', marginTop: 10 }}
-                    onClick={() => router.post(route('dev.login'))}
-                >
-                    {t('Dev quick login')}
-                </button>
-            )}
             <p className="sm mut" style={{ textAlign: 'center', marginTop: 18 }}>
                 {t('New to SkaleUp BD?')} <Link href={route('register')} className="auth-link">{t('Create an account')}</Link>
             </p>

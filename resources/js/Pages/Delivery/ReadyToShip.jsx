@@ -52,7 +52,7 @@ export default function ReadyToShip({ orders, methods, search }) {
                                     <tr key={o.id}>
                                         <td><input type="checkbox" checked={picked.includes(o.id)} onChange={() => toggle(o.id)} /></td>
                                         <td>
-                                            <Link href={`/orders/${o.id}`} className="b" style={{ color: 'var(--acc)' }}>{o.invoice}</Link>
+                                            <Link href={`/orders/${o.id}`} className="b" style={{ color: 'var(--acc-ink)' }}>{o.invoice}</Link>
                                             <div className="sm mut">{o.date}</div>
                                         </td>
                                         <td><div className="b">{o.customer_name}</div><div className="sm mut">{o.customer_phone}</div></td>

@@ -10,11 +10,11 @@ const CH = {
     whatsapp: { label: 'WhatsApp', bg: '#dcfce7', tx: '#065f46', avatar: '#065f46' },
     instagram: { label: 'Instagram', bg: '#fce7f3', tx: '#be185d', avatar: '#be185d' },
 };
-const BTN = { background: '#411550', color: '#fff', border: 'none', padding: '9px 16px', borderRadius: 8, fontWeight: 600, cursor: 'pointer', fontSize: 13.5 };
-const BTN2 = { background: '#fff', color: '#411550', border: '1px solid #d8cfe0', padding: '9px 14px', borderRadius: 8, fontWeight: 600, cursor: 'pointer', fontSize: 13.5 };
-const BUB_C = { alignSelf: 'flex-start', background: '#F4EDF7', borderRadius: 14, padding: '10px 13px', maxWidth: '75%', fontSize: 13.5, whiteSpace: 'pre-wrap' };
-const BUB_B = { alignSelf: 'flex-end', background: '#411550', color: '#fff', borderRadius: 14, padding: '10px 13px', maxWidth: '75%', fontSize: 13.5, whiteSpace: 'pre-wrap' };
-const CAP = { alignSelf: 'flex-end', fontSize: 11.5, color: '#92400e', marginTop: -4 };
+const BTN = { background: 'var(--acc-fill)', color: '#fff', border: 'none', padding: '9px 16px', borderRadius: 8, fontWeight: 600, cursor: 'pointer', fontSize: 13.5 };
+const BTN2 = { background: 'var(--card)', color: 'var(--acc-ink)', border: '1px solid var(--line)', padding: '9px 14px', borderRadius: 8, fontWeight: 600, cursor: 'pointer', fontSize: 13.5 };
+const BUB_C = { alignSelf: 'flex-start', background: 'var(--sel-bg)', borderRadius: 14, padding: '10px 13px', maxWidth: '75%', fontSize: 13.5, whiteSpace: 'pre-wrap' };
+const BUB_B = { alignSelf: 'flex-end', background: 'var(--acc-fill)', color: '#fff', borderRadius: 14, padding: '10px 13px', maxWidth: '75%', fontSize: 13.5, whiteSpace: 'pre-wrap' };
+const CAP = { alignSelf: 'flex-end', fontSize: 11.5, color: 'var(--note-ink)', marginTop: -4 };
 const PILL = (bg, tx) => ({ display: 'inline-block', fontSize: 11, fontWeight: 700, borderRadius: 99, padding: '2px 9px', background: bg, color: tx });
 
 function DraftCard({ draft }) {
@@ -23,18 +23,18 @@ function DraftCard({ draft }) {
     const isOrder = draft.kind === 'order_summary';
     const approve = () => router.post(`/messages/drafts/${draft.id}/approve`, editing ? { body } : {}, { preserveScroll: true });
     return (
-        <div style={{ background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 12, padding: 13, marginTop: 10 }}>
+        <div style={{ background: 'var(--note-bg)', border: '1px solid var(--note-line)', borderRadius: 12, padding: 13, marginTop: 10 }}>
             <b style={{ fontSize: 13.5 }}>{isOrder ? t('AI Order Summary') : t('AI Suggested Reply')}</b>{' '}
             {draft.status === 'flagged'
                 ? <span style={PILL('#fee2e2', '#dc2626')}>{t('Money figures did not match - check before sending')}</span>
                 : <span style={PILL('#fef3c7', '#92400e')}>{t('Needs your approval')}</span>}
             {editing
-                ? <textarea value={body} onChange={(e) => setBody(e.target.value)} rows={4} style={{ width: '100%', padding: '9px 11px', border: '1px solid #d1d5db', borderRadius: 9, fontSize: 13.5, margin: '8px 0' }} />
+                ? <textarea value={body} onChange={(e) => setBody(e.target.value)} rows={4} style={{ width: '100%', padding: '9px 11px', border: '1px solid var(--field-line)', borderRadius: 9, fontSize: 13.5, margin: '8px 0' }} />
                 : <p style={{ fontSize: 13.5, margin: '8px 0', whiteSpace: 'pre-wrap' }}>{draft.body}</p>}
-            <div style={{ fontSize: 12, color: '#92400e', marginBottom: 9 }}>
+            <div style={{ fontSize: 12, color: 'var(--note-ink)', marginBottom: 9 }}>
                 {draft.no_rule
                     ? <>{t('No rule matched - the AI drafted this from the product description. Check it before sending.')}</>
-                    : <>{t('Rule')}: {draft.rule}{draft.ladder_step ? ` - ${t('ladder step')} ${draft.ladder_step}` : ''} · <Link href="/settings?group=ai" style={{ color: '#92400e', fontWeight: 700 }}>{t('Change the rule in Settings')}</Link></>}
+                    : <>{t('Rule')}: {draft.rule}{draft.ladder_step ? ` - ${t('ladder step')} ${draft.ladder_step}` : ''} · <Link href="/settings?group=ai" style={{ color: 'var(--note-ink)', fontWeight: 700 }}>{t('Change the rule in Settings')}</Link></>}
             </div>
             <button type="button" style={BTN} onClick={approve}>{isOrder ? t('Approve & Create Order') : t('Approve & Send')}</button>{' '}
             {!isOrder && <><button type="button" style={BTN2} onClick={() => setEditing(!editing)}>{t('Edit')}</button>{' '}</>}
@@ -82,8 +82,8 @@ export default function Inbox({ conversations, selected, report, aiMode, aiPanic
         return () => clearInterval(id);
     }, []);
 
-    const toggleBtn = (active) => ({ background: active ? '#411550' : '#f3f4f6', color: active ? '#fff' : '#374151', border: 'none', padding: '8px 18px', borderRadius: 99, fontWeight: 700, cursor: 'pointer', fontSize: 13 });
-    const chip = (active) => ({ display: 'inline-block', fontSize: 11, fontWeight: 700, borderRadius: 99, background: active ? '#411550' : '#f3f4f6', color: active ? '#fff' : '#374151', cursor: 'pointer', padding: '5px 12px' });
+    const toggleBtn = (active) => ({ background: active ? 'var(--acc-fill)' : 'var(--tgl-bg)', color: active ? '#fff' : 'var(--tgl-ink)', border: 'none', padding: '8px 18px', borderRadius: 99, fontWeight: 700, cursor: 'pointer', fontSize: 13 });
+    const chip = (active) => ({ display: 'inline-block', fontSize: 11, fontWeight: 700, borderRadius: 99, background: active ? 'var(--acc-fill)' : 'var(--tgl-bg)', color: active ? '#fff' : 'var(--tgl-ink)', cursor: 'pointer', padding: '5px 12px' });
 
     return (
         <AppLayout title={t('Inbox')}>
@@ -106,7 +106,7 @@ export default function Inbox({ conversations, selected, report, aiMode, aiPanic
                         <table className="tbl"><thead><tr><th>{t('Rule')}</th><th>{t('Times run')}</th><th>{t('Last ran')}</th><th></th></tr></thead>
                             <tbody>
                                 {report.rule_stats.map((r) => (
-                                    <tr key={r.name}><td>{r.name}</td><td>{r.count}</td><td>{r.last}</td><td><Link href="/settings?group=ai" style={{ color: '#411550', fontWeight: 600 }}>{t('See the rule in Settings')}</Link></td></tr>
+                                    <tr key={r.name}><td>{r.name}</td><td>{r.count}</td><td>{r.last}</td><td><Link href="/settings?group=ai" style={{ color: 'var(--acc-ink)', fontWeight: 600 }}>{t('See the rule in Settings')}</Link></td></tr>
                                 ))}
                                 {report.rule_stats.length === 0 && <tr><td colSpan={4} className="mut">{t('No rules yet')}</td></tr>}
                             </tbody></table>
@@ -121,13 +121,13 @@ export default function Inbox({ conversations, selected, report, aiMode, aiPanic
                         {aiPanic
                             ? <span style={PILL('#fee2e2', '#dc2626')}>{t('AI is paused - Pause all AI is on')}</span>
                             : <span style={PILL('#dcfce7', '#15803d')}>{aiMode === 'auto' || aiMode === 'full_auto' ? t('AI is on · Auto - safe replies go by themselves') : t('AI is on · Draft only - AI writes, you send')}</span>}
-                        <span style={{ fontSize: 12.5, color: '#64748B' }}>{t('First-week rule - a wrong answer must not reach the customer')}</span>
+                        <span style={{ fontSize: 12.5, color: 'var(--mut-ink)' }}>{t('First-week rule - a wrong answer must not reach the customer')}</span>
                         <button type="button" onClick={() => router.post('/messages/panic', {}, { preserveScroll: true })} style={{ ...BTN2, marginLeft: 'auto' }}>{aiPanic ? t('Resume AI') : t('Pause all AI')}</button>
                     </div>
 
                     <div className="msg-panes">
                         <div className="card" style={{ width: 290, flexShrink: 0, padding: 10 }}>
-                            <input placeholder={t('Search conversations...')} value={search} onChange={(e) => setSearch(e.target.value)} style={{ width: '100%', padding: '9px 11px', border: '1px solid #d1d5db', borderRadius: 8, marginBottom: 9 }} />
+                            <input placeholder={t('Search conversations...')} value={search} onChange={(e) => setSearch(e.target.value)} style={{ width: '100%', padding: '9px 11px', border: '1px solid var(--field-line)', borderRadius: 8, marginBottom: 9, background: 'var(--field-bg)', color: 'var(--ink)' }} />
                             <div style={{ display: 'flex', gap: 6, marginBottom: 10, flexWrap: 'wrap' }}>
                                 {[['all', 'All'], ['facebook', 'Messenger'], ['whatsapp', 'WhatsApp'], ['instagram', 'Instagram']].map(([v, l]) => (
                                     <span key={v} style={chip(channel === v)} onClick={() => setChannel(v)}>{t(l)}</span>
@@ -137,18 +137,18 @@ export default function Inbox({ conversations, selected, report, aiMode, aiPanic
                                 {list.map((c) => {
                                     const cc = CH[c.channel] || CH.facebook;
                                     return (
-                                        <Link key={c.id} href={`/messages/inbox?c=${c.id}`} style={{ display: 'block', padding: 10, borderRadius: 10, cursor: 'pointer', background: selected && selected.id === c.id ? '#F4EDF7' : '', textDecoration: 'none', color: 'inherit' }}>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between' }}><b>{c.customer_name}</b><span style={{ fontSize: 11, color: '#94A3B8' }}>{c.time}</span></div>
-                                            <div style={{ fontSize: 12, color: '#64748B' }}>{c.snippet}</div>
+                                        <Link key={c.id} href={`/messages/inbox?c=${c.id}`} style={{ display: 'block', padding: 10, borderRadius: 10, cursor: 'pointer', background: selected && selected.id === c.id ? 'var(--sel-bg)' : '', textDecoration: 'none', color: 'inherit' }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between' }}><b>{c.customer_name}</b><span style={{ fontSize: 11, color: 'var(--faint-ink)' }}>{c.time}</span></div>
+                                            <div style={{ fontSize: 12, color: 'var(--mut-ink)' }}>{c.snippet}</div>
                                             <span style={PILL(cc.bg, cc.tx)}>{cc.label}</span>{' '}
                                             {c.has_draft && <span style={PILL('#fef3c7', '#92400e')}>{t('Draft ready')}</span>}
                                             {c.ai_replied && <span style={PILL('#dcfce7', '#15803d')}>{t('AI replied')}</span>}
                                             {c.needs_human && <span style={PILL('#fee2e2', '#dc2626')}>{t('Needs a human')}</span>}
-                                            {c.unread > 0 && <span style={PILL('#411550', '#fff')}>{c.unread}</span>}
+                                            {c.unread > 0 && <span style={PILL('var(--acc-fill)', '#fff')}>{c.unread}</span>}
                                         </Link>
                                     );
                                 })}
-                                {list.length === 0 && <div style={{ fontSize: 13, color: '#64748B', padding: 8 }}>{t('No conversations')}</div>}
+                                {list.length === 0 && <div style={{ fontSize: 13, color: 'var(--mut-ink)', padding: 8 }}>{t('No conversations')}</div>}
                             </div>
                         </div>
 
@@ -157,7 +157,7 @@ export default function Inbox({ conversations, selected, report, aiMode, aiPanic
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6, flexWrap: 'wrap' }}>
                                     <b style={{ fontSize: 15.5 }}>{selected.customer_name}</b>
                                     <span style={PILL(ch.bg, ch.tx)}>{ch.label}</span>
-                                    <span style={PILL('#f3f4f6', '#374151')}>{t('24h window: Open')}</span>
+                                    <span style={PILL('var(--tgl-bg)', 'var(--tgl-ink)')}>{t('24h window: Open')}</span>
                                     <button type="button" onClick={() => router.post(`/messages/conversations/${selected.id}/toggle-ai`, {}, { preserveScroll: true })} style={{ ...BTN2, marginLeft: 'auto', padding: '6px 12px' }}>{selected.ai_paused ? t('AI: Off for this chat') : t('AI: On for this chat')}</button>
                                     <Link href="/orders/create" style={{ ...BTN, padding: '7px 13px', textDecoration: 'none' }}>{t('Create Order')}</Link>
                                 </div>
@@ -174,17 +174,17 @@ export default function Inbox({ conversations, selected, report, aiMode, aiPanic
                                                 {m.body ? <div>{m.body}</div> : null}
                                             </div>
                                             {m.direction === 'out' && m.sender === 'ai' && m.rule && (
-                                                <div style={CAP}>{t('Rule')}: {m.rule} · <Link href="/settings?group=ai" style={{ color: '#92400e', fontWeight: 700 }}>{t('Settings')}</Link></div>
+                                                <div style={CAP}>{t('Rule')}: {m.rule} · <Link href="/settings?group=ai" style={{ color: 'var(--note-ink)', fontWeight: 700 }}>{t('Settings')}</Link></div>
                                             )}
                                         </div>
                                     ))}
-                                    {selected.messages.length === 0 && <div style={{ color: '#64748B', fontSize: 13 }}>{t('No messages yet')}</div>}
+                                    {selected.messages.length === 0 && <div style={{ color: 'var(--mut-ink)', fontSize: 13 }}>{t('No messages yet')}</div>}
                                 </div>
                                 <div>
                                     {selected.drafts.map((d) => <DraftCard key={d.id} draft={d} />)}
                                 </div>
                                 <form onSubmit={sendReply} style={{ display: 'flex', gap: 9, marginTop: 10 }}>
-                                    <input placeholder={t('Type a message...')} value={reply.data.body} onChange={(e) => reply.setData('body', e.target.value)} style={{ flex: 1, minWidth: 0, padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: 9 }} />
+                                    <input placeholder={t('Type a message...')} value={reply.data.body} onChange={(e) => reply.setData('body', e.target.value)} style={{ flex: 1, minWidth: 0, padding: '10px 12px', border: '1px solid var(--field-line)', borderRadius: 9, background: 'var(--field-bg)', color: 'var(--ink)' }} />
                                     <button type="submit" style={BTN} disabled={reply.processing}>{t('Send')}</button>
                                 </form>
                             </div>
@@ -195,12 +195,12 @@ export default function Inbox({ conversations, selected, report, aiMode, aiPanic
                                 <div style={{ textAlign: 'center', marginBottom: 10 }}>
                                     <div style={{ width: 52, height: 52, borderRadius: '50%', background: ch.avatar, color: '#fff', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 19 }}>{selected.customer_name.replace('+', '').charAt(0).toUpperCase()}</div>
                                     <div style={{ fontWeight: 700, marginTop: 6 }}>{selected.customer_name}</div>
-                                    <div style={{ fontSize: 12, color: '#64748B' }}>{[selected.customer_phone, selected.customer_address].filter(Boolean).join(' · ')}</div>
+                                    <div style={{ fontSize: 12, color: 'var(--mut-ink)' }}>{[selected.customer_phone, selected.customer_address].filter(Boolean).join(' · ')}</div>
                                 </div>
                                 <div style={{ display: 'flex', justifyContent: 'space-around', textAlign: 'center', borderTop: '1px solid #eef2f7', borderBottom: '1px solid #eef2f7', padding: '10px 0' }}>
-                                    <div><b>{selected.stats.orders}</b><div style={{ fontSize: 11, color: '#64748B' }}>{t('Orders')}</div></div>
-                                    <div><b style={{ color: '#16a34a' }}>{selected.stats.success !== null ? selected.stats.success + '%' : t('New')}</b><div style={{ fontSize: 11, color: '#64748B' }}>{t('Success rate')}</div></div>
-                                    <div><b>৳{Number(selected.stats.ltv).toLocaleString()}</b><div style={{ fontSize: 11, color: '#64748B' }}>{t('Lifetime value')}</div></div>
+                                    <div><b>{selected.stats.orders}</b><div style={{ fontSize: 11, color: 'var(--mut-ink)' }}>{t('Orders')}</div></div>
+                                    <div><b style={{ color: '#16a34a' }}>{selected.stats.success !== null ? selected.stats.success + '%' : t('New')}</b><div style={{ fontSize: 11, color: 'var(--mut-ink)' }}>{t('Success rate')}</div></div>
+                                    <div><b>৳{Number(selected.stats.ltv).toLocaleString()}</b><div style={{ fontSize: 11, color: 'var(--mut-ink)' }}>{t('Lifetime value')}</div></div>
                                 </div>
                                 {selected.product && selected.ladder.length > 1 && (
                                     <div style={{ marginTop: 12 }}>
@@ -212,18 +212,18 @@ export default function Inbox({ conversations, selected, report, aiMode, aiPanic
                                                 return (
                                                     <span key={i} style={{ display: 'contents' }}>
                                                         {i > 0 && <span>→</span>}
-                                                        <span style={{ background: isNow ? '#411550' : isFloor ? '#fee2e2' : '#f3f4f6', color: isNow ? '#fff' : isFloor ? '#dc2626' : 'inherit', borderRadius: 8, padding: '5px 9px', fontSize: 12.5, fontWeight: isNow || isFloor ? 700 : 400 }}>৳{Number(rung).toLocaleString()}{i === 0 ? ` ${t('price')}` : isNow ? ` ${t('now')}` : isFloor ? ' floor' : ''}</span>
+                                                        <span style={{ background: isNow ? 'var(--acc-fill)' : isFloor ? '#fee2e2' : 'var(--tgl-bg)', color: isNow ? '#fff' : isFloor ? '#dc2626' : 'inherit', borderRadius: 8, padding: '5px 9px', fontSize: 12.5, fontWeight: isNow || isFloor ? 700 : 400 }}>৳{Number(rung).toLocaleString()}{i === 0 ? ` ${t('price')}` : isNow ? ` ${t('now')}` : isFloor ? ' floor' : ''}</span>
                                                     </span>
                                                 );
                                             })}
                                         </div>
-                                        <div style={{ fontSize: 12, color: '#64748B', marginTop: 7 }}>{t('The AI never goes below the floor - held back by code.')}</div>
+                                        <div style={{ fontSize: 12, color: 'var(--mut-ink)', marginTop: 7 }}>{t('The AI never goes below the floor - held back by code.')}</div>
                                     </div>
                                 )}
                                 {selected.orders.length > 0 && (
                                     <div style={{ marginTop: 12 }}>
                                         <b style={{ fontSize: 13 }}>{t('Previous orders')}</b>
-                                        <div style={{ fontSize: 12.5, color: '#374151', marginTop: 6 }}>
+                                        <div style={{ fontSize: 12.5, color: 'var(--tgl-ink)', marginTop: 6 }}>
                                             {selected.orders.map((o) => <div key={o.invoice}>{o.invoice} · {o.status} · ৳{Number(o.total).toLocaleString()}</div>)}
                                         </div>
                                     </div>

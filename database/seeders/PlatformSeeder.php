@@ -29,7 +29,7 @@ class PlatformSeeder extends Seeder
         // Platform owner account (no shop of its own).
         User::updateOrCreate(
             ['email' => 'platform@skaleup.test'],
-            ['name' => 'Abu Sufian (Platform)', 'password' => 'password', 'email_verified_at' => now(), 'business_id' => null, 'is_admin' => true, 'is_platform_admin' => true],
+            ['name' => 'Abu Sufian (Platform)', 'password' => 'password', 'email_verified_at' => now(), 'business_id' => null, 'is_platform_admin' => true, 'role' => 'admin'],
         );
 
         // M19: the old time-tier packages are retired as a sales model.

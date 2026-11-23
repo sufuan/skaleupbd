@@ -1,15 +1,11 @@
-import InputError from '@/Components/InputError';
-import InputLabel from '@/Components/InputLabel';
-import PrimaryButton from '@/Components/PrimaryButton';
-import TextInput from '@/Components/TextInput';
-import { Transition } from '@headlessui/react';
 import { Link, useForm, usePage } from '@inertiajs/react';
 import { t } from '@/lib/i18n';
 
 export default function UpdateProfileInformation({
     mustVerifyEmail,
     status,
-    className = '',
+    shopName,
+    roleLabel,
 }) {
     const user = usePage().props.auth.user;
 
@@ -25,87 +21,111 @@ export default function UpdateProfileInformation({
         patch(route('profile.update'));
     };
 
+    const err = (msg) =>
+        msg ? (
+            <div style={{ color: 'var(--bad)', fontSize: 12.5, marginTop: 4 }}>
+                {msg}
+            </div>
+        ) : null;
+
     return (
-        <section className={className}>
-            <header>
-                <h2 className="text-lg font-medium text-gray-900">
-                    {t('Profile Information')}
-                </h2>
+        <section className="card">
+            <h3>{t('Profile Information')}</h3>
+            <div className="card-sub">
+                {t("Update your account's profile information and email address.")}
+            </div>
 
-                <p className="mt-1 text-sm text-gray-600">
-                    {t("Update your account's profile information and email address.")}
-                </p>
-            </header>
+            <div style={{ marginBottom: 16 }}>
+                <div className="kv">
+                    <span>{t('Shop')}</span>
+                    <b>{shopName || t('Platform')}</b>
+                </div>
+                <div className="kv">
+                    <span>{t('Role')}</span>
+                    <b>{roleLabel ? t(roleLabel) : ''}</b>
+                </div>
+            </div>
 
-            <form onSubmit={submit} className="mt-6 space-y-6">
-                <div>
-                    <InputLabel htmlFor="name" value={t('Name')} />
-
-                    <TextInput
+            <form onSubmit={submit}>
+                <div className="frow">
+                    <label className="fl" htmlFor="name">
+                        {t('Name')}
+                    </label>
+                    <input
                         id="name"
-                        className="mt-1 block w-full"
+                        className="inp"
                         value={data.name}
                         onChange={(e) => setData('name', e.target.value)}
                         required
-                        isFocused
+                        autoFocus
                         autoComplete="name"
                     />
-
-                    <InputError className="mt-2" message={errors.name} />
+                    {err(errors.name)}
                 </div>
 
-                <div>
-                    <InputLabel htmlFor="email" value={t('Email')} />
-
-                    <TextInput
+                <div className="frow mt16">
+                    <label className="fl" htmlFor="email">
+                        {t('Email')}
+                    </label>
+                    <input
                         id="email"
                         type="email"
-                        className="mt-1 block w-full"
+                        className="inp"
                         value={data.email}
                         onChange={(e) => setData('email', e.target.value)}
                         required
                         autoComplete="username"
                     />
-
-                    <InputError className="mt-2" message={errors.email} />
+                    {err(errors.email)}
                 </div>
 
                 {mustVerifyEmail && user.email_verified_at === null && (
-                    <div>
-                        <p className="mt-2 text-sm text-gray-800">
-                            {t('Your email address is unverified.')}
-                            <Link
-                                href={route('verification.send')}
-                                method="post"
-                                as="button"
-                                className="rounded-md text-sm text-gray-600 underline hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-                            >
-                                {t('Click here to re-send the verification email.')}
-                            </Link>
-                        </p>
-
+                    <div style={{ marginTop: 12, fontSize: 13.5 }}>
+                        {t('Your email address is unverified.')}{' '}
+                        <Link
+                            href={route('verification.send')}
+                            method="post"
+                            as="button"
+                            className="mini-link"
+                        >
+                            {t('Click here to re-send the verification email.')}
+                        </Link>
                         {status === 'verification-link-sent' && (
-                            <div className="mt-2 text-sm font-medium text-green-600">
+                            <div
+                                style={{
+                                    marginTop: 6,
+                                    fontWeight: 600,
+                                    color: 'var(--ok)',
+                                }}
+                            >
                                 {t('A new verification link has been sent to your email address.')}
                             </div>
                         )}
                     </div>
                 )}
 
-                <div className="flex items-center gap-4">
-                    <PrimaryButton disabled={processing}>{t('Save')}</PrimaryButton>
-
-                    <Transition
-                        show={recentlySuccessful}
-                        enter="transition ease-in-out"
-                        enterFrom="opacity-0"
-                        leave="transition ease-in-out"
-                        leaveTo="opacity-0"
-                    >
-                        <p className="text-sm text-gray-600">
+                <div
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 12,
+                        marginTop: 18,
+                    }}
+                >
+                    <button className="btn pri" disabled={processing}>
+                        {t('Save')}
+                    </button>
+                    {recentlySuccessful && (
+                        <span
+                            style={{
+                                fontSize: 13.5,
+                                fontWeight: 600,
+                                color: 'var(--ok)',
+                            }}
+                        >
                             {t('Saved.')}
-                        </p>
-                    </Transition>
+                        </span>
+                    )}
                 </div>
             </form>
         </section>

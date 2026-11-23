@@ -12,6 +12,7 @@ use App\Models\Sop;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Schema;
 
 /**
  * M13 HRM seed: roles for the existing owners, the Demo Shop team from the
@@ -125,6 +126,15 @@ class HrmSeeder extends Seeder
 
         if ($other) {
             Department::updateOrCreate(['business_id' => $other->id, 'name' => 'General'], []);
+        }
+
+        // Staff & Roles (ধাপ ৪): seeded staff keep exactly the
+        // access they have, now carried by auto-created roles.
+        if (Schema::hasTable('roles')) {
+            $backfill = app(\App\Services\StaffRoleBackfill::class);
+            foreach (Business::pluck('id') as $businessId) {
+                $backfill->forBusiness((int) $businessId);
+            }
         }
     }
 }

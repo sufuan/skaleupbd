@@ -63,7 +63,7 @@ export default function Settings({ sf, identity: identityIn, contact: contactIn,
                             <button key={c} type="button" aria-label={c} onClick={() => identity.setData('theme_color', c)}
                                 style={{ width: 36, height: 36, borderRadius: '50%', background: c, border: identity.data.theme_color === c ? '3px solid #411550' : '2px solid #D9CDE4', cursor: 'pointer' }} />
                         ))}
-                        <input type="color" value={identity.data.theme_color} onChange={(e) => identity.setData('theme_color', e.target.value)} style={{ width: 44, height: 36, border: '1px solid #D9CDE4', borderRadius: 8, background: '#fff', cursor: 'pointer' }} />
+                        <input type="color" value={identity.data.theme_color} onChange={(e) => identity.setData('theme_color', e.target.value)} style={{ width: 44, height: 36, border: '1px solid var(--sf-line)', borderRadius: 8, background: 'var(--field-bg)', cursor: 'pointer' }} />
                         <input className="fld" style={{ width: 110, marginTop: 0 }} value={identity.data.theme_color} onChange={(e) => identity.setData('theme_color', e.target.value)} maxLength={7} />
                     </div>
                     <div style={{ fontSize: 13.5, color: 'var(--muted)', marginTop: 12 }}>

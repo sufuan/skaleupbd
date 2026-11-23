@@ -175,7 +175,7 @@ export default function Scan({ todayEvents }) {
             <div className="scan-pg" style={{ maxWidth: 1500, margin: '0 auto' }}>
                 <div className="page-head" style={{ marginTop: 24, flexWrap: 'nowrap' }}>
                     <div>
-                        <h1 style={{ fontSize: 24, fontWeight: 700, color: '#411550' }}>{t('Logistics Scanner Console')}</h1>
+                        <h1 style={{ fontSize: 24, fontWeight: 700, color: 'var(--acc-ink)' }}>{t('Logistics Scanner Console')}</h1>
                         <p>{t('Scan order barcodes or invoices to perform high-speed state changes.')}</p>
                     </div>
                     <span style={{ marginLeft: 'auto', display: 'flex', gap: 8, flexShrink: 0 }}>
@@ -230,7 +230,7 @@ export default function Scan({ todayEvents }) {
                             </div>
                         </div>
 
-                        <div style={{ border: '1.5px dashed #D8CFE4', borderRadius: 12, padding: 16, marginTop: 16, background: '#fff' }}>
+                        <div style={{ border: '1.5px dashed var(--dash-line)', borderRadius: 12, padding: 16, marginTop: 16, background: 'var(--card)' }}>
                             <b style={{ fontSize: 14 }}>{t('Scanner Instructions & Shortcuts')}</b>
                             <ul className="muted-sm" style={{ margin: '8px 0 0', paddingLeft: 18, lineHeight: 1.7, listStyle: 'disc' }}>
                                 <li>{t('For barcode hardware scanners, keep this page open and focused. No input click is necessary.')}</li>
@@ -243,7 +243,7 @@ export default function Scan({ todayEvents }) {
                     <div>
                         <h3 className="scan-h" style={{ marginBottom: 14 }}>{t('SCAN SESSION SUMMARY')}</h3>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                            {statCard(t('UNIQUE PARCELS'), session.unique, '#411550', I.expand)}
+                            {statCard(t('UNIQUE PARCELS'), session.unique, 'var(--acc-ink)', I.expand)}
                             {statCard(t('SUCCESSFUL UPDATES'), session.success, '#16A34A', I.check)}
                             {statCard(t('FAILED ATTEMPTS'), session.failed, '#DC2626', I.cross)}
                             {statCard(t('DUPLICATE / ALREADY UPDATED'), session.duplicate, '#D97706', I.copy)}

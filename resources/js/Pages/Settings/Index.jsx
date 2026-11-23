@@ -1,5 +1,6 @@
 import CourierSettings from './CourierSettings';
 import PaymentGatewayForm from './PaymentGatewayForm';
+import StaffRoles from './StaffRoles';
 import AppLayout from '@/Layouts/AppLayout';
 import { t } from '@/lib/i18n';
 import { Head, Link, router, useForm } from '@inertiajs/react';
@@ -919,8 +920,12 @@ function RegistrationVerificationForm({ registration }) {
     );
 }
 
-export default function SettingsIndex({ group: initial = 'home', totpEnabled = false, totpEnrolled = false, m2, couriers, ai, isPlatform = false, packagesData = null, channels = null, paymentGateway = null, platformPaymentGateway = null, home = null, integration = null }) {
-    const groups = isPlatform ? [...GROUPS, { id: 'packages', label: 'Seller Packages', tabs: [] }] : GROUPS;
+export default function SettingsIndex({ group: initial = 'home', totpEnabled = false, totpEnrolled = false, m2, couriers, ai, isPlatform = false, packagesData = null, channels = null, paymentGateway = null, platformPaymentGateway = null, home = null, integration = null, staffRoles = null }) {
+    const groups = [
+        ...GROUPS,
+        ...(staffRoles?.can_manage ? [{ id: 'staff', label: 'Staff & Roles', tabs: [] }] : []),
+        ...(isPlatform ? [{ id: 'packages', label: 'Seller Packages', tabs: [] }] : []),
+    ];
     const [group, setGroup] = useState(initial);
     const g = groups.find((x) => x.id === group) || groups[0];
     const [tab, setTab] = useState(g.tabs[0]?.[0]);
@@ -950,6 +955,7 @@ export default function SettingsIndex({ group: initial = 'home', totpEnabled = f
                     {group === 'ai' && <Ai tab={tab} ai={ai} />}
                     {group === 'security' && <Security tab={tab} totpEnabled={totpEnabled} totpEnrolled={totpEnrolled} m2={m2} />}
                     {group === 'packages' && isPlatform && <PackagesSettings data={packagesData} />}
+                    {group === 'staff' && staffRoles?.can_manage && <StaffRoles data={staffRoles} />}
                 </div>
             </div>
         </AppLayout>

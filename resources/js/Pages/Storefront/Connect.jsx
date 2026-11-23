@@ -45,14 +45,14 @@ export default function Connect({ endpoint, businessPublicId, apiKey, freshKey, 
                     <div>
                         <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 4 }}>{t('Orders address (API)')}</div>
                         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-                            <code style={{ fontSize: 14, wordBreak: 'break-all', flex: '1 1 260px', background: '#F7F2FA', border: '1px solid #E7DEF0', borderRadius: 8, padding: '8px 12px' }}>{apiBase}</code>
+                            <code style={{ fontSize: 14, wordBreak: 'break-all', flex: '1 1 260px', background: 'var(--code-bg)', border: '1px solid var(--code-line)', borderRadius: 8, padding: '8px 12px' }}>{apiBase}</code>
                             <button className="btn" onClick={() => copy('api', apiBase)}>{copied === 'api' ? t('Copied!') : t('Copy')}</button>
                         </div>
                     </div>
                     <div>
                         <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 4 }}>{t('Your business ID (send it with every order)')}</div>
                         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-                            <code style={{ fontSize: 14, wordBreak: 'break-all', flex: '1 1 260px', background: '#F7F2FA', border: '1px solid #E7DEF0', borderRadius: 8, padding: '8px 12px' }}>{businessPublicId}</code>
+                            <code style={{ fontSize: 14, wordBreak: 'break-all', flex: '1 1 260px', background: 'var(--code-bg)', border: '1px solid var(--code-line)', borderRadius: 8, padding: '8px 12px' }}>{businessPublicId}</code>
                             <button className="btn" onClick={() => copy('biz', businessPublicId)}>{copied === 'biz' ? t('Copied!') : t('Copy')}</button>
                         </div>
                     </div>

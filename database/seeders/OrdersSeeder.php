@@ -29,10 +29,10 @@ class OrdersSeeder extends Seeder
 
         $admin = User::where('email', 'admin@skaleup.test')->first();
         if ($admin) {
-            $admin->forceFill(['business_id' => $biz->id, 'is_admin' => true])->save();
+            $admin->forceFill(['business_id' => $biz->id, 'is_owner' => true])->save();
         }
         User::updateOrCreate(['email' => 'tenant2@skaleup.test'],
-            ['name' => 'Other Owner', 'password' => 'password', 'email_verified_at' => now(), 'business_id' => $other->id, 'is_admin' => true]);
+            ['name' => 'Other Owner', 'password' => 'password', 'email_verified_at' => now(), 'business_id' => $other->id, 'is_owner' => true]);
 
         // Business + order settings (first-set only via SettingsService defaults below)
         foreach ([

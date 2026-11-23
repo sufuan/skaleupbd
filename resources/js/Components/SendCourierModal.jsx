@@ -59,7 +59,7 @@ export default function SendCourierModal({ order, methods, suggestedId = null, s
                                         {suggested && m.id === suggested.id && <span className="pill green" style={{ marginLeft: 8 }}>{t('Suggested')}</span>}
                                     </span>
                                     <span className="sm mut">{m.booking_mode === 'manual' ? t('Manual') : t('Automatic')} · {t('Charge')} ৳{Number(m.charge ?? 0).toLocaleString()}</span>
-                                    {suggested && m.id === suggested.id && reason && <span className="sm" style={{ color: 'var(--acc)' }}>{t(reason)}</span>}
+                                    {suggested && m.id === suggested.id && reason && <span className="sm" style={{ color: 'var(--acc-ink)' }}>{t(reason)}</span>}
                                 </button>
                             ))}
                         </div>

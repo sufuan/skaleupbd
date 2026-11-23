@@ -23,6 +23,13 @@ class BusinessProvisioner
         if ($user->business_id) {
             $existing = Business::find($user->business_id);
             if ($existing) {
+                // The user provision() is called for is always the shop's
+                // owner (registration is its only caller); keep the owner
+                // marker honest for shops linked before it existed.
+                if (! $user->is_owner) {
+                    $user->forceFill(['is_owner' => true])->save();
+                }
+
                 return $existing;
             }
         }
@@ -47,7 +54,7 @@ class BusinessProvisioner
             'status' => 'pending',
         ]);
 
-        $user->forceFill(['business_id' => $biz->id])->save();
+        $user->forceFill(['business_id' => $biz->id, 'is_owner' => true])->save();
 
         $this->ensureSeeds($biz);
 

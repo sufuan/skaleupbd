@@ -22,6 +22,7 @@ class ModuleAccess
         'finance' => 'finance',
         'hrm' => 'hrm',
         'settings' => 'settings',
+        'billing' => 'billing',
         'purchase' => 'purchase',
         'purchases' => 'purchase',
         'suppliers' => 'purchase',

@@ -84,7 +84,7 @@ export default function Dashboard(props) {
                                 <div className="barrow">→</div>
                                 <div className="bstep"><b>{fmt(bridge.still)}</b><span>{t('Still with the courier')}{bridge.estimate ? t(' (estimate)') : ''}</span></div>
                             </div>
-                            <div className="x-note">{t('If sales are high but cash in hand looks low, that is not a mistake - the rest is with the courier. Details:')} <Link href="/delivery/ledger" style={{ color: '#411550', fontWeight: 600 }}>{t('Courier Ledger')}</Link>
+                            <div className="x-note">{t('If sales are high but cash in hand looks low, that is not a mistake - the rest is with the courier. Details:')} <Link href="/delivery/ledger" style={{ color: 'var(--acc-ink)', fontWeight: 600 }}>{t('Courier Ledger')}</Link>
                                 {bridge.estimate && <>{t(" · Pathao's API has no payment account, so its part is estimated by subtracting hand-written payouts from Delivered.")}</>}</div>
                         </div>
 
@@ -122,8 +122,8 @@ export default function Dashboard(props) {
                                 <div className="x-kpi"><b>{fmt(figures.revenue)}</b><span>{t('Delivered sales')}</span></div>
                                 <div className="x-kpi"><b>{fmt(figures.otherIncome)}</b><span>{t('Other income')}</span></div>
                                 <div className="x-kpi red"><b>{fmt(figures.rtoLoss)}</b><span>{t('Return/RTO loss')}</span></div>
-                                <div className="x-kpi red"><b>{fmt(dues.total)}</b><span>{t('Customer dues (:count orders) -', { count: dues.count })} <Link href="/orders" style={{ color: '#411550' }}>{t('List')}</Link></span></div>
-                                <div className="x-kpi red"><b>{fmt(supplierDue || 0)}</b><span>{t('Supplier due -')} <Link href="/suppliers" style={{ color: '#411550' }}>{t('Suppliers')}</Link></span></div>
+                                <div className="x-kpi red"><b>{fmt(dues.total)}</b><span>{t('Customer dues (:count orders) -', { count: dues.count })} <Link href="/orders" style={{ color: 'var(--acc-ink)' }}>{t('List')}</Link></span></div>
+                                <div className="x-kpi red"><b>{fmt(supplierDue || 0)}</b><span>{t('Supplier due -')} <Link href="/suppliers" style={{ color: 'var(--acc-ink)' }}>{t('Suppliers')}</Link></span></div>
                                 <div className="x-kpi"><b>{fmt(figures.productCost)}</b><span>{t('Product cost')}</span></div>
                                 <div className="x-kpi"><b>{fmt(figures.courierCharges)}</b><span>{t('Courier charge (Delivered)')}</span></div>
                                 <div className="x-kpi"><b>{fmt(inventoryValue)}</b><span>{t('Inventory value (cost)')}</span></div>

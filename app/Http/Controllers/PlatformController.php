@@ -26,6 +26,12 @@ class PlatformController extends Controller
         abort_unless((bool) (auth()->user()?->is_platform_admin), 403);
     }
 
+    /** Point Packs live inside Settings (Seller Packages group); this route is the platform menu's way in. The constructor guard above makes it platform-only, like every other /admin page. */
+    public function packages(): RedirectResponse
+    {
+        return redirect('/settings?group=packages');
+    }
+
     private function currentSub(int $businessId): ?SellerSubscription
     {
         return SellerSubscription::where('business_id', $businessId)->with('package')

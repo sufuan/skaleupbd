@@ -84,6 +84,13 @@ Route::middleware(['auth', 'verified', 'totp'])->group(function () {
     })->name('sidebar.counts.seen');
 
     Route::get('/settings', [SettingsController::class, 'index'])->name('settings');
+    // Staff & Roles (ধাপ ৪): the single home for staff logins and
+    // seller-defined roles - moved out of HRM's old User & Role page.
+    Route::post('/settings/staff-roles', [\App\Http\Controllers\StaffRolesController::class, 'storeRole'])->name('settings.staffRoles.store');
+    Route::patch('/settings/staff-roles/{role}', [\App\Http\Controllers\StaffRolesController::class, 'updateRole'])->name('settings.staffRoles.update');
+    Route::delete('/settings/staff-roles/{role}', [\App\Http\Controllers\StaffRolesController::class, 'destroyRole'])->name('settings.staffRoles.destroy');
+    Route::post('/settings/staff', [\App\Http\Controllers\StaffRolesController::class, 'storeStaff'])->name('settings.staff.store');
+    Route::patch('/settings/staff/{user}', [\App\Http\Controllers\StaffRolesController::class, 'updateStaff'])->name('settings.staff.update');
     Route::post('/settings/totp', [SettingsController::class, 'updateTotp'])->name('settings.totp');
     Route::post('/settings/business', [SettingsController::class, 'updateBusiness'])->name('settings.business');
     Route::post('/settings/sources', [SettingsController::class, 'updateSources'])->name('settings.sources');
@@ -220,9 +227,6 @@ Route::middleware(['auth', 'verified', 'totp'])->group(function () {
     Route::patch('/hrm/shifts/{shift}', [\App\Http\Controllers\HrmController::class, 'updateShift'])->name('hrm.shifts.update');
     Route::delete('/hrm/shifts/{shift}', [\App\Http\Controllers\HrmController::class, 'destroyShift'])->name('hrm.shifts.destroy');
     Route::post('/hrm/shifts/{shift}/assign', [\App\Http\Controllers\HrmController::class, 'assignShift'])->name('hrm.shifts.assign');
-    Route::get('/hrm/users', [\App\Http\Controllers\HrmController::class, 'users'])->name('hrm.users');
-    Route::post('/hrm/users', [\App\Http\Controllers\HrmController::class, 'storeUser'])->name('hrm.users.store');
-    Route::patch('/hrm/users/{user}', [\App\Http\Controllers\HrmController::class, 'updateUser'])->name('hrm.users.update');
     Route::get('/hrm/settings', [\App\Http\Controllers\HrmController::class, 'settings'])->name('hrm.settings');
     Route::post('/hrm/settings', [\App\Http\Controllers\HrmController::class, 'updateSettings'])->name('hrm.settings.update');
     Route::post('/hrm/holidays', [\App\Http\Controllers\HrmController::class, 'storeHoliday'])->name('hrm.holidays.store');
@@ -368,7 +372,7 @@ Route::middleware(['auth', 'verified', 'totp'])->group(function () {
     Route::post('/admin/sellers/{business}/payments', [\App\Http\Controllers\PlatformController::class, 'storePayment'])->name('platform.seller.payment');
     Route::post('/admin/sellers/{business}/approve', [\App\Http\Controllers\PlatformController::class, 'approveSeller'])->name('platform.seller.approve');
     Route::post('/admin/sellers/{business}/reject', [\App\Http\Controllers\PlatformController::class, 'rejectSeller'])->name('platform.seller.reject');
-    Route::get('/admin/packages', fn () => redirect('/settings?group=packages'))->name('platform.packages');
+    Route::get('/admin/packages', [\App\Http\Controllers\PlatformController::class, 'packages'])->name('platform.packages');
     Route::get('/admin/claims', [\App\Http\Controllers\PlatformController::class, 'claims'])->name('platform.claims');
     Route::post('/admin/claims/{claim}/approve', [\App\Http\Controllers\PlatformController::class, 'approveClaim'])->name('platform.claims.approve');
     Route::post('/admin/claims/{claim}/reject', [\App\Http\Controllers\PlatformController::class, 'rejectClaim'])->name('platform.claims.reject');
