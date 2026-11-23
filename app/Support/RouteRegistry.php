@@ -80,6 +80,7 @@ class RouteRegistry
         'api.webhooks.carrybee' => ['public'],
         'api.webhooks.paperfly' => ['public'],
         'api.webhooks.redx' => ['public'],
+        'api.webhooks.ecourier' => ['public'],
         'api.webhooks.sms.amarsms' => ['public'],
         'api.webhooks.sms.nishchit' => ['public'],
 

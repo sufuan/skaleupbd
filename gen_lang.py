@@ -951,6 +951,7 @@ BN.update([
     ('Webhook URL', 'ওয়েবহুক URL'),
     ('Name', 'নাম'),
     ('Webhook Secret (Optional)', 'ওয়েবহুক সিক্রেট (ঐচ্ছিক)'),
+    ('No webhook secret saved - delivery updates for this courier cannot be verified.', 'Webhook secret সেভ করা নেই - এই courier-এর delivery update যাচাই করা যাবে না।'),
     ('Sandbox Mode (Test)', 'স্যান্ডবক্স মোড (টেস্ট)'),
     ('Call customer', 'কাস্টমারকে কল করুন'),
     ('Message customer on WhatsApp', 'WhatsApp-এ কাস্টমারকে মেসেজ করুন'),

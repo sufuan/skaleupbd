@@ -28,7 +28,7 @@ class CourierSettingsController extends Controller
      */
     public static function methodView(CourierMethod $m, bool $redact = false): array
     {
-        $secretKeys = ['api_key', 'api_secret', 'client_secret', 'password', 'account_password', 'access_token', 'webhook_token', 'webhook_secret', 'client_context'];
+        $secretKeys = ['api_key', 'api_secret', 'client_secret', 'password', 'account_password', 'access_token', 'webhook_token', 'webhook_secret', 'client_context', 'webhook_integration_pending_at'];
         $creds = [];
         foreach (($m->credentials ?? []) as $k => $v) {
             $isSecret = in_array($k, $secretKeys, true);
@@ -50,6 +50,7 @@ class CourierSettingsController extends Controller
             'is_default' => $m->is_default,
             'is_preferred' => $m->is_preferred,
             'sandbox' => ! empty(($m->credentials ?? [])['sandbox']),
+            'webhook_unverified' => $m->is_active && $m->webhookCredentialKey() !== null && ! $m->hasWebhookCredential(),
             'charge_inside_dhaka' => (float) $m->charge_inside_dhaka,
             'charge_outside_dhaka' => (float) $m->charge_outside_dhaka,
             'default_shipping_note' => $m->default_shipping_note,
@@ -73,6 +74,12 @@ class CourierSettingsController extends Controller
         $creds = collect($data['credentials'] ?? [])->filter(fn ($v) => filled($v))->all();
         if (! empty($data['sandbox']) && in_array($data['courier_type'], self::SANDBOX_TYPES, true)) {
             $creds['sandbox'] = true;
+        }
+        // A freshly saved Pathao/Carrybee webhook secret opens the one-time
+        // integration echo window (the seller pastes the webhook URL into
+        // the courier panel right after saving here).
+        if (in_array($data['courier_type'], ['PATHAO', 'CARRYBEE'], true) && filled($creds['webhook_secret'] ?? null)) {
+            $creds['webhook_integration_pending_at'] = now()->toIso8601String();
         }
         $method = CourierMethod::create([
             'business_id' => $this->businessId($request),
@@ -103,10 +110,19 @@ class CourierSettingsController extends Controller
         ]);
         // Blank credential fields keep the saved secret; a filled field replaces it.
         $creds = $courier->credentials ?? [];
+        $secretRotated = false;
         foreach (($data['credentials'] ?? []) as $k => $v) {
             if (filled($v)) {
+                if ($k === 'webhook_secret' && ($creds['webhook_secret'] ?? null) !== $v) {
+                    $secretRotated = true;
+                }
                 $creds[$k] = $v;
             }
+        }
+        // Rotating the Pathao/Carrybee webhook secret re-opens the one-time
+        // integration echo window, exactly like a first save.
+        if ($secretRotated && in_array($courier->courier_type, ['PATHAO', 'CARRYBEE'], true)) {
+            $creds['webhook_integration_pending_at'] = now()->toIso8601String();
         }
         // Sandbox is a plain on/off flag, not a secret: on = store true, off = remove the key.
         if (array_key_exists('sandbox', $data)) {

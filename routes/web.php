@@ -44,7 +44,7 @@ Route::get('/p/{product}', [\App\Http\Controllers\StorefrontPublicController::cl
 Route::post('/order', [\App\Http\Controllers\StorefrontPublicController::class, 'order'])->name('sf.order');
 Route::get('/order-success/{invoice}', [\App\Http\Controllers\StorefrontPublicController::class, 'success'])->name('sf.success');
 Route::get('/report', [\App\Http\Controllers\StorefrontPublicController::class, 'reportForm'])->name('sf.report');
-Route::post('/report', [\App\Http\Controllers\StorefrontPublicController::class, 'reportStore'])->name('sf.report.store');
+Route::post('/report', [\App\Http\Controllers\StorefrontPublicController::class, 'reportStore'])->middleware('throttle:5,1')->name('sf.report.store');
 
 // Registration verification (reachable while signed in but not yet
 // verified; SellerApprovalGate exempts these routes itself).
@@ -521,7 +521,8 @@ Route::post('/api/webhooks/pathao/dm/{method}', [WebhookController::class, 'path
 Route::post('/api/webhooks/carrybee/dm/{method}', [WebhookController::class, 'carrybee'])->name('api.webhooks.carrybee');
 Route::post('/api/webhooks/paperfly/dm/{method}', [WebhookController::class, 'paperfly'])->name('api.webhooks.paperfly');
 Route::post('/api/webhooks/redx/dm/{method}', [WebhookController::class, 'redx'])->name('api.webhooks.redx');
-Route::post('/api/webhooks/sms/amarsms', [\App\Http\Controllers\SmsWebhookController::class, 'amarsms'])->name('api.webhooks.sms.amarsms');
+Route::post('/api/webhooks/ecourier/dm/{method}', [WebhookController::class, 'ecourier'])->name('api.webhooks.ecourier');
+Route::post('/api/webhooks/sms/amarsms', [\App\Http\Controllers\SmsWebhookController::class, 'amarsms'])->middleware('throttle:60,1')->name('api.webhooks.sms.amarsms');
 Route::post('/api/webhooks/sms/nishchit', [\App\Http\Controllers\SmsWebhookController::class, 'nishchit'])->name('api.webhooks.sms.nishchit');
 
 require __DIR__.'/auth.php';

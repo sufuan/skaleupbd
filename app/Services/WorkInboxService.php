@@ -87,10 +87,11 @@ class WorkInboxService
         'sms_balance_low' => 'balance recharge করায় task নিজে থেকে বন্ধ হয়েছে',
         'token_balance_low' => 'points recharge করায় task নিজে থেকে বন্ধ হয়েছে',
         'channel_broken' => 'connection আবার ঠিক হয়ে যাওয়ায় task নিজে থেকে বন্ধ হয়েছে',
+        'courier_unverified' => 'webhook secret সেভ করায় task নিজে থেকে বন্ধ হয়েছে',
     ];
 
     /**
-     * The 37-rule catalog. 'value'/'unit' = the rule's time window
+     * The 38-rule catalog. 'value'/'unit' = the rule's time window
      * (trigger delay for state rules, fix-it window for event rules).
      * 'dedupe': open = one open task per fingerprint, may recur after
      * resolution; ever = one task per fingerprint for good.
@@ -132,6 +133,7 @@ class WorkInboxService
         $add(14, 'parcel_resent', 'delivery', 'Parcel আবার পাঠানো (resent) হয়েছে', 'Resent হলেই — চোখ রাখার জন্য', false, 0, 'hours', 'normal', 'delivery', $courier + ['dedupe' => 'ever']);
         $add(15, 'return_undecided', 'delivery', 'Return এসেছে, সিদ্ধান্ত হয়নি', 'Return পৌঁছানোর পর এই সময়ে সিদ্ধান্ত না হলে', true, 1, 'days', 'urgent', 'delivery', $courier);
         $add(16, 'courier_money', 'delivery', 'Courier-এর টাকা মেলেনি', 'Ledger-এ unmatched টাকা এই কদিন পড়ে থাকলে', true, 3, 'days', 'urgent', 'accounts', $courier + ['dedupe' => 'ever', 'autoclose' => false]);
+        $add(38, 'courier_unverified', 'delivery', 'Courier connection-এ webhook secret নেই', 'Connected courier-এ webhook-এর secret/token না থাকলেই সাথে সাথে', true, 0, 'immediate', 'urgent', 'admin');
 
         // ---- Messages (M6) ----
         $add(17, 'ai_handover', 'messages', 'AI handover করেছে, কেউ ধরেনি', 'Handover-এর পর এই সময়ে কেউ chat না ধরলে', true, 15, 'minutes', 'critical', 'chat');
@@ -1079,6 +1081,31 @@ class WorkInboxService
                 'detail' => $conn->last_error,
                 'source_type' => 'system', 'source_id' => $conn->id,
                 'source_label' => 'Messaging Channels · ' . $label, 'link' => '/settings?group=api',
+            ];
+        }
+
+        return $out;
+    }
+
+    private function ruleCourierUnverified(int $biz, array $def, array $c): array
+    {
+        $out = [];
+        $methods = \App\Models\CourierMethod::where('business_id', $biz)
+            ->where('is_active', true)->orderBy('id')->get();
+        foreach ($methods as $m) {
+            // Only couriers whose webhook events can be verified at all
+            // (CourierMethod::webhookCredentialKey) can be missing the
+            // credential; manual couriers never raise this task.
+            if ($m->webhookCredentialKey() === null || $m->hasWebhookCredential()) {
+                continue;
+            }
+            $label = $m->label();
+            $out[] = [
+                'fingerprint' => 'courier-method:' . $m->id,
+                'title' => $label . '-এর webhook secret সেভ করা নেই — delivery update যাচাই করা যাচ্ছে না, Settings থেকে secret বসাও',
+                'detail' => 'এই courier-এর webhook দিয়ে আসা delivery update কোনো যাচাই ছাড়াই গ্রহণ হচ্ছে। Settings → API Connection → Courier Integration-এ গিয়ে ' . $label . ' connection-এ webhook secret/token বসালেই update যাচাই শুরু হবে।',
+                'source_type' => 'system', 'source_id' => $m->id,
+                'source_label' => 'Courier Integration · ' . $label, 'link' => '/settings?group=api',
             ];
         }
 

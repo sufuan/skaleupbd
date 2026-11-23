@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Storefront;
 use App\Models\StorefrontReport;
 use App\Services\StorefrontService;
+use App\Support\DhakaTime;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -47,7 +48,7 @@ class PlatformStorefrontController extends Controller
                 'contact' => $r->contact,
                 'pageUrl' => $r->page_url,
                 'status' => $r->status,
-                'when' => $r->created_at?->format('d M Y, h:i A'),
+                'when' => DhakaTime::fmt($r->created_at, 'd M Y, h:i A'),
             ])->all();
 
         return Inertia::render('Platform/Storefronts', [

@@ -69,9 +69,14 @@ class WebhookController extends Controller
      * Pathao webhook receiver — the URL saved on each connection
      * (/api/webhooks/pathao/dm/{id}). Pathao sends its events with the
      * connection's webhook secret as the X-PATHAO-Signature header (the secret
-     * itself, not a signature). The integration test event must be answered
-     * 202 with that same secret echoed in the
-     * X-Pathao-Merchant-Webhook-Integration-Secret header.
+     * itself, not a signature). The integration test event is answered 202
+     * with that same secret echoed in the
+     * X-Pathao-Merchant-Webhook-Integration-Secret header — but ONLY inside
+     * the one-time window after the seller saves/rotates the secret in
+     * Settings (CourierMethod::webhookIntegrationPending), and the first
+     * echo closes the window. At any other time the event is answered 202
+     * with no secret header: the secret is never disclosed to an
+     * unauthenticated caller who merely knows a method id.
      */
     public function pathao(Request $request, CourierMethod $method, BookingService $booking)
     {
@@ -80,8 +85,13 @@ class WebhookController extends Controller
         $event = (string) ($payload['event'] ?? '');
 
         if ($event === 'webhook_integration') {
-            return response()->json(['status' => 'success'], 202)
-                ->header('X-Pathao-Merchant-Webhook-Integration-Secret', $secret);
+            $response = response()->json(['status' => 'success'], 202);
+            if ($secret !== '' && $method->webhookIntegrationPending()) {
+                $method->clearWebhookIntegrationPending();
+                $response->header('X-Pathao-Merchant-Webhook-Integration-Secret', $secret);
+            }
+
+            return $response;
         }
         if ($secret !== '' && ! hash_equals($secret, (string) $request->header('X-PATHAO-Signature', ''))) {
             return response()->json(['status' => 'unauthorized'], 401);
@@ -124,8 +134,12 @@ class WebhookController extends Controller
      * Carrybee: POST /api/webhooks/carrybee/dm/{method}
      * The seller registers this URL + a secret in the panel's Webhook
      * Integration form. The integration event {"event":"webhook.integration"}
-     * must be answered 202 with the X-CB-Webhook-Integration-Header echoing
-     * the secret; real events carry that same header for verification.
+     * is answered 202 with the X-CB-Webhook-Integration-Header echoing the
+     * secret — but only inside the one-time window after the seller
+     * saves/rotates the secret in Settings (same rule as Pathao, see
+     * CourierMethod::webhookIntegrationPending); the first echo closes the
+     * window and later integration events are answered with no secret
+     * header. Real events carry that same header for verification.
      * Event names: order.delivered / order.partial-delivery / order.returned /
      * order.returned-to-merchant / order.paid carry the money-relevant
      * transitions; every other event is recorded as the courier status only.
@@ -137,8 +151,13 @@ class WebhookController extends Controller
         $event = (string) $request->input('event', '');
 
         if ($event === 'webhook.integration') {
-            return response()->json(['received' => true], 202)
-                ->header('X-CB-Webhook-Integration-Header', $secret);
+            $response = response()->json(['received' => true], 202);
+            if ($secret !== '' && $method->webhookIntegrationPending()) {
+                $method->clearWebhookIntegrationPending();
+                $response->header('X-CB-Webhook-Integration-Header', $secret);
+            }
+
+            return $response;
         }
         if ($secret !== '' && ! hash_equals($secret, (string) $request->header('X-CB-Webhook-Integration-Header', ''))) {
             return response()->json(['error' => 'bad signature'], 401);
@@ -232,6 +251,62 @@ class WebhookController extends Controller
             }
             $actor = User::shopOwner((int) $method->business_id);
             app(BookingService::class)->applyCourierStatus($order, $status, $actor);
+        }
+
+        return response()->json(['received' => true], 200);
+    }
+
+    /**
+     * eCourier: POST /api/webhooks/ecourier/dm/{method}
+     * eCourier parcels were previously pull-only (the driver's /track
+     * endpoint); this receiver gives the connection a push endpoint with
+     * the same shape as Paperfly: when the seller saves a webhook secret
+     * in Settings, events must carry X-Webhook-Signature =
+     * HMAC-SHA256(raw body, secret); with no secret saved, events are
+     * accepted unverified (the conditional rule every courier follows).
+     *
+     * Payload fields are read defensively from the names eCourier uses
+     * across its API (the booking call sends product_id = our invoice,
+     * /track keys the parcel as ecr): tracking / tracking_id / ecr for
+     * the parcel, product_id / merchant_order_id / invoice for our
+     * order, status for the status text. The status text goes through
+     * BookingService::applyCourierStatus unchanged — it is the same
+     * vocabulary the driver's /track returns (Delivered / Returned /
+     * Partial ...), and that engine's transitions are state-guarded, so
+     * a repeat delivery of the same event is a no-op.
+     */
+    public function ecourier(Request $request, CourierMethod $method)
+    {
+        abort_unless($method->courier_type === 'ECOURIER' && $method->is_active, 404);
+        $secret = (string) (($method->credentials ?? [])['webhook_secret'] ?? '');
+        if ($secret !== '') {
+            $expected = hash_hmac('sha256', $request->getContent(), $secret);
+            if (! hash_equals($expected, (string) $request->header('X-Webhook-Signature', ''))) {
+                return response()->json(['error' => 'bad signature'], 401);
+            }
+        }
+
+        $tracking = (string) ($request->input('tracking') ?? $request->input('tracking_id') ?? $request->input('ecr') ?? '');
+        $invoice = (string) ($request->input('product_id') ?? $request->input('merchant_order_id') ?? $request->input('invoice') ?? '');
+        $order = null;
+        if ($tracking !== '' || $invoice !== '') {
+            $order = Order::where('business_id', $method->business_id)
+                ->where(function ($q) use ($tracking, $invoice) {
+                    if ($tracking !== '') {
+                        $q->where('tracking_id', $tracking)->orWhere('consignment_id', $tracking);
+                    }
+                    if ($invoice !== '') {
+                        $q->orWhere('invoice_no', $invoice);
+                    }
+                })
+                ->first();
+        }
+        if ($order) {
+            $status = (string) ($request->input('status') ?? '');
+            if ($status !== '') {
+                $actor = User::shopOwner((int) $method->business_id);
+                app(BookingService::class)->applyCourierStatus($order, $status, $actor);
+            }
         }
 
         return response()->json(['received' => true], 200);

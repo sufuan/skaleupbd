@@ -923,6 +923,7 @@
  "Username": "Username",
  "Shop ID": "Shop ID",
  "Webhook Secret (Optional)": "Webhook Secret (Optional)",
+ "No webhook secret saved - delivery updates for this courier cannot be verified.": "No webhook secret saved - delivery updates for this courier cannot be verified.",
  "Sandbox Mode (Test)": "Sandbox Mode (Test)",
  "Call customer": "Call customer",
  "Message customer on WhatsApp": "Message customer on WhatsApp",

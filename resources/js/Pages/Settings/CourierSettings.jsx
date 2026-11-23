@@ -31,6 +31,7 @@ export const FIELD_DEFS = {
     ECOURIER: [
         ['api_key', 'API Key', 'secret'], ['api_secret', 'API Secret', 'secret'], ['user_id', 'User ID'],
         ['package_code', 'Default Package Code (Optional)'], ['pickup_hub_id', 'Pickup Hub ID (Optional)'],
+        ['webhook_secret', 'Webhook Secret (Optional)', 'secret'],
     ],
     PAPERFLY: [
         ['api_key', 'API Key', 'secret'],
@@ -186,6 +187,9 @@ export default function CourierSettings({ couriers }) {
                             </div>
                             <div className="sm mut">{m.label} · {t('Inside Dhaka')} ৳{m.charge_inside_dhaka} · {t('Outside Dhaka')} ৳{m.charge_outside_dhaka}
                                 {m.stores.length > 0 && <> · {m.stores.length} {t('pickup stores')}</>}</div>
+                            {m.webhook_unverified && (
+                                <div className="sm" style={{ color: 'var(--warn)', marginTop: 4 }}>{t('No webhook secret saved - delivery updates for this courier cannot be verified.')}</div>
+                            )}
                         </div>
                         <button className="btn" onClick={() => setEditing(m)}>{t('Configure')}</button>
                         {(m.courier_type === 'PATHAO' || m.courier_type === 'CARRYBEE') && <button className="btn" onClick={() => router.post(`/settings/couriers/${m.id}/sync-stores`)}>{t('Sync Stores')}</button>}

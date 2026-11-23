@@ -36,16 +36,66 @@ class SmsWebhookController extends Controller
         }
 
         if ($log && $status) {
-            $log->update([
-                'delivery_status' => (string) $status,
-                'provider_response' => json_encode($request->all()),
-                'updated_at' => now(),
-            ]);
+            // Forward-only: this endpoint is unauthenticated (AmarSMS
+            // documents no DLR signature scheme in our integration), so a
+            // later report must never move a message backwards — a
+            // delivered message cannot go back to pending/failed, and a
+            // failed one cannot be resurrected. Blocked reports are kept
+            // in the app log for reconciliation and still answered 200.
+            if ($this->dlrMovesForward($log->delivery_status, (string) $status)) {
+                $log->update([
+                    'delivery_status' => (string) $status,
+                    'provider_response' => json_encode($request->all()),
+                    'updated_at' => now(),
+                ]);
+            } else {
+                Log::info('sms dlr backward ignored', [
+                    'message_id' => (string) $messageId,
+                    'current' => $log->delivery_status,
+                    'reported' => (string) $status,
+                ]);
+            }
         } else {
             Log::info('sms dlr unmatched', ['payload' => $request->all()]);
         }
 
         return response()->json(['status' => 'success']);
+    }
+
+    /**
+     * Rank + class of a delivery status. Terminal states (delivered,
+     * failed family) rank above in-flight ones; "undelivered" is tested
+     * before "delivered" because it contains it.
+     *
+     * @return array{0: int, 1: string}
+     */
+    private function dlrRank(?string $status): array
+    {
+        $s = strtolower(trim((string) $status));
+        if ($s === '') {
+            return [0, 'none'];
+        }
+        if (str_contains($s, 'undeliver') || str_contains($s, 'fail') || str_contains($s, 'reject')
+            || str_contains($s, 'expir') || str_contains($s, 'error') || str_contains($s, 'block')) {
+            return [2, 'failed'];
+        }
+        if (str_contains($s, 'deliver')) {
+            return [2, 'delivered'];
+        }
+
+        return [1, 'inflight'];
+    }
+
+    /** A report may apply only if it moves the row forward (or repeats its own terminal state). */
+    private function dlrMovesForward(?string $current, string $reported): bool
+    {
+        [$curRank, $curClass] = $this->dlrRank($current);
+        [$newRank, $newClass] = $this->dlrRank($reported);
+        if ($newRank > $curRank) {
+            return true;
+        }
+
+        return $newRank === $curRank && $newClass === $curClass;
     }
 
     /**
