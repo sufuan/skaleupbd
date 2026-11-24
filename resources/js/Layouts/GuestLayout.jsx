@@ -7,7 +7,7 @@ const Tick = () => (
     </span>
 );
 
-export default function GuestLayout({ children }) {
+export default function GuestLayout({ children, wide = false }) {
     return (
         <div className="auth-wrap">
             <div className="auth-brand">
@@ -29,7 +29,7 @@ export default function GuestLayout({ children }) {
             </div>
             <div className="auth-side">
                 <div className="auth-top"><LanguageSwitcher /></div>
-                <div className="auth-box">{children}</div>
+                <div className={`auth-box${wide ? ' wide' : ''}`}>{children}</div>
             </div>
         </div>
     );

@@ -211,6 +211,49 @@ label.fl{display:block;font-size:12.5px;font-weight:600;color:#55496e;margin:0 0
 .code-inp{letter-spacing:.45em;font-size:19px;font-weight:700;text-align:center}
 .qr-box{display:flex;justify-content:center;padding:14px;background:#fff;border:1px solid var(--line);border-radius:12px}
 .secret-code{font-family:ui-monospace,Menlo,Consolas,monospace;background:var(--chip);border-radius:9px;padding:8px 12px;font-size:13.5px;letter-spacing:.12em;text-align:center;word-break:break-all}
+/* ---------- register two-step flow (reg-) ---------- */
+.auth-box{transition:max-width .3s ease}
+.auth-box.wide{max-width:920px}
+.reg-steps{display:flex;align-items:flex-start;gap:12px;margin:2px 0 26px}
+.reg-step{display:flex;align-items:center;gap:9px;font-size:14px;font-weight:600;color:var(--mut);white-space:nowrap}
+.reg-step .reg-dot{width:27px;height:27px;border-radius:50%;border:1.5px solid var(--line);background:#fff;color:var(--mut);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex:none}
+.reg-step .reg-step-of{display:block;font-size:11px;font-weight:600;letter-spacing:.04em;color:var(--faint-ink);margin-top:1px}
+.reg-step.on{color:var(--ink)}
+.reg-step.on .reg-dot{background:var(--acc);border-color:var(--acc);color:#fff}
+.reg-step.on .reg-step-of{color:var(--acc)}
+.reg-step.done{color:var(--acc)}
+.reg-step.done .reg-dot{background:var(--acc);border-color:var(--acc);color:#fff}
+.reg-step-line{flex:1;height:1.5px;background:var(--line);border-radius:2px;min-width:14px;margin-top:13px}
+.reg-step-line.done{background:var(--acc)}
+.reg-sec-title{font-size:19px;font-weight:800;margin:0 0 4px;color:var(--ink)}
+.reg-sec-sub{color:var(--mut);font-size:13.5px;line-height:1.55;margin-bottom:18px}
+.reg-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(248px,1fr));gap:14px}
+.reg-pack{text-align:left;background:#fff;border:1px solid #e6ddea;border-radius:14px;padding:20px;display:flex;flex-direction:column;cursor:pointer;color:var(--ink)}
+.reg-pack:hover{border-color:#c9b3dd}
+.reg-pack:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.reg-pack.sel{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc),0 10px 30px rgba(65,21,80,.12)}
+.reg-pack-name{font-size:15.5px;font-weight:700;display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.reg-radio{width:20px;height:20px;border-radius:50%;border:1.5px solid #d9cde4;flex:none;display:flex;align-items:center;justify-content:center;margin-top:1px}
+.reg-pack.sel .reg-radio{border-color:var(--acc)}
+.reg-radio i{width:10px;height:10px;border-radius:50%;background:var(--acc);display:none}
+.reg-pack.sel .reg-radio i{display:block}
+.reg-pack-price{font-size:29px;font-weight:800;margin:9px 0 2px;line-height:1.1}
+.reg-pack-price span{font-size:13.5px;font-weight:500;color:#5d5266}
+.reg-pack-line{font-size:14px;margin-top:5px}
+.reg-pack-line b{color:var(--acc)}
+.reg-pack-note{font-size:12.5px;color:#5d5266;line-height:1.5;margin-top:5px}
+.reg-pack-total{margin-top:14px;padding-top:12px;border-top:1px solid #efe9f2;font-size:13px;color:#5d5266;line-height:1.55}
+.reg-pack-total b{color:var(--ink);font-size:14.5px}
+.reg-pack-btn{margin-top:14px;display:block;text-align:center;padding:10px 12px;border-radius:9px;font-size:14.5px;font-weight:600;border:1px solid var(--acc);color:var(--acc);background:#fff}
+.reg-pack.sel .reg-pack-btn{background:var(--acc);color:#fff}
+.reg-actions{margin-top:22px}
+.reg-summary{border:1px solid #E7DEF0;background:#F6F1FA;border-radius:12px;padding:13px 15px;margin-bottom:18px;display:flex;gap:12px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap}
+.reg-change{border:none;background:none;padding:0;cursor:pointer;font:inherit}
+@media (max-width:480px){
+  .reg-grid{grid-template-columns:1fr}
+  .reg-step{font-size:13px;gap:7px}
+  .reg-steps{gap:8px}
+}
 @media (max-width:900px){
   .auth-brand{display:none}
   .auth-side{padding:18px}

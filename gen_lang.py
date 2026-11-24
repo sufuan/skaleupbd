@@ -4006,6 +4006,14 @@ BN.update([
     ("That pack is not available. Please choose another pack.", "এই প্যাকটি পাওয়া যাচ্ছে না। অন্য একটি প্যাক বেছে নিন।"),
     ("Registration is not open right now.", "এখন রেজিস্ট্রেশন খোলা নেই।"),
     ("Please check back later, or contact us if you need help.", "পরে আবার চেষ্টা করুন, অথবা সাহায্য লাগলে আমাদের সঙ্গে যোগাযোগ করুন।"),
+    # register two-step flow: pack first, then the form
+    ("Step 1 of 2", "ধাপ ১ / ২"),
+    ("Step 2 of 2", "ধাপ ২ / ২"),
+    ("Choose your pack", "আপনার প্যাক বেছে নিন"),
+    ("Your details", "আপনার তথ্য"),
+    ("Selected", "নির্বাচিত"),
+    ("Continue", "এগিয়ে যান"),
+    ("Pick a pack to begin. You pay only after your account is created.", "শুরু করতে একটি প্যাক বেছে নিন। অ্যাকাউন্ট তৈরি হওয়ার পরেই পেমেন্ট করতে হবে।"),
 ])
 
 BN.update([
