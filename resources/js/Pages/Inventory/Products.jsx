@@ -323,7 +323,7 @@ function EditModal({ product, categories, brands, close, allProducts = [], initi
         short_description: product.short_description || '', long_description: product.long_description || '',
         shipping_note: product.shipping_note || '', admin_note: product.admin_note || '',
         warranty_policy: product.warranty_policy || '', warranty_coverage: product.warranty_coverage || '',
-        gallery: product.gallery || [], image: null,
+        gallery: product.gallery || [], image: null, remove_image: false,
         // Combo recipe editing (K-M3): seeded from the combo's stored
         // components; components_present tells the server this submit
         // carries the recipe (an empty list then really means "clear").
@@ -344,7 +344,7 @@ function EditModal({ product, categories, brands, close, allProducts = [], initi
                         </div>
                     )}
                     <ProductFields data={data} setData={setData} categories={categories} brands={brands} forEdit readiness={{ score: product.ai_score, missing: product.ai_missing }}
-                        allProducts={allProducts} components={data.components} setComponents={(v) => setData('components', v)} selfId={product.id} />
+                        allProducts={allProducts} components={data.components} setComponents={(v) => setData('components', v)} selfId={product.id} currentImage={product.image} />
                     <div className="flex items-center justify-end gap-2 mt-5">
                         <button type="button" className={BTN_OUTLINE} onClick={close}>{t('Cancel')}</button>
                         <button type="submit" className={BTN_PRIMARY} disabled={processing}>{t('Save Changes')}</button>

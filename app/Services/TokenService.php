@@ -367,9 +367,13 @@ class TokenService
             }
 
             // Pack state belongs to the LATEST purchase: only clear it
-            // when the first purchase is also the only one.
+            // when the first purchase is also the only one. The pack
+            // SNAPSHOT is part of that pointer (Hunt Y4 F11): leaving
+            // it kept packName() reporting the refunded pack as the
+            // shop's current pack on every platform surface.
             if ($purchases->count() <= 1) {
                 $wallet->pack_id = null;
+                $wallet->pack_snapshot = null;
                 $wallet->cycle_start = null;
                 $wallet->cycle_end = null;
                 $wallet->wallet_expires_at = null;

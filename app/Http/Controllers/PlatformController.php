@@ -66,6 +66,10 @@ class PlatformController extends Controller
             'approved_at' => now(),
             'status_note' => null,
         ]);
+        // Audit trail (Hunt Y4 F10): the decision itself is history -
+        // who decided and when stays on record even if the shop is
+        // rejected and approved again later.
+        \App\Models\SellerDecisionLog::record($business->id, $request->user()->id, 'approved');
 
         return back()->with('success', __('Seller approved. Their full dashboard is now open.'));
     }
@@ -82,6 +86,10 @@ class PlatformController extends Controller
             'approved_by' => null,
             'approved_at' => null,
         ]);
+        // Audit trail (Hunt Y4 F10): the rejection's actor, time and
+        // note live in the log, not only on the business row - a later
+        // re-approval clears status_note but never this history.
+        \App\Models\SellerDecisionLog::record($business->id, $request->user()->id, 'rejected', $data['status_note']);
 
         return back()->with('success', __('Seller rejected. They will see your note on their status page.'));
     }
@@ -326,8 +334,25 @@ class PlatformController extends Controller
             ];
         }
 
+        // Seller decisions (Hunt Y4 F10): approvals and rejections of
+        // shops, with the deciding admin, the time and the note. Kept
+        // as its own list beside the view-as sessions - the log rows
+        // are append-only, so a rejection stays visible after a later
+        // re-approval.
+        $decisions = \App\Models\SellerDecisionLog::with(['admin:id,name,email', 'business:id,name'])
+            ->orderByDesc('created_at')->orderByDesc('id')->limit(100)->get()
+            ->map(fn ($d) => [
+                'admin_name' => $d->admin?->name ?? 'Unknown admin',
+                'admin_email' => $d->admin?->email ?? '',
+                'shop' => $d->business?->name ?? 'Unknown shop',
+                'action' => $d->action,
+                'note' => $d->note,
+                'when' => DhakaTime::fmt($d->created_at, 'd M Y, h:i A'),
+            ])->all();
+
         return Inertia::render('Platform/AuditLog', [
             'rows' => $rows,
+            'decisions' => $decisions,
             'pagination' => [
                 'page' => $page,
                 'last_page' => $lastPage,

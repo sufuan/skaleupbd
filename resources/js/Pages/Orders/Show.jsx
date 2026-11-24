@@ -1,6 +1,6 @@
 import AppLayout from '@/Layouts/AppLayout';
 import { t } from '@/lib/i18n';
-import { Head, Link, router, useForm } from '@inertiajs/react';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import { StatusPill, fmt } from './ui';
 import SendCourierModal from '@/Components/SendCourierModal';
@@ -22,11 +22,17 @@ export default function Show({ order, customer, couriers, courierMethods = [], s
         const ib = courierOrder.findIndex((c) => c.toLowerCase() === b[0].toLowerCase());
         return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
     });
-    const canAddItem = ['Pending', 'Processing'].includes(order.status);
+    // Y1-F6: the page adapts to the viewer's staff ticks - the same
+    // permission_ticks map the server gate enforces with. A view-only
+    // staff member is never offered a button the server would 403.
+    const ticks = usePage().props.auth?.permission_ticks || {};
+    const canEdit = !!ticks.orders?.edit;
+    const canDelete = !!ticks.orders?.delete;
+    const canAddItem = canEdit && ['Pending', 'Processing'].includes(order.status);
     const addItem = () => { if (addPid) router.post(`/orders/${order.id}/items`, { product_id: addPid, qty: addQty }, { preserveScroll: true, onSuccess: () => { setAddPid(''); setAddQty(1); } }); };
     const saveMethod = () => { if (newMethod.trim()) router.post('/settings/courier-methods', { name: newMethod.trim() }, { preserveScroll: true, preserveState: true, onSuccess: () => { form.setData('delivery_method', newMethod.trim()); setAddingMethod(false); setNewMethod(''); } }); };
     const risky = order.fraud.verdict === 'risky';
-    const canApprove = ['Pending', 'Incomplete'].includes(order.status);
+    const canApprove = canEdit && ['Pending', 'Incomplete'].includes(order.status);
     const verdictLabel = order.fraud.verdict === 'safe' ? 'Safe' : risky ? 'Risky - take advance' : 'Not checked';
 
     // The Change Status dropdown must show the order's CURRENT status.
@@ -139,7 +145,7 @@ export default function Show({ order, customer, couriers, courierMethods = [], s
                                 <div className="sum-row"><span>{t('Advance')}</span><b>{fmt(order.advance)}</b></div>
                                 <div className="sum-row"><span>{t('Due Amount')}</span><b>{fmt(order.due)}</b></div>
                             </div>
-                            {order.status === 'Cancelled' && order.advance > 0 && (
+                            {['Cancelled', 'Returned'].includes(order.status) && order.advance > 0 && (
                                 <div className="alert-red" style={{ marginTop: 12 }}>
                                     <b>{t('Advance collected on a cancelled order')}</b>
                                     <div className="sm" style={{ marginTop: 3 }}>
@@ -147,7 +153,7 @@ export default function Show({ order, customer, couriers, courierMethods = [], s
                                     </div>
                                     {order.advance_refunded
                                         ? <div className="sm" style={{ marginTop: 6 }}><b>{t('Advance refunded')}</b></div>
-                                        : <button type="button" className="ctl-btn" style={{ marginTop: 8 }} onClick={() => router.post(`/orders/${order.id}/refund-advance`, {}, { preserveScroll: true })}>{t('Refund advance')}</button>}
+                                        : canEdit && <button type="button" className="ctl-btn" style={{ marginTop: 8 }} onClick={() => router.post(`/orders/${order.id}/refund-advance`, {}, { preserveScroll: true })}>{t('Refund advance')}</button>}
                                 </div>
                             )}
                         </div>
@@ -181,9 +187,9 @@ export default function Show({ order, customer, couriers, courierMethods = [], s
                                         <option value="">-</option>
                                         {couriers.map((c) => <option key={c} value={c}>{c}</option>)}
                                     </select>
-                                    <button type="button" className="ctl-btn" style={{ marginTop: 6 }} onClick={() => setAddingMethod(!addingMethod)}>{t('Add Delivery Method')}</button>
+                                    {canEdit && <button type="button" className="ctl-btn" style={{ marginTop: 6 }} onClick={() => setAddingMethod(!addingMethod)}>{t('Add Delivery Method')}</button>}
                                 </span>
-                                {addingMethod && (
+                                {addingMethod && canEdit && (
                                     <span style={{ display: 'flex', gap: 8, marginTop: 8 }}>
                                         <input className="fld" style={{ flex: 1, marginTop: 0 }} value={newMethod} onChange={(e) => setNewMethod(e.target.value)} placeholder={t('New delivery method name')} />
                                         <button type="button" className="ctl-btn" disabled={!newMethod.trim()} onClick={saveMethod}>{t('Save')}</button>
@@ -218,15 +224,15 @@ export default function Show({ order, customer, couriers, courierMethods = [], s
                                 <textarea className="fld" rows="2" value={form.data.note} onChange={(e) => form.setData('note', e.target.value)} placeholder={t('Write a note for your team…')} />
                             </label>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 16 }}>
-                                <button type="submit" className="ctl-btn w100" disabled={form.processing}>{t('Save Changes')}</button>
-                                <button type="button" className="ctl-btn w100" onClick={() => sms('reminder')}>{t('Send Reminder SMS')}</button>
-                                <button type="button" className="ctl-btn w100" onClick={() => sms('advance')}>{t('Send Advance SMS')}</button>
+                                {canEdit && <button type="submit" className="ctl-btn w100" disabled={form.processing}>{t('Save Changes')}</button>}
+                                {canEdit && <button type="button" className="ctl-btn w100" onClick={() => sms('reminder')}>{t('Send Reminder SMS')}</button>}
+                                {canEdit && <button type="button" className="ctl-btn w100" onClick={() => sms('advance')}>{t('Send Advance SMS')}</button>}
                                 <Link href="/orders" className="ctl-btn w100">{t('Back to List')}</Link>
                             </div>
                             <div style={{ display: 'flex', gap: 14, marginTop: 12 }}>
-                                <button type="button" style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12.5, color: '#64748B', padding: 0, fontFamily: 'inherit' }} onClick={() => block('phone')}>{t('Block Phone')}</button>
-                                <button type="button" style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12.5, color: '#64748B', padding: 0, fontFamily: 'inherit' }} onClick={() => block('ip')}>{t('Block IP')}</button>
-                                {['Pending', 'Cancelled'].includes(order.status) && (
+                                {canEdit && <button type="button" style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12.5, color: '#64748B', padding: 0, fontFamily: 'inherit' }} onClick={() => block('phone')}>{t('Block Phone')}</button>}
+                                {canEdit && <button type="button" style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12.5, color: '#64748B', padding: 0, fontFamily: 'inherit' }} onClick={() => block('ip')}>{t('Block IP')}</button>}
+                                {canDelete && ['Pending', 'Cancelled'].includes(order.status) && (
                                     <button type="button" style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12.5, color: '#DC2626', padding: 0, fontFamily: 'inherit' }} onClick={() => setDeleteOpen(true)}>{t('Delete Order')}</button>
                                 )}
                             </div>
@@ -237,11 +243,13 @@ export default function Show({ order, customer, couriers, courierMethods = [], s
                             {order.status === 'Processing' && (
                                 <>
                                     {order.booking_status === 'failed' && <p className="sm" style={{ color: 'var(--bad)', marginBottom: 10 }}>{t('The last booking failed - see the reason in Ready to Ship, or try again.')}</p>}
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                                        <button className="btn-primary" style={{ width: '100%' }} onClick={() => setSendOpen(true)}>{t('Send to Courier')}</button>
-                                        {order.booking_status === 'failed' && <button className="ctl-btn w100" onClick={() => router.post(`/delivery/${order.id}/retry`)}>{t('Retry')}</button>}
-                                    </div>
-                                    {order.courier_method_id && (
+                                    {canEdit && (
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                            <button className="btn-primary" style={{ width: '100%' }} onClick={() => setSendOpen(true)}>{t('Send to Courier')}</button>
+                                            {order.booking_status === 'failed' && <button className="ctl-btn w100" onClick={() => router.post(`/delivery/${order.id}/retry`)}>{t('Retry')}</button>}
+                                        </div>
+                                    )}
+                                    {canEdit && order.courier_method_id && (
                                         <label className="fld-l frow" style={{ marginTop: 12 }}>{t('Change courier to…')}
                                             <span style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                                                 <select className="fld inp" style={{ flex: '1 1 170px' }} value={changeMethodId} onChange={(e) => setChangeMethodId(e.target.value)}>
@@ -264,7 +272,7 @@ export default function Show({ order, customer, couriers, courierMethods = [], s
                                     {order.shipped_at && <div className="sum-row"><span>{t('Shipped')}</span><b>{order.shipped_at}</b></div>}
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 12 }}>
                                         <Link href={`/orders/${order.id}/packing-slip`} className="ctl-btn w100">{t('Print Packing Slip')}</Link>
-                                        <button className="ctl-btn w100" onClick={() => router.post(`/delivery/${order.id}/force-check`)}>{t('Check Status')}</button>
+                                        {canEdit && <button className="ctl-btn w100" onClick={() => router.post(`/delivery/${order.id}/force-check`)}>{t('Check Status')}</button>}
                                     </div>
                                 </>
                             )}

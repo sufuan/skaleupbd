@@ -236,10 +236,14 @@ class StorefrontController extends Controller
         if (! empty($data['capi_token'])) {
             $b['capi_token_enc'] = Crypt::encryptString(trim($data['capi_token']));
         }
+        $oldLogo = $b['logo'] ?? null;
         if ($request->hasFile('logo')) {
             $b['logo'] = $this->svc->storeImage($sf->business_id, $request->file('logo'));
         } elseif (! empty($data['remove_logo'])) {
             $b['logo'] = null;
+        }
+        if (($b['logo'] ?? null) !== $oldLogo) {
+            $this->deleteStoredLogo($oldLogo, $b['logo'] ?? null);
         }
         $sf->branding = $b;
         $settings = (array) $sf->settings;
@@ -455,12 +459,28 @@ class StorefrontController extends Controller
         $request->validate(['logo' => ['required', 'file', 'image', 'max:1024']]);
         $path = $this->svc->storeImage($sf->business_id, $request->file('logo'), 256);
         $b = (array) $sf->branding;
+        $oldLogo = $b['logo'] ?? null;
         $b['logo'] = $path;
         $sf->branding = $b;
         $sf->save();
+        $this->deleteStoredLogo($oldLogo, $path);
         $this->svc->forgetHostCache($sf);
 
         return response()->json(['path' => $path, 'url' => '/storage/'.$path]);
+    }
+
+    /**
+     * Remove a replaced or removed logo file from the public disk
+     * (Hunt Y4 F5): every logo swap used to orphan the old WebP.
+     * Only our own stored paths are touched - storeImage() always
+     * mints a fresh path per upload, so a path belongs to one logo.
+     */
+    private function deleteStoredLogo(?string $path, ?string $keep = null): void
+    {
+        if (! $path || $path === $keep || ! str_starts_with($path, 'storefront/')) {
+            return;
+        }
+        \Illuminate\Support\Facades\Storage::disk('public')->delete($path);
     }
 
     // ------------------------------------------------------------- my pages

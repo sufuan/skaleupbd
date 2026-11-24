@@ -56,6 +56,50 @@ class PlatformHomeService
             ->orderByDesc('id')->first();
     }
 
+    /**
+     * Previously-rejected flag for the approval queue (Hunt Y4 F3):
+     * a PENDING shop whose normalised mobile or owner email matches a
+     * REJECTED shop is very likely the same seller re-registering -
+     * the queue showed no link at all, so the admin decided blind.
+     * Display only; the decision stays human.
+     */
+    private function previouslyRejected(Business $b): bool
+    {
+        if (($b->status ?? null) !== 'pending') {
+            return false;
+        }
+        $settings = app(\App\Services\SettingsService::class);
+        // A shop's contact mobile lives in its business.{id}.mobile
+        // setting (that is where registration puts it); the profile
+        // phone column is the fallback. Both are compared normalised.
+        $contacts = function (Business $x) use ($settings): array {
+            $phones = [];
+            foreach ([$x->phone, $settings->get("business.{$x->id}.mobile")] as $p) {
+                $n = \App\Services\PhoneNormalizer::normalize(is_string($p) ? $p : null);
+                if ($n !== '') {
+                    $phones[] = $n;
+                }
+            }
+
+            return [strtolower(trim((string) $x->email)), $phones];
+        };
+        [$email, $phones] = $contacts($b);
+        if ($email === '' && $phones === []) {
+            return false;
+        }
+        foreach (Business::where('status', 'rejected')->where('id', '!=', $b->id)->get() as $r) {
+            [$rEmail, $rPhones] = $contacts($r);
+            if ($email !== '' && $rEmail === $email) {
+                return true;
+            }
+            if (array_intersect($phones, $rPhones) !== []) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     /** One row of the per-shop health list (moved verbatim from PlatformController). */
     public function sellerRow(Business $b): array
     {
@@ -93,10 +137,17 @@ class PlatformHomeService
             'name' => $b->name,
             'public_id' => $b->public_id,
             'approval_status' => $b->status ?: 'approved',
+            'previously_rejected' => $this->previouslyRejected($b),
             'status_note' => $b->status_note,
             'approved_at' => DhakaTime::fmt($b->approved_at, 'd M Y, h:i A'),
             'owner_name' => $b->owner_name,
-            'phone' => $b->phone,
+            // Y1-F1: a self-registered seller's mobile lives in the
+            // business.{id}.mobile setting (registration stores it
+            // there); the profile phone column is only filled later.
+            // Fall back to the setting so the platform can always
+            // reach the seller - the same source the
+            // previously-rejected flag above reads.
+            'phone' => $b->phone ?: app(\App\Services\SettingsService::class)->get("business.{$b->id}.mobile"),
             'email' => $b->email,
             'address' => $b->address,
             'joined' => DhakaTime::fmt($b->created_at, 'd M Y'),

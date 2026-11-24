@@ -48,7 +48,7 @@ function DraftCard({ draft }) {
     );
 }
 
-export default function Inbox({ conversations, selected, report, aiMode, aiPanic }) {
+export default function Inbox({ conversations, selected, report, aiMode, aiPanic, listTruncated }) {
     // "Pause all AI" flips the platform-global panic switch, so the
     // control belongs to platform admins only (the server refuses
     // everyone else); sellers see the status pill but no button.
@@ -59,6 +59,16 @@ export default function Inbox({ conversations, selected, report, aiMode, aiPanic
     const [detailOpen, setDetailOpen] = useState(false);
     const reply = useForm({ body: '' });
     const ch = selected ? (CH[selected.channel] || CH.facebook) : null;
+    // Y1-F3: "Create Order" carries the conversation's context into
+    // the New Order form - the customer name, phone and address from
+    // the pane beside this thread, plus the product the conversation
+    // is about - instead of opening a blank form.
+    const createOrderHref = selected ? '/orders/create?' + new URLSearchParams({
+        customer_name: selected.customer_name || '',
+        customer_phone: selected.customer_phone || '',
+        customer_address: selected.customer_address || '',
+        ...(selected.product ? { product_id: String(selected.product.id) } : {}),
+    }).toString() : '/orders/create';
     const q = search.toLowerCase();
     const list = conversations.filter((c) => (channel === 'all' || c.channel === channel) && (c.customer_name.toLowerCase().includes(q) || (c.phone || '').toLowerCase().includes(q) || (c.snippet || '').toLowerCase().includes(q)));
 
@@ -176,6 +186,7 @@ export default function Inbox({ conversations, selected, report, aiMode, aiPanic
                                 })}
                                 {list.length === 0 && <div style={{ fontSize: 13, color: 'var(--mut-ink)', padding: 8 }}>{t('No conversations')}</div>}
                             </div>
+                            {listTruncated && <div style={{ fontSize: 12, color: 'var(--mut-ink)', padding: '6px 8px 2px' }}>{t('Showing the latest 100 conversations')}</div>}
                         </div>
 
                         {selected && list.length > 0 && (
@@ -186,9 +197,10 @@ export default function Inbox({ conversations, selected, report, aiMode, aiPanic
                                     <span style={selected.window_open ? PILL('var(--tgl-bg)', 'var(--tgl-ink)') : PILL('#fee2e2', '#dc2626')}>{selected.window_open ? t('24h window: Open') : t('24h window: Closed')}</span>
                                     <span style={{ ...PILL('var(--tgl-bg)', 'var(--tgl-ink)'), marginLeft: 'auto' }}>{selected.ai_paused ? t('AI: Off for this chat') : t('AI: On for this chat')}</span>
                                     <button type="button" className="msg-detail-toggle" style={{ ...BTN2, padding: '7px 13px' }} onClick={() => setDetailOpen(true)}>{t('Customer details')}</button>
-                                    <Link href="/orders/create" style={{ ...BTN, padding: '7px 13px', textDecoration: 'none' }}>{t('Create Order')}</Link>
+                                    <Link href={createOrderHref} style={{ ...BTN, padding: '7px 13px', textDecoration: 'none' }}>{t('Create Order')}</Link>
                                 </div>
                                 <div className="msg-scroll" style={{ display: 'flex', flexDirection: 'column', gap: 9, padding: '12px 2px' }}>
+                                    {selected.thread_truncated && <div style={{ alignSelf: 'center', fontSize: 12, color: 'var(--mut-ink)' }}>{t('Showing the latest 300 messages')}</div>}
                                     {selected.messages.map((m) => (
                                         <div key={m.id} style={{ display: 'contents' }}>
                                             <div style={m.direction === 'in' ? BUB_C : BUB_B}>
@@ -200,6 +212,9 @@ export default function Inbox({ conversations, selected, report, aiMode, aiPanic
                                                 )}
                                                 {m.body ? <div>{m.body}</div> : null}
                                             </div>
+                                            {m.direction === 'out' && m.send_status === 'failed' && (
+                                                <div style={{ ...CAP, color: '#dc2626' }}>{t('Failed to send - Meta did not accept it')}</div>
+                                            )}
                                             {m.direction === 'out' && m.sender === 'ai' && m.rule && (
                                                 <div style={CAP}>{t('Rule')}: {m.rule} · <Link href="/settings?group=ai" style={{ color: 'var(--note-ink)', fontWeight: 700 }}>{t('Settings')}</Link></div>
                                             )}

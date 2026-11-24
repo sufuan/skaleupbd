@@ -25,7 +25,7 @@ class CommentsController extends Controller
     public function index(Request $request): Response
     {
         $biz = $this->biz($request);
-        $comments = Comment::where('business_id', $biz)->with(['replies' => fn ($q) => $q->orderBy('id')])
+        $comments = Comment::where('business_id', $biz)->with(['replies' => fn ($q) => $q->where('status', '!=', 'rejected')->orderBy('id')])
             ->orderByDesc('id')->get();
         [$todayFrom, $todayTo] = DhakaTime::dayBoundsUtc(DhakaTime::today());
 
@@ -113,10 +113,18 @@ class CommentsController extends Controller
     {
         $this->guard($request, $comment);
         if ($comment->status === 'hidden') {
-            $comment->status = 'awaiting';
+            // Unhide restores the status the comment had before it was
+            // hidden (Hunt Y2-15): 'awaiting' here used to erase the
+            // fact that a private reply was already sent. Comments
+            // hidden before pre_hide_status existed fall back to what
+            // the record still proves.
+            $comment->status = $comment->pre_hide_status
+                ?? ($comment->private_reply_at ? 'private_sent' : ($comment->replies()->where('status', 'sent')->exists() ? 'replied' : 'awaiting'));
+            $comment->pre_hide_status = null;
             $comment->hidden_by_ai = false;
             $nowHidden = false;
         } else {
+            $comment->pre_hide_status = $comment->status;
             $comment->status = 'hidden';
             $comment->hidden_by_ai = false;
             $nowHidden = true;
@@ -130,6 +138,12 @@ class CommentsController extends Controller
     public function done(Request $request, Comment $comment): RedirectResponse
     {
         $this->guard($request, $comment);
+        if ($comment->status === 'hidden') {
+            // Done must not erase the only local record that the
+            // comment is still hidden on the platform (Hunt Y2-15) -
+            // marking it done does not unhide it there.
+            return back()->with('error', __('This comment is hidden on the platform - unhide it before marking it done.'));
+        }
         $comment->status = 'done';
         $comment->save();
 
@@ -148,29 +162,43 @@ class CommentsController extends Controller
     public function approveReply(Request $request, CommentReply $reply): RedirectResponse
     {
         abort_unless((int) $reply->business_id === $this->biz($request), 403);
+        if (! in_array($reply->status, ['draft', 'flagged'], true)) {
+            // State discipline (Hunt Y2-14): only a pending draft can
+            // be approved - re-approving a sent reply would post it
+            // to the platform a second time.
+            return back()->with('error', __('This reply was already handled - it cannot be approved or rejected again.'));
+        }
         $body = trim((string) $request->input('body', ''));
         if ($body !== '' && $body !== $reply->body) {
             \App\Models\AiRuleProposal::create([
                 'business_id' => $reply->business_id,
                 'title' => 'Staff edit থেকে শেখা - comment reply বদলানো হয়েছে',
                 'detail' => 'আগের draft: "' . $reply->body . '" → staff পাঠিয়েছে: "' . $body . '"',
-                'rule_data' => ['source_reply_id' => $reply->id, 'edited_body' => $body],
+                'rule_data' => ['source_reply_id' => $reply->id, 'edited_body' => $body, 'note_only' => true],
                 'status' => 'pending',
             ]);
             $reply->body = $body;
         }
+        $comment = $reply->comment;
+        [$ok, $err] = [true, null];
+        if ($comment) {
+            // The Meta result decides, exactly like reply() above
+            // (Hunt Y2-14): a failed post is never marked sent.
+            $graph = app(\App\Services\MetaGraphService::class);
+            [$ok, $err] = $reply->kind === 'private'
+                ? $graph->privateReplyToComment($comment, (string) $reply->body)
+                : $graph->replyToComment($comment, (string) $reply->body);
+        }
+        if (! $ok) {
+            $reply->save(); // keep any edit; the reply stays a draft
+
+            return back()->with('error', __('Saved, but Meta did not accept it: :error', ['error' => $err]));
+        }
         $reply->status = 'sent';
         $reply->save();
-        $comment = $reply->comment;
         if ($comment) {
             $comment->status = 'replied';
             $comment->save();
-            $graph = app(\App\Services\MetaGraphService::class);
-            if ($reply->kind === 'private') {
-                $graph->privateReplyToComment($comment, (string) $reply->body);
-            } else {
-                $graph->replyToComment($comment, (string) $reply->body);
-            }
         }
 
         return back()->with('success', __('Reply sent'));
@@ -179,7 +207,14 @@ class CommentsController extends Controller
     public function rejectReply(Request $request, CommentReply $reply): RedirectResponse
     {
         abort_unless((int) $reply->business_id === $this->biz($request), 403);
-        $reply->delete();
+        if (! in_array($reply->status, ['draft', 'flagged'], true)) {
+            // Only a pending draft can be rejected (Hunt Y2-14): a
+            // sent reply is the only record of what the shop publicly
+            // said - it is never deleted from history.
+            return back()->with('error', __('This reply was already handled - it cannot be approved or rejected again.'));
+        }
+        $reply->status = 'rejected';
+        $reply->save();
 
         return back()->with('success', __('Draft rejected'));
     }

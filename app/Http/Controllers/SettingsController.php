@@ -120,7 +120,12 @@ class SettingsController extends Controller
                 'negotiation' => app(\App\Services\NegotiationService::class)->config($biz > 0 ? $biz : null),
                 'knowledge' => \App\Models\KnowledgeEntry::where('business_id', $biz)->orderBy('id')->get(['id', 'title', 'body'])->all(),
                 'proposals' => \App\Models\AiRuleProposal::where('business_id', $biz)->orderByRaw("CASE WHEN status = 'pending' THEN 0 ELSE 1 END")->orderByDesc('id')->get()
-                    ->map(fn ($p) => ['id' => $p->id, 'title' => $p->title, 'detail' => $p->detail, 'status' => $p->status])->all(),
+                    ->map(fn ($p) => ['id' => $p->id, 'title' => $p->title, 'detail' => $p->detail, 'status' => $p->status,
+                        // A proposal is actionable only when approving
+                        // it applies a real rule change; staff-edit
+                        // records are notes, and the UI labels them so
+                        // (Hunt Y2-7).
+                        'actionable' => ! empty($p->rule_data['new_rule']) || ! empty($p->rule_data['edit_rule_match'])])->all(),
             ],
             // Staff & Roles group (ধাপ ৪): staff logins and seller-
             // defined roles live here now, not in HRM. Null for
@@ -828,7 +833,14 @@ class SettingsController extends Controller
     {
         $biz = $this->shopBiz($request);
         abort_unless((int) $proposal->business_id === $biz, 403);
+        if ($proposal->status !== 'pending') {
+            // State discipline (Hunt Y2-6): a decided proposal is
+            // finished — approving again must never duplicate a rule
+            // or append a template sentence twice.
+            return back()->with('error', __('This proposal was already decided.'));
+        }
         $data = $proposal->rule_data ?? [];
+        $actionable = ! empty($data['new_rule']) || ! empty($data['edit_rule_match']);
         if (! empty($data['new_rule'])) {
             \App\Models\AiRule::create($data['new_rule'] + ['business_id' => $biz, 'active' => true]);
         }
@@ -842,12 +854,25 @@ class SettingsController extends Controller
         $proposal->status = 'approved';
         $proposal->save();
 
+        if (! $actionable) {
+            // A staff-edit proposal carries no rule change (Hunt
+            // Y2-7): approving it acknowledges the record, it does
+            // not teach the AI anything — and the flash must not
+            // claim a rule changed.
+            return back()->with('success', __('Marked as noted - this proposal only records a staff edit, so no rule changed.'));
+        }
+
         return back()->with('success', __('Proposal approved'));
     }
 
     public function rejectProposal(Request $request, \App\Models\AiRuleProposal $proposal): RedirectResponse
     {
         abort_unless((int) $proposal->business_id === (int) ($request->user()?->business_id ?? 0), 403);
+        if ($proposal->status !== 'pending') {
+            // Rejecting an already-approved proposal must not rewrite
+            // its record while its rule stays live (Hunt Y2-6).
+            return back()->with('error', __('This proposal was already decided.'));
+        }
         $proposal->status = 'rejected';
         $proposal->save();
 

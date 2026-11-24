@@ -16,6 +16,7 @@ use App\Services\StockService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -208,7 +209,9 @@ class InventoryController extends Controller
             // Full catalogue (id/name/sku) for the Edit form's combo
             // components picker - the paginated table rows are not all
             // products, and the picker must offer every one of them.
-            'allProducts' => $all->map(fn ($p) => ['id' => $p->id, 'name' => $p->name, 'sku' => $p->sku])->values(),
+            // has_variants rides along (Y1-F2): the picker leaves
+            // variant products out - they can never be components.
+            'allProducts' => $all->map(fn ($p) => ['id' => $p->id, 'name' => $p->name, 'sku' => $p->sku, 'has_variants' => $variants->has($p->id)])->values(),
             'filters' => ['search' => $request->query('search', '')],
         ]);
     }
@@ -216,11 +219,15 @@ class InventoryController extends Controller
     public function createProduct(Request $request)
     {
         $biz = $this->biz($request);
+        // Y1-F2: the combo component picker needs to know which
+        // products carry variants so it can leave them out.
+        $variantProductIds = ProductVariant::where('business_id', $biz)->distinct()->pluck('product_id')->all();
 
         return Inertia::render('Inventory/AddProduct', [
             'categories' => ProductCategory::where('business_id', $biz)->orderBy('name')->get(),
             'brands' => ProductBrand::where('business_id', $biz)->orderBy('name')->get(),
-            'allProducts' => Product::where('business_id', $biz)->orderBy('name')->get(['id', 'name', 'sku']),
+            'allProducts' => Product::where('business_id', $biz)->orderBy('name')->get(['id', 'name', 'sku'])
+                ->map(fn ($p) => ['id' => $p->id, 'name' => $p->name, 'sku' => $p->sku, 'has_variants' => in_array($p->id, $variantProductIds, true)]),
             'businessName' => $request->user()->business?->name,
         ]);
     }
@@ -260,6 +267,14 @@ class InventoryController extends Controller
             'warranty_coverage' => ['nullable', 'string', 'max:255'],
             'gallery' => ['nullable', 'array'],
             'image_url' => ['nullable', 'string', 'max:1024'],
+            // The uploaded photo itself (Hunt Y4 F4): the form promises
+            // "PNG, JPG up to 5MB" and the server now enforces it -
+            // a real image by content (jpeg/png/webp/gif; SVG and
+            // every other file kind refused), max 5120 KB. The 'file'
+            // rule also fails an upload PHP's own ini limit rejected,
+            // so an oversize photo can no longer "succeed" while the
+            // old image silently stays.
+            'image' => ['nullable', 'file', 'image', 'mimes:jpeg,png,webp,gif', 'max:5120'],
         ]);
         // These columns are NOT NULL in the schema: an emptied form field
         // arrives as null and must fall back to the column default instead
@@ -269,14 +284,43 @@ class InventoryController extends Controller
                 $data[$field] = $fallback;
             }
         }
+        // The validated UploadedFile itself never reaches the model -
+        // only the stored path (or an explicit removal) may.
+        unset($data['image']);
         if ($request->hasFile('image')) {
             $data['image'] = $request->file('image')->store('products', 'public');
         } elseif (! empty($data['image_url'])) {
             $data['image'] = $data['image_url'];
+        } elseif ($request->boolean('remove_image')) {
+            // Remove control on the edit form (Hunt Y4 F6): back to
+            // the "No image" state instead of only ever covering the
+            // photo with another one.
+            $data['image'] = null;
         }
         unset($data['image_url']);
 
         return $data;
+    }
+
+    /**
+     * Delete a product image file from the public disk once nothing
+     * references it any more (Hunt Y4 F5): replaced and deleted
+     * products used to orphan every old file forever. Only local
+     * stored paths are touched - an external image URL is not ours
+     * to delete - and a path another product still references (a
+     * product copy shares the original's file) is kept.
+     */
+    private function deleteStoredProductImage(?string $path, ?int $exceptProductId = null): void
+    {
+        if (! $path || str_starts_with($path, 'http://') || str_starts_with($path, 'https://') || str_starts_with($path, '/')) {
+            return;
+        }
+        $stillUsed = Product::where('image', $path)
+            ->when($exceptProductId, fn ($q) => $q->where('id', '!=', $exceptProductId))
+            ->exists();
+        if (! $stillUsed) {
+            \Illuminate\Support\Facades\Storage::disk('public')->delete($path);
+        }
     }
 
     /** Combo components must be the caller's own products (Hunt W W10): a foreign component id stored a recipe that could never sell. */
@@ -287,6 +331,24 @@ class InventoryController extends Controller
             'components.*.product_id' => ['nullable', 'integer', Rule::exists('products', 'id')->where('business_id', $biz)],
             'components.*.qty' => ['nullable', 'integer', 'min:1'],
         ]);
+        // Y1-F2: a variant product can never be a combo component. The
+        // combo sells whole units, but a variant product's own pool is
+        // empty by design - its stock lives in the variants' pools -
+        // so the combo read "Out of stock" forever and every intake
+        // refused it, with no explanation anywhere. Refuse the save
+        // outright, on both the create and the update path.
+        $componentIds = collect((array) $request->input('components', []))
+            ->pluck('product_id')->filter()->unique()->values();
+        if ($componentIds->isNotEmpty()) {
+            $variantProductIds = ProductVariant::where('business_id', $biz)
+                ->whereIn('product_id', $componentIds)->pluck('product_id')->unique();
+            if ($variantProductIds->isNotEmpty()) {
+                $names = Product::whereIn('id', $variantProductIds)->pluck('name')->implode(', ');
+                throw ValidationException::withMessages([
+                    'components' => __('Combo components cannot be products with variants (:names). Please pick a plain product as the component.', ['names' => $names]),
+                ]);
+            }
+        }
     }
 
     public function storeProduct(Request $request)
@@ -406,11 +468,71 @@ class InventoryController extends Controller
 
             $sku = trim((string) ($rec['sku'] ?? ''));
             $desc = trim((string) ($rec['description'] ?? ''));
-            $catId = $this->findOrCreateNamed(ProductCategory::class, $biz, trim((string) ($rec['category'] ?? '')), $catCache);
-            $brandId = $this->findOrCreateNamed(ProductBrand::class, $biz, trim((string) ($rec['brand'] ?? '')), $brandCache);
             $existing = $sku !== ''
                 ? Product::where('business_id', $biz)->where('sku', $sku)->first()
                 : null;
+
+            // Y3-F10: a row whose SKU belongs to a VARIANT updates that
+            // variant - the old products-only match created a duplicate
+            // standalone product and left the real variant untouched.
+            // A sku-less row named exactly like an export variant row
+            // ("Product (Variant)") matches its variant too, so an
+            // export-edit-reimport round-trip stays lossless even for
+            // variants that carry no SKU.
+            $variant = null;
+            if ($existing === null && $sku !== '') {
+                $variant = ProductVariant::where('business_id', $biz)->where('sku', $sku)->first();
+            }
+            if ($existing === null && $variant === null && $sku === ''
+                && preg_match('/^(.*) \(([^()]*)\)$/', $name, $m)) {
+                $parent = Product::where('business_id', $biz)->where('name', $m[1])->first();
+                if ($parent) {
+                    $variant = ProductVariant::where('business_id', $biz)
+                        ->where('product_id', $parent->id)->where('name', $m[2])->first();
+                }
+            }
+            if ($variant !== null) {
+                if ($nums['price'] !== null) {
+                    $variant->price = $nums['price'];
+                }
+                if ($nums['cost'] !== null) {
+                    $variant->cost = $nums['cost'];
+                }
+                $variant->save();
+                $updated++;
+                if ($nums['stock_qty'] !== null) {
+                    $target = (int) $nums['stock_qty'];
+                    $delta = $target - (int) $variant->stock_qty;
+                    if ($delta !== 0) {
+                        if ($target < (int) $variant->reserved_qty) {
+                            $errors[] = "Row {$rowNo}: stock not set - it would use stock that is reserved for orders";
+                        } else {
+                            $prev = (int) $variant->stock_qty;
+                            $unitCost = (float) ($variant->cost ?? $variant->product?->cost ?? 0);
+                            $variant->increment('stock_qty', $delta);
+                            StockLedger::create([
+                                'business_id' => $biz,
+                                'product_id' => $variant->product_id,
+                                'variant_id' => $variant->id,
+                                'type' => $delta > 0 ? 'adjust_in' : 'adjust_out',
+                                'qty' => abs($delta),
+                                'prev_stock' => $prev,
+                                'new_stock' => $target,
+                                'unit_cost' => $unitCost,
+                                'value_impact' => $delta * $unitCost,
+                                'reference' => 'IMPORT',
+                                'user_id' => $user->id,
+                                'reason' => 'Import',
+                                'note' => 'Stock set by import',
+                            ]);
+                        }
+                    }
+                }
+                continue;
+            }
+
+            $catId = $this->findOrCreateNamed(ProductCategory::class, $biz, trim((string) ($rec['category'] ?? '')), $catCache);
+            $brandId = $this->findOrCreateNamed(ProductBrand::class, $biz, trim((string) ($rec['brand'] ?? '')), $brandCache);
 
             if ($existing === null) {
                 $product = Product::create([
@@ -698,6 +820,19 @@ class InventoryController extends Controller
                 $p->brand_id ? ($brands[$p->brand_id] ?? '') : '',
                 $p->alert_qty, $p->short_description ?? '', $imageUrl, $imageName,
             ];
+            // Y3-F10: every variant rides along as its own row (name
+            // "Product (Variant)", the variant's own SKU, price and
+            // stock) - a variant product used to export as its bare
+            // parent row only, so an export-edit-reimport round-trip
+            // silently lost every variant's price and stock.
+            foreach ($p->variants()->orderBy('id')->get() as $v) {
+                $rows[] = [
+                    $p->name . ' (' . $v->name . ')', $v->sku ?? '', $v->effectivePrice(), $v->cost ?? $p->cost, $v->stock_qty,
+                    $p->category_id ? ($cats[$p->category_id] ?? '') : '',
+                    $p->brand_id ? ($brands[$p->brand_id] ?? '') : '',
+                    $p->alert_qty, '', '', '',
+                ];
+            }
         }
 
         if ($format === 'csv') {
@@ -744,9 +879,14 @@ class InventoryController extends Controller
     {
         abort_unless($product->business_id === $this->biz($request), 403);
         $this->validateComponents($request, (int) $product->business_id);
+        $oldImage = $product->image;
         $data = $this->productData($request);
         unset($data['stock_qty']); // stock changes go through Adjust, never the edit form
         $product->update($data);
+        // A replaced or removed photo leaves no orphan behind (F5).
+        if (array_key_exists('image', $data) && $data['image'] !== $oldImage) {
+            $this->deleteStoredProductImage($oldImage, $product->id);
+        }
 
         // Combo recipe (K-M3): the product form's components picker sends
         // components[] together with components_present=1 - only then is
@@ -780,7 +920,10 @@ class InventoryController extends Controller
         if ($hasHistory) {
             return back()->with('error', __('This product cannot be deleted - it has orders, stock history or reserved stock. Deactivate it instead.'));
         }
+        $image = $product->image;
         $product->delete();
+        // The photo file goes with the product (Hunt Y4 F5).
+        $this->deleteStoredProductImage($image);
 
         return back()->with('success', __('Product deleted'));
     }

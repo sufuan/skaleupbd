@@ -39,12 +39,29 @@ class StorefrontPublicController extends Controller
         return $sf;
     }
 
+    /**
+     * A shop whose business is not approved (pending, rejected or
+     * suspended) must not trade (Hunt Y4 F1): rejecting a seller used
+     * to lock only their dashboard while this storefront kept taking
+     * orders and burning points the seller could not even see. The
+     * public shop therefore closes with the same "unavailable" page
+     * an unpublished storefront shows. (Null/empty status predates
+     * the approval flow and reads as approved, matching
+     * SellerApprovalGate.)
+     */
+    private function businessClosed(Storefront $sf): bool
+    {
+        $status = $sf->business?->status;
+
+        return $status !== null && $status !== '' && $status !== 'approved';
+    }
+
     // ------------------------------------------------------------------ pages
 
     public function home(Request $request)
     {
         $sf = $this->sf($request);
-        if (! $sf->isPublished()) {
+        if ($this->businessClosed($sf) || ! $sf->isPublished()) {
             return $this->unavailable($sf);
         }
         $host = $this->svc->normalizeHost($request->getHost());
@@ -77,7 +94,7 @@ class StorefrontPublicController extends Controller
         if (! $page || $page->status === 'draft') {
             return response()->view('storefront.notfound', ['domain' => $host], 404);
         }
-        if (! $sf->isPublished()) {
+        if ($this->businessClosed($sf) || ! $sf->isPublished()) {
             return $this->unavailable($sf);
         }
         if ($page->status === 'paused') {
@@ -223,7 +240,7 @@ class StorefrontPublicController extends Controller
     public function product(Request $request, int $product)
     {
         $sf = $this->sf($request);
-        if (! $sf->isPublished()) {
+        if ($this->businessClosed($sf) || ! $sf->isPublished()) {
             return $this->unavailable($sf);
         }
         $host = $this->svc->normalizeHost($request->getHost());
@@ -300,7 +317,7 @@ class StorefrontPublicController extends Controller
     public function order(Request $request)
     {
         $sf = $this->sf($request);
-        if (! $sf->isPublished()) {
+        if ($this->businessClosed($sf) || ! $sf->isPublished()) {
             return $this->unavailable($sf);
         }
         // Honeypot: a filled invisible field = a bot. Pretend all is well.

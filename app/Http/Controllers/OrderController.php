@@ -61,8 +61,13 @@ class OrderController extends Controller
             'name' => $o->customer_name,
             'phone' => $o->customer_phone,
             'address' => $o->customer_address,
-            'items' => $o->items->map(fn ($i) => ['name' => $i->name, 'qty' => $i->qty, 'price' => (float) $i->price])->values(),
-            'items_text' => $o->items->map(fn ($i) => $i->name.($i->qty > 1 ? " ×{$i->qty}" : ''))->implode(', '),
+            // Y3-F3: the sold variant is part of the item's name everywhere
+            // the item is shown (order page, invoice, lists) - the same
+            // "Product (Variant)" label the stock messages use. Without it
+            // the person packing the parcel cannot tell Red from Blue.
+            'items' => $o->items->map(fn ($i) => ['name' => $i->variant_name ? "{$i->name} ({$i->variant_name})" : $i->name,
+                'variant_name' => $i->variant_name, 'qty' => $i->qty, 'price' => (float) $i->price])->values(),
+            'items_text' => $o->items->map(fn ($i) => ($i->variant_name ? "{$i->name} ({$i->variant_name})" : $i->name).($i->qty > 1 ? " ×{$i->qty}" : ''))->implode(', '),
             'total' => (float) $o->grand_total,
             'fraud' => $fraud,
             'tags' => $o->tags ?? [],
@@ -191,7 +196,7 @@ class OrderController extends Controller
             foreach ($orders as $o) {
                 fputcsv($out, [$o->invoice_no, DhakaTime::fmt($o->created_at, 'd M Y h:i A'), $o->customer_name, $o->customer_phone,
                     $o->customer_address, $o->district, $o->source, $o->status,
-                    $o->items->map(fn ($i) => $i->name.($i->qty > 1 ? " x{$i->qty}" : ''))->implode(', '),
+                    $o->items->map(fn ($i) => ($i->variant_name ? "{$i->name} ({$i->variant_name})" : $i->name).($i->qty > 1 ? " x{$i->qty}" : ''))->implode(', '),
                     $o->subtotal, $o->discount, $o->delivery_charge, $o->advance, $o->due, $o->grand_total, $o->processor?->name]);
             }
             fclose($out);
@@ -213,18 +218,48 @@ class OrderController extends Controller
     {
         $biz = $this->businessId($request);
 
+        // Y1-F3: arriving from the inbox "Create Order" action, the
+        // conversation's context rides along as query params - the
+        // customer name, phone and address the customer already gave
+        // in chat, plus the product the conversation is about. The
+        // form opens prefilled (everything still editable); the
+        // product id is re-checked against this shop's own active
+        // catalogue, never trusted blindly.
+        $prefillProductId = null;
+        if ($request->query('product_id')) {
+            $prefillProductId = Product::where('business_id', $biz)->where('is_active', true)
+                ->find((int) $request->query('product_id'))?->id;
+        }
+        $prefill = [
+            'customer_name' => mb_substr(trim((string) $request->query('customer_name', '')), 0, 120),
+            'customer_phone' => mb_substr(trim((string) $request->query('customer_phone', '')), 0, 25),
+            'customer_address' => mb_substr(trim((string) $request->query('customer_address', '')), 0, 500),
+            'product_id' => $prefillProductId,
+        ];
+
         return Inertia::render('Orders/Create', [
+            'prefill' => $prefill,
             'sources' => OrderSource::where('business_id', $biz)->where('is_visible', true)->orderBy('sort')
                 ->get(['code', 'label']),
             'products' => Product::where('business_id', $biz)->where('is_active', true)->orderBy('name')
-                ->get()->map(fn ($p) => ['id' => $p->id, 'name' => $p->name, 'sku' => $p->sku,
-                    'price' => (float) $p->price, 'stock' => $p->available(), 'image' => $p->imageUrl(),
+                ->get()->map(function ($p) {
                     // Variant picker (K-H2): the New Order form lets the
                     // seller pick which variant leaves; the line stores
                     // the variant id + name and stock moves on the
                     // variant's own pool.
-                    'variants' => $p->activeVariants()->map(fn ($v) => ['id' => $v->id, 'name' => $v->name,
-                        'price' => (float) $v->effectivePrice(), 'stock' => $v->available()])->all()]),
+                    $variants = $p->activeVariants()->map(fn ($v) => ['id' => $v->id, 'name' => $v->name,
+                        'price' => (float) $v->effectivePrice(), 'stock' => $v->available()])->all();
+
+                    return ['id' => $p->id, 'name' => $p->name, 'sku' => $p->sku,
+                        'price' => (float) $p->price, 'image' => $p->imageUrl(),
+                        // Y3-F2: a variant product's own pool is empty by
+                        // design - what the picker can sell is the sum of
+                        // its variants' pools, so that sum is the stock
+                        // figure the card and the fresh line show (never
+                        // a bare "Stock: 0" while variants hold stock).
+                        'stock' => $variants !== [] ? collect($variants)->sum('stock') : $p->available(),
+                        'variants' => $variants];
+                }),
             'couriers' => app(\App\Services\DeliveryMethodList::class)->forBusiness($biz),
             'allTags' => Order::where('business_id', $biz)->pluck('tags')->filter()
                 ->flatMap(fn ($t) => is_array($t) ? $t : [])->unique()->values(),
@@ -367,8 +402,9 @@ class OrderController extends Controller
 
         $suggestion = app(\App\Services\SuggestCourierService::class)->suggest($order);
 
-        // Collected-advance state: on a cancelled order the advance money is
-        // still sitting in Finance until the seller refunds it from here.
+        // Collected-advance state: on a cancelled or returned order the
+        // advance money is still sitting in Finance until the seller
+        // refunds it from here.
         $finService = app(\App\Services\FinanceService::class);
         $advanceTxn = $finService->orderAdvanceTxn($order);
 
@@ -659,15 +695,19 @@ class OrderController extends Controller
     }
 
     /**
-     * Refund a cancelled order's collected advance. The money sat in Finance
-     * as ordinary income until now; this posts the one reversing expense
-     * entry (FinanceService::refundOrderAdvance, idempotent per order).
+     * Refund a cancelled or returned order's collected advance. The money
+     * sat in Finance as ordinary income until now; this posts the one
+     * reversing expense entry (FinanceService::refundOrderAdvance,
+     * idempotent per order). Y3-F4: a RETURNED order's advance is the
+     * customer's money in exactly the same way - forcing staff to
+     * re-label the return as a cancellation first corrupted the
+     * return-rate figures every report derives from order status.
      */
     public function refundAdvance(Request $request, Order $order): RedirectResponse
     {
         $this->own($request, $order);
-        if ($order->status !== 'Cancelled') {
-            return back()->with('error', __('Only a cancelled order can have its advance refunded.'));
+        if (! in_array($order->status, ['Cancelled', 'Returned'], true)) {
+            return back()->with('error', __('Only a cancelled or returned order can have its advance refunded.'));
         }
         try {
             $txn = app(\App\Services\FinanceService::class)->refundOrderAdvance($order, $request->user());

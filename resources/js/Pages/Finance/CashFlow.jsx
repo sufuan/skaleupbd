@@ -4,7 +4,7 @@ import { confirmDialog } from '@/lib/confirm';
 import { FinActions, fmt, fmtSigned } from './EntrySheet';
 import { t } from '@/lib/i18n';
 
-const SRC_LABEL = { manual: 'Written by hand', order: 'Order', courier: 'Courier', system: 'System' };
+const SRC_LABEL = { manual: 'Written by hand', order: 'Order', courier: 'Courier', system: 'System', payroll: 'Payroll' };
 
 export default function CashFlow(props) {
     const { tab, days, list, filters, accounts, categories, closedThrough } = props;
@@ -72,11 +72,13 @@ export default function CashFlow(props) {
                                     {list.map((x) => (
                                         <tr key={x.id} style={x.voided ? { opacity: 0.55 } : undefined}>
                                             <td>{x.date}</td>
-                                            <td>{x.note}{x.voided && <span className="chip chip-red" style={{ marginLeft: 6 }}>{t('Voided')}</span>}{x.is_reversal && <span className="chip chip-grey" style={{ marginLeft: 6 }}>{t('Reversal entry')}</span>}</td>
+                                            <td>{x.note}{x.voided && <span className="chip chip-red" style={{ marginLeft: 6 }}>{t('Voided')}</span>}{x.is_reversal && <span className="chip chip-grey" style={{ marginLeft: 6 }}>{t('Reversal entry')}</span>}{x.source === 'payroll' && <span className="chip" style={{ marginLeft: 6 }}>{t('Payroll')}</span>}</td>
                                             <td>{x.account}</td><td>{x.category || '-'}</td><td>{t(SRC_LABEL[x.source] || x.source)}</td>
                                             <td><b style={{ color: x.direction === 'in' ? '#16A34A' : '#DC2626' }}>{fmtSigned(x.amount, x.direction)}</b></td>
                                             {filters.account && <td>{x.running !== undefined && x.running !== null ? fmt(x.running) : '-'}</td>}
-                                            <td>{!x.voided && !x.is_reversal && <button className="btn-s" onClick={() => voidTxn(x)}>{t('Void')}</button>}</td>
+                                            <td>{x.source === 'payroll'
+                                                ? <span style={{ fontSize: 12, color: '#64748B' }}>{t('Locked')}</span>
+                                                : !x.voided && !x.is_reversal && <button className="btn-s" onClick={() => voidTxn(x)}>{t('Void')}</button>}</td>
                                         </tr>
                                     ))}
                                     {!list.length && <tr><td colSpan={8}>{t('No transactions in this filter.')}</td></tr>}

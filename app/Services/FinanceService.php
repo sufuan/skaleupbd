@@ -6,7 +6,9 @@ use App\Models\FinanceAccount;
 use App\Models\FinanceCategory;
 use App\Models\FinanceTransaction;
 use App\Models\Order;
+use App\Models\Product;
 use App\Models\User;
+use App\Models\WarrantyClaim;
 use App\Models\WorkEvent;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -320,6 +322,62 @@ class FinanceService
             'account_id' => $account->id, 'direction' => 'out', 'type' => 'advance_refund',
             'amount' => $amount, 'source' => 'order', 'ref_type' => 'order', 'ref_id' => $order->id,
             'note' => __('Advance refund - order :invoice', ['invoice' => $order->invoice_no]),
+            'idempotency_key' => $key, 'txn_date' => now('Asia/Dhaka')->toDateString(),
+        ], $actor);
+    }
+
+    /**
+     * Y3-F8: closing a warranty claim as "Refunded" posts the money
+     * back out - until now the refund existed only as a word on the
+     * claim and neither P&L nor cash ever saw it. The claim row holds
+     * NO amount of its own, so the amount is the price the customer
+     * actually paid for the claimed item: the linked order line's
+     * snapshot price (via the claim's order_id, or its invoice_no),
+     * falling back to the claimed product's current price when the
+     * claim is not tied to an order line. The entry posts as a plain
+     * 'expense' (the type P&L and Cash Flow sum) with the claim as its
+     * reference, and is idempotent per claim.
+     */
+    public function refundWarrantyClaim(WarrantyClaim $claim, ?User $actor = null): FinanceTransaction
+    {
+        $key = 'warranty-refund:claim:' . $claim->id;
+        $existing = FinanceTransaction::where('business_id', $claim->business_id)->where('idempotency_key', $key)->first();
+        if ($existing) {
+            return $existing;
+        }
+        $amount = 0.0;
+        $order = null;
+        if ($claim->order_id) {
+            $order = Order::where('business_id', $claim->business_id)->find($claim->order_id);
+        }
+        if (! $order && $claim->invoice_no) {
+            $order = Order::where('business_id', $claim->business_id)->where('invoice_no', $claim->invoice_no)->first();
+        }
+        if ($order && $claim->product_id) {
+            $item = $order->items()->where('product_id', $claim->product_id)->first();
+            if ($item) {
+                $amount = (float) $item->price;
+            }
+        }
+        if ($amount <= 0 && $claim->product_id) {
+            $product = Product::where('business_id', $claim->business_id)->find($claim->product_id);
+            if ($product) {
+                $amount = (float) $product->price;
+            }
+        }
+        if ($amount <= 0) {
+            throw new \DomainException(__('No refundable amount could be worked out for this claim.'));
+        }
+        $account = FinanceAccount::where('business_id', $claim->business_id)->where('active', true)
+            ->orderByRaw("CASE type WHEN 'mobile' THEN 0 WHEN 'cash' THEN 1 ELSE 2 END")->first();
+        if (! $account) {
+            throw new \DomainException(__('No finance account is set up to refund from.'));
+        }
+
+        return $this->post($claim->business_id, [
+            'account_id' => $account->id, 'direction' => 'out', 'type' => 'expense',
+            'amount' => $amount, 'source' => 'warranty', 'ref_type' => 'warranty_claim', 'ref_id' => $claim->id,
+            'note' => __('Warranty refund - claim :claim', ['claim' => $claim->claim_no]),
             'idempotency_key' => $key, 'txn_date' => now('Asia/Dhaka')->toDateString(),
         ], $actor);
     }

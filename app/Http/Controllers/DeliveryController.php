@@ -415,7 +415,9 @@ class DeliveryController extends Controller
                 'cod' => $order->codAmount(),
                 'courier' => $order->courierMethod?->label() ?? $order->delivery_method,
                 'tracking_id' => $order->tracking_id, 'consignment_id' => $order->consignment_id,
-                'items' => $order->items->map(fn ($i) => ['name' => $i->name, 'qty' => $i->qty])->all(),
+                // Y3-F3: the packing slip is the one document that must
+                // carry the variant - packers pick from it.
+                'items' => $order->items->map(fn ($i) => ['name' => $i->variant_name ? "{$i->name} ({$i->variant_name})" : $i->name, 'qty' => $i->qty])->all(),
                 'delivery_note' => $order->delivery_note,
             ],
             'shop' => [

@@ -29,8 +29,17 @@ class AttendanceService
         return $this->settings->get($this->skey($businessId, $name), $default);
     }
 
-    public function setSetting(int $businessId, string $name, mixed $value, ?int $userId = null): void
+    public function setSetting(int $businessId, string $name, mixed $value, ?int $userId = null, ?User $actor = null): void
     {
+        // With an actor, the save goes through the logged setter so HR
+        // settings land in the Settings Change History (settings_changes)
+        // like every other settings tab (Hunt Y4 F10) - a bare set()
+        // kept only the last value and the previous one was lost.
+        if ($actor) {
+            $this->settings->setLogged($this->skey($businessId, $name), $value, $actor);
+
+            return;
+        }
         $this->settings->set($this->skey($businessId, $name), $value, $userId);
     }
 
@@ -306,6 +315,16 @@ class AttendanceService
     public function absentDaysInMonth(int $businessId, int $userId, string $month): int
     {
         $workingDays = $this->workingDaysInMonth($businessId, $month);
+        // For the CURRENT month only the days up to today have
+        // happened (Hunt Y4 F7): counting the whole month made every
+        // future working day an "absence", so building or paying a
+        // run mid-month cut salaries for days that had not occurred
+        // yet. Same elapsed-days rule monthSummary() already uses.
+        // Past months are untouched - all their days have elapsed.
+        if ($month === substr($this->todayDate(), 0, 7)) {
+            $today = $this->todayDate();
+            $workingDays = array_values(array_filter($workingDays, fn ($d) => $d <= $today));
+        }
         $attended = AttendanceRecord::where('business_id', $businessId)
             ->where('user_id', $userId)
             ->where('date', 'like', $month.'%')

@@ -234,7 +234,12 @@ class MarketingController extends Controller
         $campaign->update(['recipients' => $sent, 'total_cost' => round($cost, 2), 'status' => $sent > 0 ? 'sent' : 'not_sent']);
 
         if ($sent === 0) {
-            return back()->with('error', __('No SMS could be sent - every recipient was stopped by the do-not-send list or the daily/weekly SMS limit.'));
+            // An empty audience is its own cause (Hunt Y2 obs.): the
+            // flash must not blame the do-not-send list when there was
+            // nobody to send to at all.
+            return back()->with('error', empty($audience['phones'])
+                ? __('No SMS could be sent - this audience has no customers with a phone number right now.')
+                : __('No SMS could be sent - every recipient was stopped by the do-not-send list or the daily/weekly SMS limit.'));
         }
 
         return back()->with('success', __('Campaign sent - :sent SMS delivered, cost :cost', ['sent' => $sent, 'cost' => '৳' . number_format($cost, 2)]));

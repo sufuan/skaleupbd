@@ -55,18 +55,20 @@ function ApprovalCard({ seller }) {
                 {st === 'approved' && <><span className="pill green">{t('Approved')}</span>{seller.approved_at && <span style={{ color: 'var(--muted)', marginLeft: 8 }}>{seller.approved_at}</span>}</>}
                 {st === 'pending' && <span className="pill amber">{t('Pending approval')}</span>}
                 {st === 'rejected' && <><span className="pill red">{t('Rejected')}</span>{seller.status_note && <div style={{ color: 'var(--muted)', marginTop: 6 }}>{seller.status_note}</div>}</>}
+                {seller.previously_rejected && <span className="pill red" style={{ marginLeft: 8 }}>{t('Previously rejected')}</span>}
             </div>
-            {st !== 'approved' && (
-                <div style={{ marginTop: 12, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'flex-start' }}>
-                    <button className="btn pri" onClick={approve}>{t('Approve seller')}</button>
-                    <button className="btn" style={{ color: '#B91C1C' }} onClick={() => setShowReject((s) => !s)}>{t('Reject')}</button>
-                    {showReject && (
-                        <form onSubmit={doReject} style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                            <input style={{ height: 38, border: '1px solid #D9CDE4', borderRadius: 8, padding: '0 10px', fontSize: 13.5, fontFamily: 'inherit', width: 260 }} placeholder={t('Why? The seller sees this note')} value={reject.data.status_note} onChange={(e) => reject.setData('status_note', e.target.value)} required />
-                            <button className="btn" style={{ color: '#B91C1C' }} disabled={reject.processing}>{t('Confirm reject')}</button>
-                        </form>
-                    )}
-                </div>
+            <div style={{ marginTop: 12, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+                {st !== 'approved' && <button className="btn pri" onClick={approve}>{t('Approve seller')}</button>}
+                <button className="btn" style={{ color: '#B91C1C' }} onClick={() => setShowReject((s) => !s)}>{st === 'approved' ? t('Suspend seller') : t('Reject')}</button>
+                {showReject && (
+                    <form onSubmit={doReject} style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                        <input style={{ height: 38, border: '1px solid #D9CDE4', borderRadius: 8, padding: '0 10px', fontSize: 13.5, fontFamily: 'inherit', width: 260 }} placeholder={t('Why? The seller sees this note')} value={reject.data.status_note} onChange={(e) => reject.setData('status_note', e.target.value)} required />
+                        <button className="btn" style={{ color: '#B91C1C' }} disabled={reject.processing}>{st === 'approved' ? t('Confirm suspend') : t('Confirm reject')}</button>
+                    </form>
+                )}
+            </div>
+            {st === 'approved' && (
+                <div style={{ fontSize: 12.5, color: 'var(--muted)', marginTop: 8 }}>{t('Suspending stops their dashboard, storefront and API until you approve them again.')}</div>
             )}
         </div>
     );

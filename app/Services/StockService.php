@@ -79,11 +79,71 @@ class StockService
         if ($defaultBranchId === null) {
             return;
         }
-        $row = BranchStock::firstOrCreate(
-            ['branch_id' => $defaultBranchId, 'product_id' => $product->id],
-            ['business_id' => $product->business_id, 'qty' => 0]
-        );
-        $row->increment('qty', $delta);
+        // Y1-F7: a product whose pool was never seeded onto branches
+        // (branch stock switched ON while the shop had no branch, so
+        // the toggle-ON derivation had nothing to land on) must not
+        // take a movement as a bare row on an empty pool - a consume
+        // wrote qty -1 there and broke SUM(branch_stock) ==
+        // products.stock_qty for good. Derive first instead: the
+        // whole current pool lands on the default branch, exactly
+        // like the toggle-ON derivation. Every caller has already
+        // moved products.stock_qty when this runs, so the stored
+        // pool total IS the post-movement truth to seed from.
+        if (! BranchStock::where('business_id', $product->business_id)->where('product_id', $product->id)->exists()) {
+            BranchStock::create([
+                'business_id' => $product->business_id,
+                'branch_id' => $defaultBranchId,
+                'product_id' => $product->id,
+                'qty' => (int) Product::where('id', $product->id)->value('stock_qty'),
+            ]);
+
+            return;
+        }
+        if ($delta > 0) {
+            $row = BranchStock::firstOrCreate(
+                ['branch_id' => $defaultBranchId, 'product_id' => $product->id],
+                ['business_id' => $product->business_id, 'qty' => 0]
+            );
+            $row->increment('qty', $delta);
+
+            return;
+        }
+        // Y3-F6: a consume may not drive any branch negative. Orders
+        // fulfil from the default branch, but when that branch holds
+        // less than the shipment (the stock was transferred out), the
+        // old code simply pushed the default row below zero while the
+        // units physically sat in another branch. Take from the
+        // default branch first, then from the other branches, largest
+        // balance first, flooring every row at zero - the total taken
+        // still equals the pool movement, so SUM(branch_stock) keeps
+        // equalling products.stock_qty.
+        $need = -$delta;
+        $rows = BranchStock::where('business_id', $product->business_id)
+            ->where('product_id', $product->id)->get();
+        $defaultRow = $rows->firstWhere('branch_id', $defaultBranchId);
+        $ordered = collect($defaultRow ? [$defaultRow] : [])
+            ->concat($rows->where('branch_id', '!=', $defaultBranchId)->sortByDesc('qty')->values());
+        foreach ($ordered as $row) {
+            if ($need <= 0) {
+                break;
+            }
+            $take = min($need, max(0, (int) $row->qty));
+            if ($take > 0) {
+                $row->decrement('qty', $take);
+                $need -= $take;
+            }
+        }
+        if ($need > 0) {
+            // The branch rows summed to less than the product pool -
+            // the invariant was already broken upstream. Land the
+            // remainder on the default branch so the sum still tracks
+            // products.stock_qty instead of drifting further apart.
+            $row = BranchStock::firstOrCreate(
+                ['branch_id' => $defaultBranchId, 'product_id' => $product->id],
+                ['business_id' => $product->business_id, 'qty' => 0]
+            );
+            $row->decrement('qty', $need);
+        }
     }
 
     public function adjust(Product $product, int $delta, string $reason, ?string $note, ?User $actor, string $reference = 'ADJUST', ?float $unitCost = null): StockLedger

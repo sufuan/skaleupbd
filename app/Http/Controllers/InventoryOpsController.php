@@ -269,7 +269,17 @@ class InventoryOpsController extends Controller
             'address' => ['nullable', 'string', 'max:255'],
             'phone' => ['nullable', 'string', 'max:30'],
         ]);
-        Branch::create(['business_id' => $this->biz($request)] + $data);
+        $biz = $this->biz($request);
+        Branch::create(['business_id' => $biz] + $data);
+        // Y1-F7: if branch stock was switched ON while the shop had
+        // no branch, the toggle-ON derivation had nothing to land on
+        // and the product pools were never seeded. Creating a branch
+        // into that void seeds them now - the whole pool lands on
+        // this (first/default) branch, the same rule as toggle-ON.
+        if ($this->stock->branchStockEnabled($biz)
+            && ! BranchStock::where('business_id', $biz)->exists()) {
+            $this->stock->rederiveBranchStock($biz);
+        }
 
         return back()->with('success', __('Branch added'));
     }
@@ -292,6 +302,15 @@ class InventoryOpsController extends Controller
     public function destroyBranch(Request $request, Branch $branch)
     {
         abort_unless($branch->business_id === $this->biz($request), 403);
+        // Y3-F7: deleting a branch that still holds stock used to wipe
+        // its branch_stock rows with it, silently breaking the
+        // SUM(branch_stock) == products.stock_qty invariant - the units
+        // still existed in the pool but no screen could say where they
+        // were. Refuse, mirroring the product/variant delete guards;
+        // the seller transfers the stock out first.
+        if (BranchStock::where('branch_id', $branch->id)->where('qty', '>', 0)->exists()) {
+            return back()->with('error', __('This branch still holds stock - move its stock to another branch before deleting it.'));
+        }
         BranchStock::where('branch_id', $branch->id)->delete();
         $branch->delete();
 
@@ -300,15 +319,21 @@ class InventoryOpsController extends Controller
 
     public function storeTransfer(Request $request)
     {
+        $biz = $this->biz($request);
         $data = $request->validate([
-            'from_branch_id' => ['required', 'integer'],
-            'to_branch_id' => ['required', 'integer', 'different:from_branch_id'],
+            // Y3-F5: both branches must exist AND belong to this
+            // business (the scoped-exists rule Hunt W applied to the
+            // other inventory forms). A phantom or foreign branch id
+            // used to be accepted and firstOrCreate()d a branch_stock
+            // row for it, stranding the units where no screen can
+            // reach them.
+            'from_branch_id' => ['required', 'integer', Rule::exists('branches', 'id')->where('business_id', $biz)],
+            'to_branch_id' => ['required', 'integer', 'different:from_branch_id', Rule::exists('branches', 'id')->where('business_id', $biz)],
             'product_id' => ['required', 'integer'],
             'qty' => ['required', 'integer', 'min:1'],
             'cartons' => ['nullable', 'integer', 'min:0'],
             'note' => ['nullable', 'string', 'max:255'],
         ]);
-        $biz = $this->biz($request);
         // Hunt K-H5: a transfer may not exceed what the source branch
         // actually holds for this product - the old check-less path let
         // one typo drive a branch to -997. "Available" mirrors exactly
@@ -464,19 +489,74 @@ class InventoryOpsController extends Controller
     public function updateClaim(Request $request, WarrantyClaim $claim)
     {
         abort_unless($claim->business_id === $this->biz($request), 403);
+        $biz = $claim->business_id;
+        // Y3-F9: a resolution is only ever one of the shop's own
+        // vocabulary (Settings - Warranty), and closing requires one -
+        // a claim used to close with an empty or nonsense resolution
+        // ("Banana") because the field validated as a free string.
+        $resolutions = (array) $this->settings->bizGet($biz, "warranty.{$biz}.resolutions", 'warranty.resolutions',
+            ['Repaired', 'Replaced', 'Refunded', 'No Fault Found']);
         $data = $request->validate([
             'status' => ['required', 'string', 'in:received,in_repair,sent_to_supplier,back_from_supplier,ready_for_pickup,closed,rejected,cancelled'],
-            'resolution' => ['nullable', 'string', 'max:120'],
+            'resolution' => ['nullable', 'string', 'max:120', 'required_if:status,closed', Rule::in($resolutions)],
             'reject_reason' => ['nullable', 'string', 'max:120'],
             'cancel_reason' => ['nullable', 'string', 'max:120'],
             'note' => ['nullable', 'string'],
         ]);
+        // Y3-F8: "Replaced" and "Refunded" are real-world outcomes, not
+        // just labels - the replacement unit leaves the shelf and the
+        // refunded money leaves the till. Apply the effect BEFORE the
+        // claim row changes, so a refusal (no unit available, no
+        // refundable amount, no finance account) leaves the claim
+        // untouched instead of recording an outcome that never happened.
+        if ($data['status'] === 'closed' && ($data['resolution'] ?? null) === 'Replaced') {
+            try {
+                $this->applyWarrantyReplacement($claim, $request->user());
+            } catch (\RuntimeException $e) {
+                return back()->with('error', $e->getMessage());
+            }
+        }
+        if ($data['status'] === 'closed' && ($data['resolution'] ?? null) === 'Refunded') {
+            try {
+                app(\App\Services\FinanceService::class)->refundWarrantyClaim($claim, $request->user());
+            } catch (\DomainException | \RuntimeException $e) {
+                return back()->with('error', $e->getMessage());
+            }
+        }
         if (in_array($data['status'], ['closed', 'rejected', 'cancelled'], true)) {
             $data['closed_date'] = DhakaTime::today();
+        } else {
+            // Y3-F9: leaving a closed state (a reopened claim) clears
+            // the date - an open claim must not carry one.
+            $data['closed_date'] = null;
         }
         $claim->update($data);
 
         return back()->with('success', __('Claim updated'));
+    }
+
+    /**
+     * Y3-F8: closing a claim as "Replaced" takes one unit of the
+     * claimed product out of stock through StockService (ledger row
+     * referencing the claim, branch sync included). Fires once per
+     * claim - the ledger reference is the guard, so a reopen/re-close
+     * never consumes a second unit for the same claim. StockService
+     * refuses when no unit is available, with its translated floor
+     * messages.
+     */
+    private function applyWarrantyReplacement(WarrantyClaim $claim, ?User $actor): void
+    {
+        $reference = 'WARRANTY-' . $claim->claim_no;
+        if (StockLedger::where('business_id', $claim->business_id)->where('reference', $reference)->exists()) {
+            return;
+        }
+        $product = $claim->product_id
+            ? Product::where('business_id', $claim->business_id)->find($claim->product_id)
+            : null;
+        if (! $product) {
+            throw new \RuntimeException(__('This claim has no product to take a replacement unit from.'));
+        }
+        $this->stock->adjust($product, -1, 'Warranty replacement', "Replacement for claim {$claim->claim_no}", $actor, $reference);
     }
 
     public function saveWarrantySettings(Request $request)

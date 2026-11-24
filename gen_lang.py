@@ -4196,6 +4196,64 @@ BN.update([
     ("This variant cannot be deleted - it has stock or appears on orders.", "এই ভ্যারিয়েন্টটি মোছা যাবে না - এতে স্টক আছে বা এটি অর্ডারে আছে।"),
 ])
 
+BN.update([
+    # ---- round 9 fix batch Y3 (Hunt Y3) ----
+    (":orders orders · :delivered delivered · :returned returned", ":ordersটি অর্ডার · :deliveredটি ডেলিভারি · :returnedটি ফেরত"),
+    ("Courier network :rate% · this shop: :note", "কুরিয়ার নেটওয়ার্ক :rate% · এই দোকান: :note"),
+    ("Only a cancelled or returned order can have its advance refunded.", "শুধু বাতিল বা ফেরত আসা অর্ডারের অগ্রিম ফেরত দেওয়া যায়।"),
+    ("This branch still holds stock - move its stock to another branch before deleting it.", "এই শাখায় এখনো স্টক আছে - মোছার আগে স্টক অন্য শাখায় সরিয়ে নিন।"),
+    ("This claim has no product to take a replacement unit from.", "এই দাবিতে কোনো পণ্য নেই - বদলি পণ্য দেওয়া যাবে না।"),
+    ("No refundable amount could be worked out for this claim.", "এই দাবির জন্য ফেরতযোগ্য পরিমাণ বের করা যায়নি।"),
+    ("Warranty refund - claim :claim", "ওয়ারেন্টি ফেরত - দাবি :claim"),
+    ("Search and add products from the \"Click To Add Products\" panel.", "\"পণ্য যোগ করতে ক্লিক করুন\" প্যানেল থেকে পণ্য খুঁজে যোগ করুন।"),
+])
+
+
+BN.update({
+    'This adjustment would take the salary below zero.': 'এই সমন্বয়ে বেতন শূন্যের নিচে নেমে যাবে।',
+    'This payroll total is negative - fix the adjustments before paying.': 'এই পে-রোলের মোট অঙ্ক ঋণাত্মক - টাকা দেওয়ার আগে সমন্বয়গুলো ঠিক করুন।',
+    'This entry was created by Payroll and is locked - the payroll run is the record for this payment.': 'এই এন্ট্রিটি পে-রোল থেকে তৈরি এবং লক করা - এই পেমেন্টের রেকর্ড হলো পে-রোল রানটাই।',
+    'Seller decisions': 'সেলারদের বিষয়ে সিদ্ধান্ত',
+    'Every approval and rejection of a shop, with who decided and the note they gave. A rejection stays here even if the shop is approved later.': 'প্রতিটি দোকানের অনুমোদন ও বাতিলের রেকর্ড, কে সিদ্ধান্ত দিয়েছেন এবং তিনি যে নোট দিয়েছেন তা সহ। দোকান পরে অনুমোদন পেলেও বাতিলের রেকর্ড এখানে থেকে যায়।',
+    'No seller decisions recorded yet': 'এখনো কোনো সেলার সিদ্ধান্ত রেকর্ড হয়নি',
+    'Shop views': 'দোকান দেখা',
+    'Previously rejected': 'আগে বাতিল হয়েছে',
+    'Suspend seller': 'সেলার স্থগিত করুন',
+    'Confirm suspend': 'স্থগিত নিশ্চিত করুন',
+    'Suspending stops their dashboard, storefront and API until you approve them again.': 'স্থগিত করলে আবার অনুমোদন না দেওয়া পর্যন্ত তাদের ড্যাশবোর্ড, স্টোরফ্রন্ট ও API বন্ধ থাকবে।',
+    'The current photo will be removed when you save.': 'সেভ করলে বর্তমান ছবিটি মুছে যাবে।',
+    'Current photo': 'বর্তমান ছবি',
+    'Remove image': 'ছবি সরান',
+})
+
+BN.update([
+    # ---- round 9 fix batch Y2 (Hunt Y2) ----
+    ("This draft was already handled - it cannot be approved or rejected again.", "এই ড্রাফটটি আগেই সামলানো হয়েছে - এটি আর অনুমোদন বা বাতিল করা যাবে না।"),
+    ("This reply was already handled - it cannot be approved or rejected again.", "এই রিপ্লাইটি আগেই সামলানো হয়েছে - এটি আর অনুমোদন বা বাতিল করা যাবে না।"),
+    ("This proposal was already decided.", "এই প্রস্তাবটির সিদ্ধান্ত আগেই হয়ে গেছে।"),
+    ("Marked as noted - this proposal only records a staff edit, so no rule changed.", "নোট করা হয়েছে - এই প্রস্তাবটি শুধু স্টাফের এডিটের রেকর্ড, তাই কোনো নিয়ম বদলায়নি।"),
+    ("Mark as noted", "নোট করুন"),
+    ("This proposal only records a staff edit - no rule will change.", "এই প্রস্তাবটি শুধু স্টাফের এডিটের রেকর্ড - কোনো নিয়ম বদলাবে না।"),
+    ("Showing the latest 300 messages", "সর্বশেষ ৩০০টি মেসেজ দেখানো হচ্ছে"),
+    ("Showing the latest 100 conversations", "সর্বশেষ ১০০টি কথোপকথন দেখানো হচ্ছে"),
+    ("Failed to send - Meta did not accept it", "পাঠানো যায়নি - Meta গ্রহণ করেনি"),
+    ("This customer is on your blocklist - a chat order cannot be created for them.", "এই কাস্টমার আপনার ব্লকলিস্টে আছেন - তার জন্য চ্যাট অর্ডার তৈরি করা যাবে না।"),
+    ("This comment is hidden on the platform - unhide it before marking it done.", "এই মন্তব্যটি প্ল্যাটফর্মে লুকানো আছে - সম্পন্ন চিহ্নিত করার আগে লুকানো তুলে নিন।"),
+    ("No SMS could be sent - this audience has no customers with a phone number right now.", "কোনো SMS পাঠানো যায়নি - এই অডিয়েন্সে এখন ফোন নম্বরসহ কোনো কাস্টমার নেই।"),
+    ("Order created, but the confirmation message could not be sent - Meta did not accept it: :error", "অর্ডার তৈরি হয়েছে, কিন্তু নিশ্চিতকরণ মেসেজটি পাঠানো যায়নি - Meta গ্রহণ করেনি: :error"),
+])
+
+
+BN.update({
+})
+
+
+BN.update({
+    'Combo components cannot be products with variants (:names). Please pick a plain product as the component.': 'কম্বোর উপাদান ভ্যারিয়েন্টওয়ালা প্রোডাক্ট হতে পারবে না (:names)। উপাদান হিসেবে একটি সাধারণ প্রোডাক্ট বেছে নিন।',
+    'Products with variants cannot be used as combo components.': 'ভ্যারিয়েন্টওয়ালা প্রোডাক্ট কম্বোর উপাদান হিসেবে ব্যবহার করা যাবে না।',
+    'This combo includes a product with variants, so it cannot be sold as a combo. Replace that component with a plain product.': 'এই কম্বোতে ভ্যারিয়েন্টওয়ালা প্রোডাক্ট আছে, তাই এটি কম্বো হিসেবে বিক্রি হবে না। ওই উপাদানটি বদলে একটি সাধারণ প্রোডাক্ট দিন।',
+})
+
 EN = {k: k for k in BN}
 
 with open('lang/en.json', 'w', encoding='utf-8') as f:

@@ -9,7 +9,12 @@ export default function Sellers({ sellers, q, pendingApprovals }) {
     const [search, setSearch] = useState(q || '');
     const submit = (e) => { e.preventDefault(); router.get('/admin/sellers', { q: search }, { preserveState: true }); };
     const pill = (s) => s.status === 'active' ? <span className="pill green">{t('Active')}</span> : s.status === 'expired' ? <span className="pill red">{t('Expired')}</span> : s.status === 'cancelled' ? <span className="pill">{t('Cancelled')}</span> : <span className="pill amber">{t('No package')}</span>;
-    const approvalPill = (s) => s.approval_status === 'pending' ? <span className="pill amber">{t('Pending approval')}</span> : s.approval_status === 'rejected' ? <span className="pill red">{t('Rejected')}</span> : <span className="pill green">{t('Approved')}</span>;
+    const approvalPill = (s) => (
+        <>
+            {s.approval_status === 'pending' ? <span className="pill amber">{t('Pending approval')}</span> : s.approval_status === 'rejected' ? <span className="pill red">{t('Rejected')}</span> : <span className="pill green">{t('Approved')}</span>}
+            {s.previously_rejected && <div style={{ marginTop: 4 }}><span className="pill red">{t('Previously rejected')}</span></div>}
+        </>
+    );
 
     return (
         <AppLayout>

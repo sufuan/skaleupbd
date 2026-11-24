@@ -85,6 +85,13 @@ class PayrollService
         if ($run->status === 'paid') {
             throw new \RuntimeException('এই মাসের বেতন ইতিমধ্যে দেওয়া হয়ে গেছে।');
         }
+        // Money floor (Hunt Y4 F8): a run whose total is negative can
+        // never be paid - paying one posted a NEGATIVE expense into
+        // Finance, inflating every expense aggregate. Checked in the
+        // service as well as the item form, so no caller can pay one.
+        if ((float) $run->total < 0) {
+            throw new \RuntimeException(__('This payroll total is negative - fix the adjustments before paying.'));
+        }
         $businessId = (int) $run->business_id;
         $this->finance->ensureCategories($businessId);
         $category = FinanceCategory::where('business_id', $businessId)->where('name', 'বেতন')->first();

@@ -554,8 +554,9 @@ function Ai({ tab, ai, hasShop = true }) {
                     <div key={p.id} className="rule-card" style={{ background: '#fff' }}>
                         <div className="b">{p.title}</div>
                         <div className="sm mut mt8">{p.detail}</div>
+                        {p.actionable === false && <div className="sm mut mt8">{t('This proposal only records a staff edit - no rule will change.')}</div>}
                         <div className="flex mt8" style={{ gap: 8 }}>
-                            <button type="button" className="btn pri" onClick={() => router.post(`/settings/ai-proposals/${p.id}/approve`, {}, { preserveScroll: true })}>{t('Approve')}</button>
+                            <button type="button" className="btn pri" onClick={() => router.post(`/settings/ai-proposals/${p.id}/approve`, {}, { preserveScroll: true })}>{p.actionable === false ? t('Mark as noted') : t('Approve')}</button>
                             <button type="button" className="btn" onClick={() => router.post(`/settings/ai-proposals/${p.id}/reject`, {}, { preserveScroll: true })}>{t('Reject')}</button>
                         </div>
                     </div>

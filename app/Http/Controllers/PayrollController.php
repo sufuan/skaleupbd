@@ -110,6 +110,18 @@ class PayrollController extends Controller
             'advance_cut' => 'nullable|numeric|min:0',
             'other_adjust' => 'nullable|numeric',
         ]);
+        // Money floor (Hunt Y4 F8): an adjustment may never push this
+        // item's net below zero - an unbounded negative other_adjust
+        // once produced a negative run that was then PAID, posting a
+        // negative expense into Finance. The bound depends on this
+        // item's own basic and cuts, so it is checked per item here.
+        $net = round((float) $item->basic - (float) $item->absent_cut
+            - (float) ($data['advance_cut'] ?? 0) + (float) ($data['other_adjust'] ?? 0), 2);
+        if ($net < 0) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'other_adjust' => __('This adjustment would take the salary below zero.'),
+            ]);
+        }
         $item->advance_cut = $data['advance_cut'] ?? 0;
         $item->other_adjust = $data['other_adjust'] ?? 0;
         $item->recomputeNet();

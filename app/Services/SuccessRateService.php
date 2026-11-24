@@ -70,13 +70,15 @@ class SuccessRateService
             $note = 'No delivery history yet';
         } elseif ($headlineRate >= 60) {
             $verdict = 'safe';
-            $note = "{$orders} orders · {$delivered} delivered · {$returned} returned";
+            // Y3-F11: this note used to be a hardcoded English string -
+            // it rendered in English inside the Bangla order page.
+            $note = __(':orders orders · :delivered delivered · :returned returned', ['orders' => $orders, 'delivered' => $delivered, 'returned' => $returned]);
         } else {
             $verdict = 'risky';
-            $note = "{$orders} orders · {$delivered} delivered · {$returned} returned";
+            $note = __(':orders orders · :delivered delivered · :returned returned', ['orders' => $orders, 'delivered' => $delivered, 'returned' => $returned]);
         }
         if ($headline === 'network' && ! ($blocked || $blacklisted)) {
-            $note = 'Courier network ' . $headlineRate . '% · this shop: ' . $note;
+            $note = __('Courier network :rate% · this shop: :note', ['rate' => $headlineRate, 'note' => $note]);
         }
 
         return ['rate' => $headlineRate, 'verdict' => $verdict, 'note' => $note,

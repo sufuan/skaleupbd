@@ -141,6 +141,8 @@ class PaymentClaimService
                     'approved_at' => now(),
                     'status_note' => null,
                 ]);
+                // Same audit trail as a direct approval (Hunt Y4 F10).
+                \App\Models\SellerDecisionLog::record($business->id, $adminId, 'approved', 'Approved with payment claim #'.$claim->id);
             }
 
             return $claim;

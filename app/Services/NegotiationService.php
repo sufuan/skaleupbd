@@ -71,7 +71,11 @@ class NegotiationService
     /** The next rung's value, without changing any state. */
     public function nextOfferValue(Conversation $conversation, Product $product): ?float
     {
-        $cfg = $this->config();
+        // The SHOP's step, like floor()/ladder() read it — with no
+        // business id this silently fell back to the platform default
+        // step, so the pane's ladder and the AI's real offers disagreed
+        // (Hunt Y2-9). One config, one definition.
+        $cfg = $this->config((int) $product->business_id);
         $floor = $this->floor($product);
         $nextStep = (int) $conversation->neg_step + 1;
         $offer = round($product->effectivePrice() * (1 - ($cfg['step'] * $nextStep) / 100));

@@ -10,6 +10,7 @@ use App\Models\ChatMessage;
 use App\Models\Comment;
 use App\Models\CommentReply;
 use App\Models\Conversation;
+use App\Models\Customer;
 use App\Models\KnowledgeEntry;
 use App\Models\Product;
 use Illuminate\Support\Facades\Cache;
@@ -34,7 +35,7 @@ class RuleBrainService
         'bargain' => ['কমান', 'কমাতে', 'discount', 'কম হবে', 'কম রাখেন', 'dam kom', 'less hobe', 'শেষ দাম', 'কম দাম', 'কমে দেন', 'দিলে নিব', 'টাকায় দিলে'],
         'spam' => ['follower', 'ফলোয়ার', 'সস্তায় follower', 'cheap follower', 'like কিনুন', 'free money', 'click here', 'click link', 'scam', 'earn money', 'make money', 'casino', 'ক্যাসিনো', 'betting', 'বাজি', 'ফ্রি টাকা', 'টাকা ইনকাম', 'লিংকে ক্লিক', 'crypto', 'double investment', 'lottery', 'লটারি'],
         'angry' => ['পাইনি', 'পাই নাই', 'রেগে', 'complain', 'অভিযোগ', 'দুই দিন হলো', 'এখনো আসেনি', 'প্রতারক', 'প্রতারণা', 'টাকা মেরে', 'ভুয়া', 'মামলা', 'পুলিশ', 'কোর্ট', 'ভোক্তা অধিকার', 'ঠকিয়ে'],
-        'order_intent' => ['order confirm', 'অর্ডার কনফার্ম', 'confirm korlam', 'নিতে চাই', 'order korte chai', 'কনফার্ম করেন', 'কনফার্ম করুন', 'কনফার্ম করে দেন', 'অর্ডার করলাম', 'অর্ডার দিলাম'],
+        'order_intent' => ['order confirm', 'অর্ডার কনফার্ম', 'confirm korlam', 'নিতে চাই', 'order korte chai', 'অর্ডার করতে চাই', 'কনফার্ম করেন', 'কনফার্ম করুন', 'কনফার্ম করে দেন', 'অর্ডার করলাম', 'অর্ডার দিলাম'],
     ];
 
     public function __construct(
@@ -92,6 +93,126 @@ class RuleBrainService
             'auto' => 'draft',
             default => $mode,
         };
+    }
+
+    /**
+     * Is this conversation's customer on the shop's blocklist? The
+     * Customers page flag (is_blacklisted) — the same record the
+     * courier auto-approve guard reads (Hunt Y2-16).
+     */
+    private function customerBlocklisted(Conversation $conversation): bool
+    {
+        $phone = PhoneNormalizer::normalize($conversation->customer_phone ?? '');
+        if ($phone === '') {
+            return false;
+        }
+
+        return (bool) Customer::where('business_id', (int) $conversation->business_id)
+            ->where('phone', $phone)->value('is_blacklisted');
+    }
+
+    /**
+     * A blocklisted customer gets no AI reply at all: the conversation
+     * is flagged for a human and the brain stays silent (Hunt Y2-16).
+     * Returns true when the caller must stop here.
+     */
+    private function blocklistSilences(Conversation $conversation): bool
+    {
+        if (! $this->customerBlocklisted($conversation)) {
+            return false;
+        }
+        if (! $conversation->needs_human) {
+            $conversation->needs_human = true;
+            $conversation->save();
+        }
+        $this->log((int) $conversation->business_id, 'blocklisted_handover', $conversation->customer_name . ' - blocklisted customer, AI stayed silent', null, $conversation);
+
+        return true;
+    }
+
+    /**
+     * The shop's Working Hours window as [startMinute, endMinute] of
+     * the Dhaka day, or null when the field is empty or cannot be
+     * understood (then no hour restriction applies — a free-text field
+     * must never silently mute a shop). Accepts the forms the Settings
+     * field itself shows: "9 AM - 11 PM", "09:00 - 18:00" and the
+     * Bangla "সকাল ৯টা - রাত ১১টা".
+     */
+    private function workingHoursWindow(int $businessId): ?array
+    {
+        $raw = (string) $this->settings->bizGet($businessId, "ai.{$businessId}.working_hours", 'ai.working_hours', '');
+        if (trim($raw) === '') {
+            return null;
+        }
+        $s = strtr($raw, ['০' => '0', '১' => '1', '২' => '2', '৩' => '3', '৪' => '4', '৫' => '5', '৬' => '6', '৭' => '7', '৮' => '8', '৯' => '9']);
+        $found = []; // [offset, minutes]
+        if (preg_match_all('/(\d{1,2})(?::(\d{2}))?\s*(am|pm)\b/i', $s, $m, PREG_OFFSET_CAPTURE)) {
+            foreach ($m[0] as $i => $full) {
+                $h = (int) $m[1][$i][0];
+                $min = (int) ($m[2][$i][0] ?? 0);
+                if (strtolower($m[3][$i][0]) === 'pm' && $h < 12) {
+                    $h += 12;
+                }
+                if (strtolower($m[3][$i][0]) === 'am' && $h === 12) {
+                    $h = 0;
+                }
+                $found[] = [$full[1], $h * 60 + $min];
+            }
+        }
+        if (preg_match_all('/(সকাল|ভোর|দুপুর|বিকাল|বিকেল|সন্ধ্যা|রাত)\s*(\d{1,2})(?::(\d{2}))?\s*টা?/u', $s, $m, PREG_OFFSET_CAPTURE)) {
+            foreach ($m[0] as $i => $full) {
+                $h = (int) $m[2][$i][0];
+                $min = (int) ($m[3][$i][0] ?? 0);
+                $h = match ($m[1][$i][0]) {
+                    'সকাল', 'ভোর' => $h === 12 ? 0 : $h,
+                    'দুপুর' => $h === 12 ? 12 : $h + 12,
+                    'বিকাল', 'বিকেল', 'সন্ধ্যা' => $h + 12,
+                    'রাত' => $h === 12 ? 0 : $h + 12,
+                    default => $h,
+                };
+                $found[] = [$full[1], ($h % 24) * 60 + $min];
+            }
+        }
+        if ($found === [] && preg_match_all('/\b(\d{1,2}):(\d{2})\b/', $s, $m, PREG_OFFSET_CAPTURE)) {
+            foreach ($m[0] as $i => $full) {
+                $found[] = [$full[1], ((int) $m[1][$i][0]) * 60 + (int) $m[2][$i][0]];
+            }
+        }
+        if (count($found) < 2) {
+            return null;
+        }
+        usort($found, fn ($a, $b) => $a[0] <=> $b[0]);
+
+        return [$found[0][1], $found[1][1]];
+    }
+
+    private function withinWorkingHours(int $businessId): bool
+    {
+        $window = $this->workingHoursWindow($businessId);
+        if ($window === null || $window[0] === $window[1]) {
+            return true;
+        }
+        [$start, $end] = $window;
+        $dhaka = \Carbon\Carbon::now(\App\Support\DhakaTime::TZ);
+        $now = $dhaka->hour * 60 + $dhaka->minute;
+
+        return $start < $end
+            ? ($now >= $start && $now < $end)
+            : ($now >= $start || $now < $end); // overnight window, e.g. 8 PM - 2 AM
+    }
+
+    /**
+     * The Settings promise, enforced (Hunt Y2-10): outside the shop's
+     * Working Hours the AI only drafts — auto/full_auto step down to
+     * draft, every other level is untouched.
+     */
+    private function applyWorkingHours(int $businessId, string $mode): string
+    {
+        if (($mode === 'auto' || $mode === 'full_auto') && ! $this->withinWorkingHours($businessId)) {
+            return 'draft';
+        }
+
+        return $mode;
     }
 
     /** Does the text carry this intent's keywords? Short Latin words need word boundaries — "hi" must not fire inside "this". */
@@ -512,6 +633,7 @@ class RuleBrainService
         if ($mode === 'off') {
             return null;
         }
+        $mode = $this->applyWorkingHours((int) $conversation->business_id, $mode);
         $recent = ChatMessage::where('conversation_id', $conversation->id)
             ->where('direction', 'out')
             ->where('created_at', '>=', now()->subDay())
@@ -525,7 +647,7 @@ class RuleBrainService
             'conversation_id' => $conversation->id,
             'direction' => 'out',
             'sender' => 'ai',
-            'body' => 'আপনার বিষয়টা আমাদের অ্যাডমিনকে জানানো হয়েছে — কিছুক্ষণের মধ্যে উত্তর পাবেন।',
+            'body' => 'আপনার বিষয়টা আমাদের অ্যাডমিনকে জানানো হয়েছে - কিছুক্ষণের মধ্যে উত্তর পাবেন।',
             'status' => ($mode === 'auto' || $mode === 'full_auto') ? 'sent' : 'draft',
             'meta' => ['kind' => 'holding'],
         ]);
@@ -564,20 +686,27 @@ class RuleBrainService
         $best = null;
         $bestScore = 0;
         foreach (KnowledgeEntry::where('business_id', $businessId)->get() as $entry) {
+            $title = mb_strtolower(trim((string) $entry->title));
             $score = 0;
-            foreach (preg_split('/\s+/u', mb_strtolower($entry->title)) ?: [] as $word) {
+            foreach (preg_split('/\s+/u', $title) ?: [] as $word) {
                 $word = trim($word, ' ,।?');
                 if (mb_strlen($word) >= 3 && str_contains($hay, $word)) {
                     $score++;
                 }
             }
-            if ($score > $bestScore) {
+            // One shared generic word must not let an entry answer a
+            // question it is not about (Hunt Y2-12: "policy" alone sent
+            // the delivery policy to a warranty question). An entry
+            // qualifies on TWO title words, or when the customer says
+            // the entry's whole title.
+            $qualifies = $score >= 2 || ($title !== '' && str_contains($hay, $title));
+            if ($qualifies && $score > $bestScore) {
                 $bestScore = $score;
                 $best = $entry;
             }
         }
 
-        return $bestScore >= 1 ? $best : null;
+        return $best;
     }
 
     /** The order summary text + meta, shared by the direct and guided-collection paths. */
@@ -593,8 +722,11 @@ class RuleBrainService
         $unit = $conversation->neg_offer !== null ? (float) $conversation->neg_offer : ($variant ? $variant->effectivePrice() : $product->effectivePrice());
         $total = $unit + $delivery;
         $itemName = $product->name . ($variant ? ' (' . $variant->name . ')' : '');
+        // The quantity sits in parentheses, never "×1 - price": the
+        // money guard reads "1 - 3,400 টাকা" as a price RANGE and the
+        // summary would flag itself (Hunt Y2-11 fix regression).
         $body = $conversation->customer_name . ' · ' . ($conversation->customer_address ?: 'ঠিকানা বাকি') . "\n"
-            . $itemName . ' ×1 — ' . number_format($unit) . ' টাকা + delivery ' . number_format($delivery) . ' টাকা = মোট ' . number_format($total) . ' টাকা (Cash on Delivery)';
+            . $itemName . ' (×1) ' . number_format($unit) . ' টাকা + delivery ' . number_format($delivery) . ' টাকা = মোট ' . number_format($total) . ' টাকা (Cash on Delivery)';
         // Cart snapshot: what this conversation is currently buying.
         $state = (array) ($conversation->state_data ?? []);
         $state['cart'] = [['product_id' => $product->id, 'variant_id' => $variant?->id, 'variant_name' => $variant?->name, 'qty' => 1, 'agreed_price' => $unit]];
@@ -609,8 +741,8 @@ class RuleBrainService
         $prefix = $this->honorificPrefix($businessId, $customerName);
 
         return $step === 'phone'
-            ? $prefix . 'অর্ডারের জন্য আপনার মোবাইল নম্বরটা দিন — যে নম্বরে কুরিয়ার কল করবে।'
-            : $prefix . 'ডেলিভারির ঠিকানাটা দিন — বাসা/হোল্ডিং, রোড, এলাকা, জেলা।';
+            ? $prefix . 'অর্ডারের জন্য আপনার মোবাইল নম্বরটা দিন - যে নম্বরে কুরিয়ার কল করবে।'
+            : $prefix . 'ডেলিভারির ঠিকানাটা দিন - বাসা/হোল্ডিং, রোড, এলাকা, জেলা।';
     }
 
     /** A valid Bangladeshi mobile number from free text, normalised to 01XXXXXXXXX. */
@@ -706,6 +838,10 @@ class RuleBrainService
         if ($mode === 'off') {
             return null;
         }
+        if ($this->blocklistSilences($conversation)) {
+            return null;
+        }
+        $mode = $this->applyWorkingHours((int) $conversation->business_id, $mode);
 
         return $this->simpleOutgoing($conversation, $body, $kind, $mode);
     }
@@ -813,7 +949,11 @@ class RuleBrainService
                 'direction' => 'out',
                 'sender' => 'ai',
                 'body' => $summary['body'],
-                'status' => ($mode === 'auto' || $mode === 'full_auto') ? 'sent' : 'draft',
+                // An order summary commits the shop to a price and an
+                // order: in plain Auto it stays a draft like every
+                // other committing reply (Hunt Y2-8) - only Full auto
+                // sends it.
+                'status' => $mode === 'full_auto' ? 'sent' : 'draft',
                 'meta' => array_merge($summary['meta'], ['kind' => 'order_summary']),
             ]);
             $this->log($biz, $msg->status === 'sent' ? 'auto_sent' : 'draft_created', $conversation->customer_name . ' — Order summary (collected)', null, $conversation);
@@ -1075,6 +1215,10 @@ class RuleBrainService
             return null;
         }
 
+        if ($this->blocklistSilences($conversation)) {
+            return null;
+        }
+
         $rule = $this->matchRule($biz, $text, $conversation->channel, $conversation);
         $intent = $this->detectIntent($text, $conversation);
         $product = $this->productFor($biz, $text, $conversation);
@@ -1211,7 +1355,7 @@ class RuleBrainService
             return null;
         }
 
-        $mode = $auto[$conversation->channel] ?? 'draft';
+        $mode = $this->applyWorkingHours($biz, $auto[$conversation->channel] ?? 'draft');
         if ($mode === 'off') {
             return null;
         }
@@ -1257,7 +1401,7 @@ class RuleBrainService
             $h = $this->honorific($biz, $conversation->customer_name);
             $first = match ($quote['kind']) {
                 'accept' => 'ঠিক আছে' . ($h !== '' ? ' ' . $h : '') . ', আপনার কথামতোই ⟦offer⟧ টাকায় দিচ্ছি।',
-                'floor_repeat' => ($h !== '' ? $h . ', ' : '') . '⟦offer⟧ টাকাই শেষ দাম — এর কমে আর হচ্ছে না।',
+                'floor_repeat' => ($h !== '' ? $h . ', ' : '') . '⟦offer⟧ টাকাই শেষ দাম - এর কমে আর হচ্ছে না।',
                 default => 'বুঝতে পারছি' . ($h !== '' ? ' ' . $h : '') . '। আপনার জন্য ⟦offer⟧ টাকায় দিতে পারব।',
             };
             $slottedBody = $first . ' ডেলিভারি চার্জসহ মোট ⟦total⟧ টাকা (ঢাকার ভিতরে)। অর্ডার করবেন?';
@@ -1414,12 +1558,17 @@ class RuleBrainService
         // exempts text that merely equals the draft (Round 6, P1).
         $verified = $this->moneyCheck($biz, $body, $product, $extraFigures);
         $claimIssues = $this->guard->claimViolations($biz, $draftRendered, $body, $this->claimCtx($biz, $product, $slotValues));
+        // Plain Auto is "simple answers only" (its Settings label):
+        // a reply that commits a price - a bargaining offer or an
+        // order summary - stays a draft for a human in Auto, and only
+        // Full auto sends it (Hunt Y2-8).
+        $committing = $kind === 'order_summary' || isset($meta['offer']);
         if (!$verified || $claimIssues !== []) {
             $status = 'flagged';
             if ($claimIssues !== []) {
                 $meta = array_merge($meta ?? [], ['guard' => $claimIssues]);
             }
-        } elseif ($mode === 'auto' || $mode === 'full_auto') {
+        } elseif ($mode === 'full_auto' || ($mode === 'auto' && ! $committing)) {
             $status = 'sent';
         } else {
             $status = 'draft';
@@ -1457,6 +1606,13 @@ class RuleBrainService
     /** A staff member approves a draft (optionally after editing it). */
     public function approveDraft(ChatMessage $msg, ?string $editedBody, ?int $userId): ChatMessage
     {
+        if (! in_array($msg->status, ['draft', 'flagged'], true)) {
+            // State discipline (Hunt Y2-1/Y2-2/Y2-4): only a pending
+            // draft can be approved. Approving a sent or rejected
+            // message again must never re-run the send path, re-log a
+            // send, or (via the controller) create a second order.
+            return $msg;
+        }
         $edited = $editedBody !== null && trim($editedBody) !== '' && trim($editedBody) !== $msg->body;
 
         // Send-time re-verification (Round 6, P5): approval is a SEND, so
@@ -1511,12 +1667,15 @@ class RuleBrainService
 
         if ($edited) {
             // Learning loop: the edit becomes a proposal — a human still has
-            // to approve it in Settings before any rule changes.
+            // to approve it in Settings before any rule changes. The
+            // proposal is a RECORD of the edit (note_only, Hunt Y2-7):
+            // it carries no rule change, and Settings presents it that
+            // way instead of claiming the AI learned from it.
             AiRuleProposal::create([
                 'business_id' => $msg->business_id,
-                'title' => 'Staff edit থেকে শেখা — reply বদলানো হয়েছে',
+                'title' => 'Staff edit থেকে শেখা - reply বদলানো হয়েছে',
                 'detail' => 'আগের draft: "' . $msg->body . '" → staff পাঠিয়েছে: "' . trim($editedBody) . '"',
-                'rule_data' => ['source_message_id' => $msg->id, 'edited_body' => trim($editedBody)],
+                'rule_data' => ['source_message_id' => $msg->id, 'edited_body' => trim($editedBody), 'note_only' => true],
                 'status' => 'pending',
             ]);
             $this->log((int) $msg->business_id, 'proposal_created', 'Staff edit থেকে নতুন প্রস্তাব এসেছে', $msg->rule, $msg->conversation);
@@ -1533,8 +1692,17 @@ class RuleBrainService
 
     public function rejectDraft(ChatMessage $msg): void
     {
+        if (! in_array($msg->status, ['draft', 'flagged'], true)) {
+            // Only a pending draft can be rejected (Hunt Y2-3): a sent
+            // message the customer received must never be rewritten
+            // as "rejected" and hidden from the thread.
+            return;
+        }
         $msg->status = 'rejected';
         $msg->save();
+        // A rejection is a decision about an AI reply — it belongs in
+        // the activity log like approvals, holds and edits (Y2-5).
+        $this->log((int) $msg->business_id, 'draft_rejected', ($msg->conversation?->customer_name ?? '') . ' - draft rejected', $msg->rule, $msg->conversation);
     }
 
     /** Incoming comment: spam hides itself; questions get a drafted reply. */
@@ -1579,7 +1747,7 @@ class RuleBrainService
             'draft' => $slottedBody,
         ]);
         $body = $phrased ? $this->renderSlots($phrased['text'], $product, $biz) : $draftRendered;
-        $mode = $this->cautious($auto['comment'] ?? 'draft');
+        $mode = $this->cautious($this->applyWorkingHours($biz, $auto['comment'] ?? 'draft'));
         $verified = $this->moneyCheck($biz, $body, $product)
             && $this->guard->claimViolations($biz, $draftRendered, $body, $this->claimCtx($biz, $product)) === [];
         $status = !$verified ? 'flagged' : ($mode === 'auto' || $mode === 'full_auto' ? 'sent' : 'draft');

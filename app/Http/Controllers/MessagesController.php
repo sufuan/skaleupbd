@@ -98,6 +98,10 @@ class MessagesController extends Controller
                 'ai_paused' => (bool) $sel->ai_paused,
                 'needs_human' => (bool) $sel->needs_human,
                 'window_open' => $windowOpen,
+                // The 300-message cap must be visible, not silent
+                // (Hunt Y2-13): the thread shows a note when older
+                // messages exist beyond the ones shipped.
+                'thread_truncated' => ChatMessage::where('conversation_id', $sel->id)->count() > $msgs->count(),
                 'product' => $product ? ['id' => $product->id, 'name' => $product->name, 'price' => (float) $product->price] : null,
                 'ladder' => $product ? $this->negotiation->ladder($product) : [],
                 'neg_offer' => $sel->neg_offer !== null ? (float) $sel->neg_offer : null,
@@ -109,6 +113,9 @@ class MessagesController extends Controller
                     'attachment_type' => $m->attachment_type,
                     'attachment_path' => $m->attachment_path,
                     'transcript' => $m->meta['transcript'] ?? null,
+                    // A send Meta refused must be visible as failed in
+                    // the thread, not presented as delivered (Y2-17).
+                    'send_status' => $m->meta['send_status'] ?? null,
                     'rule' => $m->ai_rule_id ? \App\Models\AiRule::find($m->ai_rule_id)?->name : null,
                     'time' => DhakaTime::fmt($m->created_at, 'h:i A'),
                 ])->values()->all(),
@@ -171,6 +178,9 @@ class MessagesController extends Controller
 
         return Inertia::render('Messages/Inbox', [
             'conversations' => $list,
+            // The 100-conversation cap is visible too (Hunt Y2-13):
+            // the report count is global, the list is not.
+            'listTruncated' => $report['conversations'] > count($list),
             'selected' => $selected,
             'report' => $report,
             'aiMode' => $modeLabel,
@@ -196,11 +206,36 @@ class MessagesController extends Controller
         return $sentOk ? back()->with('success', __('Message sent')) : back()->with('error', __('Saved, but Meta did not accept it: :error', ['error' => $sendErr]));
     }
 
+    /** The conversation's customer is on the shop's blocklist (Customers page flag). */
+    private function chatCustomerBlocklisted(ChatMessage $message): bool
+    {
+        $phone = PhoneNormalizer::normalize($message->conversation?->customer_phone ?? '');
+        if ($phone === '') {
+            return false;
+        }
+
+        return (bool) \App\Models\Customer::where('business_id', (int) $message->business_id)
+            ->where('phone', $phone)->value('is_blacklisted');
+    }
+
     public function approveDraft(Request $request, ChatMessage $message, OrderService $orders): RedirectResponse
     {
         abort_unless((int) $message->business_id === $this->biz($request), 403);
+        if (! in_array($message->status, ['draft', 'flagged'], true)) {
+            // State discipline (Hunt Y2-1/Y2-2/Y2-4): a draft that was
+            // already approved or rejected is finished. A second
+            // approve (double-click, second staff member, stale tab)
+            // is an honest refusal - never a second send, a second
+            // order or a second point.
+            return back()->with('error', __('This draft was already handled - it cannot be approved or rejected again.'));
+        }
         $edited = $request->input('body');
         $kind = $message->meta['kind'] ?? null;
+        if ($kind === 'order_summary' && $this->chatCustomerBlocklisted($message)) {
+            // The blocklist binds at the till too (Hunt Y2-16): no
+            // order, no point for a customer the shop has blocked.
+            return back()->with('error', __('This customer is on your blocklist - a chat order cannot be created for them.'));
+        }
         $this->brain->approveDraft($message, $edited, $request->user()?->id);
         $message->refresh();
         if ($message->status !== 'sent') {
@@ -209,9 +244,11 @@ class MessagesController extends Controller
             // created - the approver sees why and edits first.
             return back()->with('error', $message->meta['hold_reason'] ?? __('This reply was held because its figures no longer match the live price or stock. Edit the reply, then approve again.'));
         }
-        if ($message->status === 'sent') {
-            app(\App\Services\MetaGraphService::class)->dispatch($message);
-        }
+        // The dispatch result is surfaced exactly like the staff-reply
+        // path below handles it (Hunt Y2-17): a send Meta refused is
+        // flashed as failed and stays marked failed in the thread via
+        // meta.send_status - never reported as a clean send.
+        [$sentOk, $sendErr] = app(\App\Services\MetaGraphService::class)->dispatch($message);
 
         if ($kind === 'order_summary') {
             $c = $message->conversation;
@@ -240,16 +277,27 @@ class MessagesController extends Controller
                     return back()->with('error', $e->getMessage());
                 }
 
+                if (! $sentOk) {
+                    return back()->with('error', __('Order created, but the confirmation message could not be sent - Meta did not accept it: :error', ['error' => $sendErr]));
+                }
+
                 return back()->with('success', __('Order created from chat'));
             }
         }
 
-        return back()->with('success', __('Reply sent'));
+        return $sentOk
+            ? back()->with('success', __('Reply sent'))
+            : back()->with('error', __('Saved, but Meta did not accept it: :error', ['error' => $sendErr]));
     }
 
     public function rejectDraft(Request $request, ChatMessage $message): RedirectResponse
     {
         abort_unless((int) $message->business_id === $this->biz($request), 403);
+        if (! in_array($message->status, ['draft', 'flagged'], true)) {
+            // Only a pending draft can be rejected (Hunt Y2-3): a sent
+            // message stays on the record as sent.
+            return back()->with('error', __('This draft was already handled - it cannot be approved or rejected again.'));
+        }
         $this->brain->rejectDraft($message);
 
         return back()->with('success', __('Draft rejected'));

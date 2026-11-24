@@ -157,10 +157,12 @@ function TxnTable({ list, onVoid, onEdit }) {
                 <tbody>
                     {list.map((x) => (
                         <tr key={x.id} style={x.voided ? { opacity: 0.55 } : undefined}>
-                            <td>{x.date}</td><td>{x.note}{x.voided && <span className="chip chip-red" style={{ marginLeft: 6 }}>{t('Voided')}</span>}</td>
+                            <td>{x.date}</td><td>{x.note}{x.voided && <span className="chip chip-red" style={{ marginLeft: 6 }}>{t('Voided')}</span>}{x.source === 'payroll' && <span className="chip" style={{ marginLeft: 6 }}>{t('Payroll')}</span>}</td>
                             <td>{x.category || '-'}</td><td>{x.account}</td>
                             <td><b style={{ color: x.direction === 'in' ? '#16A34A' : '#DC2626' }}>{fmtSigned(x.amount, x.direction)}</b></td>
-                            <td>{!x.voided && !x.is_reversal && <span style={{ display: 'inline-flex', gap: 6 }}><button className="btn-s" onClick={() => onEdit(x)}>{t('Edit')}</button><button className="btn-s" onClick={() => onVoid(x)}>{t('Void')}</button></span>}</td>
+                            <td>{x.source === 'payroll'
+                                ? <span style={{ fontSize: 12, color: '#64748B' }}>{t('Locked')}</span>
+                                : !x.voided && !x.is_reversal && <span style={{ display: 'inline-flex', gap: 6 }}><button className="btn-s" onClick={() => onEdit(x)}>{t('Edit')}</button><button className="btn-s" onClick={() => onVoid(x)}>{t('Void')}</button></span>}</td>
                         </tr>
                     ))}
                     <tr><td colSpan={4} style={{ textAlign: 'right', color: '#64748B' }}>{t('Total of this list')}</td>

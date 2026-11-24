@@ -14,7 +14,7 @@ const PLUS = (
     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
 );
 
-export default function Create({ sources, products, couriers, defaults, toggles, allTags = [], paymentMethods = [] }) {
+export default function Create({ sources, products, couriers, defaults, toggles, allTags = [], paymentMethods = [], prefill = {} }) {
     const [mode, setMode] = useState('approved');
     const [layoutOpen, setLayoutOpen] = useState(false);
     const [opts, setOpts] = useState(() => {
@@ -32,7 +32,12 @@ export default function Create({ sources, products, couriers, defaults, toggles,
     const [pop, setPop] = useState(null); // tag | ref | note | att | more
     const togglePop = (id) => setPop((p) => (p === id ? null : id));
     const [cross, setCross] = useState(!!toggles.cross_sale);
-    const [picked, setPicked] = useState([]); // {product_id, name, sku, qty, price, stock}
+    // Y1-F3: from the inbox, the conversation's product starts as the
+    // first picked line (same shape newLine builds below).
+    const [picked, setPicked] = useState(() => {
+        const p = prefill.product_id ? products.find((x) => x.id === prefill.product_id) : null;
+        return p ? [{ product_id: p.id, name: p.name, sku: p.sku, qty: 1, price: p.price, stock: p.stock, base_price: p.price, base_stock: p.stock, variant_id: null, variant_name: null, variants: p.variants || [] }] : [];
+    }); // {product_id, name, sku, qty, price, stock}
     const [customOpen, setCustomOpen] = useState(false);
     const [custom, setCustom] = useState({ name: '', sku: '', price: 0, qty: 1 });
     const [qSku, setQSku] = useState('');
@@ -43,8 +48,8 @@ export default function Create({ sources, products, couriers, defaults, toggles,
     const fileRef = useRef(null);
 
     const form = useForm({
-        customer_name: '', customer_phone: '', customer_email: '',
-        customer_address: '', district: '', area: '', source: '',
+        customer_name: prefill.customer_name || '', customer_phone: prefill.customer_phone || '', customer_email: '',
+        customer_address: prefill.customer_address || '', district: '', area: '', source: '',
         delivery_method: couriers[0] || '', shipping_note: '', delivery_note: '',
         preorder_reason: 'Out of Stock', notify_date: '',
         discount: 0, delivery_charge: defaults.delivery_charge, advance: 0, txn_id: '',
@@ -64,24 +69,44 @@ export default function Create({ sources, products, couriers, defaults, toggles,
         return true;
     });
 
+    const newLine = (p) => ({ product_id: p.id, name: p.name, sku: p.sku, qty: 1, price: p.price, stock: p.stock, base_price: p.price, base_stock: p.stock, variant_id: null, variant_name: null, variants: p.variants || [] });
     const addProduct = (p) => {
         setPicked((prev) => {
+            // Y3-F1: a product WITH variants can be added again as a
+            // NEW line - one line per variant (Red on one line, Blue on
+            // another) for a single order. A plain product still folds
+            // into its one existing line.
+            if (p.variants && p.variants.length) return [...prev, newLine(p)];
             const ex = prev.find((i) => i.product_id === p.id && !i.variant_id);
             if (ex) return prev.map((i) => i === ex ? { ...i, qty: i.qty + 1 } : i);
-            return [...prev, { product_id: p.id, name: p.name, sku: p.sku, qty: 1, price: p.price, stock: p.stock, base_price: p.price, base_stock: p.stock, variant_id: null, variant_name: null, variants: p.variants || [] }];
+            return [...prev, newLine(p)];
         });
     };
     // Variant picker on a picked line: choosing a variant points the
     // line at that variant (its price + its own stock pool); clearing
     // it falls back to the product itself.
     const pickVariant = (ix, vid) => {
-        setPicked((prev) => prev.map((i, j) => {
-            if (j !== ix) return i;
-            const v = (i.variants || []).find((x) => String(x.id) === String(vid));
-            return v
-                ? { ...i, variant_id: v.id, variant_name: v.name, price: v.price, stock: v.stock }
-                : { ...i, variant_id: null, variant_name: null, price: i.base_price, stock: i.base_stock };
-        }));
+        setPicked((prev) => {
+            const line = prev[ix];
+            const v = (line.variants || []).find((x) => String(x.id) === String(vid));
+            // Y3-F1: two lines may never carry the SAME variant - fold
+            // this line's quantity into the line that already has it
+            // instead of silently double-counting the variant.
+            if (v) {
+                const dupIx = prev.findIndex((x, j) => j !== ix && x.product_id === line.product_id && String(x.variant_id) === String(v.id));
+                if (dupIx >= 0) {
+                    return prev
+                        .map((x, j) => (j === dupIx ? { ...x, qty: x.qty + line.qty } : x))
+                        .filter((_, j) => j !== ix);
+                }
+            }
+            return prev.map((i, j) => {
+                if (j !== ix) return i;
+                return v
+                    ? { ...i, variant_id: v.id, variant_name: v.name, price: v.price, stock: v.stock }
+                    : { ...i, variant_id: null, variant_name: null, price: i.base_price, stock: i.base_stock };
+            });
+        });
     };
     const addCustom = () => {
         if (!custom.name || Number(custom.price) < 0) return;
@@ -100,7 +125,20 @@ export default function Create({ sources, products, couriers, defaults, toggles,
 
     const submit = (e) => {
         e.preventDefault();
-        form.transform((d) => ({ ...d, mode, items: picked, cross_sale: cross }));
+        // Y3-F1 safety net: whatever the picking path, the server
+        // never receives two lines for the same product + variant -
+        // their quantities merge into one line first.
+        const merged = [];
+        const seen = new Map();
+        for (const i of picked) {
+            if (i.product_id) {
+                const key = i.product_id + ':' + (i.variant_id || 0);
+                if (seen.has(key)) { merged[seen.get(key)].qty += i.qty; continue; }
+                seen.set(key, merged.length);
+            }
+            merged.push({ ...i });
+        }
+        form.transform((d) => ({ ...d, mode, items: merged, cross_sale: cross }));
         form.post('/orders', { forceFormData: true });
     };
 
@@ -231,24 +269,27 @@ export default function Create({ sources, products, couriers, defaults, toggles,
                                         <div className="prod-list">
                                             {visible.map((p) => {
                                                 const added = picked.some((i) => i.product_id === p.id);
-                                                // R8: ONE stock figure per product - the same
-                                                // Product::available() figure the picked line
-                                                // starts from (p.stock, the pool a no-variant
-                                                // line draws on). The old card summed the
-                                                // variants' pools while the line showed the
-                                                // parent pool, quoting two different "Stock"
-                                                // numbers for one product on one screen. Each
-                                                // variant's own pool stays on its picker option,
-                                                // and picking one points the line at that pool.
+                                                const hasVariants = !!(p.variants && p.variants.length);
+                                                // R8 + Y3-F2: ONE stock figure per product -
+                                                // p.stock, which the server fills with the
+                                                // summed variant pools for a variant product
+                                                // and Product::available() otherwise; the
+                                                // picked line starts from the same figure.
+                                                // Each variant's own pool stays on its picker
+                                                // option, and picking one points the line at
+                                                // that pool.
+                                                // Y3-F1: a variant product's card stays enabled
+                                                // after a pick - clicking again adds another
+                                                // line for another variant. A plain product
+                                                // disables once added (its line just counts up).
                                                 const cardStock = p.stock;
-                                                const variantTotal = (p.variants && p.variants.length) ? p.variants.reduce((a, v) => a + v.stock, 0) : 0;
-                                                const dis = added || (cardStock + variantTotal === 0 && mode !== 'preorder');
+                                                const dis = (!hasVariants && added) || (cardStock === 0 && mode !== 'preorder');
                                                 return (
                                                     <button type="button" key={p.id} className="prod-card" disabled={dis} onClick={() => addProduct(p)}>
                                                         {p.image && <img className="pc-photo" src={p.image} alt="" onError={(e) => { e.currentTarget.style.display = 'none'; }} />}
                                                         <span className="pc-name">{p.name}</span>
                                                         <span className="muted-sm">SKU: {p.sku}</span>
-                                                        <span className="muted-sm">{t('Price')}: {fmt(p.price)} · {t('Stock')}: {cardStock}{cardStock + variantTotal === 0 ? ` - ${t('Pre-order allowed')}` : ''}</span>
+                                                        <span className="muted-sm">{t('Price')}: {fmt(p.price)} · {t('Stock')}: {cardStock}{cardStock === 0 ? ` - ${t('Pre-order allowed')}` : ''}</span>
                                                         <span className="pc-fav" onClick={(e) => toggleFav(e, p.id)}>{favs.has(p.id) ? t('Remove from featured') : t('Mark as featured')}</span>
                                                     </button>
                                                 );

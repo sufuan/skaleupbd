@@ -8,6 +8,7 @@ use App\Models\Business;
 use App\Models\Order;
 use App\Services\OrderService;
 use App\Services\PhoneNormalizer;
+use App\Services\SettingsService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -17,7 +18,7 @@ use Illuminate\Http\Request;
  */
 class ExternalOrderController extends Controller
 {
-    public function __construct(private readonly OrderService $orders) {}
+    public function __construct(private readonly OrderService $orders, private readonly SettingsService $settings) {}
 
     private function envelope(bool $ok, int $code, string $message, ?array $data = null): JsonResponse
     {
@@ -50,6 +51,15 @@ class ExternalOrderController extends Controller
         }
         if (! $apiKey->grants('orders.write')) {
             return $this->envelope(false, 403, 'This key does not have permission to write orders.');
+        }
+        // A shop that is not approved (pending, rejected or suspended)
+        // must not trade (Hunt Y4 F1): its key used to keep creating
+        // orders - and burning points - after the platform rejected
+        // the seller. Null/empty status predates the approval flow
+        // and reads as approved, matching SellerApprovalGate.
+        $bizStatus = $business->status;
+        if ($bizStatus !== null && $bizStatus !== '' && $bizStatus !== 'approved') {
+            return $this->envelope(false, 403, 'This shop is not active and cannot take orders right now.');
         }
 
         $idem = (string) $request->header('x-idempotency-key', '');
@@ -117,7 +127,12 @@ class ExternalOrderController extends Controller
             'delivery_method' => $data['deliveryMethodName'] ?? null,
             'delivery_note' => $data['note'] ?? null,
             'discount' => $data['discount'] ?? 0,
-            'delivery_charge' => $data['deliveryCharge'] ?? 0,
+            // Y1-F4: an omitted deliveryCharge means "the shop's
+            // usual charge", not free delivery - fall back to the
+            // shop's configured default delivery cost, the same
+            // bizGet chain the chat-order and New Order paths use.
+            // An explicitly sent value (including 0) is respected.
+            'delivery_charge' => $data['deliveryCharge'] ?? (float) $this->settings->bizGet($business->id, "business.{$business->id}.default_delivery_cost", 'business.default_delivery_cost', 60),
             'advance' => $data['advance'] ?? 0,
             'is_preorder' => (bool) ($data['isPreorder'] ?? false),
             'external_ref' => $data['externalRef'] ?? null,

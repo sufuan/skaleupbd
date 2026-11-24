@@ -545,7 +545,10 @@ class HrmController extends Controller
             'payroll_enabled' => 'boolean',
         ]);
         foreach ($data as $name => $value) {
-            $this->att->setSetting($biz, $name, $value, $request->user()->id);
+            if (in_array($name, ['require_checkin', 'auto_checkout', 'payroll_enabled'], true)) {
+                $value = (bool) $value; // keep the change log's On/Off shape
+            }
+            $this->att->setSetting($biz, $name, $value, $request->user()->id, $request->user());
         }
 
         return back()->with('success', __('HR settings updated.'));

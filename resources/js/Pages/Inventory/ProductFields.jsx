@@ -51,7 +51,7 @@ function Switch({ checked, onChange, label, hint }) {
     );
 }
 
-export default function ProductFields({ data, setData, categories = [], brands = [], businessName = '', forEdit = false, mode, setMode, variants, setVariants, readiness = null, allProducts = [], components, setComponents, selfId = null }) {
+export default function ProductFields({ data, setData, categories = [], brands = [], businessName = '', forEdit = false, mode, setMode, variants, setVariants, readiness = null, allProducts = [], components, setComponents, selfId = null, currentImage = null }) {
     const [galleryUrl, setGalleryUrl] = useState('');
     const [newCategory, setNewCategory] = useState('');
     const catInputRef = useRef(null);
@@ -121,13 +121,18 @@ export default function ProductFields({ data, setData, categories = [], brands =
                                 <div key={i} className="flex flex-wrap gap-2">
                                     <select className={INPUT + ' flex-1 min-w-[180px]'} value={c.product_id || ''} onChange={(e) => { const n = [...components]; n[i].product_id = e.target.value; setComponents(n); }}>
                                         <option value="">{t('Select product')}</option>
-                                        {allProducts.filter((p) => p.id !== selfId).map((p) => <option key={p.id} value={p.id}>{p.name}{p.sku ? ` (${p.sku})` : ''}</option>)}
+                                        {/* Y1-F2: variant products are not offered as components - a combo can never sell one. A component already saved on an older combo stays visible so its row still renders (and the warning below explains it). */}
+                                        {allProducts.filter((p) => p.id !== selfId && (!p.has_variants || String(p.id) === String(c.product_id))).map((p) => <option key={p.id} value={p.id}>{p.name}{p.sku ? ` (${p.sku})` : ''}</option>)}
                                     </select>
                                     <input className={INPUT + ' w-24'} type="number" min="1" placeholder={t('Qty')} value={c.qty} onChange={(e) => { const n = [...components]; n[i].qty = e.target.value; setComponents(n); }} />
                                     <button type="button" className={BTN_OUTLINE + ' px-3'} onClick={() => setComponents(components.filter((_, j) => j !== i))}>×</button>
                                 </div>
                             ))}
                             <button type="button" className={BTN_OUTLINE + ' h-9'} onClick={() => setComponents([...(components || []), { product_id: '', qty: 1 }])}>+ {t('Add Component')}</button>
+                            <div className="text-xs text-muted-foreground">{t('Products with variants cannot be used as combo components.')}</div>
+                            {(components || []).some((c) => { const p = allProducts.find((x) => String(x.id) === String(c.product_id)); return p && p.has_variants; }) && (
+                                <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">{t('This combo includes a product with variants, so it cannot be sold as a combo. Replace that component with a plain product.')}</div>
+                            )}
                             {(components || []).length === 0 && <div className="text-xs text-muted-foreground">{t('No components yet - without components this combo sells from its own stock.')}</div>}
                         </div>
                     </Section>
@@ -195,6 +200,22 @@ export default function ProductFields({ data, setData, categories = [], brands =
                         <input type="file" accept="image/*" className="hidden" onChange={(e) => setData('image', e.target.files[0] || null)} />
                         <span className="text-xs text-muted-foreground">{data.image ? (data.image.name || t('Image selected')) : t('No image')}</span>
                     </label>
+                    {forEdit && currentImage && (
+                        <div className="flex items-center gap-3">
+                            <img src={currentImage} alt="" style={{ width: 44, height: 44, objectFit: 'cover', borderRadius: 6, opacity: data.remove_image ? 0.35 : 1 }} />
+                            {data.remove_image ? (
+                                <>
+                                    <span className="text-xs text-muted-foreground">{t('The current photo will be removed when you save.')}</span>
+                                    <button type="button" className={BTN_OUTLINE + ' px-3'} onClick={() => setData('remove_image', false)}>{t('Undo')}</button>
+                                </>
+                            ) : (
+                                <>
+                                    <span className="text-xs text-muted-foreground">{t('Current photo')}</span>
+                                    <button type="button" className={BTN_OUTLINE + ' px-3'} style={{ color: '#B91C1C' }} onClick={() => { setData('image', null); setData('remove_image', true); }}>{t('Remove image')}</button>
+                                </>
+                            )}
+                        </div>
+                    )}
                     <div className="flex gap-2">
                         <input className={INPUT} placeholder="https://example.com/gallery-image.jpg" value={galleryUrl} onChange={(e) => setGalleryUrl(e.target.value)} />
                         <button type="button" className={BTN_OUTLINE} onClick={() => { if (galleryUrl.trim()) { setData('gallery', [...(data.gallery || []), galleryUrl.trim()]); setGalleryUrl(''); } }}>{t('Add to Gallery')}</button>

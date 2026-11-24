@@ -244,6 +244,13 @@ class FinanceController extends Controller
         if ($transaction->voided_at) {
             return back()->with('error', __('This is already voided.'));
         }
+        if ($transaction->source === 'payroll') {
+            // Locked system entry (Hunt Y4 F9): the payroll run is the
+            // single source of truth for this money. Voiding it here
+            // stranded the month - Payroll said paid, Finance said
+            // nothing was paid, and no path could reopen the run.
+            return back()->with('error', __('This entry was created by Payroll and is locked - the payroll run is the record for this payment.'));
+        }
         if ($transaction->reversal_of) {
             return back()->with('error', __('A reversal entry cannot be voided.'));
         }
@@ -266,6 +273,11 @@ class FinanceController extends Controller
         }
         if ($transaction->transfer_pair_id !== null) {
             return back()->with('error', __('A transfer entry cannot be changed directly.'));
+        }
+        if ($transaction->source === 'payroll') {
+            // Locked system entry (Hunt Y4 F9): editing this amount
+            // here made Finance and the payroll run disagree silently.
+            return back()->with('error', __('This entry was created by Payroll and is locked - the payroll run is the record for this payment.'));
         }
         if (! in_array($transaction->type, ['income', 'expense'], true)) {
             return back()->with('error', __('This type of entry cannot be changed here.'));
