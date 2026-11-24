@@ -43,32 +43,48 @@ class SettingsService
     }
 
     /**
-     * The name a shop trades under. The profile form saves a per-business
-     * override (business.{id}.profile_name); until a seller saves one,
-     * their registered business name is the truth. The old global
-     * business.name was shared by every seller — they all saw the first
-     * shop's name ("Demo Shop") on their settings, invoices and slips.
+     * The name a shop trades under (Hunt Z4-M3): the businesses row is
+     * the ONE source - the Business Profile form writes it there, the
+     * seller header and the platform Sellers list read it there. The
+     * old per-business settings override (business.{id}.profile_name)
+     * is only a fallback for a row whose name was never set; the form
+     * no longer writes it as the primary store, so the two can no
+     * longer disagree (invoices printed the settings name while the
+     * seller's own header kept showing the registered one).
      */
     public function shopName(int $biz): string
     {
         if ($biz <= 0) {
             return '';
         }
-        $saved = trim((string) $this->get("business.{$biz}.profile_name", ''));
-        if ($saved !== '') {
-            return $saved;
+        $name = trim((string) (\App\Models\Business::whereKey($biz)->value('name') ?? ''));
+        if ($name !== '') {
+            return $name;
         }
 
-        return (string) (\App\Models\Business::whereKey($biz)->value('name') ?? '');
+        return trim((string) $this->get("business.{$biz}.profile_name", ''));
     }
 
-    /** Per-business profile contact field (mobile|address), legacy global as fallback. */
+    /**
+     * Profile contact field (mobile|address) (Hunt Z4-M3): the
+     * businesses row (phone / address columns) is the one source, for
+     * the same reason as shopName(); the per-business settings key and
+     * then the legacy global remain as fallbacks for values saved
+     * before the row became the store.
+     */
     public function shopContact(int $biz, string $field): string
     {
         // No shop in scope (platform admin): never surface the legacy
         // global, which holds a real shop's contact details.
         if ($biz <= 0) {
             return '';
+        }
+        if ($field === 'mobile' || $field === 'address') {
+            $column = $field === 'mobile' ? 'phone' : 'address';
+            $v = trim((string) (\App\Models\Business::whereKey($biz)->value($column) ?? ''));
+            if ($v !== '') {
+                return $v;
+            }
         }
         $v = $this->get("business.{$biz}.{$field}", null);
 

@@ -87,7 +87,7 @@ function PendingClaimCard({ claim, paymentInstructions, platformPayment }) {
     );
 }
 
-export default function Index({ balance, pointsPerOrder, threshold, blocked, low, pendingApproval, pack, packs, onboardingFee, firstPurchase, paymentInstructions, platformPayment, openClaim, pastClaims, preselectedPackId, ledger }) {
+export default function Index({ balance, pointsPerOrder, threshold, blocked, low, pendingApproval, pack, packs, onboardingFee, firstPurchase, paymentInstructions, platformPayment, openClaim, pastClaims, pastClaimsTotal, preselectedPackId, ledger }) {
     const pages = [];
     for (let p = 1; p <= (ledger.last_page || 1); p++) pages.push(p);
     const lastRejected = !openClaim && pastClaims && pastClaims.length > 0 && pastClaims[0].status === 'rejected' ? pastClaims[0] : null;
@@ -208,6 +208,11 @@ export default function Index({ balance, pointsPerOrder, threshold, blocked, low
                                     </div>
                                 ))}
                             </div>
+                            {pastClaimsTotal > pastClaims.length && (
+                                <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 8 }}>
+                                    {t('Showing the latest :shown of :total payment requests', { shown: pastClaims.length, total: pastClaimsTotal })}
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>

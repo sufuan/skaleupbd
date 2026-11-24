@@ -41,6 +41,32 @@ class OrderController extends Controller
         return $order;
     }
 
+    /**
+     * The product picker list, ONE shape for every order screen
+     * (Hunt Z4-M2): the New Order form and the order-detail Add
+     * Product picker used to compute stock differently - the detail
+     * picker read the parent pool, so a variant product showed
+     * "Stock: 0" there while New Order showed the sellable sum.
+     * Here, a variant product's stock is the sum of its variants'
+     * available pools (Y3-F2); anything else is Product::available().
+     */
+    private function catalogue(int $biz): array
+    {
+        return Product::where('business_id', $biz)->where('is_active', true)->orderBy('name')
+            ->get()->map(function ($p) {
+                // Variant picker (K-H2): the form lets the seller pick
+                // which variant leaves; the line stores the variant id
+                // + name and stock moves on the variant's own pool.
+                $variants = $p->activeVariants()->map(fn ($v) => ['id' => $v->id, 'name' => $v->name,
+                    'price' => (float) $v->effectivePrice(), 'stock' => $v->available()])->all();
+
+                return ['id' => $p->id, 'name' => $p->name, 'sku' => $p->sku,
+                    'price' => (float) $p->price, 'image' => $p->imageUrl(),
+                    'stock' => $variants !== [] ? collect($variants)->sum('stock') : $p->available(),
+                    'variants' => $variants];
+            })->all();
+    }
+
     private function row(Order $o, ?array $liveFraud = null, ?array $sourceLabels = null, ?array $fraudCounts = null): array
     {
         $fraud = $liveFraud ?? ['rate' => $o->fraud_rate, 'verdict' => $o->fraud_verdict, 'note' => $o->fraud_note];
@@ -241,25 +267,7 @@ class OrderController extends Controller
             'prefill' => $prefill,
             'sources' => OrderSource::where('business_id', $biz)->where('is_visible', true)->orderBy('sort')
                 ->get(['code', 'label']),
-            'products' => Product::where('business_id', $biz)->where('is_active', true)->orderBy('name')
-                ->get()->map(function ($p) {
-                    // Variant picker (K-H2): the New Order form lets the
-                    // seller pick which variant leaves; the line stores
-                    // the variant id + name and stock moves on the
-                    // variant's own pool.
-                    $variants = $p->activeVariants()->map(fn ($v) => ['id' => $v->id, 'name' => $v->name,
-                        'price' => (float) $v->effectivePrice(), 'stock' => $v->available()])->all();
-
-                    return ['id' => $p->id, 'name' => $p->name, 'sku' => $p->sku,
-                        'price' => (float) $p->price, 'image' => $p->imageUrl(),
-                        // Y3-F2: a variant product's own pool is empty by
-                        // design - what the picker can sell is the sum of
-                        // its variants' pools, so that sum is the stock
-                        // figure the card and the fresh line show (never
-                        // a bare "Stock: 0" while variants hold stock).
-                        'stock' => $variants !== [] ? collect($variants)->sum('stock') : $p->available(),
-                        'variants' => $variants];
-                }),
+            'products' => $this->catalogue($biz),
             'couriers' => app(\App\Services\DeliveryMethodList::class)->forBusiness($biz),
             'allTags' => Order::where('business_id', $biz)->pluck('tags')->filter()
                 ->flatMap(fn ($t) => is_array($t) ? $t : [])->unique()->values(),
@@ -285,6 +293,15 @@ class OrderController extends Controller
         $mandatorySource = (bool) $this->settings->bizGet($storeBiz, "orders.{$storeBiz}.mandatory_source", 'orders.mandatory_source', true);
         $mandatoryNote = (bool) $this->settings->bizGet($storeBiz, "orders.{$storeBiz}.mandatory_shipping_note", 'orders.mandatory_shipping_note', false);
         $mandatoryTxn = (bool) $this->settings->bizGet($storeBiz, "orders.{$storeBiz}.mandatory_advance_txn", 'orders.mandatory_advance_txn', true);
+        // Z4-L3: a transaction id only exists when the advance arrived
+        // through a digital method. The form labels Payment Method
+        // OPTIONAL and a cash advance has no TrxId, yet the old rule
+        // demanded one for ANY advance and bounced the order with only
+        // "The txn id field is required." Cash (or no method chosen)
+        // never requires one; a digital method does, and the form now
+        // marks the field required exactly then.
+        $digitalMethod = in_array((string) $request->input('payment_method', ''), ['bKash', 'Nagad', 'Rocket', 'Bank'], true);
+        $txnRequired = $mandatoryTxn && $digitalMethod && (float) $request->input('advance', 0) > 0;
 
         $data = $request->validate([
             'customer_name' => ['required', 'string', 'max:120'],
@@ -304,7 +321,7 @@ class OrderController extends Controller
             'discount' => ['nullable', 'numeric', 'min:0'],
             'delivery_charge' => ['nullable', 'numeric', 'min:0'],
             'advance' => ['nullable', 'numeric', 'min:0'],
-            'txn_id' => [$mandatoryTxn && (float) $request->input('advance', 0) > 0 ? 'required' : 'nullable', 'string', 'max:80'],
+            'txn_id' => [$txnRequired ? 'required' : 'nullable', 'string', 'max:80'],
             'tags' => ['nullable', 'array'],
             'payment_method' => ['nullable', 'string', 'max:60'],
             'reference_link' => ['nullable', 'string', 'max:255'],
@@ -319,11 +336,60 @@ class OrderController extends Controller
             'items.*.qty' => ['required', 'integer', 'min:1'],
             'items.*.price' => ['required', 'numeric', 'min:0'],
             'attachment' => ['nullable', 'file', 'max:5120'],
+            // Z1-3: one token per form mount, minted by the form -
+            // a resubmission of the same form instance is the same act.
+            'submit_token' => ['nullable', 'string', 'max:64'],
         ]);
 
         if (! PhoneNormalizer::isValid($data['customer_phone'])) {
             return back()->withErrors(['customer_phone' => 'Enter a valid mobile number (01XXXXXXXXX)'])->withInput();
         }
+
+        // Z1-3: a duplicate submission (double-click, browser retry,
+        // two tabs of the same mounted form) returns the order the
+        // first submission created - never a second order, never a
+        // second, non-refundable point. The unique (business_id,
+        // submit_token) index backs this check against the race where
+        // both submissions arrive at once (see the QueryException
+        // catch around the create below). Clients that send no token
+        // keep the old behaviour exactly.
+        $submitToken = $data['submit_token'] ?? null;
+        if ($submitToken) {
+            $existing = Order::where('business_id', $storeBiz)->where('submit_token', $submitToken)->first();
+            if ($existing) {
+                return redirect()->route('orders.show', $existing)->with('success', __('Order :invoice created', ['invoice' => $existing->invoice_no]));
+            }
+        }
+
+        // Z1-10: manual line prices are server-authoritative. The
+        // form's per-line price is whatever the product cost when the
+        // page loaded (or whatever a tampered request claims - a
+        // ৳1,200 product booked at ৳1 verbatim), so for every line
+        // that names a catalogue product the price is re-read from
+        // the catalogue NOW: the variant's effective price for a
+        // variant line, the product's price otherwise. Free-text
+        // lines (no product) keep the typed price - there is no
+        // catalogue price for them. The caps below and the service
+        // both compute from these resolved prices.
+        $data['items'] = collect($data['items'])->map(function ($i) use ($storeBiz) {
+            if (empty($i['product_id'])) {
+                return $i;
+            }
+            $product = Product::where('business_id', $storeBiz)->find($i['product_id']);
+            if (! $product) {
+                return $i;
+            }
+            $variant = null;
+            if (! empty($i['variant_id'])) {
+                $variant = $product->variants()->find($i['variant_id']);
+            }
+            if (! $variant && ! empty($i['variant_name'])) {
+                $variant = $product->variants()->where('name', $i['variant_name'])->first();
+            }
+            $i['price'] = $variant ? (float) $variant->effectivePrice() : (float) $product->price;
+
+            return $i;
+        })->all();
 
         // S-F3/S-F4: the discount and the advance are capped by the bill
         // itself. A discount past subtotal + delivery made grand_total
@@ -366,6 +432,19 @@ class OrderController extends Controller
             ], $request->user(), 'New Order form');
         } catch (\App\Exceptions\InsufficientTokensException $e) {
             return back()->with('error', $e->getMessage())->withInput();
+        } catch (\Illuminate\Database\QueryException $e) {
+            // Z1-3, the racing twin: both submissions passed the
+            // pre-check above and the unique submit_token index
+            // stopped this one at the insert. The first submission's
+            // order is the answer - send the user to it, exactly as
+            // if their own click had landed once.
+            if ($submitToken) {
+                $existing = Order::where('business_id', $storeBiz)->where('submit_token', $submitToken)->first();
+                if ($existing) {
+                    return redirect()->route('orders.show', $existing)->with('success', __('Order :invoice created', ['invoice' => $existing->invoice_no]));
+                }
+            }
+            throw $e;
         }
 
         if ($data['mode'] === 'approved') {
@@ -483,9 +562,7 @@ class OrderController extends Controller
                     'stores' => $m->pickupStores->map(fn ($st) => ['id' => $st->id, 'store_id' => $st->store_id, 'name' => $st->name, 'is_default' => $st->is_default])->all()];
             })->all(),
             'sources' => OrderSource::where('business_id', $biz)->where('is_visible', true)->orderBy('sort')->get(['code', 'label']),
-            'products' => Product::where('business_id', $biz)->where('is_active', true)->orderBy('name')
-                ->get()->map(fn ($p) => ['id' => $p->id, 'name' => $p->name, 'sku' => $p->sku,
-                    'price' => (float) $p->price, 'stock' => $p->available()]),
+            'products' => $this->catalogue($biz),
             'processingStatuses' => Order::PROCESSING_STATUSES,
             'cancelReasons' => Order::CANCEL_REASONS,
             'pendingCount' => Order::where('business_id', $biz)->where('status', 'Pending')->count(),

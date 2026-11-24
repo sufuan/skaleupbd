@@ -19,6 +19,7 @@ use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use PhpOffice\PhpSpreadsheet\IOFactory;
@@ -183,7 +184,7 @@ class InventoryController extends Controller
         })->values();
 
         $variants = ProductVariant::where('business_id', $biz)->get()->groupBy('product_id')
-            ->map(fn ($rows) => $rows->map(fn ($v) => ['id' => $v->id, 'name' => $v->name, 'sku' => $v->sku, 'price' => $v->price, 'cost' => $v->cost, 'stock_qty' => $v->stock_qty])->values());
+            ->map(fn ($rows) => $rows->map(fn ($v) => ['id' => $v->id, 'name' => $v->name, 'sku' => $v->sku, 'price' => $v->price, 'cost' => $v->cost, 'stock_qty' => $v->stock_qty, 'reserved_qty' => $v->reserved_qty])->values());
 
         return Inertia::render('Inventory/Products', [
             'products' => $products->through(fn ($p) => $this->productRow($p)),
@@ -324,13 +325,26 @@ class InventoryController extends Controller
     }
 
     /** Combo components must be the caller's own products (Hunt W W10): a foreign component id stored a recipe that could never sell. */
-    private function validateComponents(Request $request, int $biz): void
+    private function validateComponents(Request $request, int $biz, bool $requireComponent = false): void
     {
         $request->validate([
             'components' => ['nullable', 'array'],
             'components.*.product_id' => ['nullable', 'integer', Rule::exists('products', 'id')->where('business_id', $biz)],
             'components.*.qty' => ['nullable', 'integer', 'min:1'],
         ]);
+        // Z4-L1: a combo saved with NO component selected went through
+        // silently and could only be discovered later, on the Combo
+        // tab ("No components yet"). A combo IS its recipe - refuse
+        // the save until at least one component row names a product.
+        if ($requireComponent) {
+            $hasComponent = collect((array) $request->input('components', []))
+                ->contains(fn ($c) => ! empty($c['product_id']));
+            if (! $hasComponent) {
+                throw ValidationException::withMessages([
+                    'components' => __('A combo product needs at least one component. Please add a component product.'),
+                ]);
+            }
+        }
         // Y1-F2: a variant product can never be a combo component. The
         // combo sells whole units, but a variant product's own pool is
         // empty by design - its stock lives in the variants' pools -
@@ -354,8 +368,31 @@ class InventoryController extends Controller
     public function storeProduct(Request $request)
     {
         $biz = $this->biz($request);
-        $this->validateComponents($request, $biz);
+        $this->validateComponents($request, $biz, $request->input('type') === 'combo');
         $data = $this->productData($request);
+        // Defect A: the variant rows used to be read RAW from the
+        // request further down - a negative stock_qty sailed straight
+        // into the insert (the live -28 / -26 rows; every other layer
+        // was verified clean, this door simply had no guard, unlike
+        // storeVariant). Validate the rows BEFORE anything is created,
+        // with the same rules storeVariant uses, and create from the
+        // validated data only. Fully blank rows are the create form's
+        // untouched "+ Add Variant" placeholders - dropped first,
+        // exactly as the old loop skipped nameless rows.
+        $variantRows = [];
+        if ($request->input('mode') === 'variants') {
+            $rows = array_values(array_filter((array) $request->input('variants', []), fn ($v) => ! is_array($v) || ! (
+                empty($v['name']) && empty($v['price']) && empty($v['cost'])
+                && (empty($v['stock_qty']) || (int) $v['stock_qty'] === 0)
+            )));
+            $variantRows = Validator::make(['variants' => $rows], [
+                'variants.*.name' => ['required', 'string', 'max:255'],
+                'variants.*.sku' => ['nullable', 'string', 'max:120'],
+                'variants.*.price' => ['nullable', 'numeric', 'min:0'],
+                'variants.*.cost' => ['nullable', 'numeric', 'min:0'],
+                'variants.*.stock_qty' => ['nullable', 'integer', 'min:0'],
+            ])->validate()['variants'] ?? [];
+        }
         $data['business_id'] = $biz;
         $data['sku'] = $data['sku'] ?? ('PRODUCT-AUTO-' . strtoupper(substr(uniqid(), -6)));
         $initial = (int) ($data['stock_qty'] ?? 0);
@@ -373,14 +410,10 @@ class InventoryController extends Controller
                 ['business_id' => $biz, 'qty' => $product->stock_qty]
             );
         }
-        if ($request->input('mode') === 'variants') {
-            foreach ((array) $request->input('variants', []) as $v) {
-                if (! empty($v['name'])) {
-                    ProductVariant::create(['business_id' => $biz, 'product_id' => $product->id,
-                        'name' => $v['name'], 'sku' => $v['sku'] ?? null, 'price' => $v['price'] ?? null,
-                        'cost' => $v['cost'] ?? null, 'stock_qty' => (int) ($v['stock_qty'] ?? 0)]);
-                }
-            }
+        foreach ($variantRows as $v) {
+            ProductVariant::create(['business_id' => $biz, 'product_id' => $product->id,
+                'name' => $v['name'], 'sku' => $v['sku'] ?? null, 'price' => $v['price'] ?? null,
+                'cost' => $v['cost'] ?? null, 'stock_qty' => (int) ($v['stock_qty'] ?? 0)]);
         }
         if ($product->type === 'combo') {
             foreach ((array) $request->input('components', []) as $c) {
@@ -878,7 +911,12 @@ class InventoryController extends Controller
     public function updateProduct(Request $request, Product $product)
     {
         abort_unless($product->business_id === $this->biz($request), 403);
-        $this->validateComponents($request, (int) $product->business_id);
+        // Z4-L1 on the update path: the recipe is only replaced when
+        // the form says it carries one (components_present), so the
+        // at-least-one-component rule applies under that same
+        // condition, judged on the type this save leaves behind.
+        $this->validateComponents($request, (int) $product->business_id,
+            $request->boolean('components_present') && ($request->input('type') ?? $product->type) === 'combo');
         $oldImage = $product->image;
         $data = $this->productData($request);
         unset($data['stock_qty']); // stock changes go through Adjust, never the edit form
@@ -1051,6 +1089,45 @@ class InventoryController extends Controller
         ProductVariant::create(['business_id' => $product->business_id, 'product_id' => $product->id] + $data);
 
         return back()->with('success', __('Variant added'));
+    }
+
+    /**
+     * Edit an existing variant (Hunt Z4-M1): name/sku/price/cost are
+     * plain field saves, but stock is NEVER written directly - a
+     * stock_delta rides along to StockService::adjustVariant, which
+     * books it in the ledger under the same floor rules as a product
+     * adjustment. Before this, a mistyped variant price or stock
+     * could not be corrected at all (delete is guarded once the
+     * variant has orders).
+     */
+    public function updateVariant(Request $request, ProductVariant $variant)
+    {
+        abort_unless($variant->business_id === $this->biz($request), 403);
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'sku' => ['nullable', 'string', 'max:120'],
+            'price' => ['nullable', 'numeric', 'min:0'],
+            'cost' => ['nullable', 'numeric', 'min:0'],
+            'stock_delta' => ['nullable', 'integer'],
+            'reason' => ['nullable', 'string', 'max:120'],
+        ]);
+        $delta = (int) ($data['stock_delta'] ?? 0);
+        if ($delta !== 0) {
+            try {
+                $this->stock->adjustVariant($variant, $delta, $data['reason'] ?? 'Manual Adjustment', null, $request->user());
+            } catch (\RuntimeException $e) {
+                // StockService floor refusal (below zero / into reserved).
+                return back()->with('error', $e->getMessage());
+            }
+        }
+        $variant->update([
+            'name' => $data['name'],
+            'sku' => $data['sku'] ?? null,
+            'price' => $data['price'] ?? null,
+            'cost' => $data['cost'] ?? null,
+        ]);
+
+        return back()->with('success', __('Variant updated'));
     }
 
     public function destroyVariant(Request $request, ProductVariant $variant)

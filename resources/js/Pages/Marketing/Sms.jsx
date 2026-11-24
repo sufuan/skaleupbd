@@ -9,8 +9,25 @@ export default function Sms({ balance, rate, success_rate, audiences, dnd_count,
     const [message, setMessage] = useState('');
     const [coupon, setCoupon] = useState('');
     const aud = audiences.find((a) => a.key === audKey) || { count: 0, sendable: 0 };
-    const parts = useMemo(() => smsParts(message), [message]);
-    const chars = useMemo(() => [...message].length, [message]);
+    // Z4-L5: the phone preview must show the message the customer
+    // actually receives. The server substitutes {coupon}/{discount}
+    // from the chosen coupon (MarketingController::sendCampaign via
+    // AutomationService::fill) and appends the code when the text
+    // never mentions it - the preview runs the same steps, and the
+    // character/part counts are taken from the substituted body too,
+    // since that is what is stored, sent and charged.
+    const preview = useMemo(() => {
+        let body = message;
+        if (coupon) {
+            const discount = { FEST10: '10%', RETURN50: '৳50' }[coupon];
+            body = body.split('{coupon}').join(coupon);
+            if (discount) body = body.split('{discount}').join(discount);
+            if (!body.includes(coupon)) body += ' Code: ' + coupon;
+        }
+        return body;
+    }, [message, coupon]);
+    const parts = useMemo(() => smsParts(preview), [preview]);
+    const chars = useMemo(() => [...preview].length, [preview]);
     const total = aud.sendable * parts * rate;
     const afterRaw = balance - total;
     // The remainder is a display figure and never reads below zero -
@@ -75,7 +92,7 @@ export default function Sms({ balance, rate, success_rate, audiences, dnd_count,
                         <div className="phone">
                             <div className="phone-screen">
                                 <div style={{ fontSize: 11.5, color: '#78716C', marginBottom: 8 }}>{t("How it will go to the customer's phone")}</div>
-                                <div className="sms-bubble">{message || t('It will show here as you write…')}</div>
+                                <div className="sms-bubble">{preview || t('It will show here as you write…')}</div>
                             </div>
                         </div>
                     </div>

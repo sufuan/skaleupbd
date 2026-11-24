@@ -149,6 +149,21 @@ class StockService
     public function adjust(Product $product, int $delta, string $reason, ?string $note, ?User $actor, string $reference = 'ADJUST', ?float $unitCost = null): StockLedger
     {
         return DB::transaction(function () use ($product, $delta, $reason, $note, $actor, $reference, $unitCost) {
+            // Concurrency (Hunt Z1-1): the floor below is only as good
+            // as the numbers it reads, and the caller's copy can be
+            // stale - two staff with the same product screen open both
+            // passed the floor against the same pre-race stock and
+            // drove it negative, with both ledger rows claiming the
+            // same prev/new. Lock the product row and re-read it
+            // inside this transaction, so the check, the movement and
+            // the ledger all speak about the row as it is NOW: a
+            // concurrent adjust (or an approve reserving against the
+            // same row) serialises on this lock first.
+            $locked = Product::where('id', $product->id)->lockForUpdate()->first();
+            if ($locked) {
+                $product->setRawAttributes($locked->getAttributes());
+                $product->syncOriginal();
+            }
             // Floor (Hunt W W7): a manual movement may never take the
             // stock below zero, nor eat into units already reserved for
             // live orders - the order paths refuse overselling, and the
@@ -164,7 +179,7 @@ class StockService
                     throw new \RuntimeException(__('This adjustment would use stock that is reserved for orders.'));
                 }
             }
-            $prev = $product->stock_qty;
+            $prev = (int) $product->stock_qty;
             $product->increment('stock_qty', $delta);
             $this->syncDefaultBranchStock($product, $delta);
             $cost = $unitCost ?? (float) $product->cost;
@@ -192,6 +207,69 @@ class StockService
             // unchanged quantities.
             try {
                 \App\Jobs\Integrations\PushWooStockJob::dispatchDebounced((int) $product->business_id, (int) $product->id);
+            } catch (\Throwable) {
+                // Stock movement must never break on the integration layer.
+            }
+
+            return $ledger;
+        });
+    }
+
+    /**
+     * The variant twin of adjust() (Hunt Z4-M1): a variant's stock used
+     * to be uncorrectable once the variant existed - the only path was
+     * delete + re-add, and delete is guarded once the variant has
+     * orders. A correction now moves through here, so it carries the
+     * same discipline as a product adjustment: the variant row is
+     * locked and re-read before the floor check (never below zero,
+     * never into units reserved for live orders), and the movement is
+     * written to the ledger against the variant's own pool (the
+     * variant_id column the order paths already write). Variant pools
+     * never sync branch_stock - branch rows are product-level, exactly
+     * as the order ship/return paths treat them.
+     */
+    public function adjustVariant(\App\Models\ProductVariant $variant, int $delta, string $reason, ?string $note, ?User $actor, string $reference = 'ADJUST'): StockLedger
+    {
+        return DB::transaction(function () use ($variant, $delta, $reason, $note, $actor, $reference) {
+            $locked = \App\Models\ProductVariant::where('id', $variant->id)->lockForUpdate()->first();
+            if ($locked) {
+                $variant->setRawAttributes($locked->getAttributes());
+                $variant->syncOriginal();
+            }
+            if ($delta < 0) {
+                $newQty = (int) $variant->stock_qty + $delta;
+                if ($newQty < 0) {
+                    throw new \RuntimeException(__('This adjustment would take the stock below zero.'));
+                }
+                if ($newQty < (int) $variant->reserved_qty) {
+                    throw new \RuntimeException(__('This adjustment would use stock that is reserved for orders.'));
+                }
+            }
+            $prev = (int) $variant->stock_qty;
+            $variant->increment('stock_qty', $delta);
+            $cost = $variant->cost !== null ? (float) $variant->cost : (float) ($variant->product?->cost ?? 0);
+
+            $ledger = StockLedger::create([
+                'business_id' => $variant->business_id,
+                'product_id' => $variant->product_id,
+                'variant_id' => $variant->id,
+                'type' => $delta >= 0 ? 'adjust_in' : 'adjust_out',
+                'qty' => abs($delta),
+                'prev_stock' => $prev,
+                'new_stock' => $prev + $delta,
+                'unit_cost' => $cost,
+                'value_impact' => $delta * $cost,
+                'reference' => $reference,
+                'user_id' => $actor?->id,
+                'reason' => $reason,
+                'note' => $note,
+            ]);
+
+            // The parent product's sellable figure changed (its picker
+            // stock is the sum of its variants' pools), so the Woo stock
+            // push is queued for the product, same as adjust() does.
+            try {
+                \App\Jobs\Integrations\PushWooStockJob::dispatchDebounced((int) $variant->business_id, (int) $variant->product_id);
             } catch (\Throwable) {
                 // Stock movement must never break on the integration layer.
             }

@@ -6,7 +6,7 @@ import EntrySheet, { FinActions, fmt, fmtSigned } from './EntrySheet';
 import { t } from '@/lib/i18n';
 
 export default function IncomeExpense(props) {
-    const { tab, categoryFilter, byCategory, list, totalIncome, totalExpense, accounts, categories, canSee } = props;
+    const { tab, categoryFilter, byCategory, list, listTotal, listPage, totalIncome, totalExpense, accounts, categories, canSee } = props;
     const [sheet, setSheet] = useState(false);
     const [kind, setKind] = useState('expense');
     const catForm = useForm({ name: '', kind: 'expense' });
@@ -79,7 +79,15 @@ export default function IncomeExpense(props) {
                             </select>
                             {activeFilter && <span className="chip chip-amber">{t('Filter: :name - the total below is for this filter', { name: activeFilter.name })}</span>}
                         </div>
-                        <TxnTable list={list} onVoid={voidTxn} onEdit={openEditTxn} />
+                        <TxnTable list={list} total={listTotal} onVoid={voidTxn} onEdit={openEditTxn} />
+                        {listPage && listPage.last_page > 1 && (
+                            <div style={{ display: 'flex', gap: 6, padding: '12px 0', flexWrap: 'wrap' }}>
+                                {Array.from({ length: listPage.last_page }, (_, i) => i + 1).map((p) => (
+                                    <button key={p} className={p === listPage.current_page ? 'btn-p' : 'btn-s'}
+                                        onClick={() => go({ tab, category: categoryFilter || undefined, page: p })}>{p}</button>
+                                ))}
+                            </div>
+                        )}
                         {editTxn && (
                             <form onSubmit={(e) => { e.preventDefault(); txnForm.patch(`/finance/transactions/${editTxn.id}`, { preserveScroll: true, onSuccess: () => setEditTxn(null) }); }}
                                 style={{ display: 'flex', gap: 8, marginTop: 14, alignItems: 'end', flexWrap: 'wrap' }}>
@@ -147,9 +155,12 @@ export default function IncomeExpense(props) {
     );
 }
 
-function TxnTable({ list, onVoid, onEdit }) {
+function TxnTable({ list, total, onVoid, onEdit }) {
     if (!list.length) return <div className="x-note">{t('No entries.')}</div>;
-    const total = list.filter((x) => !x.voided).reduce((s, x) => s + (x.direction === 'in' ? x.amount : -x.amount), 0);
+    // The footer total arrives from the server: the full filtered list
+    // under the live-rows rule (voided originals and reversal rows both
+    // excluded), so it always reconciles with the header totals even
+    // when the list spans several pages.
     return (
         <div style={{ overflowX: 'auto' }}>
             <table className="x-table">

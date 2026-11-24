@@ -100,6 +100,25 @@ class ExternalOrderController extends Controller
             return $this->envelope(false, 422, 'customerNumber is not a valid mobile number');
         }
 
+        // Z3-OBS1: a line that NAMES a product id must name one of the
+        // caller's own products. OrderService resolves product ids
+        // inside the key's business, so a foreign or mistyped id used
+        // to degrade silently into an unlinked line at the
+        // caller-supplied price - the integration never learned its
+        // catalogue was wrong. Refuse the whole order, naming the bad
+        // id(s). Lines with no productId stay free-text, as before.
+        $namedIds = collect($data['products'])->pluck('productId')->filter(fn ($id) => $id !== null)->unique()->values();
+        if ($namedIds->isNotEmpty()) {
+            $ownIds = \App\Models\Product::where('business_id', $business->id)
+                ->whereIn('id', $namedIds)->pluck('id')->map(fn ($id) => (int) $id)->all();
+            $badIds = $namedIds->map(fn ($id) => (int) $id)->diff($ownIds)->values();
+            if ($badIds->isNotEmpty()) {
+                return $this->envelope(false, 422, $badIds->count() === 1
+                    ? 'Product '.$badIds->first().' does not belong to this shop.'
+                    : 'Products '.$badIds->implode(', ').' do not belong to this shop.');
+            }
+        }
+
         // Dedup on the caller's own order reference, not only on the
         // optional idempotency header: externalRef is the identifier every
         // caller already sends (the status lookup keys on it too), and the
@@ -154,6 +173,27 @@ class ExternalOrderController extends Controller
             ], null, 'External API');
         } catch (\App\Exceptions\InsufficientTokensException $e) {
             return $this->envelope(false, 402, $e->getMessage());
+        } catch (\Illuminate\Database\QueryException $e) {
+            // Z1-4, the racing twin: both POSTs passed the dedup
+            // checks above and the unique (business_id, external_ref)
+            // / (business_id, idempotency_key) indexes stopped this
+            // one at the insert. A duplicate-key outcome means the
+            // original order now exists - return it, exactly like
+            // the sequential-duplicate path above. Any other database
+            // error is not a duplicate and keeps flying.
+            $existing = null;
+            if ($idem !== '') {
+                $existing = Order::where('business_id', $business->id)->where('idempotency_key', $idem)->first();
+            }
+            if (! $existing && ! empty($data['externalRef'])) {
+                $existing = Order::where('business_id', $business->id)->where('external_ref', $data['externalRef'])->first();
+            }
+            if ($existing) {
+                return $this->envelope(true, 200, 'Duplicate request - order already exists', [
+                    'orderId' => $existing->id, 'invoice' => $existing->invoice_no,
+                ]);
+            }
+            throw $e;
         }
 
         AppNotification::create(['business_id' => $order->business_id, 'kind' => 'order', 'title' => "New order {$order->invoice_no}",

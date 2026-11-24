@@ -9,6 +9,7 @@ use App\Models\Order;
 use App\Models\User;
 use App\Models\WorkEvent;
 use App\Services\Couriers\DriverFactory;
+use Illuminate\Support\Facades\DB;
 
 class BookingService
 {
@@ -212,6 +213,29 @@ class BookingService
      *  - a return still travelling back (rider assigned / processing) is not yet back with the seller.
      */
     public function applyCourierStatus(Order $order, string $courierStatus, ?User $actor): void
+    {
+        // Concurrency (Hunt Z1-9): the decision below reads the
+        // order's status, and the caller's copy can be stale - two
+        // deliveries of the same courier event, each holding a
+        // pre-transition copy, could both decide "this delivers".
+        // The whole application runs in one transaction on the row
+        // locked and re-read here, so the second delivery decides on
+        // the winner's committed state (and changeStatus's same-state
+        // no-op, Z1-5, closes what is left). The caller's model is
+        // synced back to the applied state before returning.
+        DB::transaction(function () use ($order, $courierStatus, $actor) {
+            $fresh = Order::where('id', $order->id)->lockForUpdate()->first();
+            if (! $fresh) {
+                return;
+            }
+            $this->applyCourierStatusLocked($fresh, $courierStatus, $actor);
+            $order->setRawAttributes($fresh->getAttributes());
+            $order->syncOriginal();
+        });
+    }
+
+    /** applyCourierStatus()'s body, run on the locked row inside its transaction. */
+    private function applyCourierStatusLocked(Order $order, string $courierStatus, ?User $actor): void
     {
         $lower = strtolower($courierStatus);
 

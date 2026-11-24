@@ -100,7 +100,14 @@ class PayrollController extends Controller
             return $deny;
         }
         $run = $item->run;
-        if (! $this->canManage($request) || ! $run || $run->business_id !== $this->biz($request)) {
+        // Z3-OBS3: another shop's item is a 404, not a 302 back-redirect
+        // - the refusal shape every other cross-tenant route uses. The
+        // caller's OWN staff without the manage right keep the friendly
+        // back-with-error below (same tenant, a toast is the right UX).
+        if (! $run || $run->business_id !== $this->biz($request)) {
+            abort(404);
+        }
+        if (! $this->canManage($request)) {
             return back()->with('error', __('You do not have permission for this action.'));
         }
         if ($run->status === 'paid') {
@@ -136,7 +143,11 @@ class PayrollController extends Controller
         if ($deny = $this->guard($request)) {
             return $deny;
         }
-        if (! $this->canManage($request) || $run->business_id !== $this->biz($request)) {
+        // Z3-OBS3: another shop's run is a 404 (see updateItem).
+        if ($run->business_id !== $this->biz($request)) {
+            abort(404);
+        }
+        if (! $this->canManage($request)) {
             return back()->with('error', __('You do not have permission for this action.'));
         }
         $data = $request->validate(['account_id' => 'required|integer']);

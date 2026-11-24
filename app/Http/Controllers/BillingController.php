@@ -61,6 +61,11 @@ class BillingController extends Controller
             ->pluck('invoice_no', 'id');
 
         $openClaim = $this->claims->openClaim($biz);
+        // The card lists the latest 5 decided claims; the true count
+        // rides along so the page can say when it is partial (Hunt Z2-5).
+        $pastClaimsTotal = SellerPaymentClaim::where('business_id', $biz)
+            ->whereIn('status', [SellerPaymentClaim::APPROVED, SellerPaymentClaim::REJECTED])
+            ->count();
         $pastClaims = SellerPaymentClaim::where('business_id', $biz)
             ->whereIn('status', [SellerPaymentClaim::APPROVED, SellerPaymentClaim::REJECTED])
             ->latest('id')->limit(5)->get();
@@ -103,6 +108,7 @@ class BillingController extends Controller
             'platformPayment' => app(\App\Services\PaymentGatewayService::class)->enabledNumbers(null),
             'openClaim' => $openClaim ? $this->claimView($openClaim) : null,
             'pastClaims' => $pastClaims->map(fn ($c) => $this->claimView($c))->all(),
+            'pastClaimsTotal' => $pastClaimsTotal,
             'preselectedPackId' => $preselected,
             'ledger' => [
                 'data' => $ledger->getCollection()->map(fn ($r) => [

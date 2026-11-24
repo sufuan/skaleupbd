@@ -218,7 +218,7 @@ class RouteRegistry
 
         // ------------------------------------------------ shop: orders
         'orders.index' => ['shop', 'orders', 'view'],
-        'orders.create' => ['shop', 'orders', 'view'],
+        'orders.create' => ['shop', 'orders', 'edit'],
         'orders.store' => ['shop', 'orders', 'edit'],
         'orders.export' => ['shop', 'orders', 'export'],
         'orders.next' => ['shop', 'orders', 'view'],
@@ -400,6 +400,7 @@ class RouteRegistry
         'inventory.brands.store' => ['shop', 'inventory', 'edit'],
         'inventory.brands.destroy' => ['shop', 'inventory', 'delete'],
         'inventory.variants.store' => ['shop', 'inventory', 'edit'],
+        'inventory.variants.update' => ['shop', 'inventory', 'edit'],
         'inventory.variants.destroy' => ['shop', 'inventory', 'delete'],
         'inventory.ledger' => ['shop', 'inventory', 'view'],
         'inventory.reconcile' => ['shop', 'inventory', 'edit'],

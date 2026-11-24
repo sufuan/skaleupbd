@@ -184,6 +184,10 @@ class OrderService
                 'notify_date' => $data['notify_date'] ?? null,
                 'external_ref' => $data['external_ref'] ?? null,
                 'idempotency_key' => $data['idempotency_key'] ?? null,
+                // Z1-3: the New Order form's per-mount submission token,
+                // unique per business (migration 000057) - a duplicated
+                // submission dies on the index instead of booking twice.
+                'submit_token' => $data['submit_token'] ?? null,
                 // M18 storefront attribution (saved on every storefront order).
                 'storefront_id' => $data['storefront_id'] ?? null,
                 'storefront_page_id' => $data['storefront_page_id'] ?? null,
@@ -543,6 +547,24 @@ class OrderService
     public function approve(Order $order, User $actor): Order
     {
         return DB::transaction(function () use ($order, $actor) {
+            // Concurrency (Hunt Z1-6): the exactly-once story rested on
+            // the caller's copy being fresh and on the storage engine
+            // serialising writers. Lock the order row and re-read it
+            // inside this transaction: a second concurrent approve
+            // waits on the lock, then sees the post-approve state and
+            // no-ops here - no second reservation, no second history
+            // row - instead of re-running the whole path on a stale
+            // Pending copy. (Callers only ever approve Pending /
+            // Incomplete orders; anything else under the lock is the
+            // winner's finished work.)
+            $locked = Order::where('id', $order->id)->lockForUpdate()->first();
+            if ($locked) {
+                $order->setRawAttributes($locked->getAttributes());
+                $order->syncOriginal();
+                if (! in_array($order->status, ['Pending', 'Incomplete'], true)) {
+                    return $order;
+                }
+            }
             // Only the units this order does not already hold can be short:
             // a repeat approve() must not count its own reservation against
             // itself. A first approval (nothing held) gets the identical
@@ -603,6 +625,18 @@ class OrderService
     public function changeStatus(Order $order, string $to, User $actor, ?string $reason = null): Order
     {
         return DB::transaction(function () use ($order, $to, $actor, $reason) {
+            // Z1-5 (engine-correct): judge the transition from the row
+            // as it stands NOW, under its lock. A caller holding a
+            // stale copy (loaded as Processing while another request
+            // already shipped the order) must see the true current
+            // status, so the same-state no-op below and every
+            // exactly-once stock block below decide on the real
+            // transition, not on a memory.
+            $locked = Order::where('id', $order->id)->lockForUpdate()->first();
+            if ($locked) {
+                $order->setRawAttributes($locked->getAttributes());
+                $order->syncOriginal();
+            }
             $from = $order->status;
 
             // R9: the target must be a real order status. Every write
@@ -611,6 +645,19 @@ class OrderService
             // order outside every tab, filter and count.
             if (! in_array($to, array_merge(Order::STATUSES, Order::EXTRA_STATUSES), true)) {
                 throw ValidationException::withMessages(['status' => __('That is not a valid order status.')]);
+            }
+
+            // Same-state no-op (Hunt Z1-5): moving an order to the
+            // status it already holds changes nothing, and must DO
+            // nothing - the stock blocks below were already guarded
+            // against it, but the status save, the history row and the
+            // Shipped/Delivered automation hooks (a paid customer SMS
+            // each) ran unconditionally, so a double-click, a stale
+            // tab re-save or a manual ship overlapping a courier
+            // webhook re-fired all of them. A real transition keeps
+            // today's behaviour exactly.
+            if ($from === $to) {
+                return $order;
             }
 
             // M4: a delivered order's goods have left and its accounts are

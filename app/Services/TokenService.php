@@ -281,6 +281,19 @@ class TokenService
             return;
         }
         $amount = $this->pointsPerOrder();
+        // Zero floor (Hunt Z1-7): canAfford() is an unlocked read, so
+        // two intakes racing at balance 1 both passed it - and this
+        // deduction, taken under the wallet lock, then landed the
+        // second one at -1 with the ledger still reconciling, so no
+        // alarm would ever fire. manualCredit() has always refused to
+        // cross zero; the order path gets the same floor here, under
+        // the same lock: the refusal throws the same exception the
+        // canAfford gate throws, and because this runs inside the
+        // order-creation transaction, the refused intake leaves no
+        // order and no ledger row behind.
+        if ((int) $wallet->balance < $amount) {
+            throw new \App\Exceptions\InsufficientTokensException(self::BLOCK_MESSAGE);
+        }
         try {
             $this->writeRow($wallet, 'deduct', -$amount, [
                 'order_id' => $order->id,

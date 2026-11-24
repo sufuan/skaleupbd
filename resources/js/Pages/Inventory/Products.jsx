@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link, router, useForm } from '@inertiajs/react';
 import { confirmDialog } from '@/lib/confirm';
@@ -83,7 +83,29 @@ export default function Products({ products, summary, inactive, combos, wraps, v
 
     const doSearch = (e) => { e.preventDefault(); router.get('/inventory/products', { search }, { preserveState: true }); };
     const toggle = (p, field) => router.post(`/inventory/products/${p.id}/toggle`, { field }, { preserveScroll: true });
-    const adjust = (p, delta) => router.post(`/inventory/products/${p.id}/adjust`, { delta, reason: 'Quick Adjust' }, { preserveScroll: true });
+    // Z4-L2: the stepper used to fire one Inertia visit per click -
+    // the displayed number only moved on a full reload, and clicks
+    // inside one tick cancelled each other's visits, collapsing into
+    // a single +1. Now clicks accumulate into a pending delta that
+    // the row displays immediately (server stock + pending), and one
+    // visit carries the whole accumulated delta once the clicking
+    // pauses; the fresh props then confirm the true figure.
+    const [pending, setPending] = useState({});
+    const pendingRef = useRef({});
+    const flushTimers = useRef({});
+    const flushAdjust = (p) => {
+        const d = pendingRef.current[p.id] || 0;
+        if (!d) return;
+        pendingRef.current[p.id] = 0;
+        setPending((s) => ({ ...s, [p.id]: 0 }));
+        router.post(`/inventory/products/${p.id}/adjust`, { delta: d, reason: 'Quick Adjust' }, { preserveScroll: true });
+    };
+    const adjust = (p, delta) => {
+        pendingRef.current[p.id] = (pendingRef.current[p.id] || 0) + delta;
+        setPending((s) => ({ ...s, [p.id]: pendingRef.current[p.id] }));
+        clearTimeout(flushTimers.current[p.id]);
+        flushTimers.current[p.id] = setTimeout(() => flushAdjust(p), 500);
+    };
     const nameOf = (id) => (allRows.find((r) => r.id === id)?.name) || (combos.find((r) => r.id === id)?.name) || (wraps.find((r) => r.id === id)?.name) || ('#' + id);
 
     const table = (rows, emptyText) => (
@@ -117,7 +139,7 @@ export default function Products({ products, summary, inactive, combos, wraps, v
                                 <div className="flex items-center gap-2">
                                     <div className="flex items-center rounded-full bg-slate-100 p-0.5 shadow-sm">
                                         <button type="button" aria-label={t('Decrease Stock')} className="inline-flex items-center justify-center h-6 w-6 rounded-full hover:bg-white text-sm" onClick={() => adjust(p, -1)}>−</button>
-                                        <span className="min-w-[2rem] text-center font-medium">{p.stock_qty}</span>
+                                        <span className="min-w-[2rem] text-center font-medium">{p.stock_qty + (pending[p.id] || 0)}</span>
                                         <button type="button" aria-label={t('Increase Stock')} className="inline-flex items-center justify-center h-6 w-6 rounded-full hover:bg-white text-sm" onClick={() => adjust(p, 1)}>+</button>
                                     </div>
                                     <button type="button" className="text-xs text-primary font-medium" onClick={() => setAdjustFor(p)}>{t('Adjust')}</button>
@@ -232,10 +254,58 @@ export default function Products({ products, summary, inactive, combos, wraps, v
             ), document.body)}
 
             {editFor && <EditModal product={editFor} categories={categories} brands={brands} allProducts={allProducts}
+                productVariants={variants[editFor.id] || []}
                 initialComponents={(combos.find((c) => c.id === editFor.id) || {}).components || []} close={() => setEditFor(null)} />}
             {adjustFor && <AdjustModal product={adjustFor} close={() => setAdjustFor(null)} />}
             {ioOpen && <ImportExportModal close={() => setIoOpen(false)} />}
         </AppLayout>
+    );
+}
+
+function VariantRow({ v }) {
+    // Z4-M1: an existing variant can be corrected in place - name and
+    // price are plain field saves; a stock correction is sent as a
+    // delta and booked in the Stock Ledger by the server (never a
+    // silent overwrite), so a variant with orders stays correctable.
+    const [editing, setEditing] = useState(false);
+    const [name, setName] = useState(v.name);
+    const [price, setPrice] = useState(v.price ?? '');
+    const [delta, setDelta] = useState('');
+    const open = () => { setName(v.name); setPrice(v.price ?? ''); setDelta(''); setEditing(true); };
+    const save = () => {
+        const d = parseInt(delta, 10);
+        router.patch(`/inventory/variants/${v.id}`, {
+            name: name.trim() || v.name,
+            sku: v.sku || null,
+            price: price === '' ? null : price,
+            cost: v.cost ?? null,
+            stock_delta: Number.isNaN(d) ? 0 : d,
+            reason: 'Manual Adjustment',
+        }, { preserveScroll: true, onSuccess: () => setEditing(false) });
+    };
+    return (
+        <div className="border-t pt-2">
+            <div className="flex items-center justify-between text-sm">
+                <span>{v.name}</span>
+                <span className="text-muted-foreground">{v.sku || ''} · {v.price ? money(v.price) : ''} · {t('Stock')}: {v.stock_qty}{v.reserved_qty > 0 ? ` · ${t('Reserved')}: ${v.reserved_qty}` : ''}</span>
+                <span className="flex items-center gap-3">
+                    <button type="button" className="text-xs text-primary font-medium" onClick={open}>{t('Edit')}</button>
+                    <button type="button" className="text-xs text-red-600" onClick={() => router.delete(`/inventory/variants/${v.id}`, { preserveScroll: true })}>{t('Delete')}</button>
+                </span>
+            </div>
+            {editing && (
+                <div className="mt-2 space-y-2">
+                    <div className="flex flex-wrap gap-2">
+                        <input className={INPUT + ' flex-1 min-w-[160px]'} placeholder={t('e.g. Size: L / Color: Red')} value={name} onChange={(e) => setName(e.target.value)} />
+                        <input className={INPUT + ' w-28'} type="number" placeholder={t('Price')} value={price} onChange={(e) => setPrice(e.target.value)} />
+                        <input className={INPUT + ' w-28'} type="number" placeholder="+5 / -3" value={delta} onChange={(e) => setDelta(e.target.value)} />
+                        <button type="button" className={BTN_PRIMARY + ' h-10'} onClick={save}>{t('Save')}</button>
+                        <button type="button" className={BTN_OUTLINE + ' h-10'} onClick={() => setEditing(false)}>{t('Cancel')}</button>
+                    </div>
+                    <div className="text-xs text-muted-foreground">{t('Use + for stock in, − for stock out. Every adjustment is written to the Stock Ledger.')}</div>
+                </div>
+            )}
+        </div>
     );
 }
 
@@ -253,11 +323,7 @@ function Variations({ allRows, variants }) {
                         <button type="button" className="text-xs text-primary font-medium" onClick={() => setFormFor(formFor === p.id ? null : p.id)}>+ {t('Add Variant')}</button>
                     </div>
                     {(variants[p.id] || []).map((v) => (
-                        <div key={v.id} className="flex items-center justify-between text-sm border-t pt-2">
-                            <span>{v.name}</span>
-                            <span className="text-muted-foreground">{v.sku || ''} · {v.price ? money(v.price) : ''} · {t('Stock')}: {v.stock_qty}</span>
-                            <button type="button" className="text-xs text-red-600" onClick={() => router.delete(`/inventory/variants/${v.id}`, { preserveScroll: true })}>{t('Delete')}</button>
-                        </div>
+                        <VariantRow key={v.id} v={v} />
                     ))}
                     {(variants[p.id] || []).length === 0 && <div className="text-xs text-muted-foreground">{t('No variants')}</div>}
                     {formFor === p.id && (
@@ -309,7 +375,26 @@ function Taxonomy({ categories, brands }) {
     );
 }
 
-function EditModal({ product, categories, brands, close, allProducts = [], initialComponents = [] }) {
+function VariantPriceRow({ v }) {
+    // Z4-M1: the product Edit form loads the product's variants and
+    // saves a corrected price per row (its own PATCH - the product
+    // form itself carries no variant fields). Stock is not editable
+    // here: corrections go through the Variations tab's ledger path.
+    const [price, setPrice] = useState(v.price ?? '');
+    const dirty = String(price) !== String(v.price ?? '');
+    const save = () => router.patch(`/inventory/variants/${v.id}`, {
+        name: v.name, sku: v.sku || null, price: price === '' ? null : price, cost: v.cost ?? null,
+    }, { preserveScroll: true });
+    return (
+        <div className="flex items-center gap-2 text-sm">
+            <span className="flex-1">{v.name} <span className="text-muted-foreground">· {t('Stock')}: {v.stock_qty}</span></span>
+            <input className={INPUT + ' w-28'} type="number" placeholder={t('Price')} value={price} onChange={(e) => setPrice(e.target.value)} />
+            <button type="button" className={BTN_OUTLINE + ' h-9 px-3'} disabled={!dirty} onClick={save}>{t('Save')}</button>
+        </div>
+    );
+}
+
+function EditModal({ product, categories, brands, close, allProducts = [], initialComponents = [], productVariants = [] }) {
     // NOTE: submit via POST + _method spoofing - PHP cannot parse a
     // multipart/form-data body on a real PATCH request (the name field
     // would arrive empty), so forceFormData must go through POST.
@@ -345,6 +430,13 @@ function EditModal({ product, categories, brands, close, allProducts = [], initi
                     )}
                     <ProductFields data={data} setData={setData} categories={categories} brands={brands} forEdit readiness={{ score: product.ai_score, missing: product.ai_missing }}
                         allProducts={allProducts} components={data.components} setComponents={(v) => setData('components', v)} selfId={product.id} currentImage={product.image} />
+                    {productVariants.length > 0 && (
+                        <div className="mt-5 border-t pt-4 space-y-2">
+                            <div className="font-semibold text-sm">{t('Variants')}</div>
+                            {productVariants.map((v) => <VariantPriceRow key={v.id} v={v} />)}
+                            <div className="text-xs text-muted-foreground">{t('To correct a variant stock, use the Variations tab - stock changes are written to the Stock Ledger.')}</div>
+                        </div>
+                    )}
                     <div className="flex items-center justify-end gap-2 mt-5">
                         <button type="button" className={BTN_OUTLINE} onClick={close}>{t('Cancel')}</button>
                         <button type="submit" className={BTN_PRIMARY} disabled={processing}>{t('Save Changes')}</button>

@@ -548,6 +548,26 @@ class PurchaseController extends Controller
         ]);
     }
 
+    /**
+     * The same supplier twice (Hunt Z4-L4): the create form accepted
+     * an identical name + phone for the same shop with no signal, and
+     * the shop's dues then split across two records that look like one
+     * supplier. Identity here is name + phone (both trimmed, name
+     * case-insensitive); a phoneless supplier can only clash with
+     * another phoneless one of the same name. Returns the existing row
+     * when the pair is already on file.
+     */
+    private function duplicateSupplier(int $biz, string $name, ?string $phone, ?int $exceptId = null): ?Supplier
+    {
+        $phone = trim((string) ($phone ?? ''));
+
+        return Supplier::where('business_id', $biz)
+            ->when($exceptId, fn ($q) => $q->where('id', '!=', $exceptId))
+            ->get()
+            ->first(fn ($s) => mb_strtolower(trim((string) $s->name)) === mb_strtolower(trim($name))
+                && trim((string) ($s->phone ?? '')) === $phone);
+    }
+
     public function storeSupplier(Request $request): RedirectResponse
     {
         $biz = $this->biz($request);
@@ -559,6 +579,9 @@ class PurchaseController extends Controller
             'terms_days' => 'nullable|integer|min:0|max:365',
             'note' => 'nullable|string|max:1000',
         ]);
+        if ($dupe = $this->duplicateSupplier($biz, $data['name'], $data['phone'] ?? null)) {
+            return back()->withInput()->with('error', __('A supplier named :name with this phone number already exists.', ['name' => $dupe->name]));
+        }
         Supplier::create([
             'business_id' => $biz, 'name' => $data['name'],
             'phone' => $data['phone'] ?? null, 'email' => $data['email'] ?? null,
@@ -581,6 +604,11 @@ class PurchaseController extends Controller
             'terms_days' => 'nullable|integer|min:0|max:365',
             'note' => 'nullable|string|max:1000',
         ]);
+        // Z4-L4, same guard on the edit path: renaming a supplier onto
+        // another supplier's name + phone splits the dues just the same.
+        if ($dupe = $this->duplicateSupplier($biz, $data['name'], $data['phone'] ?? null, $supplier->id)) {
+            return back()->withInput()->with('error', __('A supplier named :name with this phone number already exists.', ['name' => $dupe->name]));
+        }
         $supplier->update([
             'name' => $data['name'], 'phone' => $data['phone'] ?? null,
             'email' => $data['email'] ?? null, 'address' => $data['address'] ?? null,

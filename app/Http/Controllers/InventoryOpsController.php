@@ -308,7 +308,16 @@ class InventoryOpsController extends Controller
         // still existed in the pool but no screen could say where they
         // were. Refuse, mirroring the product/variant delete guards;
         // the seller transfers the stock out first.
-        if (BranchStock::where('branch_id', $branch->id)->where('qty', '>', 0)->exists()) {
+        // Round 10 (live pass): the guard only means anything while
+        // branch stock is ENABLED. With the feature OFF the rows are
+        // inert leftovers - nothing reads them (the Branches page
+        // derives its figures from products) and turning the feature
+        // back ON re-derives every pool from products anyway - so an
+        // OFF-era branch must be deletable, rows and all, instead of
+        // being trapped behind a guard it can never satisfy (there may
+        // be no other branch to transfer to).
+        if ($this->stock->branchStockEnabled((int) $branch->business_id)
+            && BranchStock::where('branch_id', $branch->id)->where('qty', '>', 0)->exists()) {
             return back()->with('error', __('This branch still holds stock - move its stock to another branch before deleting it.'));
         }
         BranchStock::where('branch_id', $branch->id)->delete();
@@ -341,6 +350,10 @@ class InventoryOpsController extends Controller
         // feature is ON; while OFF, the whole pool on the default branch
         // and zero anywhere else (the page's own derivation).
         $product = Product::where('business_id', $biz)->find($data['product_id']);
+        // Z3-OBS3: a product that is not this shop's (foreign or
+        // nonexistent) is a 404, not the 302 "not enough stock"
+        // back-redirect a missing product used to fall into.
+        abort_unless($product, 404);
         $available = 0;
         if ($product) {
             if ($this->stock->branchStockEnabled($biz)) {
@@ -359,7 +372,7 @@ class InventoryOpsController extends Controller
         if ($product && (int) $data['from_branch_id'] === (int) $this->stock->defaultBranchId($biz)) {
             $available = max(0, $available - (int) $product->reserved_qty);
         }
-        if (! $product || (int) $data['qty'] > $available) {
+        if ((int) $data['qty'] > $available) {
             return back()->with('error', __('Not enough stock in the source branch - only :available available.', ['available' => $available]));
         }
         $transfer = StockTransfer::create(['business_id' => $biz, 'user_id' => $request->user()->id, 'status' => 'sent'] + $data);

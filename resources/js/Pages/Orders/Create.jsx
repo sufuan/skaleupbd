@@ -42,6 +42,17 @@ export default function Create({ sources, products, couriers, defaults, toggles,
     const [custom, setCustom] = useState({ name: '', sku: '', price: 0, qty: 1 });
     const [qSku, setQSku] = useState('');
     const [qName, setQName] = useState('');
+    // Z1-3: one submission token per form mount. A double-click, a
+    // browser retry or a second submit of THIS mounted form carries
+    // the same token, and the server books it exactly once (unique
+    // index + duplicate returns the first order). A fresh mount is a
+    // genuinely new act and mints a new token.
+    const submitToken = useRef(null);
+    if (submitToken.current === null) {
+        submitToken.current = (window.crypto && typeof crypto.randomUUID === 'function')
+            ? crypto.randomUUID()
+            : 'tok-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 12);
+    }
     const [favs, setFavs] = useState(() => new Set());
     const [favOnly, setFavOnly] = useState(false);
     const skuRef = useRef(null);
@@ -60,6 +71,14 @@ export default function Create({ sources, products, couriers, defaults, toggles,
     const itemsTotal = useMemo(() => picked.reduce((a, i) => a + i.price * i.qty, 0), [picked]);
     const grand = itemsTotal - Number(form.data.discount || 0) + Number(form.data.delivery_charge || 0);
     const due = grand - Number(form.data.advance || 0);
+    // Z4-L3: the TrxId is required exactly when the server requires it -
+    // a digital payment method, an advance actually taken, and the
+    // shop's mandatory-txn setting on. A cash advance has no TrxId, so
+    // the field says so instead of bouncing the order afterwards.
+    const txnRequired = ['bKash', 'Nagad', 'Rocket', 'Bank'].includes(form.data.payment_method)
+        && Number(form.data.advance || 0) > 0 && !!toggles.mandatory_advance_txn;
+    const txnCashNote = Number(form.data.advance || 0) > 0 && !txnRequired && !!toggles.mandatory_advance_txn
+        && !['bKash', 'Nagad', 'Rocket', 'Bank'].includes(form.data.payment_method);
     const itemCount = picked.reduce((a, i) => a + i.qty, 0);
 
     const visible = products.filter((p) => {
@@ -138,7 +157,7 @@ export default function Create({ sources, products, couriers, defaults, toggles,
             }
             merged.push({ ...i });
         }
-        form.transform((d) => ({ ...d, mode, items: merged, cross_sale: cross }));
+        form.transform((d) => ({ ...d, mode, items: merged, cross_sale: cross, submit_token: submitToken.current }));
         form.post('/orders', { forceFormData: true });
     };
 
@@ -330,7 +349,8 @@ export default function Create({ sources, products, couriers, defaults, toggles,
                                     <label className="fld-l frow" style={{ marginTop: 12 }}>{t('Delivery Charge (৳)')}<input className="fld" type="number" min="0" value={form.data.delivery_charge} onChange={(e) => form.setData('delivery_charge', e.target.value)} /></label>
                                     <label className="fld-l frow" style={{ marginTop: 12 }}>{t('Advance (৳)')}<input className="fld" type="number" min="0" value={form.data.advance} onChange={(e) => form.setData('advance', e.target.value)} /></label>
                                     {err('advance')}
-                                    <label className="fld-l frow" style={{ marginTop: 12 }}>{t('Transaction ID')}<input className="fld" placeholder={t('TrxId (bKash/Nagad/Bank)')} disabled={Number(form.data.advance || 0) <= 0} value={form.data.txn_id} onChange={(e) => form.setData('txn_id', e.target.value)} /></label>
+                                    <label className="fld-l frow" style={{ marginTop: 12 }}>{t('Transaction ID')}{txnRequired ? ' *' : ''}<input className="fld" placeholder={t('TrxId (bKash/Nagad/Bank)')} disabled={Number(form.data.advance || 0) <= 0} value={form.data.txn_id} onChange={(e) => form.setData('txn_id', e.target.value)} /></label>
+                                    {txnCashNote && <div className="muted-sm" style={{ marginTop: 4 }}>{t('Not needed for cash payments.')}</div>}
                                     {err('txn_id')}
                                 </div>
                                 <div className="card"><h3>{t('Order Summary')}</h3>

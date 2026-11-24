@@ -337,20 +337,37 @@ class FinanceController extends Controller
 
         // The list must cover the SAME month as the totals above it — it
         // silently listed all time, so the page disagreed with itself.
-        $list = FinanceTransaction::where('business_id', $biz)->whereIn('type', ['income', 'expense'])
+        // It is also paginated (Hunt Z2-3): it silently stopped at 200
+        // rows while the totals above it counted every row of the month.
+        $scoped = fn () => FinanceTransaction::where('business_id', $biz)->whereIn('type', ['income', 'expense'])
             ->whereDate('txn_date', '>=', $from)->whereDate('txn_date', '<=', $to)
-            ->with(['account', 'category', 'creator'])
             ->when($tab === 'expense', fn ($q) => $q->where('type', 'expense'))
             ->when($tab === 'income', fn ($q) => $q->where('type', 'income'))
-            ->when($catFilter, fn ($q) => $q->where('category_id', (int) $catFilter))
-            ->orderByDesc('txn_date')->orderByDesc('id')->limit(200)->get()
-            ->map(fn ($t) => $this->txnRow($t))->all();
+            ->when($catFilter, fn ($q) => $q->where('category_id', (int) $catFilter));
+
+        // The footer total covers the FULL filtered list (not just the
+        // visible page) under the same live-rows rule as the header
+        // totals: a voided original AND its reversal row both drop out
+        // (Hunt Z2-2 — counting the reversal leg added a phantom amount
+        // the header never counted, so the footer disagreed with it).
+        $listTotal = round((float) $scoped()->whereNull('voided_at')->whereNull('reversal_of')
+            ->selectRaw("SUM(CASE WHEN direction = 'in' THEN amount ELSE -amount END) as s")->value('s'), 2);
+
+        $listPage = $scoped()->with(['account', 'category', 'creator'])
+            ->orderByDesc('txn_date')->orderByDesc('id')->paginate(50);
+        $list = $listPage->getCollection()->map(fn ($t) => $this->txnRow($t))->all();
 
         return Inertia::render('Finance/IncomeExpense', [
             'tab' => $tab,
             'categoryFilter' => $catFilter ? (int) $catFilter : null,
             'byCategory' => $byCategory,
             'list' => $list,
+            'listTotal' => $listTotal,
+            'listPage' => [
+                'current_page' => $listPage->currentPage(),
+                'last_page' => $listPage->lastPage(),
+                'total' => $listPage->total(),
+            ],
             'totalIncome' => round((float) (clone $base)->where('type', 'income')->sum('amount'), 2),
             'totalExpense' => round((float) (clone $base)->where('type', 'expense')->sum('amount'), 2),
             'accounts' => $this->accountsPayload($biz),

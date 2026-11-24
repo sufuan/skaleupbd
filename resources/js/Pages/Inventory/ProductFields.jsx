@@ -133,7 +133,7 @@ export default function ProductFields({ data, setData, categories = [], brands =
                             {(components || []).some((c) => { const p = allProducts.find((x) => String(x.id) === String(c.product_id)); return p && p.has_variants; }) && (
                                 <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">{t('This combo includes a product with variants, so it cannot be sold as a combo. Replace that component with a plain product.')}</div>
                             )}
-                            {(components || []).length === 0 && <div className="text-xs text-muted-foreground">{t('No components yet - without components this combo sells from its own stock.')}</div>}
+                            {(components || []).length === 0 && <div className="text-xs text-muted-foreground">{t('No components yet - a combo needs at least one component before it can be saved.')}</div>}
                         </div>
                     </Section>
                 )}

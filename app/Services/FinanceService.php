@@ -10,6 +10,7 @@ use App\Models\Product;
 use App\Models\User;
 use App\Models\WarrantyClaim;
 use App\Models\WorkEvent;
+use App\Support\DhakaTime;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -156,24 +157,40 @@ class FinanceService
         return FinanceTransaction::where('business_id', $businessId)->whereNull('voided_at')->whereNull('reversal_of');
     }
 
-    /** Period money figures. Dates are Asia/Dhaka calendar days. */
+    /**
+     * Period money figures. The period is ONE Asia/Dhaka calendar range:
+     * $from/$to are its edges, and callers may hand them over in any
+     * timezone (Finance passes Dhaka Carbons, Reports passes the same
+     * instants converted to UTC). The bound each data type needs is
+     * derived HERE, never by the caller: stored timestamps
+     * (orders.updated_at) compare against the UTC instant bounds of the
+     * Dhaka range, while finance txn_date values already store Dhaka
+     * calendar dates and compare as dates. Passing raw caller bounds to
+     * both mixed the conventions — each surface got one half right and
+     * one half wrong, in opposite directions (Hunt Z2-1).
+     */
     public function figures(int $businessId, Carbon $from, Carbon $to): array
     {
         $settlements = app(SettlementService::class);
+        $fromDate = $from->copy()->setTimezone(DhakaTime::TZ)->toDateString();
+        $toDate = $to->copy()->setTimezone(DhakaTime::TZ)->toDateString();
+        [$utcFrom] = DhakaTime::dayBoundsUtc($fromDate);
+        [, $utcTo] = DhakaTime::dayBoundsUtc($toDate);
+
         $delivered = Order::where('business_id', $businessId)->where('status', 'Delivered')
-            ->whereBetween('updated_at', [$from, $to])->with('items')->get();
+            ->whereBetween('updated_at', [$utcFrom, $utcTo])->with('items')->get();
         $revenue = round($delivered->sum(fn (Order $o) => (float) $o->grand_total), 2);
         $productCost = round($delivered->sum(fn (Order $o) => $o->items->sum(fn ($i) => (float) $i->cost * (int) $i->qty)), 2);
         $courierCharges = round($delivered->sum(fn (Order $o) => $settlements->committedCharge($o)), 2);
 
         $returned = Order::where('business_id', $businessId)->where('status', 'Returned')
-            ->whereBetween('updated_at', [$from, $to])->get();
+            ->whereBetween('updated_at', [$utcFrom, $utcTo])->get();
         $rtoLoss = round($returned->sum(fn (Order $o) => $settlements->committedCharge($o)), 2);
 
         $expense = round((float) $this->liveTxns($businessId)->where('type', 'expense')
-            ->whereDate('txn_date', '>=', $from->toDateString())->whereDate('txn_date', '<=', $to->toDateString())->sum('amount'), 2);
+            ->whereDate('txn_date', '>=', $fromDate)->whereDate('txn_date', '<=', $toDate)->sum('amount'), 2);
         $otherIncome = round((float) $this->liveTxns($businessId)->where('type', 'income')
-            ->whereDate('txn_date', '>=', $from->toDateString())->whereDate('txn_date', '<=', $to->toDateString())->sum('amount'), 2);
+            ->whereDate('txn_date', '>=', $fromDate)->whereDate('txn_date', '<=', $toDate)->sum('amount'), 2);
 
         $profit = round($revenue + $otherIncome - $productCost - $courierCharges - $rtoLoss - $expense, 2);
 

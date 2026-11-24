@@ -5,7 +5,7 @@ import { t } from '@/lib/i18n';
 import { tk } from '@/lib/money';
 
 
-export default function CustomerShow({ customer, orders }) {
+export default function CustomerShow({ customer, orders, ordersTotal }) {
     const form = useForm({ name: customer.name || '', address: customer.address || '', district: customer.district || '', area: customer.area || '', email: customer.email || '' });
     const save = (e) => { e.preventDefault(); form.patch(`/customers/${customer.id}`, { preserveScroll: true }); };
 
@@ -52,6 +52,11 @@ export default function CustomerShow({ customer, orders }) {
                 </div>
                 <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
                     <h4 style={{ fontSize: 15, padding: '14px 14px 6px' }}>{t('Order history')}</h4>
+                    {ordersTotal > orders.length && (
+                        <div style={{ padding: '0 14px 8px', fontSize: 12, color: 'var(--muted)' }}>
+                            {t('Showing the latest :shown of :total orders', { shown: orders.length, total: ordersTotal })}
+                        </div>
+                    )}
                     <div className="tbl-wrap">
                         <table className="tbl">
                             <thead><tr><th>{t('Invoice')}</th><th>{t('Date')}</th><th>{t('Status')}</th><th>{t('Total')}</th></tr></thead>

@@ -3932,5 +3932,14 @@
  "Order created, but the confirmation message could not be sent - Meta did not accept it: :error": "Order created, but the confirmation message could not be sent - Meta did not accept it: :error",
  "Combo components cannot be products with variants (:names). Please pick a plain product as the component.": "Combo components cannot be products with variants (:names). Please pick a plain product as the component.",
  "Products with variants cannot be used as combo components.": "Products with variants cannot be used as combo components.",
- "This combo includes a product with variants, so it cannot be sold as a combo. Replace that component with a plain product.": "This combo includes a product with variants, so it cannot be sold as a combo. Replace that component with a plain product."
+ "This combo includes a product with variants, so it cannot be sold as a combo. Replace that component with a plain product.": "This combo includes a product with variants, so it cannot be sold as a combo. Replace that component with a plain product.",
+ "Showing the latest :shown of :total orders": "Showing the latest :shown of :total orders",
+ "Showing the latest :shown of :total payment requests": "Showing the latest :shown of :total payment requests",
+ "Variant updated": "Variant updated",
+ "Variants": "Variants",
+ "To correct a variant stock, use the Variations tab - stock changes are written to the Stock Ledger.": "To correct a variant stock, use the Variations tab - stock changes are written to the Stock Ledger.",
+ "A combo product needs at least one component. Please add a component product.": "A combo product needs at least one component. Please add a component product.",
+ "No components yet - a combo needs at least one component before it can be saved.": "No components yet - a combo needs at least one component before it can be saved.",
+ "A supplier named :name with this phone number already exists.": "A supplier named :name with this phone number already exists.",
+ "Not needed for cash payments.": "Not needed for cash payments."
 }

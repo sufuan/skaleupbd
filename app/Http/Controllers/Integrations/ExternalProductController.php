@@ -59,6 +59,7 @@ class ExternalProductController extends Controller
             return $this->deny('This key does not have permission to write products.');
         }
 
+        $this->assertShopActive($key->business_id);
         $this->assertNotSuspended($key->business_id);
 
         $validated = $request->validate([
@@ -191,6 +192,7 @@ class ExternalProductController extends Controller
             return $this->deny('This key does not have permission to read stock.');
         }
 
+        $this->assertShopActive($key->business_id);
         $this->assertNotSuspended($key->business_id);
 
         $validated = $request->validate([
@@ -276,6 +278,29 @@ class ExternalProductController extends Controller
             ->where('platform', 'custom')
             ->whereIn('status', ['active', 'degraded'])
             ->first(['id']);
+    }
+
+    /**
+     * A shop that is not approved (pending, rejected or suspended)
+     * must not trade (Hunt Y4 F1), and the refusal must name THAT
+     * reason (Z3-OBS2): these shops usually have no wallet row, so
+     * the points check below fired first and answered a misleading
+     * "out of points" 503. Approval is therefore checked BEFORE the
+     * balance. Null/empty status predates the approval flow and reads
+     * as approved, matching ExternalOrderController and
+     * SellerApprovalGate. No shop data is returned either way.
+     */
+    private function assertShopActive(int $businessId): void
+    {
+        $status = \App\Models\Business::whereKey($businessId)->value('status');
+        if ($status !== null && $status !== '' && $status !== 'approved') {
+            abort(response()->json([
+                'success'    => false,
+                'statusCode' => 403,
+                'requestId'  => null,
+                'message'    => 'This shop is not active right now.',
+            ], 403));
+        }
     }
 
     private function assertNotSuspended(int $businessId): void

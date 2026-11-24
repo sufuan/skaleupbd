@@ -53,6 +53,10 @@ export default function Inbox({ conversations, selected, report, aiMode, aiPanic
     // control belongs to platform admins only (the server refuses
     // everyone else); sellers see the status pill but no button.
     const isPlatformAdmin = !!usePage().props.auth?.user?.is_platform_admin;
+    // Z4-L6: creating an order is an edit-tick act (orders.store) -
+    // staff without it are not offered the Create Order entry point,
+    // the same adaptation Y1-F6 made on the order detail page.
+    const canCreateOrder = !!usePage().props.auth?.permission_ticks?.orders?.edit;
     const [view, setView] = useState('main');
     const [channel, setChannel] = useState('all');
     const [search, setSearch] = useState('');
@@ -197,7 +201,7 @@ export default function Inbox({ conversations, selected, report, aiMode, aiPanic
                                     <span style={selected.window_open ? PILL('var(--tgl-bg)', 'var(--tgl-ink)') : PILL('#fee2e2', '#dc2626')}>{selected.window_open ? t('24h window: Open') : t('24h window: Closed')}</span>
                                     <span style={{ ...PILL('var(--tgl-bg)', 'var(--tgl-ink)'), marginLeft: 'auto' }}>{selected.ai_paused ? t('AI: Off for this chat') : t('AI: On for this chat')}</span>
                                     <button type="button" className="msg-detail-toggle" style={{ ...BTN2, padding: '7px 13px' }} onClick={() => setDetailOpen(true)}>{t('Customer details')}</button>
-                                    <Link href={createOrderHref} style={{ ...BTN, padding: '7px 13px', textDecoration: 'none' }}>{t('Create Order')}</Link>
+                                    {canCreateOrder && <Link href={createOrderHref} style={{ ...BTN, padding: '7px 13px', textDecoration: 'none' }}>{t('Create Order')}</Link>}
                                 </div>
                                 <div className="msg-scroll" style={{ display: 'flex', flexDirection: 'column', gap: 9, padding: '12px 2px' }}>
                                     {selected.thread_truncated && <div style={{ alignSelf: 'center', fontSize: 12, color: 'var(--mut-ink)' }}>{t('Showing the latest 300 messages')}</div>}

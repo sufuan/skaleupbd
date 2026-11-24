@@ -7,7 +7,7 @@ use App\Models\Order;
 use App\Models\User;
 use App\Services\BookingService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 class WebhookController extends Controller
 {
@@ -36,13 +36,23 @@ class WebhookController extends Controller
             return response()->json(['status' => 'unauthorized'], 401);
         }
 
+        // Claim-first idempotency (Hunt Z1-9): the delivery is
+        // claimed in a unique-keyed table BEFORE anything is
+        // applied, with an atomic insert-or-ignore - two simultaneous
+        // deliveries of the same event cannot both hold the claim,
+        // so the loser is answered here without re-applying the
+        // status or re-sending any SMS. (The old check-then-put
+        // cache test could be passed by both.) The claim key is the
+        // courier's Idempotency-Key when one rides along, and the
+        // exact payload otherwise - a byte-identical re-delivery IS
+        // the same event.
         $idem = (string) $request->header('Idempotency-Key', '');
-        if ($idem !== '') {
-            $cacheKey = 'sf_webhook_' . $method->id . '_' . md5($idem);
-            if (Cache::has($cacheKey)) {
-                return response()->json(['status' => 'success']);
-            }
-            Cache::put($cacheKey, true, now()->addDay());
+        $claimKey = 'steadfast:'.$method->id.':'.($idem !== '' ? 'key:'.md5($idem) : 'body:'.md5($request->getContent()));
+        $claimed = DB::table('courier_webhook_claims')->insertOrIgnore([
+            'claim_key' => $claimKey, 'source' => 'steadfast', 'created_at' => now(), 'updated_at' => now(),
+        ]);
+        if ($claimed === 0) {
+            return response()->json(['status' => 'success']);
         }
 
         $payload = $request->json()->all();
@@ -102,6 +112,18 @@ class WebhookController extends Controller
         // an invoice number must never be able to flip an order.
         if ($secret === '' || ! hash_equals($secret, (string) $request->header('X-PATHAO-Signature', ''))) {
             return response()->json(['status' => 'unauthorized'], 401);
+        }
+
+        // Claim-first idempotency (Hunt Z1-9): Pathao sends no
+        // idempotency key, so the claim is the exact payload - a
+        // byte-identical re-delivery is the same event and is
+        // answered without being applied twice.
+        $claimKey = 'pathao:'.$method->id.':body:'.md5($request->getContent());
+        $claimed = DB::table('courier_webhook_claims')->insertOrIgnore([
+            'claim_key' => $claimKey, 'source' => 'pathao', 'created_at' => now(), 'updated_at' => now(),
+        ]);
+        if ($claimed === 0) {
+            return response()->json(['status' => 'success'], 202);
         }
 
         $consignmentId = (string) ($payload['consignment_id'] ?? $payload['data']['consignment_id'] ?? '');

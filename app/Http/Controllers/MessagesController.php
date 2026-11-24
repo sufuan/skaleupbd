@@ -236,7 +236,14 @@ class MessagesController extends Controller
             // order, no point for a customer the shop has blocked.
             return back()->with('error', __('This customer is on your blocklist - a chat order cannot be created for them.'));
         }
-        $this->brain->approveDraft($message, $edited, $request->user()?->id);
+        $handled = $this->brain->approveDraft($message, $edited, $request->user()?->id);
+        if ($handled === null) {
+            // Lost the race (Hunt Z1-8): another approver's locked
+            // guard committed first, so this copy was stale - the
+            // draft is already handled and NOTHING here may dispatch
+            // or create an order for it a second time.
+            return back()->with('error', __('This draft was already handled - it cannot be approved or rejected again.'));
+        }
         $message->refresh();
         if ($message->status !== 'sent') {
             // Held at approval (Round 6, P5): the figures no longer match
@@ -298,7 +305,11 @@ class MessagesController extends Controller
             // message stays on the record as sent.
             return back()->with('error', __('This draft was already handled - it cannot be approved or rejected again.'));
         }
-        $this->brain->rejectDraft($message);
+        if (! $this->brain->rejectDraft($message)) {
+            // Already handled under the lock (Hunt Z1-8) - the stale
+            // copy above passed the fast-path check, the row did not.
+            return back()->with('error', __('This draft was already handled - it cannot be approved or rejected again.'));
+        }
 
         return back()->with('success', __('Draft rejected'));
     }

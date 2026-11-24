@@ -306,6 +306,7 @@ Route::middleware(['auth', 'verified', 'totp'])->group(function () {
     Route::post('/inventory/brands', [\App\Http\Controllers\InventoryController::class, 'storeBrand'])->name('inventory.brands.store');
     Route::delete('/inventory/brands/{brand}', [\App\Http\Controllers\InventoryController::class, 'destroyBrand'])->name('inventory.brands.destroy');
     Route::post('/inventory/products/{product}/variants', [\App\Http\Controllers\InventoryController::class, 'storeVariant'])->name('inventory.variants.store');
+    Route::patch('/inventory/variants/{variant}', [\App\Http\Controllers\InventoryController::class, 'updateVariant'])->name('inventory.variants.update');
     Route::delete('/inventory/variants/{variant}', [\App\Http\Controllers\InventoryController::class, 'destroyVariant'])->name('inventory.variants.destroy');
     Route::get('/inventory/ledger', [\App\Http\Controllers\InventoryOpsController::class, 'ledger'])->name('inventory.ledger');
     Route::post('/inventory/reconcile', [\App\Http\Controllers\InventoryOpsController::class, 'reconcile'])->name('inventory.reconcile');

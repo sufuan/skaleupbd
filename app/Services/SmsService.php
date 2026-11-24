@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Customer;
 use App\Models\Order;
+use App\Models\Setting;
 use App\Models\SmsDoNotSend;
 use App\Models\SmsLog;
 use App\Services\Sms\AmarSmsGateway;
@@ -11,6 +12,7 @@ use App\Services\Sms\NishchitGateway;
 use App\Services\Sms\SmsGateway;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\DB;
 
 /**
  * M12's one SMS sender. Every SMS the platform sends for a shop goes through
@@ -87,14 +89,18 @@ class SmsService
      * 'dnd', 'cap', or null when it would really go out. The campaign
      * preview and the sender share this one check, so the number of
      * recipients the seller is promised is the number the send reaches.
+     * With $locked, the counts are taken as locking (current) reads -
+     * send() uses that variant inside its balance-lock transaction, so
+     * a concurrent send's just-committed log row is always counted
+     * (Hunt Z1-2); the preview keeps the plain snapshot read.
      */
-    public function marketingSkipReason(int $biz, string $phone): ?string
+    public function marketingSkipReason(int $biz, string $phone, bool $locked = false): ?string
     {
         $phone = PhoneNormalizer::normalize($phone);
         if ($this->onDoNotSend($biz, $phone)) {
             return 'dnd';
         }
-        [$today, $week] = $this->marketingSentCounts($biz, $phone);
+        [$today, $week] = $locked ? $this->marketingSentCountsLocked($biz, $phone) : $this->marketingSentCounts($biz, $phone);
         if ($today >= (int) $this->setting($biz, 'cap_day', 1) || $week >= (int) $this->setting($biz, 'cap_week', 3)) {
             return 'cap';
         }
@@ -102,16 +108,31 @@ class SmsService
         return null;
     }
 
-    /** Marketing sends already delivered to this phone today / in the last 7 days. */
-    public function marketingSentCounts(int $biz, string $phone): array
+    private function marketingSentQuery(int $biz, string $phone)
     {
-        $base = SmsLog::where('business_id', $biz)->where('phone', $phone)->where('status', 'sent')
+        return SmsLog::where('business_id', $biz)->where('phone', $phone)->where('status', 'sent')
             ->where(function ($q) {
                 $q->where('source_type', 'campaign')
                     ->orWhereIn('source_key', self::MARKETING_FLOWS);
             });
+    }
+
+    /** Marketing sends already delivered to this phone today / in the last 7 days. */
+    public function marketingSentCounts(int $biz, string $phone): array
+    {
+        $base = $this->marketingSentQuery($biz, $phone);
         $today = (clone $base)->whereDate('created_at', Carbon::today())->count();
         $week = (clone $base)->where('created_at', '>=', Carbon::now()->subDays(7))->count();
+
+        return [$today, $week];
+    }
+
+    /** marketingSentCounts() as locking reads (see marketingSkipReason). */
+    private function marketingSentCountsLocked(int $biz, string $phone): array
+    {
+        $base = $this->marketingSentQuery($biz, $phone);
+        $today = (clone $base)->whereDate('created_at', Carbon::today())->lockForUpdate()->pluck('id')->count();
+        $week = (clone $base)->where('created_at', '>=', Carbon::now()->subDays(7))->lockForUpdate()->pluck('id')->count();
 
         return [$today, $week];
     }
@@ -134,37 +155,59 @@ class SmsService
             'body' => $body, 'parts' => $parts, 'cost' => 0,
         ];
 
-        if ($marketing) {
-            $skip = $this->marketingSkipReason($biz, $phone);
-            if ($skip !== null) {
-                $row['status'] = $skip === 'dnd' ? 'skipped_dnd' : 'skipped_cap';
+        // Exactly-once charging (Hunt Z1-2): the cap check, the
+        // balance check and the decrement are one atomic step. The
+        // shop's balance settings row is locked for the whole send,
+        // so two overlapping sends serialise on it - the second send
+        // re-reads the balance from the locked row and counts today's
+        // sends as locking reads only after the first send has
+        // committed, and can pass neither check on stale state (the
+        // old code read the balance, dispatched, then wrote back
+        // balance - cost: two sends on one SMS of credit both landed,
+        // and the lost update left the books reading a clean 0).
+        // A refused send writes only its own log row - the balance
+        // and the counts stay untouched.
+        return DB::transaction(function () use ($biz, $phone, $body, $cost, $marketing, $row) {
+            $balanceKey = "marketing.{$biz}.sms_balance";
+            DB::table('settings')->insertOrIgnore([
+                'key' => $balanceKey, 'value' => '0', 'type' => 'number', 'group' => 'marketing',
+                'created_at' => now(), 'updated_at' => now(),
+            ]);
+            $balanceRow = Setting::where('key', $balanceKey)->lockForUpdate()->first();
+            $balance = (float) ($balanceRow?->decodedValue() ?? 0);
+
+            if ($marketing) {
+                $skip = $this->marketingSkipReason($biz, $phone, locked: true);
+                if ($skip !== null) {
+                    $row['status'] = $skip === 'dnd' ? 'skipped_dnd' : 'skipped_cap';
+
+                    return SmsLog::create($row);
+                }
+            }
+            if ($balance < $cost) {
+                $row['status'] = 'failed';
+                $row['error'] = 'Not enough SMS balance';
 
                 return SmsLog::create($row);
             }
-        }
-        if ($this->balance($biz) < $cost) {
-            $row['status'] = 'failed';
-            $row['error'] = 'Not enough SMS balance';
+
+            $dispatch = $this->dispatch($biz, $phone, $body);
+            $row['provider'] = $dispatch['provider'];
+            $row['provider_message_id'] = $dispatch['provider_message_id'];
+            $row['provider_response'] = $dispatch['response'];
+            if (! $dispatch['ok']) {
+                $row['status'] = 'failed';
+                $row['error'] = $dispatch['error'] !== null ? mb_substr($dispatch['error'], 0, 250) : null;
+
+                return SmsLog::create($row);
+            }
+
+            $this->settings->set($balanceKey, round($balance - $cost, 2));
+            $row['status'] = 'sent';
+            $row['cost'] = $cost;
 
             return SmsLog::create($row);
-        }
-
-        $dispatch = $this->dispatch($biz, $phone, $body);
-        $row['provider'] = $dispatch['provider'];
-        $row['provider_message_id'] = $dispatch['provider_message_id'];
-        $row['provider_response'] = $dispatch['response'];
-        if (! $dispatch['ok']) {
-            $row['status'] = 'failed';
-            $row['error'] = $dispatch['error'] !== null ? mb_substr($dispatch['error'], 0, 250) : null;
-
-            return SmsLog::create($row);
-        }
-
-        $this->setSetting($biz, 'sms_balance', round($this->balance($biz) - $cost, 2));
-        $row['status'] = 'sent';
-        $row['cost'] = $cost;
-
-        return SmsLog::create($row);
+        });
     }
 
     /**

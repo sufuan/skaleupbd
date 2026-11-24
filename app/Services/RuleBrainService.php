@@ -14,6 +14,7 @@ use App\Models\Customer;
 use App\Models\KnowledgeEntry;
 use App\Models\Product;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Rule Brain — decides, the AI only phrases.
@@ -1603,16 +1604,40 @@ class RuleBrainService
         return $msg;
     }
 
-    /** A staff member approves a draft (optionally after editing it). */
-    public function approveDraft(ChatMessage $msg, ?string $editedBody, ?int $userId): ChatMessage
+    /**
+     * A staff member approves a draft (optionally after editing it).
+     * Returns the message when THIS call handled it (sent, or held
+     * flagged), and null when another approver already handled it -
+     * the caller must read null as an honest "already handled"
+     * refusal, never as a send.
+     */
+    public function approveDraft(ChatMessage $msg, ?string $editedBody, ?int $userId): ?ChatMessage
     {
-        if (! in_array($msg->status, ['draft', 'flagged'], true)) {
-            // State discipline (Hunt Y2-1/Y2-2/Y2-4): only a pending
-            // draft can be approved. Approving a sent or rejected
-            // message again must never re-run the send path, re-log a
-            // send, or (via the controller) create a second order.
-            return $msg;
-        }
+        return DB::transaction(function () use ($msg, $editedBody, $userId) {
+            // State discipline under concurrency (Hunt Y2-1/Y2-2/Y2-4,
+            // closed for the concurrent case by Hunt Z1-8): the guard
+            // used to test the status on each request's own in-memory
+            // copy, so two staff approving the same draft at the same
+            // moment both passed it and both ran the full send path.
+            // The guard now runs on the row locked inside this
+            // transaction: the second approver waits on the lock,
+            // re-reads the winner's committed status, and gets null -
+            // which the controller turns into the already-handled
+            // refusal BEFORE any dispatch or order creation can run.
+            // Approving a sent or rejected message must never re-run
+            // the send path, re-log a send, or create a second order.
+            $locked = ChatMessage::where('id', $msg->id)->lockForUpdate()->first();
+            if (! $locked || ! in_array($locked->status, ['draft', 'flagged'], true)) {
+                return null;
+            }
+
+            return $this->approveDraftLocked($locked, $editedBody, $userId);
+        });
+    }
+
+    /** approveDraft()'s body, run on the locked row inside its transaction. */
+    private function approveDraftLocked(ChatMessage $msg, ?string $editedBody, ?int $userId): ChatMessage
+    {
         $edited = $editedBody !== null && trim($editedBody) !== '' && trim($editedBody) !== $msg->body;
 
         // Send-time re-verification (Round 6, P5): approval is a SEND, so
@@ -1690,19 +1715,30 @@ class RuleBrainService
         return $msg;
     }
 
-    public function rejectDraft(ChatMessage $msg): void
+    /**
+     * Reject a pending draft. Returns false when the draft was
+     * already handled (the same locked guard as approveDraft, Z1-8),
+     * so the caller can answer honestly instead of claiming a
+     * rejection it did not perform.
+     */
+    public function rejectDraft(ChatMessage $msg): bool
     {
-        if (! in_array($msg->status, ['draft', 'flagged'], true)) {
-            // Only a pending draft can be rejected (Hunt Y2-3): a sent
-            // message the customer received must never be rewritten
-            // as "rejected" and hidden from the thread.
-            return;
-        }
-        $msg->status = 'rejected';
-        $msg->save();
-        // A rejection is a decision about an AI reply — it belongs in
-        // the activity log like approvals, holds and edits (Y2-5).
-        $this->log((int) $msg->business_id, 'draft_rejected', ($msg->conversation?->customer_name ?? '') . ' - draft rejected', $msg->rule, $msg->conversation);
+        return DB::transaction(function () use ($msg) {
+            $locked = ChatMessage::where('id', $msg->id)->lockForUpdate()->first();
+            if (! $locked || ! in_array($locked->status, ['draft', 'flagged'], true)) {
+                // Only a pending draft can be rejected (Hunt Y2-3): a sent
+                // message the customer received must never be rewritten
+                // as "rejected" and hidden from the thread.
+                return false;
+            }
+            $locked->status = 'rejected';
+            $locked->save();
+            // A rejection is a decision about an AI reply — it belongs in
+            // the activity log like approvals, holds and edits (Y2-5).
+            $this->log((int) $locked->business_id, 'draft_rejected', ($locked->conversation?->customer_name ?? '') . ' - draft rejected', $locked->rule, $locked->conversation);
+
+            return true;
+        });
     }
 
     /** Incoming comment: spam hides itself; questions get a drafted reply. */

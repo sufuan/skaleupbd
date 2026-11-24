@@ -4254,6 +4254,21 @@ BN.update({
     'This combo includes a product with variants, so it cannot be sold as a combo. Replace that component with a plain product.': 'এই কম্বোতে ভ্যারিয়েন্টওয়ালা প্রোডাক্ট আছে, তাই এটি কম্বো হিসেবে বিক্রি হবে না। ওই উপাদানটি বদলে একটি সাধারণ প্রোডাক্ট দিন।',
 })
 
+BN.update({
+    'Showing the latest :shown of :total orders': 'মোট :totalটি অর্ডারের মধ্যে সর্বশেষ :shownটি দেখানো হচ্ছে',
+    'Showing the latest :shown of :total payment requests': 'মোট :totalটি পেমেন্ট অনুরোধের মধ্যে সর্বশেষ :shownটি দেখানো হচ্ছে',
+})
+
+BN.update({
+    'Variant updated': 'ভ্যারিয়েন্ট আপডেট হয়েছে',
+    'Variants': 'ভ্যারিয়েন্টসমূহ',
+    'To correct a variant stock, use the Variations tab - stock changes are written to the Stock Ledger.': 'ভ্যারিয়েন্টের স্টক ঠিক করতে Variations ট্যাব ব্যবহার করুন - স্টকের পরিবর্তন Stock Ledger-এ লেখা হয়।',
+    'A combo product needs at least one component. Please add a component product.': 'একটি কম্বো প্রোডাক্টে অন্তত একটি উপাদান লাগবে। একটি উপাদান প্রোডাক্ট যোগ করুন।',
+    'No components yet - a combo needs at least one component before it can be saved.': 'এখনো কোনো উপাদান নেই - সেভ করার আগে একটি কম্বোতে অন্তত একটি উপাদান লাগবে।',
+    'A supplier named :name with this phone number already exists.': ':name নামে এই ফোন নম্বরের একজন সাপ্লায়ার ইতিমধ্যে আছে।',
+    'Not needed for cash payments.': 'নগদ পেমেন্টের জন্য লাগবে না।',
+})
+
 EN = {k: k for k in BN}
 
 with open('lang/en.json', 'w', encoding='utf-8') as f:

@@ -369,9 +369,19 @@ class SettingsController extends Controller
             'invoice_slug' => ['required', 'string', 'max:10'],
             'default_delivery_cost' => ['required', 'numeric', 'min:0'],
         ]);
-        // Saved per business: the old global keys made every seller share
-        // (and overwrite) one shop profile.
+        // One source (Hunt Z4-M3): the businesses row carries the
+        // shop's name, phone and address - the seller header, the
+        // platform Sellers list and the Y1-F1 phone fallback all read
+        // it there. The per-business settings keys are still written
+        // with the SAME values (and still change-logged), so every
+        // reader of the old keys sees the same truth and the two
+        // stores can no longer disagree.
         $biz = $this->shopBiz($request);
+        \App\Models\Business::whereKey($biz)->update([
+            'name' => $data['name'],
+            'phone' => $data['mobile'] ?? null,
+            'address' => $data['address'] ?? null,
+        ]);
         $this->setLogged($request, "business.{$biz}.profile_name", $data['name']);
         $this->setLogged($request, "business.{$biz}.mobile", $data['mobile'] ?? '');
         $this->setLogged($request, "business.{$biz}.address", $data['address'] ?? '');

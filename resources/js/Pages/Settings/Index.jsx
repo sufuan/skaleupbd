@@ -769,8 +769,19 @@ function NegotiationForm({ ai }) {
     const n = ai?.negotiation || { max: 15, step: 5, free_delivery_min: 1000 };
     const form = useForm({ max_discount: n.max, step: n.step, free_delivery_min: n.free_delivery_min });
     const price = 600;
-    const rungs = [];
-    for (let d = 0; d <= form.data.max_discount; d += Math.max(1, Number(form.data.step) || 5)) rungs.push(Math.round(price * (1 - d / 100)));
+    // Mirror NegotiationService::ladder() exactly (Z4 observation):
+    // rungs step down by the step %, each clamped at the floor, and
+    // the true floor (max discount, rounded UP) is appended whenever
+    // the last step does not land on it. The old loop stopped at the
+    // last whole step and labelled THAT the floor - at step 10 / max
+    // 15 it called ৳540 the floor while the AI really goes to ৳510.
+    const stepPct = Math.max(1, Number(form.data.step) || 5);
+    const maxPct = Number(form.data.max_discount) || 0;
+    const floorPrice = Math.ceil(price * (1 - maxPct / 100));
+    const rungs = [price];
+    const stepCount = Math.floor(maxPct / stepPct);
+    for (let i = 1; i <= stepCount; i++) rungs.push(Math.max(Math.round(price * (1 - (stepPct * i) / 100)), floorPrice));
+    if (rungs[rungs.length - 1] > floorPrice) rungs.push(floorPrice);
     return (
         <form onSubmit={(e) => { e.preventDefault(); form.post('/settings/ai-negotiation', { preserveScroll: true }); }}>
             <div className="card"><h3>{t('Price & Negotiation')}</h3><div className="card-sub">{t('The AI lowers the price step by step - never below the floor, held back by code')}</div>

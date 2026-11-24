@@ -91,6 +91,10 @@ class CustomersController extends Controller
     public function show(Request $request, Customer $customer): Response
     {
         abort_unless($customer->business_id === $this->bizId($request), 404);
+        // The history list shows the latest 50; the true count rides
+        // along so the page can say when it is partial (Hunt Z2-4 — the
+        // card above counts all of them, the list silently stopped).
+        $ordersTotal = Order::where('business_id', $customer->business_id)->where('customer_id', $customer->id)->count();
         $orders = Order::where('business_id', $customer->business_id)->where('customer_id', $customer->id)
             ->latest('id')->limit(50)->get()
             ->map(fn ($o) => [
@@ -106,6 +110,7 @@ class CustomersController extends Controller
                 'since' => DhakaTime::fmt($customer->created_at, 'd M Y'),
             ], $this->aggregates($customer->business_id, $customer)),
             'orders' => $orders,
+            'ordersTotal' => $ordersTotal,
         ]);
     }
 
