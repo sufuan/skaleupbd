@@ -120,6 +120,7 @@ class RouteRegistry
         'platform.seller.subscribe' => ['platform', null, 'edit'],
         'platform.seller.refund' => ['platform', null, 'edit'],
         'platform.seller.payment' => ['platform', null, 'edit'],
+        'platform.seller.points' => ['platform', null, 'edit'],
         'platform.seller.approve' => ['platform', null, 'edit'],
         'platform.seller.reject' => ['platform', null, 'edit'],
         // View-as-seller (ধাপ ৩): enter/exit are platform actions;
@@ -147,11 +148,17 @@ class RouteRegistry
         'settings.pricing' => ['platform', 'settings', 'edit'],
         'settings.registration' => ['platform', 'settings', 'edit'],
         'settings.paymentGateway.platform' => ['platform', 'settings', 'edit'],
-        'settings.aiReply' => ['platform', 'settings', 'edit'],
+        // AI behaviour (reply levels, negotiation, behaviour, and the
+        // read-only provider check) is each shop's own: shop context,
+        // owner-only via the settings key. A platform admin passes the
+        // shop context too and edits the platform defaults instead.
+        // The provider SAVE (settings.aiTalker - model + API keys)
+        // stays platform-only: the keys are the platform's.
+        'settings.aiReply' => ['shop', 'settings', 'edit'],
         'settings.aiTalker' => ['platform', 'settings', 'edit'],
-        'settings.aiTalker.test' => ['platform', 'settings', 'edit'],
-        'settings.aiNegotiation' => ['platform', 'settings', 'edit'],
-        'settings.aiBehavior' => ['platform', 'settings', 'edit'],
+        'settings.aiTalker.test' => ['shop', 'settings', 'edit'],
+        'settings.aiNegotiation' => ['shop', 'settings', 'edit'],
+        'settings.aiBehavior' => ['shop', 'settings', 'edit'],
         // The AI panic switch flips a platform-global flag (ai.* is
         // platform scope until it is namespaced per business).
         'messages.panic' => ['platform', 'messages', 'edit'],
@@ -239,6 +246,7 @@ class RouteRegistry
         'orders.approve' => ['shop', 'orders', 'edit'],
         'orders.sms' => ['shop', 'orders', 'edit'],
         'orders.block' => ['shop', 'orders', 'edit'],
+        'orders.refundAdvance' => ['shop', 'orders', 'edit'],
         'orders.destroy' => ['shop', 'orders', 'delete'],
         'orders.invoice' => ['shop', 'orders', 'view'],
 
@@ -393,8 +401,6 @@ class RouteRegistry
         'inventory.brands.destroy' => ['shop', 'inventory', 'delete'],
         'inventory.variants.store' => ['shop', 'inventory', 'edit'],
         'inventory.variants.destroy' => ['shop', 'inventory', 'delete'],
-        'inventory.groups.store' => ['shop', 'inventory', 'edit'],
-        'inventory.groups.destroy' => ['shop', 'inventory', 'delete'],
         'inventory.ledger' => ['shop', 'inventory', 'view'],
         'inventory.reconcile' => ['shop', 'inventory', 'edit'],
         'inventory.branches' => ['shop', 'inventory', 'view'],
@@ -811,7 +817,11 @@ class RouteRegistry
         if ($context === 'platform') {
             // Only the platform-scope groups: the global Meta
             // connection and platform gateway (inside API Connection),
-            // AI & Auto Reply, Security & Records, Seller Packages.
+            // AI & Auto Reply, Security & Records. Seller Packages is
+            // NOT repeated here: it lives in the Settings page's own
+            // group list (and /admin/packages redirects there), and
+            // listing it in this sidebar too showed the label twice on
+            // the packages page, both highlighted (Round 2 Hunt B F9).
             return [
                 ['label' => 'API Connection', 'g' => 'api'],
                 ['label' => 'AI & Auto Reply', 'g' => 'ai'],
@@ -821,7 +831,6 @@ class RouteRegistry
                 // carries an href, which AppLayout renders as a direct
                 // link inside this Settings group.
                 ['label' => 'Audit Log', 'href' => '/admin/audit-log'],
-                ['label' => 'Seller Packages', 'g' => 'packages'],
             ];
         }
 

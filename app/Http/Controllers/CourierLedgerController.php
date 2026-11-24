@@ -52,10 +52,13 @@ class CourierLedgerController extends Controller
             'buckets' => $buckets,
             // Short-paid only: a parcel that was paid something but less than expected.
             // Never-paid parcels are owed money — they live in COD Receivable, not here.
+            // The state comes from the same source Invoice History reads: the
+            // disputed flag on the parcel's settlement allocations.
             'differences' => $receivables->filter(fn ($r) => $r['difference'] < -0.01 && $r['settled'] > 0)->map(fn ($r) => [
                 'invoice' => $r['order']->invoice, 'courier' => $r['order']->courierMethod?->label(),
                 'type' => 'COD Difference', 'severity' => $r['difference'] < -500 ? 'High' : ($r['difference'] < -100 ? 'Medium' : 'Low'),
                 'expected' => $r['expected'], 'actual' => $r['settled'], 'difference' => $r['difference'],
+                'state' => \App\Models\CourierSettlementAllocation::where('order_id', $r['order']->id)->where('disputed', true)->exists() ? 'Disputed' : 'Still open',
             ])->values()->all(),
         ];
     }
@@ -67,12 +70,22 @@ class CourierLedgerController extends Controller
         $methods = CourierMethod::where('business_id', $biz)->orderBy('name')->get();
 
         return Inertia::render('Delivery/Ledger', [
-            'rows' => collect($data['rows'])->map(fn ($r) => [
+            'rows' => collect($data['rows'])->map(fn ($r) => $r['method'] === null ? [
+                'courier' => __('Manual (no courier)'), 'class' => 'manual',
+                'company' => __('Manual (no courier)'),
+                'manual' => false,
+                'delivered' => \App\Models\Order::where('business_id', $biz)->whereNull('courier_method_id')->where('status', 'Delivered')->count(),
+                'collected' => $r['collected'], 'settled' => $r['settled'], 'charges' => $r['charges'], 'still' => $r['still'],
+            ] : [
                 'courier' => $r['method']->label(), 'class' => $r['method']->courierClass(),
-                'company' => \App\Models\CourierMethod::LABELS[$r['method']->courier_type] ?? $r['method']->label(),
+                // The group is the seller's own method: label it with the
+                // method's name (label() falls back to the type label only
+                // when the method has no name). "Manual (no courier)" above
+                // is reserved for orders with no method at all.
+                'company' => $r['method']->label(),
                 'manual' => $r['method']->courier_type === 'OTHERS',
                 'delivered' => \App\Models\Order::where('business_id', $biz)->where('courier_method_id', $r['method']->id)->where('status', 'Delivered')->count(),
-                'collected' => $r['collected'], 'settled' => $r['settled'], 'still' => $r['still'],
+                'collected' => $r['collected'], 'settled' => $r['settled'], 'charges' => $r['charges'], 'still' => $r['still'],
             ])->all(),
             'total' => $data['total'],
             'ratecard' => $methods->map(fn (CourierMethod $m) => [
@@ -111,11 +124,11 @@ class CourierLedgerController extends Controller
         $request->validate(['file' => 'required|file|max:2048']);
         $name = strtolower($request->file('file')->getClientOriginalName());
         if (str_ends_with($name, '.pdf')) {
-            return response()->json(['ok' => false, 'error' => 'PDF is not accepted — upload the CSV or XLSX statement from the courier'], 422);
+            return response()->json(['ok' => false, 'error' => 'PDF is not accepted - upload the CSV or XLSX statement from the courier'], 422);
         }
         $lines = $this->parseStatement($request->file('file')->getRealPath());
         if ($lines === null) {
-            return response()->json(['ok' => false, 'error' => 'Could not read the file — the statement needs invoice and paid amount columns'], 422);
+            return response()->json(['ok' => false, 'error' => 'Could not read the file - the statement needs invoice and paid amount columns'], 422);
         }
         $result = $this->settlements->matchUpload($this->biz($request), $lines, false, $request->user());
 

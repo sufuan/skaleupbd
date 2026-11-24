@@ -12,15 +12,21 @@ function hoursLabel(minutes) {
     return m ? t(':h hours :m minutes', { h, m }) : t(':h hours', { h });
 }
 
-function DayCard({ my }) {
+function DayCard({ my, canCheckin }) {
     const post = (url) => router.post(url, {}, { preserveScroll: true });
     return (
         <div className="x-card">
             <h4>{t('My day today')}</h4>
             {!my && (
                 <div className="daycard">
-                    <p style={{ fontSize: 13.5, color: '#64748B', margin: 0 }}>{t('Not checked in yet today.')}</p>
-                    <button type="button" className="btn-p" onClick={() => post('/hrm/attendance/check-in')}>{t('Check in')}</button>
+                    {canCheckin ? (
+                        <>
+                            <p style={{ fontSize: 13.5, color: '#64748B', margin: 0 }}>{t('Not checked in yet today.')}</p>
+                            <button type="button" className="btn-p" onClick={() => post('/hrm/attendance/check-in')}>{t('Check in')}</button>
+                        </>
+                    ) : (
+                        <p style={{ fontSize: 13.5, color: '#64748B', margin: 0 }}>{t('Admin logins are not counted in attendance.')}</p>
+                    )}
                 </div>
             )}
             {my && (
@@ -182,7 +188,7 @@ function ShiftsTab({ shifts, staffOptions, canManage }) {
     );
 }
 
-export default function Attendance({ tab, my_record, today, pending_leaves, my_leaves, report, shifts, staff_options, can_manage }) {
+export default function Attendance({ tab, can_checkin, my_record, today, pending_leaves, my_leaves, report, shifts, staff_options, can_manage }) {
     return (
         <AppLayout title={t('Attendance')}>
             <Head title={t('Attendance')} />
@@ -200,7 +206,7 @@ export default function Attendance({ tab, my_record, today, pending_leaves, my_l
 
                 {tab === 'today' && (
                     <>
-                        <DayCard my={my_record} />
+                        <DayCard my={my_record} canCheckin={can_checkin} />
                         <LeaveCards leaves={pending_leaves} canManage={can_manage} />
                         <div className="x-card">
                             <h4>{t('Everyone today')}</h4>

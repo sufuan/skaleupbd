@@ -47,18 +47,42 @@ class RuleBrainService
     ) {
     }
 
-    /** @return array<string,string> channel => off|draft|auto|full_auto, plus panic */
-    public function autonomy(): array
+    /**
+     * Reply levels for one shop: the shop's own save (ai.{biz}.autonomy)
+     * wins, the platform-global ai.autonomy is the fallback until the
+     * shop saves its own. The panic flag is different - it pauses AI
+     * for EVERY shop, so it is read from the global row only and stays
+     * platform-admin controlled (MessagesController::panic).
+     *
+     * @return array<string,mixed> channel => off|draft|auto|full_auto, plus panic
+     */
+    public function autonomy(?int $businessId = null): array
     {
-        $a = $this->settings->get('ai.autonomy', []);
+        $global = $this->settings->get('ai.autonomy', []);
+        $global = is_array($global) ? $global : [];
+        $a = $global;
+        if ($businessId !== null && $businessId > 0) {
+            $own = $this->settings->bizGet($businessId, "ai.{$businessId}.autonomy", 'ai.autonomy', []);
+            $a = is_array($own) ? $own : [];
+        }
 
         return [
             'facebook' => $a['facebook'] ?? 'draft',
             'whatsapp' => $a['whatsapp'] ?? 'draft',
             'instagram' => $a['instagram'] ?? 'draft',
             'comment' => $a['comment'] ?? 'draft',
-            'panic' => (bool) ($a['panic'] ?? false),
+            'panic' => (bool) ($global['panic'] ?? false),
         ];
+    }
+
+    /** The shop's effective AI behaviour (own save wins, global fallback). */
+    private function behaviorFor(int $businessId): array
+    {
+        $b = $businessId > 0
+            ? $this->settings->bizGet($businessId, "ai.{$businessId}.behavior", 'ai.behavior', [])
+            : $this->settings->get('ai.behavior', []);
+
+        return is_array($b) ? $b : [];
     }
 
     private function cautious(string $mode): string
@@ -291,7 +315,7 @@ class RuleBrainService
         ] : [
             '{product}' => $product?->name ?? 'পণ্যটা',
             '{price}' => $product ? number_format($product->effectivePrice()) : '',
-            '{stock}' => $product ? (string) max(0, (int) $product->stock_qty - (int) $product->reserved_qty) : '',
+            '{stock}' => $product ? (string) max(0, $product->available()) : '',
             '{delivery_inside}' => number_format($inside),
             '{delivery_outside}' => number_format(120),
             '{honorific}' => $honorific ?? '',
@@ -317,7 +341,7 @@ class RuleBrainService
         $inside = (float) $this->settings->bizGet($businessId, "business.{$businessId}.default_delivery_cost", 'business.default_delivery_cost', 60);
         $map = [
             '⟦price⟧' => $product ? number_format($product->effectivePrice()) : '',
-            '⟦stock⟧' => $product ? (string) max(0, (int) $product->stock_qty - (int) $product->reserved_qty) : '',
+            '⟦stock⟧' => $product ? (string) max(0, $product->available()) : '',
             '⟦delivery_inside⟧' => number_format($inside),
             '⟦delivery_outside⟧' => number_format(120),
         ];
@@ -353,7 +377,7 @@ class RuleBrainService
 
         return [
             'in_stock' => $available === null || $available > 0,
-            'free_delivery_ok' => $product !== null && $price >= $this->negotiation->config()['free_delivery_min'],
+            'free_delivery_ok' => $product !== null && $price >= $this->negotiation->config($businessId)['free_delivery_min'],
             'shop_phone' => Business::find($businessId)?->phone,
         ];
     }
@@ -397,8 +421,8 @@ class RuleBrainService
      */
     private function holdingLine(Conversation $conversation, array $auto): ?ChatMessage
     {
-        $behavior = $this->settings->get('ai.behavior', []);
-        if (!is_array($behavior) || !($behavior['angry_holding'] ?? false)) {
+        $behavior = $this->behaviorFor((int) $conversation->business_id);
+        if (!($behavior['angry_holding'] ?? false)) {
             return null;
         }
         $mode = $auto[$conversation->channel] ?? 'draft';
@@ -591,7 +615,7 @@ class RuleBrainService
     /** Public fixed-text reply (used by the media job for photo confirmation). */
     public function simpleReply(Conversation $conversation, string $body, string $kind): ?ChatMessage
     {
-        $mode = $this->autonomy()[$conversation->channel] ?? 'draft';
+        $mode = $this->autonomy((int) $conversation->business_id)[$conversation->channel] ?? 'draft';
         if ($mode === 'off') {
             return null;
         }
@@ -731,7 +755,7 @@ class RuleBrainService
     /** Every figure the business could honestly state right now. */
     public function allowedFigures(int $businessId, ?Product $product): array
     {
-        $figures = [60.0, 120.0, (float) $this->settings->bizGet($businessId, "business.{$businessId}.default_delivery_cost", 'business.default_delivery_cost', 60), $this->negotiation->config()['free_delivery_min']];
+        $figures = [60.0, 120.0, (float) $this->settings->bizGet($businessId, "business.{$businessId}.default_delivery_cost", 'business.default_delivery_cost', 60), $this->negotiation->config($businessId)['free_delivery_min']];
         foreach (Product::where('business_id', $businessId)->get() as $p) {
             $figures[] = (float) $p->price;
             $figures[] = $p->effectivePrice();
@@ -827,11 +851,9 @@ class RuleBrainService
         return $incoming;
     }
 
-    private function debounceSeconds(): int
+    private function debounceSeconds(int $businessId): int
     {
-        $behavior = $this->settings->get('ai.behavior', []);
-
-        return is_array($behavior) ? max(0, (int) ($behavior['debounce_seconds'] ?? 0)) : 0;
+        return max(0, (int) ($this->behaviorFor($businessId)['debounce_seconds'] ?? 0));
     }
 
     /**
@@ -871,7 +893,7 @@ class RuleBrainService
             return null;
         }
         $latest = $pending->last();
-        if ($latest->created_at && $latest->created_at->gt(now()->subSeconds($this->debounceSeconds()))) {
+        if ($latest->created_at && $latest->created_at->gt(now()->subSeconds($this->debounceSeconds((int) $conversation->business_id)))) {
             return null; // still inside the quiet window — a later run takes it
         }
         $text = $pending->pluck('body')->filter(fn ($b) => trim((string) $b) !== '')->implode("\n");
@@ -919,7 +941,7 @@ class RuleBrainService
             return null;
         }
 
-        $auto = $this->autonomy();
+        $auto = $this->autonomy($biz);
         if ($auto['panic'] || $conversation->ai_paused) {
             return null;
         }
@@ -1304,7 +1326,7 @@ class RuleBrainService
     public function handleComment(Comment $comment): ?CommentReply
     {
         $biz = (int) $comment->business_id;
-        $auto = $this->autonomy();
+        $auto = $this->autonomy($biz);
         if ($auto['panic']) {
             return null;
         }

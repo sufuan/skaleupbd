@@ -12,6 +12,7 @@ use App\Services\AttendanceService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response as InertiaResponse;
 use App\Support\DhakaTime;
@@ -71,8 +72,10 @@ class HrmController extends Controller
                 'user_id' => $u->id,
                 'name' => $u->name,
                 'department' => $dept?->name,
-                'check_in' => DhakaTime::fmt($r?->check_in_at, 'h:i A'),
-                'check_out' => DhakaTime::fmt($r?->check_out_at, 'h:i A'),
+                // Attendance times are stored as Dhaka wall-clock
+                // (AttendanceService::nowDhaka) - display as stored.
+                'check_in' => DhakaTime::fmtWall($r?->check_in_at, 'h:i A'),
+                'check_out' => DhakaTime::fmtWall($r?->check_out_at, 'h:i A'),
                 'status_key' => $key,
                 'status_label' => $label,
                 'late_minutes' => (int) ($r?->late_minutes ?? 0),
@@ -125,8 +128,8 @@ class HrmController extends Controller
 
         $mine = $this->att->recordFor($user, $this->att->todayDate());
         $myRecord = $mine ? [
-            'check_in' => DhakaTime::fmt($mine->check_in_at, 'h:i A'),
-            'check_out' => DhakaTime::fmt($mine->check_out_at, 'h:i A'),
+            'check_in' => DhakaTime::fmtWall($mine->check_in_at, 'h:i A'),
+            'check_out' => DhakaTime::fmtWall($mine->check_out_at, 'h:i A'),
             'break_minutes' => (int) $mine->break_minutes,
             'on_break' => $mine->break_started_at !== null,
             'work_minutes' => $mine->workMinutes(),
@@ -163,6 +166,7 @@ class HrmController extends Controller
 
         return Inertia::render('Hrm/Attendance', [
             'tab' => $tab,
+            'can_checkin' => $user->role !== 'admin',
             'my_record' => $myRecord,
             'today' => $this->todayRows($biz),
             'pending_leaves' => $this->pendingLeaves($biz),
@@ -202,10 +206,17 @@ class HrmController extends Controller
 
     public function checkIn(Request $request): RedirectResponse
     {
+        // Admins are excluded from attendance by design - the today
+        // list and the month report both skip role admin - so an owner
+        // check-in would create a record nothing ever shows. Refuse it
+        // here; the page does not offer the button either.
+        if ($request->user()->role === 'admin') {
+            return back()->with('error', __('Admin logins are not counted in attendance.'));
+        }
         try {
             $this->att->checkIn($request->user());
 
-            return back()->with('success', 'Check-in হয়ে গেছে।');
+            return back()->with('success', __('Checked in.'));
         } catch (\RuntimeException $e) {
             return back()->with('error', $e->getMessage());
         }
@@ -216,7 +227,7 @@ class HrmController extends Controller
         try {
             $this->att->checkOut($request->user());
 
-            return back()->with('success', 'Check-out হয়ে গেছে।');
+            return back()->with('success', __('Checked out.'));
         } catch (\RuntimeException $e) {
             return back()->with('error', $e->getMessage());
         }
@@ -540,11 +551,11 @@ class HrmController extends Controller
             'name' => 'required|string|max:120',
         ]);
         if (Holiday::where('business_id', $biz)->whereDate('date', $data['date'])->exists()) {
-            return back()->with('error', 'এই তারিখে ইতিমধ্যে একটি ছুটির দিন আছে।');
+            throw ValidationException::withMessages(['date' => __('A holiday already exists on this date.')]);
         }
         Holiday::create(['business_id' => $biz, ...$data]);
 
-        return back()->with('success', 'ছুটির দিন যোগ হয়েছে।');
+        return back()->with('success', __('Holiday added.'));
     }
 
     public function destroyHoliday(Request $request, Holiday $holiday): RedirectResponse
@@ -554,6 +565,6 @@ class HrmController extends Controller
         }
         $holiday->delete();
 
-        return back()->with('success', 'ছুটির দিন মোছা হয়েছে।');
+        return back()->with('success', __('Holiday deleted.'));
     }
 }

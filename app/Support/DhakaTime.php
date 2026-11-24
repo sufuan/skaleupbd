@@ -28,6 +28,23 @@ class DhakaTime
         return $c->setTimezone(self::TZ)->format($format);
     }
 
+    /**
+     * Format a value that is STORED as Dhaka wall-clock numbers, as
+     * stored - no conversion. Attendance datetimes are the one case:
+     * AttendanceService::nowDhaka() deliberately writes Dhaka readings
+     * into the UTC frame, so the stored numbers already ARE the Dhaka
+     * reading; running them through fmt() would add +6h a second time.
+     */
+    public static function fmtWall(mixed $value, string $format): ?string
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+        $c = $value instanceof CarbonInterface ? $value->copy() : Carbon::parse($value);
+
+        return $c->format($format);
+    }
+
     /** Today's calendar date in Dhaka (Y-m-d). */
     public static function today(): string
     {

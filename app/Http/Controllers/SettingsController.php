@@ -54,7 +54,7 @@ class SettingsController extends Controller
             || ($gw['rocket_enabled'] && $gw['rocket_number'] !== '') || $gw['ssl_enabled'] || $gw['shurjo_enabled'];
         $connCount = (int) $courierOn + (int) $fbOn + (int) $waOn + (int) $igOn + (int) ($apiKey !== null) + (int) $gatewayOn;
         $visibleSources = OrderSource::where('business_id', $biz)->where('is_visible', true)->count();
-        $autonomy = app(\App\Services\RuleBrainService::class)->autonomy();
+        $autonomy = app(\App\Services\RuleBrainService::class)->autonomy($biz > 0 ? $biz : null);
         $aiModeLabel = ['auto' => 'Auto reply on', 'draft' => 'Draft only', 'off' => 'Auto reply off'][$autonomy['facebook'] ?? 'draft'] ?? 'Draft only';
         $totpOn = $this->totp->enabled();
         $homeStats = [
@@ -64,12 +64,12 @@ class SettingsController extends Controller
                 ['label' => 'Facebook Page connected', 'done' => $fbOn],
                 ['label' => 'WhatsApp connected', 'done' => $waOn],
                 ['label' => 'Order sources set up', 'done' => $visibleSources > 0],
-                ['label' => 'AI reply level chosen', 'done' => ! empty((array) $this->settings->get('ai.autonomy', []))],
+                ['label' => 'AI reply level chosen', 'done' => ! empty((array) $this->settings->bizGet($biz, "ai.{$biz}.autonomy", 'ai.autonomy', []))],
             ],
             'cards' => [
                 ['label' => 'Business Settings', 'value' => $profileFilled ? 'Profile complete' : 'Profile incomplete', 'pill' => $profileFilled ? 'green' : 'amber'],
-                ['label' => 'API Connection', 'value' => $connCount . ' of 6 connected', 'pill' => $connCount >= 6 ? 'green' : 'amber'],
-                ['label' => 'Calls & Orders', 'value' => $visibleSources . ' sources active', 'pill' => $visibleSources > 0 ? 'green' : 'amber'],
+                ['label' => 'API Connection', 'value' => __(':count of 6 connected', ['count' => $connCount]), 'pill' => $connCount >= 6 ? 'green' : 'amber'],
+                ['label' => 'Calls & Orders', 'value' => __(':count sources active', ['count' => $visibleSources]), 'pill' => $visibleSources > 0 ? 'green' : 'amber'],
                 ['label' => 'AI & Auto Reply', 'value' => $aiModeLabel, 'pill' => ($autonomy['facebook'] ?? 'draft') === 'auto' ? 'green' : 'amber'],
                 ['label' => 'Security & Records', 'value' => $totpOn ? 'Two-factor on' : 'Two-factor off', 'pill' => $totpOn ? 'green' : 'amber'],
             ],
@@ -102,11 +102,21 @@ class SettingsController extends Controller
             'ai' => [
                 'rules' => \App\Models\AiRule::where('business_id', $biz)->orderBy('id')->get()
                     ->map(fn ($r) => ['id' => $r->id, 'name' => $r->name, 'trigger_type' => $r->trigger_type, 'match_text' => $r->match_text, 'action' => $r->action, 'reply_template' => $r->reply_template, 'channel' => $r->channel, 'active' => (bool) $r->active])->all(),
-                'autonomy' => app(\App\Services\RuleBrainService::class)->autonomy(),
+                'autonomy' => app(\App\Services\RuleBrainService::class)->autonomy($biz > 0 ? $biz : null),
                 'talker' => app(\App\Services\AiTalkerService::class)->config(),
-                'behavior' => (array) $this->settings->get('ai.behavior', []),
-                'working_hours' => (string) $this->settings->get('ai.working_hours', app()->getLocale() === 'bn' ? 'সকাল ৯টা - রাত ১১টা' : '9 AM - 11 PM'),
-                'negotiation' => app(\App\Services\NegotiationService::class)->config(),
+                // The provider form (model + API keys) is the platform's:
+                // only a platform admin outside view-as may edit it. A
+                // seller sees it read-only - their own AI behaviour
+                // (levels, negotiation, behaviour) is namespaced to
+                // their shop and fully theirs to save.
+                'talkerEditable' => $isPlatform && ! $viewing,
+                'behavior' => $biz > 0
+                    ? (array) $this->settings->bizGet($biz, "ai.{$biz}.behavior", 'ai.behavior', [])
+                    : (array) $this->settings->get('ai.behavior', []),
+                'working_hours' => $biz > 0
+                    ? (string) $this->settings->bizGet($biz, "ai.{$biz}.working_hours", 'ai.working_hours', app()->getLocale() === 'bn' ? 'সকাল ৯টা - রাত ১১টা' : '9 AM - 11 PM')
+                    : (string) $this->settings->get('ai.working_hours', app()->getLocale() === 'bn' ? 'সকাল ৯টা - রাত ১১টা' : '9 AM - 11 PM'),
+                'negotiation' => app(\App\Services\NegotiationService::class)->config($biz > 0 ? $biz : null),
                 'knowledge' => \App\Models\KnowledgeEntry::where('business_id', $biz)->orderBy('id')->get(['id', 'title', 'body'])->all(),
                 'proposals' => \App\Models\AiRuleProposal::where('business_id', $biz)->orderByRaw("CASE WHEN status = 'pending' THEN 0 ELSE 1 END")->orderByDesc('id')->get()
                     ->map(fn ($p) => ['id' => $p->id, 'title' => $p->title, 'detail' => $p->detail, 'status' => $p->status])->all(),
@@ -452,7 +462,14 @@ class SettingsController extends Controller
             'valuation' => ['required', 'string', 'in:average_cost'],
         ]);
         $biz = $this->shopBiz($request);
+        $wasBranchStock = (bool) $this->settings->bizGet($biz, "inventory.{$biz}.branch_stock_enabled", 'inventory.branch_stock_enabled', false);
         $this->setLoggedBiz($request, $biz, "inventory.{$biz}.branch_stock_enabled", 'inventory.branch_stock_enabled', (bool) $data['branch_stock_enabled']);
+        if ((bool) $data['branch_stock_enabled'] && ! $wasBranchStock) {
+            // Same rule as the Branches-page toggle (Hunt K-H4): switching
+            // branch stock ON re-derives branch_stock from products first,
+            // so the figures start true whichever screen flipped the switch.
+            app(\App\Services\StockService::class)->rederiveBranchStock($biz);
+        }
         $this->setLoggedBiz($request, $biz, "inventory.{$biz}.warehouse_cartons", 'inventory.warehouse_cartons', (bool) $data['warehouse_cartons']);
         $this->setLoggedBiz($request, $biz, "inventory.{$biz}.stock_management_disabled", 'inventory.stock_management_disabled', (bool) $data['stock_management_disabled']);
         $this->setLoggedBiz($request, $biz, "inventory.{$biz}.valuation", 'inventory.valuation', $data['valuation']);
@@ -648,11 +665,12 @@ class SettingsController extends Controller
 
     public function updateAiReply(Request $request): RedirectResponse
     {
-        // ai.* keys are platform-global (read without any business
-        // namespacing by RuleBrainService / AiTalkerService), so every
-        // AI settings write is platform admin only until ai.* is
-        // namespaced per business.
-        abort_unless((bool) ($request->user()?->is_platform_admin), 403);
+        // The reply levels and working hours are each shop's own
+        // behaviour: a shop user saves them under ai.{biz}.* and the
+        // platform defaults stay untouched. A platform admin edits
+        // those defaults (the global rows every shop falls back to).
+        // The panic flag inside ai.autonomy is NOT part of this form -
+        // it stays platform-global (MessagesController::panic).
         $data = $request->validate([
             'facebook' => ['required', 'string', 'in:off,draft,auto,full_auto'],
             'whatsapp' => ['required', 'string', 'in:off,draft,auto,full_auto'],
@@ -660,13 +678,23 @@ class SettingsController extends Controller
             'comment' => ['required', 'string', 'in:off,draft,auto,full_auto'],
             'working_hours' => ['nullable', 'string', 'max:200'],
         ]);
-        $auto = $this->settings->get('ai.autonomy', []);
-        $auto = array_merge(is_array($auto) ? $auto : [], [
+        $levels = [
             'facebook' => $data['facebook'], 'whatsapp' => $data['whatsapp'],
             'instagram' => $data['instagram'], 'comment' => $data['comment'],
-        ]);
-        $this->setLogged($request, 'ai.autonomy', $auto);
-        $this->setLogged($request, 'ai.working_hours', (string) ($data['working_hours'] ?? ''));
+        ];
+        if ((bool) ($request->user()?->is_platform_admin)) {
+            $auto = $this->settings->get('ai.autonomy', []);
+            $auto = array_merge(is_array($auto) ? $auto : [], $levels);
+            $this->setLogged($request, 'ai.autonomy', $auto);
+            $this->setLogged($request, 'ai.working_hours', (string) ($data['working_hours'] ?? ''));
+        } else {
+            $biz = $this->shopBiz($request);
+            $current = (array) $this->settings->bizGet($biz, "ai.{$biz}.autonomy", 'ai.autonomy', []);
+            $merged = array_merge($current, $levels);
+            unset($merged['panic']); // panic never lives in a shop row - global only
+            $this->setLoggedBiz($request, $biz, "ai.{$biz}.autonomy", 'ai.autonomy', $merged);
+            $this->setLoggedBiz($request, $biz, "ai.{$biz}.working_hours", 'ai.working_hours', (string) ($data['working_hours'] ?? ''));
+        }
 
         return back()->with('success', 'AI Reply settings saved');
     }
@@ -711,40 +739,59 @@ class SettingsController extends Controller
 
     public function testAiTalker(Request $request): \Illuminate\Http\JsonResponse
     {
-        abort_unless((bool) ($request->user()?->is_platform_admin), 403);
         $data = $request->validate([
             'provider' => ['required', 'string', 'in:gemini,claude'],
             'key' => ['nullable', 'string', 'max:300'],
         ]);
-        // A key typed into the form is tested as typed; blank tests the saved one.
-        $result = app(\App\Services\AiTalkerService::class)->testConnection($data['provider'], $data['key'] ?? null);
+        // The check changes nothing and never exposes the saved key: it
+        // runs one minimal call ("Reply with exactly: OK") and reports
+        // ok/failed. A key typed into the form is tested as typed, but
+        // only for platform admins - the provider form (and its keys)
+        // is the platform's; a seller's check always tests the saved
+        // platform key, so a seller can confirm the AI model is
+        // reachable without ever touching the keys.
+        $typed = (bool) ($request->user()?->is_platform_admin) ? ($data['key'] ?? null) : null;
+        $result = app(\App\Services\AiTalkerService::class)->testConnection($data['provider'], $typed);
 
         return response()->json($result);
     }
 
     public function updateAiNegotiation(Request $request): RedirectResponse
     {
-        abort_unless((bool) ($request->user()?->is_platform_admin), 403);
+        // Each shop's own discount ladder: shop users save under
+        // ai.{biz}.negotiation; a platform admin edits the defaults.
         $data = $request->validate([
             'max_discount' => ['required', 'integer', 'min:0', 'max:90'],
             'step' => ['required', 'integer', 'min:1', 'max:50'],
             'free_delivery_min' => ['required', 'numeric', 'min:0'],
         ]);
-        $this->setLogged($request, 'ai.negotiation', $data);
+        if ((bool) ($request->user()?->is_platform_admin)) {
+            $this->setLogged($request, 'ai.negotiation', $data);
+        } else {
+            $biz = $this->shopBiz($request);
+            $this->setLoggedBiz($request, $biz, "ai.{$biz}.negotiation", 'ai.negotiation', $data);
+        }
 
         return back()->with('success', 'Negotiation settings saved');
     }
 
     public function updateAiBehavior(Request $request): RedirectResponse
     {
-        abort_unless((bool) ($request->user()?->is_platform_admin), 403);
+        // Each shop's own AI behaviour (tone, holding line, its daily
+        // model-call cap, burst wait): shop users save under
+        // ai.{biz}.behavior; a platform admin edits the defaults.
         $data = $request->validate([
             'angry_holding' => ['required', 'boolean'],
             'honorific' => ['required', 'string', 'in:auto,apu,bhaiya,none'],
             'daily_llm_cap' => ['required', 'integer', 'min:0', 'max:100000'],
             'debounce_seconds' => ['required', 'integer', 'min:0', 'max:60'],
         ]);
-        $this->setLogged($request, 'ai.behavior', $data);
+        if ((bool) ($request->user()?->is_platform_admin)) {
+            $this->setLogged($request, 'ai.behavior', $data);
+        } else {
+            $biz = $this->shopBiz($request);
+            $this->setLoggedBiz($request, $biz, "ai.{$biz}.behavior", 'ai.behavior', $data);
+        }
 
         return back()->with('success', 'AI behaviour settings saved');
     }

@@ -116,12 +116,12 @@ class AttendanceService
         $today = $this->todayDate();
 
         if ($this->approvedLeaveOn($businessId, $user->id, $today)) {
-            throw new \RuntimeException('আজ আপনার ছুটি অনুমোদিত আছে — Check-in লাগবে না।');
+            throw new \RuntimeException(__('You have approved leave today - no check-in needed.'));
         }
 
         $record = $this->recordFor($user, $today);
         if ($record && $record->check_in_at) {
-            throw new \RuntimeException('আজ ইতিমধ্যে Check-in হয়ে গেছে।');
+            throw new \RuntimeException(__('You have already checked in today.'));
         }
 
         $now = $this->nowDhaka();
@@ -144,10 +144,10 @@ class AttendanceService
         $today = $this->todayDate();
         $record = $this->recordFor($user, $today);
         if (! $record || ! $record->check_in_at) {
-            throw new \RuntimeException('আগে Check-in করুন।');
+            throw new \RuntimeException(__('Please check in first.'));
         }
         if ($record->check_out_at) {
-            throw new \RuntimeException('আজ ইতিমধ্যে Check-out হয়ে গেছে।');
+            throw new \RuntimeException(__('You have already checked out today.'));
         }
         if ($record->break_started_at) {
             $this->endBreak($user);
@@ -163,10 +163,10 @@ class AttendanceService
     {
         $record = $this->recordFor($user, $this->todayDate());
         if (! $record || ! $record->check_in_at || $record->check_out_at) {
-            throw new \RuntimeException('Break নিতে আগে Check-in করুন।');
+            throw new \RuntimeException(__('Please check in before taking a break.'));
         }
         if ($record->break_started_at) {
-            throw new \RuntimeException('ইতিমধ্যে Break চলছে।');
+            throw new \RuntimeException(__('A break is already running.'));
         }
         $record->break_started_at = $this->nowDhaka();
         $record->save();
@@ -174,13 +174,27 @@ class AttendanceService
         return $record;
     }
 
+    /**
+     * The day's counted break minutes after adding a finished break,
+     * with the HR max_break cap applied: break time past the cap does
+     * not count as break, so the counted total never grows beyond it.
+     * The clamped number on the record is itself the visible record of
+     * the cap - the schema has no separate note field.
+     */
+    private function countedBreak(AttendanceRecord $record, int $addMinutes): int
+    {
+        $cap = max(0, (int) $this->setting((int) $record->business_id, 'max_break', 60));
+
+        return min((int) $record->break_minutes + $addMinutes, $cap);
+    }
+
     public function endBreak(User $user): AttendanceRecord
     {
         $record = $this->recordFor($user, $this->todayDate());
         if (! $record || ! $record->break_started_at) {
-            throw new \RuntimeException('কোনো Break চলছে না।');
+            throw new \RuntimeException(__('No break is running.'));
         }
-        $record->break_minutes += (int) $record->break_started_at->diffInMinutes($this->nowDhaka());
+        $record->break_minutes = $this->countedBreak($record, (int) $record->break_started_at->diffInMinutes($this->nowDhaka()));
         $record->break_started_at = null;
         $record->save();
 
@@ -208,7 +222,7 @@ class AttendanceService
             $end = $this->shiftEnd($record->user, $today);
             if ($this->nowDhaka()->greaterThan($end->copy()->addMinutes(10))) {
                 if ($record->break_started_at) {
-                    $record->break_minutes += (int) $record->break_started_at->diffInMinutes($end);
+                    $record->break_minutes = $this->countedBreak($record, (int) $record->break_started_at->diffInMinutes($end));
                     $record->break_started_at = null;
                 }
                 $record->check_out_at = $end;

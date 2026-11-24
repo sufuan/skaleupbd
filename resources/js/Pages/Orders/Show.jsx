@@ -47,7 +47,10 @@ export default function Show({ order, customer, couriers, courierMethods = [], s
     });
     const [tagInput, setTagInput] = useState('');
     const [statusSel, setStatusSel] = useState(inFlow ? (order.processing_status || 'Processing') : order.status);
-    const statusOptions = inFlow ? processingStatuses : [order.status, ...processingStatuses.filter((s) => s !== order.status)];
+    // Outside the Pending/Processing flow (Shipped, Delivered, Returned,
+    // Cancelled) Cancel is not offered: a delivered order cannot be
+    // cancelled (M4, refused server-side too) - goods back means Return.
+    const statusOptions = inFlow ? processingStatuses : [order.status, ...processingStatuses.filter((s) => s !== order.status && s !== 'Cancel')];
     const onStatusSel = (v) => { setStatusSel(v); form.setData('processing_status', processingStatuses.includes(v) ? v : ''); };
 
     const save = (e) => { e.preventDefault(); form.patch(`/orders/${order.id}`, { preserveScroll: true, onSuccess: () => form.reset('note', 'advance_payment') }); };
@@ -136,6 +139,17 @@ export default function Show({ order, customer, couriers, courierMethods = [], s
                                 <div className="sum-row"><span>{t('Advance')}</span><b>{fmt(order.advance)}</b></div>
                                 <div className="sum-row"><span>{t('Due Amount')}</span><b>{fmt(order.due)}</b></div>
                             </div>
+                            {order.status === 'Cancelled' && order.advance > 0 && (
+                                <div className="alert-red" style={{ marginTop: 12 }}>
+                                    <b>{t('Advance collected on a cancelled order')}</b>
+                                    <div className="sm" style={{ marginTop: 3 }}>
+                                        {t('The customer paid an advance of :amount by :method. It is still sitting in your accounts.', { amount: fmt(order.advance_amount ?? order.advance), method: order.advance_method || order.payment_method })}
+                                    </div>
+                                    {order.advance_refunded
+                                        ? <div className="sm" style={{ marginTop: 6 }}><b>{t('Advance refunded')}</b></div>
+                                        : <button type="button" className="ctl-btn" style={{ marginTop: 8 }} onClick={() => router.post(`/orders/${order.id}/refund-advance`, {}, { preserveScroll: true })}>{t('Refund advance')}</button>}
+                                </div>
+                            )}
                         </div>
 
                         {order.attachments?.length > 0 && (

@@ -40,14 +40,27 @@ class AiTalkerService
         return 'ai.usage.' . $businessId . '.' . now()->format('Y-m-d');
     }
 
+    /**
+     * The shop's effective AI behaviour: its own save
+     * (ai.{biz}.behavior) wins, the platform-global ai.behavior is the
+     * fallback until the shop saves its own.
+     */
+    private function behaviorFor(int $businessId): array
+    {
+        $b = $businessId > 0
+            ? $this->settings->bizGet($businessId, "ai.{$businessId}.behavior", 'ai.behavior', [])
+            : $this->settings->get('ai.behavior', []);
+
+        return is_array($b) ? $b : [];
+    }
+
     /** Per-shop daily cap on model calls (ai.behavior.daily_llm_cap; 0 = no cap). */
     private function budgetAllows(int $businessId): bool
     {
         if ($businessId <= 0) {
             return true;
         }
-        $behavior = $this->settings->get('ai.behavior', []);
-        $cap = is_array($behavior) ? (int) ($behavior['daily_llm_cap'] ?? 0) : 0;
+        $cap = (int) ($this->behaviorFor($businessId)['daily_llm_cap'] ?? 0);
         if ($cap <= 0) {
             return true;
         }
@@ -63,8 +76,7 @@ class AiTalkerService
         $key = $this->usageKey($businessId);
         $used = (int) $this->settings->get($key, 0) + 1;
         $this->settings->set($key, $used);
-        $behavior = $this->settings->get('ai.behavior', []);
-        $cap = is_array($behavior) ? (int) ($behavior['daily_llm_cap'] ?? 0) : 0;
+        $cap = (int) ($this->behaviorFor($businessId)['daily_llm_cap'] ?? 0);
         if ($cap > 0 && $used === $cap) {
             // The moment the cap is hit: one Work Inbox item, once.
             \Illuminate\Support\Facades\DB::table('work_events')->insert([

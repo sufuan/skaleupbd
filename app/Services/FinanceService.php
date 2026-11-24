@@ -72,7 +72,7 @@ class FinanceService
     {
         $date = $data['txn_date'] ?? now('Asia/Dhaka')->toDateString();
         if ($this->monthLocked($businessId, $date)) {
-            throw new \RuntimeException('এই মাস বন্ধ হয়ে গেছে - এই তারিখে entry দেওয়া যাবে না।');
+            throw new \RuntimeException(__('This month is already closed - no entry can be added on this date.'));
         }
         return FinanceTransaction::create([
             'business_id' => $businessId,
@@ -126,7 +126,7 @@ class FinanceService
                     'type' => $t->type,
                     'amount' => $t->amount,
                     'category_id' => $t->category_id,
-                    'note' => 'বাতিলের উল্টো entry (মূল entry #' . $t->id . ')',
+                    'note' => __('Reversal of voided entry (original entry #:id)', ['id' => $t->id]),
                     'source' => 'system',
                     'reversal_of' => $t->id,
                     'txn_date' => now('Asia/Dhaka')->toDateString(),
@@ -178,19 +178,25 @@ class FinanceService
         return compact('revenue', 'productCost', 'courierCharges', 'rtoLoss', 'expense', 'otherIncome', 'profit');
     }
 
-    /** COD money bridge: where the delivered money is stuck right now (all-time). */
+    /**
+     * COD money bridge: where the courier-held money is stuck right now
+     * (all-time). Reads SettlementService::courierTotals — the same numbers
+     * as the Courier Ledger and receivables. Only parcels actually booked
+     * with a courier count: a manual delivery is cash in hand, never
+     * courier-held, and its delivery charge is not a courier charge.
+     * ('sales' is the COD those booked parcels collected.)
+     */
     public function bridge(int $businessId): array
     {
         $settlements = app(SettlementService::class);
-        $delivered = Order::where('business_id', $businessId)->where('status', 'Delivered')->get();
-        $sales = round($delivered->sum(fn (Order $o) => (float) $o->grand_total), 2);
-        $charges = round($delivered->sum(fn (Order $o) => $settlements->committedCharge($o)), 2);
-        $received = round((float) \App\Models\CourierSettlementAllocation::whereHas('order', fn ($q) => $q->where('business_id', $businessId))->sum('amount'), 2);
-        $expectedNet = round($delivered->sum(fn (Order $o) => $settlements->expectedNet($o)), 2);
-        $still = round($expectedNet - $received, 2);
+        $totals = $settlements->courierTotals($businessId);
+        $sales = $totals['collected'];
+        $charges = $totals['charges'];
+        $received = $totals['settled'];
+        $still = $totals['still'];
 
         // Pathao has no payment API: if any still-owed parcel rides Pathao, the figure is an estimate.
-        $estimate = $delivered->contains(function (Order $o) use ($settlements) {
+        $estimate = $settlements->courierDelivered($businessId)->contains(function (Order $o) use ($settlements) {
             $driver = $o->courierMethod?->driver;
             return $driver === 'pathao' && $settlements->settledNet($o) < $settlements->expectedNet($o) - 0.01;
         });
@@ -246,12 +252,70 @@ class FinanceService
             $this->post($businessId, [
                 'account_id' => $account->id, 'direction' => 'in', 'type' => 'advance',
                 'amount' => $amount, 'source' => 'order', 'ref_type' => 'order', 'ref_id' => $order->id,
-                'note' => 'Order ' . $order->invoice_no . ' - advance',
+                'note' => __('Order :invoice - advance', ['invoice' => $order->invoice_no]),
                 'idempotency_key' => $postKey, 'txn_date' => now('Asia/Dhaka')->toDateString(),
             ], $actor);
         } catch (\Throwable $e) {
             report($e); // finance must never break an order
         }
+    }
+
+    /** The live advance row collected for an order (not voided, not a reversal), if any. */
+    public function orderAdvanceTxn(Order $order): ?FinanceTransaction
+    {
+        $key = 'advance-order-' . $order->id;
+
+        return FinanceTransaction::where('business_id', $order->business_id)
+            ->where(fn ($q) => $q->where('idempotency_key', $key)->orWhere('idempotency_key', 'like', $key . '-v%'))
+            ->whereNull('voided_at')->whereNull('reversal_of')
+            ->latest('id')->first();
+    }
+
+    /** Whether an order's collected advance has already been refunded. */
+    public function advanceRefunded(Order $order): bool
+    {
+        return FinanceTransaction::where('business_id', $order->business_id)
+            ->where('idempotency_key', 'advance-refund:order:' . $order->id)->exists();
+    }
+
+    /**
+     * Refund a cancelled order's collected advance: exactly one expense
+     * entry out of the account that holds the advance, keyed
+     * advance-refund:order:{id} so it can never post twice (a repeat call
+     * returns the existing row). The money stays untouched until the seller
+     * runs this; the order's points stay deducted (owner rule).
+     */
+    public function refundOrderAdvance(Order $order, ?User $actor = null): FinanceTransaction
+    {
+        $key = 'advance-refund:order:' . $order->id;
+        $existing = FinanceTransaction::where('business_id', $order->business_id)->where('idempotency_key', $key)->first();
+        if ($existing) {
+            return $existing;
+        }
+        $advanceTxn = $this->orderAdvanceTxn($order);
+        $amount = round((float) ($advanceTxn?->amount ?? $order->advance), 2);
+        if ($amount <= 0) {
+            throw new \DomainException(__('This order has no collected advance to refund.'));
+        }
+        $account = $advanceTxn?->account;
+        if (! $account) {
+            $accountId = (int) ($this->setting($order->business_id, 'advance_account_id', 0) ?: 0);
+            $account = $accountId
+                ? FinanceAccount::where('business_id', $order->business_id)->where('id', $accountId)->where('active', true)->first()
+                : null;
+            $account ??= FinanceAccount::where('business_id', $order->business_id)->where('active', true)
+                ->orderByRaw("CASE type WHEN 'mobile' THEN 0 WHEN 'cash' THEN 1 ELSE 2 END")->first();
+        }
+        if (! $account) {
+            throw new \DomainException(__('No finance account is set up to refund from.'));
+        }
+
+        return $this->post($order->business_id, [
+            'account_id' => $account->id, 'direction' => 'out', 'type' => 'expense',
+            'amount' => $amount, 'source' => 'order', 'ref_type' => 'order', 'ref_id' => $order->id,
+            'note' => __('Advance refund - order :invoice', ['invoice' => $order->invoice_no]),
+            'idempotency_key' => $key, 'txn_date' => now('Asia/Dhaka')->toDateString(),
+        ], $actor);
     }
 
     /** Courier payout recorded in Delivery → mirror it into the named finance account (idempotent). */
@@ -275,7 +339,7 @@ class FinanceService
                 'account_id' => $account->id, 'direction' => 'in', 'type' => 'courier_payout',
                 'amount' => (float) $payment->amount, 'source' => 'courier',
                 'ref_type' => 'courier_payment', 'ref_id' => $payment->id,
-                'note' => 'Courier payout - ' . ($payment->method?->name ?? ''),
+                'note' => __('Courier payout - :name', ['name' => $payment->method?->name ?? '']),
                 'idempotency_key' => $key,
                 'txn_date' => $payment->date?->toDateString() ?? now('Asia/Dhaka')->toDateString(),
             ]);
@@ -288,7 +352,7 @@ class FinanceService
     {
         WorkEvent::create([
             'business_id' => $businessId, 'kind' => 'finance_mismatch',
-            'title' => 'Finance হিসাব মেলেনি', 'body' => $body, 'link' => '/finance',
+            'title' => __('Finance accounts did not match'), 'body' => $body, 'link' => '/finance',
         ]);
     }
 }

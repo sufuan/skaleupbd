@@ -13,11 +13,18 @@ use App\Services\Couriers\DriverFactory;
 use Illuminate\Support\Collection;
 
 /**
- * Courier money (§5.3c, §10.7c). Definitions used everywhere in M3:
- *  - Collected by courier  = Σ COD of Delivered parcels (what the courier took from customers)
+ * Courier money (§5.3c, §10.7c). ONE definition, shared by the Courier
+ * Ledger, the Finance COD bridge, receivables and the dashboard's pending
+ * COD (see courierTotals):
+ *  - Collected by courier  = Σ COD of Delivered parcels actually booked with
+ *    a courier (what the courier took from customers)
  *  - Expected per parcel   = COD − the courier's committed charge (Settings rate card, zone by district)
- *  - Settled to you        = Σ over allocations of (net amount + that parcel's committed charge)
- *  - Still with courier    = Collected − Settled
+ *  - Settled to you        = Σ over allocations of the net amount actually paid to the seller
+ *  - Courier charges       = Σ committed (rate-card) charges of those booked
+ *    parcels — the same figure before and after settlement
+ *  - Still with courier    = Collected − Settled − Charges
+ *  - Manual (no courier)   = parcels delivered by hand: the COD is already with the
+ *    seller, so Collected counts as Settled and nothing is still with a courier.
  * Settlement data is pulled via API or matched from an upload / one-line entry — never hand-typed per parcel.
  */
 class SettlementService
@@ -35,6 +42,38 @@ class SettlementService
     public function settledNet(Order $order): float
     {
         return (float) CourierSettlementAllocation::where('order_id', $order->id)->sum('amount');
+    }
+
+    /**
+     * Delivered parcels actually booked with a courier. Manual deliveries
+     * (no courier method) are cash in hand — the seller already holds the
+     * money — so they never count as courier-held on any surface.
+     */
+    public function courierDelivered(int $businessId, ?int $methodId = null): Collection
+    {
+        return Order::with('courierMethod')
+            ->where('business_id', $businessId)
+            ->where('status', 'Delivered')
+            ->whereNotNull('courier_method_id')
+            ->when($methodId, fn ($q) => $q->where('courier_method_id', $methodId))
+            ->get();
+    }
+
+    /**
+     * The one courier-money computation every surface reads:
+     * Still = Collected − Settled − Charges, where Charges are the committed
+     * rate-card charges of the booked parcels (recognised up front, not only
+     * when a settlement lands).
+     */
+    public function courierTotals(int $businessId, ?int $methodId = null): array
+    {
+        $orders = $this->courierDelivered($businessId, $methodId);
+        $collected = round($orders->sum(fn (Order $o) => $o->codAmount()), 2);
+        $charges = round($orders->sum(fn (Order $o) => $this->committedCharge($o)), 2);
+        $settled = round((float) CourierSettlementAllocation::whereIn('order_id', $orders->pluck('id'))->sum('amount'), 2);
+
+        return ['collected' => $collected, 'settled' => $settled, 'charges' => $charges,
+            'still' => round($collected - $settled - $charges, 2)];
     }
 
     /** Delivered parcels with a courier that still owe money (or were short-paid). */
@@ -67,25 +106,35 @@ class SettlementService
         })->filter(fn ($r) => $r['unsettled'] || abs($r['difference']) > 0.01)->values();
     }
 
-    /** The three ledger numbers, per method and combined. */
+    /** The ledger numbers, per method and combined, plus a manual (no-courier) group. */
     public function ledger(int $businessId): array
     {
         $methods = CourierMethod::where('business_id', $businessId)->orderBy('name')->get();
         $rows = [];
-        $total = ['collected' => 0.0, 'settled' => 0.0, 'still' => 0.0];
+        $total = ['collected' => 0.0, 'settled' => 0.0, 'charges' => 0.0, 'still' => 0.0];
         foreach ($methods as $m) {
-            $delivered = Order::where('business_id', $businessId)->where('status', 'Delivered')->where('courier_method_id', $m->id)->get();
-            $collected = $delivered->sum(fn (Order $o) => $o->codAmount());
-            $settled = 0.0;
-            foreach (CourierSettlementAllocation::whereHas('settlement', fn ($q) => $q->where('courier_method_id', $m->id))->with('order')->get() as $a) {
-                $settled += (float) $a->amount + ($a->order ? $this->committedCharge($a->order) : 0);
-            }
-            $row = ['method' => $m, 'collected' => round($collected, 2), 'settled' => round($settled, 2), 'still' => round($collected - $settled, 2)];
+            $row = ['method' => $m, 'manual' => false] + $this->courierTotals($businessId, $m->id);
             $rows[] = $row;
             $total['collected'] += $row['collected'];
             $total['settled'] += $row['settled'];
+            $total['charges'] += $row['charges'];
             $total['still'] += $row['still'];
         }
+
+        // Parcels delivered by hand (no courier method) belong in the ledger
+        // too: without this group the collected total cannot be reconciled
+        // against delivered sales. The customer paid the seller directly, so
+        // the money is already settled and no courier holds any of it.
+        $manualDelivered = Order::where('business_id', $businessId)->where('status', 'Delivered')->whereNull('courier_method_id')->get();
+        if ($manualDelivered->isNotEmpty()) {
+            $collected = round($manualDelivered->sum(fn (Order $o) => $o->codAmount()), 2);
+            $row = ['method' => null, 'manual' => true, 'collected' => $collected, 'settled' => $collected,
+                'charges' => 0.0, 'still' => 0.0];
+            $rows[] = $row;
+            $total['collected'] += $row['collected'];
+            $total['settled'] += $row['settled'];
+        }
+        $total = array_map(fn ($v) => round($v, 2), $total);
 
         return ['rows' => $rows, 'total' => $total];
     }

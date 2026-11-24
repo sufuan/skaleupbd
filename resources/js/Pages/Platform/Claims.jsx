@@ -18,9 +18,14 @@ function ClaimRow({ c }) {
     const reject = useForm({ admin_note: '' });
     const [showReject, setShowReject] = useState(false);
     const approve = async () => {
-        const msg = c.seller_pending
+        // State the balance replacement BEFORE confirming: a monthly
+        // pack swaps the whole current balance for the pack points.
+        const balNote = c.validity_type === 'monthly'
+            ? ` ${t('Their current balance of')} ${num(c.current_balance)} ${t('points will be replaced by the pack points - leftover points do not carry over.')}`
+            : ` ${t('Their current balance is')} ${num(c.current_balance)} ${t('points.')}`;
+        const msg = (c.seller_pending
             ? `${t('Approve this payment, credit')} ${num(c.pack_credits)} ${t('points and activate')} ${c.shop}? ${t('Their account is still pending - this one approval opens it.')}`
-            : `${t('Approve this payment and credit')} ${num(c.pack_credits)} ${t('points to')} ${c.shop}?`;
+            : `${t('Approve this payment and credit')} ${num(c.pack_credits)} ${t('points to')} ${c.shop}?`) + balNote;
         if (await confirmDialog(msg)) {
             router.post(`/admin/claims/${c.id}/approve`, {}, { preserveScroll: true });
         }

@@ -59,7 +59,7 @@ final class WooReconciliationJob implements ShouldQueue
     ): void {
         $conn = IntegrationConnection::find($this->connectionId);
 
-        if (! $conn || $conn->type !== 'woocommerce') {
+        if (! $conn || $conn->platform !== 'woo') {
             return;
         }
 
@@ -98,6 +98,14 @@ final class WooReconciliationJob implements ShouldQueue
         $conn->update(['woo_reconciled_at' => now()]);
     }
 
+    /** @return array{0:string,1:string} consumer key + consumer secret */
+    private function credentials(IntegrationConnection $conn): array
+    {
+        $creds = $conn->credentials_enc ?? [];
+
+        return [(string) ($creds['ck'] ?? ''), (string) ($creds['cs'] ?? '')];
+    }
+
     // -------------------------------------------------------------------------
 
     private function reRegisterWebhooks(
@@ -115,7 +123,8 @@ final class WooReconciliationJob implements ShouldQueue
             }
 
             // Fetch current webhook list from WooCommerce.
-            $liveWebhooks = $client->get($conn, 'webhooks', ['per_page' => 100]);
+            [$ck, $cs] = $this->credentials($conn);
+            $liveWebhooks = $client->listWebhooks((string) $conn->site_url, $ck, $cs);
             $liveIds      = collect($liveWebhooks)->pluck('id')->map(fn ($id) => (int) $id)->toArray();
 
             $missingIds = array_diff(array_map('intval', $wooWebhookIds), $liveIds);
@@ -144,7 +153,7 @@ final class WooReconciliationJob implements ShouldQueue
                 // Delete disabled ones from WC then re-register.
                 foreach ($disabledIds as $wid) {
                     try {
-                        $client->delete($conn, "webhooks/{$wid}");
+                        $client->deleteWebhook((string) $conn->site_url, $ck, $cs, (int) $wid);
                     } catch (\Throwable) {
                         // Ignore — it may already be gone.
                     }
@@ -170,16 +179,10 @@ final class WooReconciliationJob implements ShouldQueue
             $cursor = $conn->woo_orders_cursor
                 ?? now()->subHours(24)->toIso8601String();
 
-            // Statuses we care about (matches the inbound status map defaults).
-            $params = [
-                'after'    => $cursor,
-                'status'   => 'processing,on-hold',
-                'per_page' => 50,
-                'orderby'  => 'modified',
-                'order'    => 'asc',
-            ];
-
-            $orders = $client->get($conn, 'orders', $params);
+            // Statuses we care about (processing,on-hold) are baked into
+            // the client's modified-after query, matching the old params.
+            [$ck, $cs] = $this->credentials($conn);
+            $orders = $client->getOrdersModifiedAfter((string) $conn->site_url, $ck, $cs, $cursor, 1, 50);
 
             if (empty($orders)) {
                 return;
@@ -203,7 +206,9 @@ final class WooReconciliationJob implements ShouldQueue
 
                 if (! $exists) {
                     try {
-                        $importer->import($conn, $wooOrder);
+                        $statusMap = json_decode((string) ($conn->woo_status_map ?? ''), true)
+                            ?? WooCommerceConnectService::DEFAULT_STATUS_MAP;
+                        $importer->importOrder($conn, $wooOrder, $statusMap);
                         $imported++;
                     } catch (\Throwable $e) {
                         Log::error('WooReconciliation: order import error.', [

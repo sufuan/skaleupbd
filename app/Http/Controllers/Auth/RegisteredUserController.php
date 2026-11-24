@@ -15,6 +15,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
@@ -41,13 +42,19 @@ class RegisteredUserController extends Controller
     public function create(Request $request): Response
     {
         $pack = $this->chosenPack($request->query('pack'));
+        $packData = fn (PointPack $p) => [
+            'id' => $p->id, 'name' => $p->name, 'price_bdt' => (float) $p->price_bdt,
+            'credits' => (int) $p->credits, 'validity_type' => $p->validity_type,
+        ];
 
         return Inertia::render('Auth/Register', [
-            'pack' => $pack ? [
-                'id' => $pack->id, 'name' => $pack->name, 'price_bdt' => (float) $pack->price_bdt,
-                'credits' => (int) $pack->credits, 'validity_type' => $pack->validity_type,
-            ] : null,
-            'onboardingFee' => $pack ? app(TokenService::class)->onboardingFee() : 0,
+            'pack' => $pack ? $packData($pack) : null,
+            // A pack is mandatory (owner rule): the form either shows
+            // the pack picked on /pricing, or a picker over every
+            // active pack. An empty list means registration is closed.
+            'packs' => PointPack::where('is_active', true)->orderBy('price_bdt')->get()
+                ->map($packData)->values(),
+            'onboardingFee' => app(TokenService::class)->onboardingFee(),
             // Registration verification (Settings switch): the form
             // marks the mobile field required when a code will be sent
             // by SMS, and shows the "we will send a code" note.
@@ -75,7 +82,12 @@ class RegisteredUserController extends Controller
             'email' => 'required|string|lowercase|email|max:255|unique:'.User::class,
             'mobile' => [$mobileRequired ? 'required' : 'nullable', 'string', 'max:20'],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
-            'pack_id' => ['nullable'], // validated softly below — a bad pack never blocks signup
+            // A pack is mandatory (owner rule): no pack, no signup —
+            // and the pack must be a real, active one, never ignored.
+            'pack_id' => ['required', 'integer', Rule::exists('point_packs', 'id')->where('is_active', true)],
+        ], [
+            'pack_id.required' => __('Please choose a pack to continue.'),
+            'pack_id.exists' => __('That pack is not available. Please choose another pack.'),
         ]);
 
         $user = User::create([
@@ -97,8 +109,9 @@ class RegisteredUserController extends Controller
             app(SettingsService::class)->set("business.{$user->business_id}.mobile", $mobile);
         }
 
-        // M19 purchase flow: a pack picked on the pricing page becomes a
-        // pending payment claim, so Billing shows exactly what to pay.
+        // M19 purchase flow: the chosen pack (validated above, always
+        // present) becomes a pending payment claim, so Billing shows
+        // exactly what to pay.
         $pack = $this->chosenPack($request->input('pack_id'));
         if ($pack && $user->business_id) {
             try {

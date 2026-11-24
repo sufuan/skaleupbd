@@ -12,11 +12,15 @@ export default function Sms({ balance, rate, success_rate, audiences, dnd_count,
     const parts = useMemo(() => smsParts(message), [message]);
     const chars = useMemo(() => [...message].length, [message]);
     const total = aud.sendable * parts * rate;
-    const after = balance - total;
+    const afterRaw = balance - total;
+    // The remainder is a display figure and never reads below zero -
+    // the shortfall itself is carried by the warning line under the
+    // numbers (and the send stays disabled while it is short).
+    const after = Math.max(0, afterRaw);
     // Warn as soon as the numbers say the balance will not cover the send —
     // not only after the seller starts typing (an empty composer used to
     // show "Balance left ৳-9" with no warning at all).
-    const warn = after < 0;
+    const warn = afterRaw < 0;
 
     const pickTemplate = (id) => {
         const tpl = templates.find((x) => String(x.id) === String(id));
@@ -99,7 +103,9 @@ export default function Sms({ balance, rate, success_rate, audiences, dnd_count,
                                 <td>{t(':count people', { count: fmtNum(c.recipients) })} ({c.audience_label})</td>
                                 <td>{fmt(c.total_cost)}</td>
                                 <td>{fmtNum(c.orders)} · {fmt(c.sales)}</td>
-                                <td><Verdict profit={c.profit} /></td>
+                                <td>{c.recipients > 0
+                                    ? <Verdict profit={c.profit} />
+                                    : <span className="chip chip-grey">{t('No SMS could be sent')}</span>}</td>
                             </tr>
                         ))}
                         {campaigns.length === 0 && <tr><td colSpan="5" style={{ color: '#94A3B8' }}>{t('No campaign has been sent yet.')}</td></tr>}

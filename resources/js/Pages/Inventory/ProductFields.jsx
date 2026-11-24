@@ -44,14 +44,14 @@ function Switch({ checked, onChange, label, hint }) {
                 {hint && <div className="text-xs text-muted-foreground">{hint}</div>}
             </div>
             <button type="button" role="switch" aria-checked={checked} onClick={() => onChange(!checked)}
-                className={`inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${checked ? 'bg-primary' : 'bg-input'}`}>
+                className={`inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${checked ? 'bg-primary' : 'invx-switch-off'}`}>
                 <span className={`pointer-events-none block h-5 w-5 rounded-full bg-background shadow-lg ring-0 transition-transform ${checked ? 'translate-x-5' : 'translate-x-0'}`} />
             </button>
         </div>
     );
 }
 
-export default function ProductFields({ data, setData, categories = [], brands = [], businessName = '', forEdit = false, mode, setMode, variants, setVariants, readiness = null }) {
+export default function ProductFields({ data, setData, categories = [], brands = [], businessName = '', forEdit = false, mode, setMode, variants, setVariants, readiness = null, allProducts = [], components, setComponents, selfId = null }) {
     const [galleryUrl, setGalleryUrl] = useState('');
     const [newCategory, setNewCategory] = useState('');
     const catInputRef = useRef(null);
@@ -111,6 +111,25 @@ export default function ProductFields({ data, setData, categories = [], brands =
                                 <button type="button" className={BTN_OUTLINE + ' h-9'} onClick={() => setVariants([...variants, { name: '', price: '', stock_qty: 0 }])}>+ {t('Add Variant')}</button>
                             </div>
                         )}
+                    </Section>
+                )}
+
+                {data.type === 'combo' && setComponents && (
+                    <Section title={t('Combo Components')} desc={t('The products this combo is made of. Selling the combo takes stock from these components.')}>
+                        <div className="space-y-2">
+                            {(components || []).map((c, i) => (
+                                <div key={i} className="flex flex-wrap gap-2">
+                                    <select className={INPUT + ' flex-1 min-w-[180px]'} value={c.product_id || ''} onChange={(e) => { const n = [...components]; n[i].product_id = e.target.value; setComponents(n); }}>
+                                        <option value="">{t('Select product')}</option>
+                                        {allProducts.filter((p) => p.id !== selfId).map((p) => <option key={p.id} value={p.id}>{p.name}{p.sku ? ` (${p.sku})` : ''}</option>)}
+                                    </select>
+                                    <input className={INPUT + ' w-24'} type="number" min="1" placeholder={t('Qty')} value={c.qty} onChange={(e) => { const n = [...components]; n[i].qty = e.target.value; setComponents(n); }} />
+                                    <button type="button" className={BTN_OUTLINE + ' px-3'} onClick={() => setComponents(components.filter((_, j) => j !== i))}>×</button>
+                                </div>
+                            ))}
+                            <button type="button" className={BTN_OUTLINE + ' h-9'} onClick={() => setComponents([...(components || []), { product_id: '', qty: 1 }])}>+ {t('Add Component')}</button>
+                            {(components || []).length === 0 && <div className="text-xs text-muted-foreground">{t('No components yet - without components this combo sells from its own stock.')}</div>}
+                        </div>
                     </Section>
                 )}
 

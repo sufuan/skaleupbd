@@ -76,6 +76,26 @@ class SmsService
         return SmsDoNotSend::where('business_id', $biz)->where('phone', $phone)->exists();
     }
 
+    /**
+     * Why a marketing send to this phone would be skipped right now:
+     * 'dnd', 'cap', or null when it would really go out. The campaign
+     * preview and the sender share this one check, so the number of
+     * recipients the seller is promised is the number the send reaches.
+     */
+    public function marketingSkipReason(int $biz, string $phone): ?string
+    {
+        $phone = PhoneNormalizer::normalize($phone);
+        if ($this->onDoNotSend($biz, $phone)) {
+            return 'dnd';
+        }
+        [$today, $week] = $this->marketingSentCounts($biz, $phone);
+        if ($today >= (int) $this->setting($biz, 'cap_day', 1) || $week >= (int) $this->setting($biz, 'cap_week', 3)) {
+            return 'cap';
+        }
+
+        return null;
+    }
+
     /** Marketing sends already delivered to this phone today / in the last 7 days. */
     public function marketingSentCounts(int $biz, string $phone): array
     {
@@ -108,15 +128,10 @@ class SmsService
             'body' => $body, 'parts' => $parts, 'cost' => 0,
         ];
 
-        if ($marketing && $this->onDoNotSend($biz, $phone)) {
-            $row['status'] = 'skipped_dnd';
-
-            return SmsLog::create($row);
-        }
         if ($marketing) {
-            [$today, $week] = $this->marketingSentCounts($biz, $phone);
-            if ($today >= (int) $this->setting($biz, 'cap_day', 1) || $week >= (int) $this->setting($biz, 'cap_week', 3)) {
-                $row['status'] = 'skipped_cap';
+            $skip = $this->marketingSkipReason($biz, $phone);
+            if ($skip !== null) {
+                $row['status'] = $skip === 'dnd' ? 'skipped_dnd' : 'skipped_cap';
 
                 return SmsLog::create($row);
             }
@@ -378,11 +393,11 @@ class SmsService
             ->pluck('customer_phone')->unique()->values()->all();
 
         return [
-            'all' => ['label' => 'সব customer', 'phones' => $all],
-            'bought_30d' => ['label' => 'শেষ 30 দিনে কিনেছে', 'phones' => $bought30],
-            'dormant_60d' => ['label' => 'একবার কিনে 60 দিন আসেনি', 'phones' => $dormant],
-            'unconfirmed_today' => ['label' => 'আজকের unconfirmed order', 'phones' => $unconfirmed],
-            'outside_dhaka' => ['label' => 'ঢাকার বাইরের customer', 'phones' => $outside],
+            'all' => ['label' => __('All customers'), 'phones' => $all],
+            'bought_30d' => ['label' => __('Bought in the last 30 days'), 'phones' => $bought30],
+            'dormant_60d' => ['label' => __('Bought once, not back in 60 days'), 'phones' => $dormant],
+            'unconfirmed_today' => ['label' => __("Today's unconfirmed orders"), 'phones' => $unconfirmed],
+            'outside_dhaka' => ['label' => __('Customers outside Dhaka'), 'phones' => $outside],
         ];
     }
 

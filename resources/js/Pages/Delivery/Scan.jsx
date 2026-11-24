@@ -60,7 +60,7 @@ export default function Scan({ todayEvents }) {
     };
 
     const applyScan = async (scanCode, scanType) => {
-        const at = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const at = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Dhaka' });
         try {
             const res = await fetch('/delivery/scan', {
                 method: 'POST',
@@ -207,7 +207,7 @@ export default function Scan({ todayEvents }) {
                             <div style={{ border: '1px solid var(--line)', borderRadius: 10, padding: 14 }}>
                                 <div className="muted-sm" style={{ marginBottom: 8 }}>{t('Click input to activate scanner or type manually')}</div>
                                 <form onSubmit={submit}>
-                                    <input ref={inputRef} className="fld" style={{ fontSize: 16, padding: 14 }} placeholder={t('Scan or type invoice number and press Enter...')}
+                                    <input ref={inputRef} className="fld" style={{ fontSize: 16, padding: 14 }} placeholder={t('Scan or type invoice number')}
                                         value={code} onChange={(e) => setCode(e.target.value)} autoFocus />
                                 </form>
                             </div>

@@ -4,7 +4,7 @@ import StaffRoles from './StaffRoles';
 import AppLayout from '@/Layouts/AppLayout';
 import { t } from '@/lib/i18n';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { confirmDialog } from '@/lib/confirm';
 
 const GROUPS = [
@@ -22,6 +22,21 @@ function Sw({ on = false }) {
 }
 function SaveBar() {
     return <div className="flex mt16"><span className="spacer" /><button className="btn pri">{t('Save Changes')}</button></div>;
+}
+// Local form state that follows the server value until the user edits it.
+// A plain useEffect sync wipes unsaved edits in THIS section whenever a
+// sibling section's save reloads the page props (the Advanced Settings
+// silent-loss trap); with the diverged check, an edited section keeps its
+// edits across other sections' saves, while a clean section still picks
+// up fresh server values.
+function useSyncedState(serverValue) {
+    const [value, setValue] = useState(serverValue);
+    const prevServer = useRef(serverValue);
+    useEffect(() => {
+        setValue((cur) => (JSON.stringify(cur) === JSON.stringify(prevServer.current) ? serverValue : cur));
+        prevServer.current = serverValue;
+    }, [serverValue]);
+    return [value, setValue];
 }
 // Shown in place of a shop-scoped form when there is no shop in scope
 // (a platform admin outside view-as): the honest state, with no save
@@ -340,7 +355,8 @@ function SellerChannelCard({ channel, title, intro, conn, fields, readOnly }) {
                     ? <div className="sm" style={{ color: 'var(--bad)', marginBottom: 8 }}>{t('Not working')}{conn.last_error ? ` - ${t('Meta said:')} ${conn.last_error}` : ''}</div>
                     : <div className="sm mut" style={{ marginBottom: 8 }}><span className="pill green">{t('Connected')}</span> {conn.display_name || conn.external_id}{conn.phone_number ? ` · ${conn.phone_number}` : ''}{conn.last_checked_at ? ` · ${t('Last checked')} ${conn.last_checked_at}` : ''}</div>)}
                 {fields.map((f) => (
-                    <div className="frow" key={f.key}><label className="fl">{t(f.label)}</label><input className="inp" type={f.password ? 'password' : 'text'} autoComplete={f.password ? 'new-password' : undefined} value={form.data[f.key]} onChange={(e) => form.setData(f.key, e.target.value)} placeholder={f.password ? (conn?.token_set ? t('Saved - leave blank to keep it') : '') : undefined} /></div>
+                    <div className="frow" key={f.key}><label className="fl">{t(f.label)}</label><input className="inp" type={f.password ? 'password' : 'text'} autoComplete={f.password ? 'new-password' : undefined} value={form.data[f.key]} onChange={(e) => form.setData(f.key, e.target.value)} placeholder={f.password ? (conn?.token_set ? t('Saved - leave blank to keep it') : '') : undefined} />
+                        {form.errors[f.key] && <div className="sm" style={{ color: 'var(--bad)', marginTop: 6 }}>{form.errors[f.key]}</div>}</div>
                 ))}
                 {conn?.token_set ? <div className="sm mut">{t('Token saved')}{conn.token_last4 ? ` (••••${conn.token_last4})` : ''}</div> : null}
                 <div className="flex mt16">
@@ -473,7 +489,8 @@ function MarketingSmsForm({ ms }) {
             <form className="card" style={{ marginTop: 16 }} onSubmit={(e) => { e.preventDefault(); test.post('/settings/sms-test', { preserveScroll: true }); }}>
                 <h3>{t('Send test SMS')}</h3>
                 <div className="card-sub">{t('Sends one SMS right now in the current mode - in Demo mode it is only logged, in Live mode your provider sends it for real')}</div>
-                <div className="frow"><label className="fl">{t('Phone number')}</label><input className="inp" style={{ maxWidth: 300 }} value={test.data.phone} onChange={(e) => test.setData('phone', e.target.value)} placeholder="01XXXXXXXXX" /></div>
+                <div className="frow"><label className="fl">{t('Phone number')}</label><input className="inp" style={{ maxWidth: 300 }} value={test.data.phone} onChange={(e) => test.setData('phone', e.target.value)} placeholder="01XXXXXXXXX" />
+                    {test.errors.phone && <div className="sm" style={{ color: 'var(--bad)', marginTop: 6 }}>{test.errors.phone}</div>}</div>
                 <div className="frow"><label className="fl">{t('Message')}</label><input className="inp" style={{ maxWidth: 420 }} value={test.data.message} onChange={(e) => test.setData('message', e.target.value)} /></div>
                 <div className="flex mt16"><span className="spacer" /><button className="btn pri" disabled={test.processing}>{t('Send test SMS')}</button></div>
             </form>
@@ -642,6 +659,12 @@ function AiReplyForm({ ai }) {
 
 function TalkerForm({ ai }) {
     const tk = ai?.talker || {};
+    // The provider (model + API keys) is the platform's: sellers and
+    // view-as sessions see this form read-only. Their own AI behaviour
+    // lives in the AI Reply / Negotiation / Behaviour forms, which are
+    // namespaced to their shop. The Check connection button stays live
+    // for everyone - it changes nothing and never shows the key.
+    const editable = ai?.talkerEditable === true;
     const form = useForm({
         enabled: !!tk.enabled,
         normal_provider: tk.normal_provider || 'gemini',
@@ -674,14 +697,14 @@ function TalkerForm({ ai }) {
             <>
                 <div className="b" style={{ marginTop: 14 }}>{t(label)}</div>
                 <div className="frow"><label className="fl">{t('Provider')}</label>
-                    <select className="inp" value={provider} onChange={(e) => form.setData(name + '_provider', e.target.value)}>
+                    <select className="inp" value={provider} disabled={!editable} onChange={(e) => form.setData(name + '_provider', e.target.value)}>
                         <option value="gemini">Gemini (Google)</option>
                         <option value="claude">Claude (Anthropic)</option>
                     </select></div>
-                <div className="frow"><label className="fl">{t('Model')}</label><input className="inp" value={form.data[name + '_model']} onChange={(e) => form.setData(name + '_model', e.target.value)} /></div>
+                <div className="frow"><label className="fl">{t('Model')}</label><input className="inp" value={form.data[name + '_model']} disabled={!editable} onChange={(e) => form.setData(name + '_model', e.target.value)} /></div>
                 <div className="frow"><label className="fl">{t('API key')}</label>
                     <div className="flex" style={{ gap: 8, flex: 1 }}>
-                        <input className="inp" type="password" autoComplete="new-password" style={{ flex: 1 }} value={form.data[keyField]} onChange={(e) => form.setData(keyField, e.target.value)} placeholder={keySet ? t('Saved - leave blank to keep it') : ''} />
+                        <input className="inp" type="password" autoComplete="new-password" style={{ flex: 1 }} value={form.data[keyField]} disabled={!editable} onChange={(e) => form.setData(keyField, e.target.value)} placeholder={keySet ? (editable ? t('Saved - leave blank to keep it') : t('Saved - set by the platform')) : ''} />
                         <button type="button" className="btn" disabled={check?.busy} onClick={() => runCheck(provider, form.data[keyField])}>{t('Check connection')}</button>
                     </div></div>
                 {check && !check.busy && (
@@ -694,16 +717,17 @@ function TalkerForm({ ai }) {
         <form onSubmit={(e) => { e.preventDefault(); form.post('/settings/ai-talker', { preserveScroll: true, onSuccess: () => form.reset('gemini_key', 'claude_key') }); }}>
             <div className="card" style={{ marginTop: 16 }}><h3>{t('AI Model')}</h3>
                 <div className="card-sub">{t('The model only writes the reply in a natural voice - the Rule Brain still decides every fact and figure, and every figure is re-checked before sending')}</div>
+                {!editable && <div className="sm mut" style={{ marginBottom: 8 }}>{t('The AI model and its API keys are set by the platform - every shop uses the same model.')}</div>}
                 <div className="frow"><label className="fl">{t('Use AI model for replies')}</label>
-                    <button type="button" className={`switch ${form.data.enabled ? 'on' : ''}`} aria-label="toggle" onClick={() => form.setData('enabled', !form.data.enabled)} /></div>
+                    <button type="button" className={`switch ${form.data.enabled ? 'on' : ''}`} aria-label="toggle" disabled={!editable} onClick={() => form.setData('enabled', !form.data.enabled)} /></div>
                 {tier('normal', 'Everyday replies')}
                 {tier('complex', 'Complex replies')}
                 <div className="b" style={{ marginTop: 14 }}>{t('Which replies use the complex model')}</div>
                 <div className="frow"><label className="fl">{t('Angry customers')}</label>
-                    <button type="button" className={`switch ${form.data.route_angry ? 'on' : ''}`} aria-label="toggle" onClick={() => form.setData('route_angry', !form.data.route_angry)} /></div>
+                    <button type="button" className={`switch ${form.data.route_angry ? 'on' : ''}`} aria-label="toggle" disabled={!editable} onClick={() => form.setData('route_angry', !form.data.route_angry)} /></div>
                 <div className="frow"><label className="fl">{t('Long bargaining (3rd offer onwards)')}</label>
-                    <button type="button" className={`switch ${form.data.route_long_bargain ? 'on' : ''}`} aria-label="toggle" onClick={() => form.setData('route_long_bargain', !form.data.route_long_bargain)} /></div>
-                <SaveBar />
+                    <button type="button" className={`switch ${form.data.route_long_bargain ? 'on' : ''}`} aria-label="toggle" disabled={!editable} onClick={() => form.setData('route_long_bargain', !form.data.route_long_bargain)} /></div>
+                {editable && <SaveBar />}
             </div>
         </form>
     );
@@ -791,7 +815,7 @@ function KnowledgeRow({ entry }) {
     );
 }
 
-function Security({ tab, totpEnabled, totpEnrolled, m2, hasShop = true }) {
+function Security({ tab, totpEnabled, totpEnrolled, m2, hasShop = true, isPlatform = false, viewing = false }) {
     if (tab === 'records') return (
         <>
             <div className="card mb12"><h3>{t('Deletion Logs')}</h3><div className="card-sub">{t('Records of deleted items are kept for 7 days')}</div>
@@ -809,7 +833,13 @@ function Security({ tab, totpEnabled, totpEnrolled, m2, hasShop = true }) {
         </>
     );
     if (tab === 'advanced') {
-        const toggleTotp = () => router.post('/settings/totp', { enabled: !totpEnabled }, { preserveScroll: true });
+        // security.totp_enabled is ONE platform-wide switch, not a shop
+        // setting: only a platform admin outside view-as may flip it.
+        // Everyone else sees the current status read-only - a live
+        // switch here used to fire a POST that 403'd into a full-screen
+        // error modal for sellers (Round 2 Hunt B F2).
+        const canToggleTotp = isPlatform && !viewing;
+        const toggleTotp = () => { if (canToggleTotp) router.post('/settings/totp', { enabled: !totpEnabled }, { preserveScroll: true }); };
         return (
             <>
                 <div className="card mb12"><h3>{t('Advanced Settings')}</h3><div className="card-sub">{t('Change with care - these affect the whole shop')}</div>
@@ -819,9 +849,12 @@ function Security({ tab, totpEnabled, totpEnrolled, m2, hasShop = true }) {
                             <div className="sm mut">{totpEnabled
                                 ? (totpEnrolled ? t('On - your account asks for an authenticator code at every login') : t('On - set up your authenticator to finish turning it on for your account'))
                                 : t('When on, every login also needs a 6-digit code from Google Authenticator')}</div>
+                            {canToggleTotp
+                                ? <div className="sm mut">{t('This switch applies to every login on the platform.')}</div>
+                                : (!isPlatform && <div className="sm mut">{t('Set by the platform - only the platform admin can change this')}</div>)}
                         </div>
                         {totpEnabled && !totpEnrolled && <Link href="/totp/setup" className="btn pri">{t('Set up authenticator')}</Link>}
-                        <button className={`switch ${totpEnabled ? 'on' : ''}`} onClick={toggleTotp} aria-label="toggle two-factor login" />
+                        <button className={`switch ${totpEnabled ? 'on' : ''}`} onClick={toggleTotp} disabled={!canToggleTotp} aria-label="toggle two-factor login" style={!canToggleTotp ? { opacity: .5, cursor: 'not-allowed' } : undefined} />
                     </div>
                     <div className="conn-row"><div style={{ flex: 1 }}><div className="b">{t('Require Device Approval')}</div><div className="sm mut">{t('A new device cannot enter until an admin approves it')}</div><div className="sm mut">{t('Module is not developed yet')}</div></div><button className="switch" disabled aria-label="toggle require device approval" style={{ opacity: .5, cursor: 'not-allowed' }} /></div>
                     <div className="conn-row"><div style={{ flex: 1 }}><div className="b" style={{ color: 'var(--bad)' }}>{t('Reset Shop Data')}</div><div className="sm mut">{t('Every order and product will be deleted - this cannot be undone')}</div><div className="sm mut">{t('Module is not developed yet')}</div></div><button className="btn" disabled style={{ color: 'var(--bad)', borderColor: '#f0caca', opacity: .5, cursor: 'not-allowed' }}>{t('Reset')}</button></div>
@@ -841,8 +874,7 @@ function Security({ tab, totpEnabled, totpEnrolled, m2, hasShop = true }) {
 }
 
 function FinanceSettingsForm({ m2 }) {
-    const [fin, setFin] = useState(m2.finance);
-    useEffect(() => { setFin(m2.finance); }, [m2.finance]);
+    const [fin, setFin] = useSyncedState(m2.finance);
     if (!fin) return null;
     return (
         <div className="card"><h3>{t('Finance')}</h3><div className="card-sub">{t('How the Finance module behaves for this shop')}</div>
@@ -863,8 +895,7 @@ function FinanceSettingsForm({ m2 }) {
 }
 
 function InventorySettingsForm({ m2 }) {
-    const [inv, setInv] = useState(m2.inventory);
-    useEffect(() => { setInv(m2.inventory); }, [m2.inventory]);
+    const [inv, setInv] = useSyncedState(m2.inventory);
     const rows = [
         ['branch_stock_enabled', 'Multi Warehouse / Branch Stock', 'Each branch keeps its own stock count; transfers move stock between branches'],
         ['warehouse_cartons', 'Warehouse Cartons', 'Transfers also record how many cartons move'],
@@ -890,8 +921,7 @@ function InventorySettingsForm({ m2 }) {
 }
 
 function OrderTogglesForm({ m2 }) {
-    const [tg, setTg] = useState(m2.toggles);
-    useEffect(() => { setTg(m2.toggles); }, [m2.toggles]);
+    const [tg, setTg] = useSyncedState(m2.toggles);
     const rows = [
         ['show_email', 'Show Email Field', 'The New Order form shows an email field'],
         ['show_alt_number', 'Show Alternative Number Field', 'The New Order form shows a second phone number field'],
@@ -1106,7 +1136,7 @@ export default function SettingsIndex({ group: initial = 'home', totpEnabled = f
                     {group === 'api' && <Api tab={tab} couriers={couriers} autoApprove={autoApprove} channels={channels} myChannels={myChannels} channelsPlatform={channelsPlatform} channelsReadOnly={viewing} paymentGateway={paymentGateway} platformPaymentGateway={platformPaymentGateway} integration={integration} hasShop={hasShop} />}
                     {group === 'calls' && (hasShop ? <Calls tab={tab} m2={m2} /> : <ShopScopeNotice />)}
                     {group === 'ai' && <Ai tab={tab} ai={ai} hasShop={hasShop} />}
-                    {group === 'security' && <Security tab={tab} totpEnabled={totpEnabled} totpEnrolled={totpEnrolled} m2={m2} hasShop={hasShop} />}
+                    {group === 'security' && <Security tab={tab} totpEnabled={totpEnabled} totpEnrolled={totpEnrolled} m2={m2} hasShop={hasShop} isPlatform={isPlatform} viewing={viewing} />}
                     {group === 'packages' && isPlatform && <PackagesSettings data={packagesData} />}
                     {group === 'staff' && staffRoles?.can_manage && <StaffRoles data={staffRoles} />}
                 </div>

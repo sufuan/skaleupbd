@@ -366,6 +366,9 @@ class DeliveryController extends Controller
                 if (! empty($data['return_tag'])) {
                     $order->return_tag = $data['return_tag'];
                 }
+                if (! empty($order->courier_status)) {
+                    $order->courier_status = 'Returned';
+                }
                 $order->save();
                 $orders->changeStatus($order, 'Returned', $request->user(), 'Scanned as return');
 
@@ -375,6 +378,9 @@ class DeliveryController extends Controller
                     return $fail('Only a shipped parcel can come back to the store (RTS)');
                 }
                 $order->returned_at = now();
+                if (! empty($order->courier_status)) {
+                    $order->courier_status = 'Returned';
+                }
                 $order->save();
                 $orders->changeStatus($order, 'Returned', $request->user(), 'Returned to store (RTS scan)');
 

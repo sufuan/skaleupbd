@@ -226,9 +226,13 @@ class StorefrontPublicController extends Controller
         if (! $sf->isPublished()) {
             return $this->unavailable($sf);
         }
-        $p = Product::where('business_id', $sf->business_id)->where('is_active', true)->find($product);
-        abort_unless($p, 404);
         $host = $this->svc->normalizeHost($request->getHost());
+        $p = Product::where('business_id', $sf->business_id)->where('is_active', true)->find($product);
+        if (! $p) {
+            // Same branded shop 404 as an unknown page slug - a bare
+            // framework 404 on a live shop reads as if the shop is broken.
+            return response()->view('storefront.notfound', ['domain' => $host], 404);
+        }
         $html = $this->cachedHtml($sf, $host, '/p/'.$p->id, fn () => view('storefront.product', [
             'sf' => $sf,
             'brand' => $this->brand($sf),
@@ -299,13 +303,13 @@ class StorefrontPublicController extends Controller
         }
         $ipKey = 'sf-order-ip:'.$request->ip();
         if (RateLimiter::tooManyAttempts($ipKey, 10)) {
-            return $this->orderError($request, 'Too many order attempts. Please wait a minute and try again.');
+            return $this->orderError($request, __('Too many order attempts. Please wait a minute and try again.'));
         }
         RateLimiter::hit($ipKey, 60);
 
         // Zero balance = no new orders, said honestly (M19 rule).
         if (app(\App\Services\TokenService::class)->blocked($sf->business_id)) {
-            return $this->orderError($request, 'This shop cannot take new orders right now. Please contact the shop owner.');
+            return $this->orderError($request, __('This shop cannot take new orders right now. Please contact the shop owner.'));
         }
 
         try {
@@ -325,39 +329,56 @@ class StorefrontPublicController extends Controller
                 'fbclid' => ['nullable', 'string', 'max:255'],
                 'ic_event_id' => ['nullable', 'string', 'max:80'],
                 'purchase_event_id' => ['nullable', 'string', 'max:80'],
+            ], [
+                // The shop pages are Bangla-first; the framework's raw
+                // English validation sentences must not leak into the form.
+                'customer_name.required' => __('Please enter your name.'),
+                'customer_phone.required' => __('Please enter your phone number.'),
+                'customer_address.required' => __('Please enter your full address.'),
+                'customer_address.min' => __('Please enter your full address.'),
+                'district.required' => __('Please choose your district.'),
             ]);
         } catch (ValidationException $e) {
-            return $this->orderError($request, collect($e->errors())->flatten()->first() ?? 'Please check the form and try again.');
+            return $this->orderError($request, collect($e->errors())->flatten()->first() ?? __('Please check the form and try again.'));
         }
         if (! in_array($data['district'], StorefrontService::districts(), true)) {
-            return $this->orderError($request, 'Please choose your district.');
+            return $this->orderError($request, __('Please choose your district.'));
         }
         $phone = PhoneNormalizer::normalize($data['customer_phone']);
         $phoneKey = 'sf-order-phone:'.$phone;
         if (RateLimiter::tooManyAttempts($phoneKey, 5)) {
-            return $this->orderError($request, 'Too many orders from this phone number. Please try again later.');
+            return $this->orderError($request, __('Too many orders from this phone number. Please try again later.'));
         }
 
         // Cross-shop guard + live price/stock: the product must be THIS
         // shop's, and the price is always recomputed from the database.
         $product = Product::where('business_id', $sf->business_id)->where('is_active', true)->find($data['product_id']);
         if (! $product) {
-            return $this->orderError($request, 'This product is not available in this shop.');
+            return $this->orderError($request, __('This product is not available in this shop.'));
         }
         $qty = (int) ($data['qty'] ?? 1);
-        if ($product->manage_stock && ((int) $product->stock_qty - (int) $product->reserved_qty) < $qty) {
-            return $this->orderError($request, 'Sorry, this product is out of stock right now.');
-        }
         // Variant: must belong to this product; its own stock + price rule.
+        // A variant line is judged on the VARIANT's pool alone - the
+        // parent product's stock is a different pool and must not block
+        // (or allow) the sale.
         $variant = null;
         if (! empty($data['variant_id'])) {
             $variant = $product->variants()->find((int) $data['variant_id']);
             if (! $variant) {
-                return $this->orderError($request, 'That variant is not available. Please choose another.');
+                return $this->orderError($request, __('That variant is not available. Please choose another.'));
             }
             if ($product->manage_stock && $variant->available() < $qty) {
-                return $this->orderError($request, 'Sorry, this variant is out of stock right now.');
+                return $this->orderError($request, $variant->available() <= 0
+                    ? __('Sorry, this variant is out of stock right now.')
+                    : __('Only :count left for this variant. Please lower the quantity.', ['count' => $variant->available()]));
             }
+        } elseif ($product->manage_stock && $product->available() < $qty) {
+            // available() is the one definition: for a combo it counts
+            // how many full combos the components can still make, else
+            // the product's own stock minus reservations.
+            return $this->orderError($request, $product->available() <= 0
+                ? __('Sorry, this product is out of stock right now.')
+                : __('Only :count left in stock. Please lower the quantity.', ['count' => $product->available()]));
         }
         RateLimiter::hit($phoneKey, 3600);
 
@@ -414,6 +435,7 @@ class StorefrontPublicController extends Controller
             'items' => [[
                 'product_id' => $product->id,
                 'name' => $product->name,
+                'variant_id' => $variant?->id,
                 'variant_name' => $variant?->name,
                 'qty' => $qty,
                 'price' => $price,
@@ -442,7 +464,7 @@ class StorefrontPublicController extends Controller
         } catch (InsufficientTokensException) {
             return response()->view('storefront.unable', ['sf' => $sf, 'brand' => $this->brand($sf)], 200);
         } catch (\Illuminate\Contracts\Cache\LockTimeoutException) {
-            return $this->orderError($request, 'Your order is being placed. Please wait a moment and check again.');
+            return $this->orderError($request, __('Your order is being placed. Please wait a moment and check again.'));
         }
 
         if (! $isDuplicate) {
@@ -536,7 +558,10 @@ class StorefrontPublicController extends Controller
 
     public function productVm(Product $p): array
     {
-        $availableQty = (int) $p->stock_qty - (int) $p->reserved_qty;
+        // The one availability definition (combo = components can make,
+        // else own stock minus reservations) - the same figure the
+        // checkout check enforces.
+        $availableQty = $p->available();
         $images = [];
         if (! empty($p->image)) {
             $images[] = str_starts_with($p->image, 'http') ? $p->image : '/storage/'.$p->image;

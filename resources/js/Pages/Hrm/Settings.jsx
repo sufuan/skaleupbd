@@ -79,6 +79,11 @@ export default function Settings({ settings, holidays, can_manage }) {
                             {can_manage && <button type="button" className="btn-mini danger" onClick={() => delHoliday(h.id)}>{t('Delete')}</button>}
                         </div>
                     ))}
+                    {can_manage && Object.keys(hol.errors).length > 0 && (
+                        <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" style={{ marginTop: 12 }}>
+                            {Object.values(hol.errors)[0]}
+                        </div>
+                    )}
                     {can_manage && (
                         <form className="form-grid" style={{ marginTop: 12 }} onSubmit={(e) => { e.preventDefault(); hol.post('/hrm/holidays', { preserveScroll: true, onSuccess: () => hol.reset() }); }}>
                             <div className="fld"><label className="lbl">{t('Date')}</label>

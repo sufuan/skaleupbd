@@ -60,7 +60,7 @@ export default function Branches({ branches, stats, branchStockEnabled, cartonsE
                                 </div>
                                 <button type="button" role="switch" aria-checked={branchStockEnabled} aria-label={t('Branch Stock')}
                                     onClick={() => router.post('/inventory/branches/toggle-stock', {}, { preserveScroll: true })}
-                                    className={`inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors ${branchStockEnabled ? 'bg-primary' : 'bg-input'}`}>
+                                    className={`inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors ${branchStockEnabled ? 'bg-primary' : 'invx-switch-off'}`}>
                                     <span className={`pointer-events-none block h-5 w-5 rounded-full bg-background shadow-lg ring-0 transition-transform ${branchStockEnabled ? 'translate-x-5' : 'translate-x-0'}`} />
                                 </button>
                             </div>
@@ -145,14 +145,14 @@ function TransferForm({ branches, products, transfers, branchName, productName, 
                 <div className="font-semibold">{t('Stock Transfer')}</div>
                 <div className="grid gap-3 sm:grid-cols-2">
                     <div className="space-y-1">
-                        <label className="text-sm font-medium">{t('From Warehouse')}</label>
+                        <label className="text-sm font-medium">{t('From Branch')}</label>
                         <select className={INPUT} value={form.from_branch_id} onChange={(e) => set('from_branch_id', e.target.value)}>
                             <option value="">{t('Select')}</option>
                             {branches.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
                         </select>
                     </div>
                     <div className="space-y-1">
-                        <label className="text-sm font-medium">{t('To Warehouse')}</label>
+                        <label className="text-sm font-medium">{t('To Branch')}</label>
                         <select className={INPUT} value={form.to_branch_id} onChange={(e) => set('to_branch_id', e.target.value)}>
                             <option value="">{t('Select')}</option>
                             {branches.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}

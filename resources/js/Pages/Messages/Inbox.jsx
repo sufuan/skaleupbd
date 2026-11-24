@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link, router, useForm } from '@inertiajs/react';
+import { Link, router, useForm, usePage } from '@inertiajs/react';
 import AppLayout from '@/Layouts/AppLayout';
 import { t } from '@/lib/i18n';
 
@@ -17,11 +17,16 @@ const BUB_B = { alignSelf: 'flex-end', background: 'var(--acc-fill)', color: '#f
 const CAP = { alignSelf: 'flex-end', fontSize: 11.5, color: 'var(--note-ink)', marginTop: -4 };
 const PILL = (bg, tx) => ({ display: 'inline-block', fontSize: 11, fontWeight: 700, borderRadius: 99, padding: '2px 9px', background: bg, color: tx });
 
+// Approving/rejecting a draft changes the sidebar Inbox badge count;
+// the layout listens for this event and refetches /sidebar-counts at
+// once instead of waiting for its next poll.
+const refreshCounts = () => window.dispatchEvent(new Event('skaleup:counts-refresh'));
+
 function DraftCard({ draft }) {
     const [editing, setEditing] = useState(false);
     const [body, setBody] = useState(draft.body);
     const isOrder = draft.kind === 'order_summary';
-    const approve = () => router.post(`/messages/drafts/${draft.id}/approve`, editing ? { body } : {}, { preserveScroll: true });
+    const approve = () => router.post(`/messages/drafts/${draft.id}/approve`, editing ? { body } : {}, { preserveScroll: true, onSuccess: refreshCounts });
     return (
         <div style={{ background: 'var(--note-bg)', border: '1px solid var(--note-line)', borderRadius: 12, padding: 13, marginTop: 10 }}>
             <b style={{ fontSize: 13.5 }}>{isOrder ? t('AI Order Summary') : t('AI Suggested Reply')}</b>{' '}
@@ -38,15 +43,20 @@ function DraftCard({ draft }) {
             </div>
             <button type="button" style={BTN} onClick={approve}>{isOrder ? t('Approve & Create Order') : t('Approve & Send')}</button>{' '}
             {!isOrder && <><button type="button" style={BTN2} onClick={() => setEditing(!editing)}>{t('Edit')}</button>{' '}</>}
-            <button type="button" style={BTN2} onClick={() => router.post(`/messages/drafts/${draft.id}/reject`, {}, { preserveScroll: true })}>{t('Reject')}</button>
+            <button type="button" style={BTN2} onClick={() => router.post(`/messages/drafts/${draft.id}/reject`, {}, { preserveScroll: true, onSuccess: refreshCounts })}>{t('Reject')}</button>
         </div>
     );
 }
 
 export default function Inbox({ conversations, selected, report, aiMode, aiPanic }) {
+    // "Pause all AI" flips the platform-global panic switch, so the
+    // control belongs to platform admins only (the server refuses
+    // everyone else); sellers see the status pill but no button.
+    const isPlatformAdmin = !!usePage().props.auth?.user?.is_platform_admin;
     const [view, setView] = useState('main');
     const [channel, setChannel] = useState('all');
     const [search, setSearch] = useState('');
+    const [detailOpen, setDetailOpen] = useState(false);
     const reply = useForm({ body: '' });
     const ch = selected ? (CH[selected.channel] || CH.facebook) : null;
     const list = conversations.filter((c) => (channel === 'all' || c.channel === channel) && c.customer_name.toLowerCase().includes(search.toLowerCase()));
@@ -137,18 +147,18 @@ export default function Inbox({ conversations, selected, report, aiMode, aiPanic
                             ? <span style={PILL('#fee2e2', '#dc2626')}>{t('AI is paused - Pause all AI is on')}</span>
                             : <span style={PILL('#dcfce7', '#15803d')}>{aiMode === 'auto' || aiMode === 'full_auto' ? t('AI is on · Auto - safe replies go by themselves') : t('AI is on · Draft only - AI writes, you send')}</span>}
                         <span style={{ fontSize: 12.5, color: 'var(--mut-ink)' }}>{t('First-week rule - a wrong answer must not reach the customer')}</span>
-                        <button type="button" onClick={() => router.post('/messages/panic', {}, { preserveScroll: true })} style={{ ...BTN2, marginLeft: 'auto' }}>{aiPanic ? t('Resume AI') : t('Pause all AI')}</button>
+                        {isPlatformAdmin && <button type="button" onClick={() => router.post('/messages/panic', {}, { preserveScroll: true })} style={{ ...BTN2, marginLeft: 'auto' }}>{aiPanic ? t('Resume AI') : t('Pause all AI')}</button>}
                     </div>
 
                     <div className="msg-panes">
-                        <div className="card" style={{ width: 290, flexShrink: 0, padding: 10 }}>
+                        <div className="card msg-list" style={{ padding: 10 }}>
                             <input placeholder={t('Search conversations...')} value={search} onChange={(e) => setSearch(e.target.value)} style={{ width: '100%', padding: '9px 11px', border: '1px solid var(--field-line)', borderRadius: 8, marginBottom: 9, background: 'var(--field-bg)', color: 'var(--ink)' }} />
                             <div style={{ display: 'flex', gap: 6, marginBottom: 10, flexWrap: 'wrap' }}>
                                 {[['all', 'All'], ['facebook', 'Messenger'], ['whatsapp', 'WhatsApp'], ['instagram', 'Instagram']].map(([v, l]) => (
                                     <span key={v} style={chip(channel === v)} onClick={() => setChannel(v)}>{t(l)}</span>
                                 ))}
                             </div>
-                            <div>
+                            <div className="msg-list-scroll">
                                 {list.map((c) => {
                                     const cc = CH[c.channel] || CH.facebook;
                                     return (
@@ -167,16 +177,17 @@ export default function Inbox({ conversations, selected, report, aiMode, aiPanic
                             </div>
                         </div>
 
-                        {selected && (
+                        {selected && list.length > 0 && (
                             <div className="card msg-thread" ref={threadRef} style={{ flex: 1, minWidth: 0, padding: 18 }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6, flexWrap: 'wrap' }}>
                                     <b style={{ fontSize: 15.5 }}>{selected.customer_name}</b>
                                     <span style={PILL(ch.bg, ch.tx)}>{ch.label}</span>
                                     <span style={PILL('var(--tgl-bg)', 'var(--tgl-ink)')}>{t('24h window: Open')}</span>
-                                    <button type="button" onClick={() => router.post(`/messages/conversations/${selected.id}/toggle-ai`, {}, { preserveScroll: true })} style={{ ...BTN2, marginLeft: 'auto', padding: '6px 12px' }}>{selected.ai_paused ? t('AI: Off for this chat') : t('AI: On for this chat')}</button>
+                                    <span style={{ ...PILL('var(--tgl-bg)', 'var(--tgl-ink)'), marginLeft: 'auto' }}>{selected.ai_paused ? t('AI: Off for this chat') : t('AI: On for this chat')}</span>
+                                    <button type="button" className="msg-detail-toggle" style={{ ...BTN2, padding: '7px 13px' }} onClick={() => setDetailOpen(true)}>{t('Customer details')}</button>
                                     <Link href="/orders/create" style={{ ...BTN, padding: '7px 13px', textDecoration: 'none' }}>{t('Create Order')}</Link>
                                 </div>
-                                <div className="msg-scroll" style={{ display: 'flex', flexDirection: 'column', gap: 9, padding: '12px 2px', minHeight: 300 }}>
+                                <div className="msg-scroll" style={{ display: 'flex', flexDirection: 'column', gap: 9, padding: '12px 2px' }}>
                                     {selected.messages.map((m) => (
                                         <div key={m.id} style={{ display: 'contents' }}>
                                             <div style={m.direction === 'in' ? BUB_C : BUB_B}>
@@ -205,8 +216,15 @@ export default function Inbox({ conversations, selected, report, aiMode, aiPanic
                             </div>
                         )}
 
-                        {selected && (
-                            <div className="card" style={{ width: 295, flexShrink: 0, padding: 16 }}>
+                        {selected && list.length > 0 && detailOpen && (
+                            <div className="msg-detail-backdrop" onClick={() => setDetailOpen(false)} />
+                        )}
+
+                        {selected && list.length > 0 && (
+                            <div className={"card msg-detail" + (detailOpen ? " open" : "")} style={{ padding: 16 }}>
+                                <div style={{ textAlign: 'right' }}>
+                                    <button type="button" className="msg-detail-close" style={{ ...BTN2, padding: '4px 11px' }} onClick={() => setDetailOpen(false)}>✕</button>
+                                </div>
                                 <div style={{ textAlign: 'center', marginBottom: 10 }}>
                                     <div style={{ width: 52, height: 52, borderRadius: '50%', background: ch.avatar, color: '#fff', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 19 }}>{selected.customer_name.replace('+', '').charAt(0).toUpperCase()}</div>
                                     <div style={{ fontWeight: 700, marginTop: 6 }}>{selected.customer_name}</div>
@@ -244,6 +262,12 @@ export default function Inbox({ conversations, selected, report, aiMode, aiPanic
                                     </div>
                                 )}
                                 <button type="button" onClick={() => router.post(`/messages/conversations/${selected.id}/toggle-ai`, {}, { preserveScroll: true })} style={{ ...BTN2, width: '100%', marginTop: 14 }}>{selected.ai_paused ? t('Give the chat back to AI') : t('Take over chat')}</button>
+                            </div>
+                        )}
+
+                        {list.length === 0 && (
+                            <div className="card" style={{ flex: 1, minWidth: 0, padding: 18 }}>
+                                <div style={{ fontSize: 13.5, color: 'var(--mut-ink)', padding: 8 }}>{t('No conversations')}</div>
                             </div>
                         )}
                     </div>

@@ -118,6 +118,11 @@ class ProcessWooWebhookJob implements ShouldQueue
             'attempts'   => $event->attempts + 1,
             'error'      => null,
         ]);
+
+        // A successfully imported order IS a connection success: stamp it,
+        // or the Connect page health card says "Last success: None yet"
+        // while orders are flowing in.
+        $conn->update(['last_success_at' => now()]);
     }
 
     // ------------------------------------------------------------------ product handler
@@ -175,6 +180,8 @@ class ProcessWooWebhookJob implements ShouldQueue
             'attempts'   => $event->attempts + 1,
             'error'      => null,
         ]);
+
+        $conn->update(['last_success_at' => now()]);
     }
 
     // ------------------------------------------------------------------ helpers

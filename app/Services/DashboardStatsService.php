@@ -109,7 +109,11 @@ class DashboardStatsService
         $counts30 = collect(range(29, 0))->map(fn ($i) => $todayD->copy()->subDays($i))->map(fn ($d) => [
             'date' => $d->format('M j'),
             'created' => $this->onDay($this->base($biz), 'created_at', $d->toDateString())->count(),
-            'sent' => $this->onDay($this->base($biz)->whereNotNull('shipped_at'), 'shipped_at', $d->toDateString())->count(),
+            // One "Sent to Courier" definition everywhere (the Overview
+            // one): of the orders created in the period, how many were
+            // handed to a courier (shipped_at set). Bucketing by the
+            // shipped_at day instead made the two tabs disagree.
+            'sent' => $this->onDay($this->base($biz)->whereNotNull('shipped_at'), 'created_at', $d->toDateString())->count(),
         ])->all();
 
         $hourlyFor = function (Carbon $d) use ($biz) {
@@ -283,20 +287,22 @@ class DashboardStatsService
 
         $products = Product::where('business_id', $biz)->where('is_active', true)->get();
         $low = $products->filter(function ($p) use ($soldAll) {
-            $available = (int) $p->stock_qty - (int) $p->reserved_qty;
+            // The one availability definition (combo = components,
+            // else own stock minus reservations).
+            $available = $p->available();
 
             return $available <= (int) $p->alert_qty || (int) ($soldAll[$p->id] ?? 0) === 0;
         })->map(fn ($p) => [
             'name' => $p->name,
-            'stock' => (int) $p->stock_qty - (int) $p->reserved_qty,
+            'stock' => $p->available(),
             'sold' => (int) ($soldAll[$p->id] ?? 0),
         ])->sortBy('stock')->values()->take(10)->all();
 
         return [
             'top' => $soldWin,
             'low_rows' => $low,
-            'low_total_stock' => (int) $products->sum(fn ($p) => (int) $p->stock_qty - (int) $p->reserved_qty),
-            'low_count' => (int) $products->filter(fn ($p) => (int) $p->stock_qty - (int) $p->reserved_qty <= (int) $p->alert_qty)->count(),
+            'low_total_stock' => (int) $products->sum(fn ($p) => $p->available()),
+            'low_count' => (int) $products->filter(fn ($p) => $p->available() <= (int) $p->alert_qty)->count(),
             'total_sold' => (int) $soldAll->sum(),
         ];
     }
@@ -398,7 +404,9 @@ class DashboardStatsService
             'web_day' => $this->onDay($this->base($biz)->where('source', 'WEB'), 'created_at', $dayStr)->count(),
             'inc_day' => $this->onDay($this->base($biz)->where('source', 'INCOMPLETE_ORDER'), 'created_at', $dayStr)->count(),
             'created_day' => $this->onDay($this->base($biz), 'created_at', $dayStr)->count(),
-            'sent_day' => $this->onDay($this->base($biz)->whereNotNull('shipped_at'), 'shipped_at', $dayStr)->count(),
+            // Same definition as Overview/counts30: orders created on
+            // the day that were handed to a courier (shipped_at set).
+            'sent_day' => $this->onDay($this->base($biz)->whereNotNull('shipped_at'), 'created_at', $dayStr)->count(),
         ];
     }
 }

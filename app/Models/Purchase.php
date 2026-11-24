@@ -79,6 +79,13 @@ class Purchase extends Model
     /** Receive status label, exactly as the lists show it. */
     public function receiveStatus(): string
     {
-        return $this->isFullyReceived() ? 'Received' : 'Not received';
+        if ($this->isFullyReceived()) {
+            return 'Received';
+        }
+        // Hunt G-8: once any goods are in (received or damaged) the
+        // purchase is partially received, not "Not received".
+        $touched = $this->items()->whereRaw('qty_received + qty_damaged > 0')->exists();
+
+        return $touched ? 'Partially received' : 'Not received';
     }
 }

@@ -114,7 +114,7 @@ class OrderToolsController extends Controller
             if ($order) {
                 $order->auto_call_status = $data['outcome'] === 'verified' ? 'verified' : 'failed';
                 $order->save();
-                $order->logActivity('action', "Call logged by {$request->user()->name} — outcome: {$data['outcome']}", $request->user());
+                $order->logActivity('action', "Call logged by {$request->user()->name} - outcome: {$data['outcome']}", $request->user());
             }
         }
         $balance = (float) $this->settings->bizGet($biz, "autocall.{$biz}.balance", 'autocall.balance', 1250);
@@ -213,7 +213,41 @@ class OrderToolsController extends Controller
     public function preorderNotify(Request $request, Order $order): RedirectResponse
     {
         abort_unless($order->business_id === $this->biz($request), 404);
+        $biz = $order->business_id;
+
+        // A real send through the one SMS service, under the seller's own
+        // gateway config and prepaid balance (SmsService::send never uses
+        // the platform's OTP config for customer messages). There is no
+        // dedicated preorder template, so the body is the standard order
+        // notification template ('thankyou'), filled with the same
+        // substitution the automation uses. The notified flag, the
+        // activity line and the success flash are written ONLY when the
+        // SMS actually goes out - the old code flipped the flag and
+        // claimed a notification that was never sent.
+        $automation = app(\App\Services\AutomationService::class);
+        $contact = $this->settings->shopContact($biz, 'mobile');
+        $body = $automation->fill($automation->body($biz, 'thankyou'), [
+            'name' => $order->customer_name, 'invoice' => $order->invoice_no,
+            'phone' => $contact, 'number' => $contact,
+            'shop' => $this->settings->shopName($biz),
+        ]);
+        $log = app(\App\Services\SmsService::class)->send($biz, $order->customer_phone, $body, [
+            'type' => 'automation', 'key' => 'preorder_notify', 'label' => 'Preorder notification', 'ref' => $order->invoice_no,
+        ], $order->customer_id);
+
+        if ($log->status !== 'sent') {
+            $reason = match ($log->status) {
+                'skipped_dnd' => 'customer is on the do-not-send list',
+                'skipped_cap' => 'SMS limit reached for this customer',
+                default => $log->error ?: 'SMS could not be sent',
+            };
+            $order->logActivity('sms', "Preorder notification not sent - {$reason}", $request->user());
+
+            return back()->with('error', "Notification SMS could not be sent - {$reason}");
+        }
+
         $order->preorder_notified = true;
+        $order->notify_date = now()->toDateString();
         $order->save();
         $order->logActivity('sms', "Preorder notification sent to customer by {$request->user()->name}", $request->user());
 

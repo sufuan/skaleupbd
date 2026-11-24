@@ -92,12 +92,11 @@ export default function InvoiceUpload({ methods, history, payments, receivables 
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
                     <span style={{ display: 'inline-flex', flexDirection: 'column', gap: 6 }}>
                         <span style={{ fontSize: 13, fontWeight: 600, color: '#64748B' }}>{t('Select Section')}</span>
-                        <select id="invSection" className="fld" style={{ width: '100%', maxWidth: 445 }} value={section} onChange={(e) => setSection(e.target.value)}>
-                            <option value="Manual Entry">{t('Manual Entry')}</option>
-                            <option value="Invoice History">{t('Invoice History')}</option>
-                        </select>
+                        <span style={{ display: 'inline-flex', gap: 8 }}>
+                            <button type="button" className="ctl-btn" style={section === 'Manual Entry' ? { background: '#411550', borderColor: '#411550', color: '#fff' } : undefined} onClick={() => setSection('Manual Entry')}>{t('Manual Entry')}</button>
+                            <button type="button" className="ctl-btn" style={section === 'Invoice History' ? { background: '#411550', borderColor: '#411550', color: '#fff' } : undefined} onClick={() => setSection('Invoice History')}>{t('Invoice History')}</button>
+                        </span>
                     </span>
-                    <button className="ctl-btn" style={{ alignSelf: 'flex-end' }} onClick={() => setSection('Invoice History')}>{t('Invoice History')}</button>
                     <button className="ctl-btn" style={{ marginLeft: 'auto', alignSelf: 'flex-end' }} onClick={() => setGuideOpen(true)}>{t('Fixing invalid lines')}</button>
                 </div>
 

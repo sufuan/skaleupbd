@@ -51,11 +51,14 @@ class CustomersController extends Controller
         $q = trim((string) $request->query('q', ''));
         $customers = Customer::where('business_id', $bizId)
             ->when($q !== '', fn ($x) => $x->where(fn ($w) => $w->where('name', 'like', "%{$q}%")->orWhere('phone', 'like', "%{$q}%")))
-            // Sort by lifetime value computed live (sum of DELIVERED order
-            // totals - Customer::lifetimeValue()). The stored column of
-            // that name is never written, so sorting by it sorted by 0.
-            ->withSum(['orders as lifetime_value_live' => fn ($x) => $x->where('status', 'Delivered')], 'grand_total')
-            ->orderByDesc('lifetime_value_live')->get();
+            // Sort by the figure the list actually displays: TOTAL SPENT,
+            // the booked value of non-cancelled orders (the same sum
+            // aggregates() returns per row, and the same definition as
+            // the profile page and the Customer Report). Sorting by the
+            // delivered-only lifetime value while displaying the
+            // non-cancelled sum made the visible order look unsorted.
+            ->withSum(['orders as spent_live' => fn ($x) => $x->whereNotIn('status', ['Cancelled'])], 'grand_total')
+            ->orderByDesc('spent_live')->orderBy('phone')->get();
         $rows = $customers->map(fn ($c) => array_merge([
             'id' => $c->id, 'name' => $c->name, 'phone' => $c->phone, 'address' => $c->address,
             'district' => $c->district, 'blacklisted' => (bool) $c->is_blacklisted,
@@ -107,6 +110,9 @@ class CustomersController extends Controller
             'address' => ['nullable', 'string', 'max:400'],
             'district' => ['nullable', 'string', 'max:80'],
         ]);
+        if (! \App\Services\PhoneNormalizer::isValid($data['phone'])) {
+            return back()->with('error', 'Enter a valid mobile number (01XXXXXXXXX)');
+        }
         $exists = Customer::where('business_id', $this->bizId($request))->where('phone', $data['phone'])->exists();
         if ($exists) {
             return back()->with('error', 'A customer with this phone number already exists');
@@ -179,6 +185,13 @@ class CustomersController extends Controller
             $phone = preg_replace('/\s+/', '', $row[1] ?? '');
             $address = $row[2] ?? null;
             if ($phone === '' || $name === '') {
+                $skipped++;
+                continue;
+            }
+            // Same BD mobile rule the order form enforces - an invalid
+            // number is skipped and counted, never imported (junk numbers
+            // poison fraud checks and SMS sends later).
+            if (! \App\Services\PhoneNormalizer::isValid($phone)) {
                 $skipped++;
                 continue;
             }

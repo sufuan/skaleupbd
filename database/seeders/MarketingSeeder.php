@@ -32,7 +32,7 @@ class MarketingSeeder extends Seeder
             'shipping' => ['Shipping খবর', 'তোমার parcel {courier}-এ পাঠানো হয়েছে। Tracking নম্বর: {cn}'],
             'delivered' => ['Delivered ধন্যবাদ', 'তোমার order পৌঁছে গেছে! পণ্য কেমন লাগলো, এক লাইনে জানিও।'],
             'back_in_stock' => ['Stock ফিরলে খবর', 'তুমি যে {product} চেয়েছিলে, আবার stock-এ এসেছে! ফুরোনোর আগে order করো।'],
-            'winback' => ['ঘুমন্ত customer offer', 'অনেকদিন দেখা নেই! শুধু তোমার জন্য 10% ছাড় — code: FEST10'],
+            'winback' => ['ঘুমন্ত customer offer', 'অনেকদিন দেখা নেই! শুধু তোমার জন্য 10% ছাড় - code: FEST10'],
             'post_return' => ['Return-এর পর আহ্বান', 'আগের পণ্যটা পছন্দ হয়নি বলে দুঃখিত। আমাদের নতুন collection দেখো, পছন্দ হবেই।'],
             'offer' => ['Offer (coupon-সহ)', 'শুধু তোমার জন্য {discount} ছাড়! Code: {coupon} — order করার সময় code-টা বললেই হবে।'],
         ];

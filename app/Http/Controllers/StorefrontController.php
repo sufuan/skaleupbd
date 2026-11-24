@@ -34,6 +34,7 @@ class StorefrontController extends Controller
     {
         return \App\Models\ApiKey::where('business_id', $biz)
             ->where('label', self::CONNECTION_KEY_LABEL)
+            ->active()
             ->latest('id')->first();
     }
 
@@ -661,7 +662,11 @@ window.addEventListener('message', function (e) {
     document.querySelectorAll('[data-bid]').forEach(function (el) {
         var on = el.getAttribute('data-bid') === e.data.sfHighlight;
         el.style.outline = on ? '2px solid #411550' : '';
-        el.style.outlineOffset = on ? '-2px' : '';
+        // Outside the section, not inset: an inset outline touches the
+        // hero title, whose text starts flush at the section's left edge.
+        // This bridge runs only in the editor preview, so the public
+        // page rendering is unaffected.
+        el.style.outlineOffset = on ? '3px' : '';
         if (on) el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     });
 });

@@ -57,8 +57,8 @@ class MockDriver implements CourierDriver
         }
 
         return [
-            ['store_id' => 'ST-100', 'name' => 'Main Store — Dhaka'],
-            ['store_id' => 'ST-200', 'name' => 'Branch Store — Chattogram'],
+            ['store_id' => 'ST-100', 'name' => 'Main Store - Dhaka'],
+            ['store_id' => 'ST-200', 'name' => 'Branch Store - Chattogram'],
         ];
     }
 

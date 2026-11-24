@@ -21,7 +21,7 @@ export function TaskCard({ task, onDone, selectable = false, checked = false, on
                 <div className="tk-meta">
                     {done && <span className="chip chip-green">{t('Done')}</span>}
                     {auto && <span className="chip chip-grey">{t('Resolved on its own')}</span>}
-                    {!closed && <span className={`chip ${PRIORITY_CHIP[task.priority] || 'chip-grey'}`}>{task.priority_label}</span>}
+                    {!closed && <span className={`chip ${PRIORITY_CHIP[task.priority] || 'chip-grey'}`}>{t(task.priority_label)}</span>}
                     {!closed && task.due && <span className={`chip ${task.due.chip}`}>{task.due.text}</span>}
                     {task.status === 'in_progress' && <span className="chip chip-purple">{t('In progress')}</span>}
                     {task.source_label && <span>{task.source_label}</span>}
@@ -32,7 +32,7 @@ export function TaskCard({ task, onDone, selectable = false, checked = false, on
                 </div>
                 <div className="tk-cap">
                     {task.rule_num
-                        ? <>{t('Rule')} {task.rule_num}: {task.rule_name} · <Link href="/work-inbox/settings">{t('See the rule in Settings')}</Link></>
+                        ? <>{t('Rule')} {task.rule_num}: {t(task.rule_name)} · <Link href="/work-inbox/settings">{t('See the rule in Settings')}</Link></>
                         : <>{t('Manual task')}</>}
                     {done && task.done_note && <> · <b>{t('How it was resolved:')}</b> {task.done_note}</>}
                     {auto && task.auto_close_reason && <> · {task.auto_close_reason}</>}

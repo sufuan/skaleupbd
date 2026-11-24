@@ -26,7 +26,7 @@ final class RunWooReconciliation extends Command
         $single = $this->option('connection');
 
         $query = IntegrationConnection::query()
-            ->where('type', 'woocommerce')
+            ->where('platform', 'woo')
             ->where('status', 'active');
 
         if ($single) {

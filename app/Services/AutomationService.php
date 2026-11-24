@@ -20,12 +20,12 @@ class AutomationService
 {
     public const FLOWS = [
         'thankyou' => ['group' => 'order', 'title' => 'নতুন order এলে ধন্যবাদ SMS', 'when' => 'Order হওয়ার সাথে সাথে customer-এর phone-এ যাবে', 'default_on' => true, 'timing' => []],
-        'reminder' => ['group' => 'order', 'title' => 'Confirm হয়নি — reminder SMS', 'when' => 'Order-এর 2 ঘণ্টা পরও confirm না হলে একবার, পরদিন সকালে আরেকবার যাবে', 'default_on' => true, 'timing' => ['first_hours' => 2, 'second_hours' => 20]],
+        'reminder' => ['group' => 'order', 'title' => 'Confirm হয়নি - reminder SMS', 'when' => 'Order-এর 2 ঘণ্টা পরও confirm না হলে একবার, পরদিন সকালে আরেকবার যাবে', 'default_on' => true, 'timing' => ['first_hours' => 2, 'second_hours' => 20]],
         'advance' => ['group' => 'order', 'title' => 'Advance চাইলে SMS', 'when' => 'Risky মনে হলে order page থেকে staff চাপলেই যাবে (নিজে থেকে যাবে না)', 'default_on' => false, 'timing' => []],
         'shipped' => ['group' => 'delivery', 'title' => 'Courier-এ পাঠালেই SMS', 'when' => 'Parcel booking হওয়ার সাথে সাথে, tracking নম্বরসহ', 'default_on' => true, 'timing' => []],
         'delivered' => ['group' => 'delivery', 'title' => 'Delivered হলে ধন্যবাদ + review', 'when' => 'Delivery complete হলেই যাবে', 'default_on' => true, 'timing' => []],
         'back_in_stock' => ['group' => 'winback', 'title' => 'Stock ফিরলে খবর', 'when' => 'Preorder করা product আবার stock-এ এলেই শুধু ওই customer-দের যাবে', 'default_on' => true, 'timing' => []],
-        'winback' => ['group' => 'winback', 'title' => 'ঘুমন্ত customer-দের offer', 'when' => '60 দিন ধরে না আসা customer-দের, মাসে একবার — coupon-সহ', 'default_on' => false, 'timing' => ['dormant_days' => 60]],
+        'winback' => ['group' => 'winback', 'title' => 'ঘুমন্ত customer-দের offer', 'when' => '60 দিন ধরে না আসা customer-দের, মাসে একবার - coupon-সহ', 'default_on' => false, 'timing' => ['dormant_days' => 60]],
         'post_return' => ['group' => 'winback', 'title' => 'Return-এর পর আবার কেনার আহ্বান', 'when' => 'Return শেষ হওয়ার 3 দিন পর যাবে', 'default_on' => false, 'timing' => ['days' => 3]],
     ];
 
@@ -36,7 +36,7 @@ class AutomationService
         'shipping' => 'তোমার parcel {courier}-এ পাঠানো হয়েছে। Tracking নম্বর: {cn}',
         'delivered' => 'তোমার order পৌঁছে গেছে! পণ্য কেমন লাগলো, এক লাইনে জানিও।',
         'back_in_stock' => 'তুমি যে {product} চেয়েছিলে, আবার stock-এ এসেছে! ফুরোনোর আগে order করো।',
-        'winback' => 'অনেকদিন দেখা নেই! শুধু তোমার জন্য 10% ছাড় — code: FEST10',
+        'winback' => 'অনেকদিন দেখা নেই! শুধু তোমার জন্য 10% ছাড় - code: FEST10',
         'post_return' => 'আগের পণ্যটা পছন্দ হয়নি বলে দুঃখিত। আমাদের নতুন collection দেখো, পছন্দ হবেই।',
     ];
 
@@ -189,7 +189,7 @@ class AutomationService
                             continue;
                         }
                         $p = Product::where('business_id', $biz)->find($item->product_id);
-                        if ($p && ((int) $p->stock_qty - (int) $p->reserved_qty) >= (int) $item->qty) {
+                        if ($p && $p->available() >= (int) $item->qty) {
                             $log = $this->sendFlow($biz, 'back_in_stock', $o->customer_phone,
                                 ['product' => $item->name], $o->invoice_no, $o->customer_id);
                             if ($log && $log->status === 'sent') {

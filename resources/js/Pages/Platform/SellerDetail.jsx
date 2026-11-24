@@ -11,9 +11,14 @@ function ClaimActions({ c }) {
     const reject = useForm({ admin_note: '' });
     const [showReject, setShowReject] = useState(false);
     const approve = async () => {
-        const msg = c.seller_pending
+        // State the balance replacement BEFORE confirming: a monthly
+        // pack swaps the whole current balance for the pack points.
+        const balNote = c.validity_type === 'monthly'
+            ? ` ${t('Their current balance of')} ${num(c.current_balance)} ${t('points will be replaced by the pack points - leftover points do not carry over.')}`
+            : ` ${t('Their current balance is')} ${num(c.current_balance)} ${t('points.')}`;
+        const msg = (c.seller_pending
             ? `${t('Approve this payment, credit')} ${num(c.pack_credits)} ${t('points and activate this seller? Their account is still pending - this one approval opens it.')}`
-            : `${t('Approve this payment and credit')} ${num(c.pack_credits)} ${t('points to this seller?')}`;
+            : `${t('Approve this payment and credit')} ${num(c.pack_credits)} ${t('points to this seller?')}`) + balNote;
         if (await confirmDialog(msg)) {
             router.post(`/admin/claims/${c.id}/approve`, {}, { preserveScroll: true });
         }
@@ -71,9 +76,21 @@ export default function SellerDetail({ seller, purchaseHistory = [], payments, p
     const profile = useForm({ name: seller.name, owner_name: seller.owner_name || '', phone: seller.phone || '', email: seller.email || '', address: seller.address || '' });
     const sub = useForm({ package_id: packages[0]?.id || '', amount: '', method: 'bKash', note: '' });
     const pay = useForm({ amount: '', method: 'bKash', note: '' });
+    const credit = useForm({ amount: '', note: '' });
 
     const saveProfile = (e) => { e.preventDefault(); profile.patch(`/admin/sellers/${seller.id}`, { preserveScroll: true }); };
-    const doSubscribe = (e) => { e.preventDefault(); sub.post(`/admin/sellers/${seller.id}/subscribe`, { preserveScroll: true, onSuccess: () => sub.reset('amount', 'note') }); };
+    // The confirm states the balance replacement BEFORE it happens: a
+    // monthly pack swaps the whole current balance for the pack points.
+    const doSubscribe = async (e) => {
+        e.preventDefault();
+        const pack = packages.find((x) => String(x.id) === String(sub.data.package_id));
+        const bal = num(wallet?.balance || 0);
+        const msg = pack?.validity_type === 'monthly'
+            ? `${t('Record this purchase? It credits')} ${num(pack.credits)} ${t('points and replaces the current balance of')} ${bal} ${t('points - leftover points do not carry over.')}`
+            : `${t('Record this purchase? It credits')} ${num(pack?.credits || 0)} ${t('points. Current balance:')} ${bal} ${t('points.')}`;
+        if (await confirmDialog(msg)) sub.post(`/admin/sellers/${seller.id}/subscribe`, { preserveScroll: true, onSuccess: () => sub.reset('amount', 'note') });
+    };
+    const doCredit = (e) => { e.preventDefault(); credit.post(`/admin/sellers/${seller.id}/points`, { preserveScroll: true, onSuccess: () => credit.reset() }); };
     const doPay = (e) => { e.preventDefault(); pay.post(`/admin/sellers/${seller.id}/payments`, { preserveScroll: true, onSuccess: () => pay.reset() }); };
     const doRefund = async () => { if (await confirmDialog(t('Refund this seller\'s first purchase? Their points go to zero and the money rows are reversed. This can be done only once.'))) router.post(`/admin/sellers/${seller.id}/refund-first-purchase`, {}, { preserveScroll: true }); };
     const pkgPrice = packages.find((p) => String(p.id) === String(sub.data.package_id))?.price;
@@ -159,6 +176,16 @@ export default function SellerDetail({ seller, purchaseHistory = [], payments, p
                             <label className="lbl">{t('Note')}</label>
                             <input className="fld" value={pay.data.note} onChange={(e) => pay.setData('note', e.target.value)} />
                             <button className="btn-primary" disabled={pay.processing} style={{ marginTop: 14 }}>{t('Record payment')}</button>
+                        </form>
+                    </div>
+                    <div className="card">
+                        <h4 style={{ fontSize: 15, marginBottom: 10 }}>{t('Add points')}</h4>
+                        <form onSubmit={doCredit}>
+                            <label className="lbl">{t('Amount')}</label>
+                            <input className="fld" type="number" min="1" step="1" value={credit.data.amount} onChange={(e) => credit.setData('amount', e.target.value)} required />
+                            <label className="lbl">{t('Note')}</label>
+                            <input className="fld" value={credit.data.note} onChange={(e) => credit.setData('note', e.target.value)} required />
+                            <button className="btn-primary" disabled={credit.processing} style={{ marginTop: 14 }}>{t('Add points')}</button>
                         </form>
                     </div>
                 </div>

@@ -9,6 +9,7 @@ use App\Models\Order;
 use App\Models\Product;
 use App\Services\NegotiationService;
 use App\Services\OrderService;
+use App\Services\PhoneNormalizer;
 use App\Services\RuleBrainService;
 use App\Services\SettingsService;
 use Illuminate\Http\RedirectResponse;
@@ -53,11 +54,18 @@ class MessagesController extends Controller
             $orders = collect();
             $stats = ['orders' => 0, 'success' => null, 'ltv' => 0];
             if ($sel->customer_phone) {
-                $orders = Order::where('business_id', $biz)->where('customer_phone', preg_replace('/\D/', '', $sel->customer_phone) ? $sel->customer_phone : $sel->customer_phone)
+                // Orders store the canonical 01... form - the same
+                // PhoneNormalizer order intake uses. Conversation phones
+                // arrive raw ("+880 1712-345678" on WhatsApp), so match
+                // on the normalised form or those customers look new.
+                $phone = PhoneNormalizer::normalize($sel->customer_phone);
+                $orders = Order::where('business_id', $biz)->where('customer_phone', $phone)
                     ->latest('id')->limit(5)->get(['id', 'invoice_no', 'status', 'grand_total']);
-                $all = Order::where('business_id', $biz)->where('customer_phone', $sel->customer_phone)->get();
+                $all = Order::where('business_id', $biz)->where('customer_phone', $phone)->get();
                 $stats['orders'] = $all->count();
-                $stats['ltv'] = (float) $all->sum('grand_total');
+                // Lifetime value matches the Customers page definition
+                // (Customer::lifetimeValue): delivered orders only.
+                $stats['ltv'] = (float) $all->where('status', 'Delivered')->sum('grand_total');
                 $done = $all->whereIn('status', ['Delivered', 'Returned'])->count();
                 $stats['success'] = $done > 0 ? (int) round($all->where('status', 'Delivered')->count() / $done * 100) : null;
             }
@@ -122,7 +130,7 @@ class MessagesController extends Controller
             })->all(),
         ];
 
-        $auto = $this->brain->autonomy();
+        $auto = $this->brain->autonomy($biz > 0 ? $biz : null);
         $modeLabel = $auto['panic'] ? 'paused' : ($auto['facebook'] ?? 'draft');
 
         return Inertia::render('Messages/Inbox', [
@@ -213,8 +221,9 @@ class MessagesController extends Controller
     public function panic(Request $request): RedirectResponse
     {
         // The panic flag lives in the platform-global ai.autonomy setting
-        // (it pauses AI for EVERY shop, not just the caller's), so it is
-        // platform admin only until ai.* is namespaced per business.
+        // (it pauses AI for EVERY shop, not just the caller's), so it
+        // stays platform admin only even though the channel levels in
+        // the same row are now namespaced per shop (ai.{biz}.autonomy).
         // Per-conversation AI pause (toggleAi) stays available to sellers.
         abort_unless((bool) ($request->user()?->is_platform_admin), 403);
         $auto = $this->settings->get('ai.autonomy', []);

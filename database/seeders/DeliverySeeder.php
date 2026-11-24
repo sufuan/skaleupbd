@@ -41,11 +41,11 @@ class DeliverySeeder extends Seeder
 
         CourierPickupStore::firstOrCreate(
             ['courier_method_id' => $pathao->id, 'store_id' => 'ST-100'],
-            ['name' => 'Main Store — Dhaka', 'is_default' => true]
+            ['name' => 'Main Store - Dhaka', 'is_default' => true]
         );
         CourierPickupStore::firstOrCreate(
             ['courier_method_id' => $pathao->id, 'store_id' => 'ST-200'],
-            ['name' => 'Branch Store — Chattogram']
+            ['name' => 'Branch Store - Chattogram']
         );
 
         CourierAssignmentRule::firstOrCreate(

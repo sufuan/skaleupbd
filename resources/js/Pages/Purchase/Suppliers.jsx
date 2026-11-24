@@ -105,7 +105,7 @@ export default function Suppliers({ tab, q, stats, rows, reorderRows, reportRows
                                 <table className="tbl">
                                     <thead><tr>
                                         <th>{t('Supplier')}</th><th>{t('Phone')}</th><th>{t('Terms')}</th>
-                                        <th>{t('Purchases')}</th><th>{t('Total purchased')}</th><th>{t('Due (bills)')}</th>
+                                        <th>{t('Purchases')}</th><th>{t('Total purchased')}</th><th>{t('Due (bills)')}</th><th>{t('Credit')}</th>
                                         <th>{t('Oldest due date')}</th><th>{t('Last purchase')}</th><th>{t('Needs attention')}</th><th></th>
                                     </tr></thead>
                                     <tbody>
@@ -117,6 +117,7 @@ export default function Suppliers({ tab, q, stats, rows, reorderRows, reportRows
                                                 <td>{r.purchases}</td>
                                                 <td>{fmt(r.total_purchased)}</td>
                                                 <td className="b">{r.due > 0 ? fmt(r.due) : '-'}</td>
+                                                <td className="b">{r.credit > 0 ? fmt(r.credit) : '-'}</td>
                                                 <td>{r.due > 0 ? fmtDate(r.oldest_due_date) : '-'}</td>
                                                 <td>{fmtDate(r.last_purchase)}</td>
                                                 <td>{r.overdue > 0 ? <span className="pill red">{t('Overdue')} {fmt(r.overdue)}</span> : '-'}</td>
@@ -129,7 +130,7 @@ export default function Suppliers({ tab, q, stats, rows, reorderRows, reportRows
                                                 </td>
                                             </tr>
                                         ))}
-                                        {rows.length === 0 && <tr><td colSpan={10} className="mut">{t('No suppliers yet.')}</td></tr>}
+                                        {rows.length === 0 && <tr><td colSpan={11} className="mut">{t('No suppliers yet.')}</td></tr>}
                                     </tbody>
                                 </table>
                             </div>
@@ -171,17 +172,18 @@ export default function Suppliers({ tab, q, stats, rows, reorderRows, reportRows
                         <div className="card">
                             <div className="tbl-wrap">
                                 <table className="tbl">
-                                    <thead><tr><th>{t('Supplier')}</th><th>{t('Purchased')}</th><th>{t('Paid')}</th><th>{t('Due (bills)')}</th></tr></thead>
+                                    <thead><tr><th>{t('Supplier')}</th><th>{t('Purchased')}</th><th>{t('Paid')}</th><th>{t('Credit')}</th><th>{t('Due (bills)')}</th></tr></thead>
                                     <tbody>
                                         {reportRows.map((r) => (
                                             <tr key={r.id}>
                                                 <td className="b">{r.name}</td>
                                                 <td>{fmt(r.purchased)}</td>
                                                 <td>{fmt(r.paid)}</td>
+                                                <td>{fmt(r.credit)}</td>
                                                 <td className="b">{r.due > 0 ? fmt(r.due) : '-'}</td>
                                             </tr>
                                         ))}
-                                        {reportRows.length === 0 && <tr><td colSpan={4} className="mut">{t('No purchases in this period.')}</td></tr>}
+                                        {reportRows.length === 0 && <tr><td colSpan={5} className="mut">{t('No purchases in this period.')}</td></tr>}
                                     </tbody>
                                 </table>
                             </div>

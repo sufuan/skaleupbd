@@ -70,13 +70,13 @@ export default function Dashboard(props) {
                             <div className={`x-kpi ${figures.profit >= 0 ? 'green' : 'red'}`}><b>{fmtMoney(figures.profit)}</b><span>{t('Profit (this period)')}</span></div>
                             <div className="x-kpi purple"><b>{fmt(totalCash)}</b><span>{t('Cash in hand (all accounts)')}</span></div>
                             <div className="x-kpi"><b>{fmt(bridge.still)}</b><span>{t('Due from courier')}{bridge.estimate ? t(' (estimate)') : ''}</span></div>
-                            <div className="x-kpi red"><b>{fmt(figures.expense + figures.rtoLoss)}</b><span>{t('Expenses (this period)')}</span></div>
+                            <div className="x-kpi red"><b>{fmt(figures.expense)}</b><span>{t('Expenses (this period)')}</span></div>
                         </div>
 
                         <div className="x-card">
                             <h4>{t('COD money bridge - which step the money is at now')}</h4>
                             <div className="bridge">
-                                <div className="bstep"><b>{fmt(bridge.sales)}</b><span>{t('Delivered sales')}</span></div>
+                                <div className="bstep"><b>{fmt(bridge.sales)}</b><span>{t('Collected by courier')}</span></div>
                                 <div className="barrow">→</div>
                                 <div className="bstep"><b>− {fmt(bridge.charges)}</b><span>{t('Courier charge deducted')}</span></div>
                                 <div className="barrow">→</div>

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Business;
 use App\Models\Order;
 use App\Models\PointPack;
 use App\Models\SellerPaymentClaim;
@@ -77,6 +78,10 @@ class BillingController extends Controller
             'threshold' => $this->tokens->lowThreshold(),
             'blocked' => $this->tokens->blocked($biz),
             'low' => $this->tokens->isLow($biz),
+            // A shop still waiting for platform approval is blocked by
+            // its status, not by points - the page must say so instead
+            // of blaming a finished balance it never had.
+            'pendingApproval' => Business::find($biz)?->status === 'pending',
             'pack' => $wallet->pack_id ? [
                 'name' => $wallet->packName(),
                 'validity_type' => $wallet->pack_snapshot['validity_type'] ?? null,

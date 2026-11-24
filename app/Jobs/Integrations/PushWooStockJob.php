@@ -80,7 +80,7 @@ final class PushWooStockJob implements ShouldQueue
     {
         $conn = IntegrationConnection::find($this->connectionId);
 
-        if (! $conn || $conn->status !== 'active' || $conn->type !== 'woocommerce') {
+        if (! $conn || $conn->status !== 'active' || $conn->platform !== 'woo') {
             Log::info('PushWooStockJob: connection gone or inactive, skipping.', [
                 'connection_id' => $this->connectionId,
             ]);

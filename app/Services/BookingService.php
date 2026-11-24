@@ -198,7 +198,10 @@ class BookingService
         $courierStatus = (string) $result['courier_status'];
         $this->applyCourierStatus($order, $courierStatus, $actor);
 
-        return ['ok' => true, 'courier_status' => $courierStatus];
+        // Report the APPLIED status, not the courier's raw reply: the
+        // forward-only guard may have kept the stored status, and the
+        // caller's message must never contradict the record.
+        return ['ok' => true, 'courier_status' => $order->courier_status, 'reported' => $courierStatus];
     }
 
     /**
@@ -210,26 +213,39 @@ class BookingService
      */
     public function applyCourierStatus(Order $order, string $courierStatus, ?User $actor): void
     {
-        $order->courier_status = $courierStatus;
         $lower = strtolower($courierStatus);
 
-        if (! $actor || str_contains($lower, 'approval_pending') || str_contains($lower, 'partial')) {
+        $recordOnly = ! $actor || str_contains($lower, 'approval_pending') || str_contains($lower, 'partial');
+        // Only explicit arrival words close a return: return_initiated / return_pending /
+        // return_cancelled / *_rider_assigned mean the parcel is still travelling (or not coming).
+        $returnArrived = str_contains($lower, 'return_received') || str_contains($lower, 'return_delivered')
+            || str_contains($lower, 'return_accepted') || str_contains($lower, 'returned');
+        $delivers = ! $recordOnly && str_contains($lower, 'delivered') && ! str_contains($lower, 'return') && $order->status === 'Shipped';
+        $returns = ! $recordOnly && $returnArrived && in_array($order->status, ['Shipped', 'Delivered'], true);
+
+        // M5: forward-only, mirroring the SMS delivery-report guard
+        // (dlrRank/dlrMovesForward). A stale report - the mock driver
+        // always answers "In Transit", a webhook can also arrive late -
+        // must never move the recorded courier status backwards. A report
+        // that actually drives the lifecycle (delivered / return arrived)
+        // always records itself.
+        if ($delivers || $returns || $this->courierMovesForward($order->courier_status, $courierStatus)) {
+            $order->courier_status = $courierStatus;
+        }
+
+        if ($recordOnly) {
             $order->save();
 
             return;
         }
-        if (str_contains($lower, 'delivered') && ! str_contains($lower, 'return') && $order->status === 'Shipped') {
+        if ($delivers) {
             $order->delivered_at = now();
             $order->save();
             $this->orders->changeStatus($order, 'Delivered', $actor, 'Courier confirmed delivery');
 
             return;
         }
-        // Only explicit arrival words close a return: return_initiated / return_pending /
-        // return_cancelled / *_rider_assigned mean the parcel is still travelling (or not coming).
-        $returnArrived = str_contains($lower, 'return_received') || str_contains($lower, 'return_delivered')
-            || str_contains($lower, 'return_accepted') || str_contains($lower, 'returned');
-        if ($returnArrived && in_array($order->status, ['Shipped', 'Delivered'], true)) {
+        if ($returns) {
             $order->returned_at = now();
             $order->save();
             $this->orders->changeStatus($order, 'Returned', $actor, 'Courier returned the parcel');
@@ -237,6 +253,68 @@ class BookingService
             return;
         }
         $order->save();
+    }
+
+    /**
+     * Forward-only rank for a courier-reported status: [rank, class].
+     * Check order matters - 'undelivered' and 'out_for_delivery' contain
+     * 'deliver', and anything with 'approval_pending' is unconfirmed even
+     * when it also says delivered.
+     *
+     * @return array{0: int, 1: string}
+     */
+    private function courierRank(?string $status): array
+    {
+        $s = strtolower(trim((string) $status));
+        if ($s === '') {
+            return [0, 'none'];
+        }
+        if (str_contains($s, 'return')) {
+            $arrived = str_contains($s, 'return_received') || str_contains($s, 'return_delivered')
+                || str_contains($s, 'return_accepted') || str_contains($s, 'returned');
+
+            return $arrived ? [5, 'returned'] : [3, 'returning'];
+        }
+        if (str_contains($s, 'cancel')) {
+            return [5, 'cancelled'];
+        }
+        if (str_contains($s, 'approval_pending')) {
+            return [4, 'approval'];
+        }
+        if (str_contains($s, 'undeliver') || str_contains($s, 'not_delivered') || str_contains($s, 'fail')) {
+            return [4, 'failed'];
+        }
+        if (str_contains($s, 'out_for_delivery') || str_contains($s, 'out for delivery')
+            || str_contains($s, 'assigned') || str_contains($s, 'rider')) {
+            return [3, 'out'];
+        }
+        if (str_contains($s, 'deliver')) {
+            return str_contains($s, 'partial') ? [4, 'partial'] : [5, 'delivered'];
+        }
+        if (str_contains($s, 'partial')) {
+            return [4, 'partial'];
+        }
+        if (str_contains($s, 'hold')) {
+            return [3, 'hold'];
+        }
+        if (str_contains($s, 'transit') || str_contains($s, 'picked') || str_contains($s, 'hub')
+            || str_contains($s, 'processing') || str_contains($s, 'in_progress')) {
+            return [2, 'transit'];
+        }
+
+        return [1, 'booked'];
+    }
+
+    /** A courier report may apply only if it moves the status forward (or repeats its own state). */
+    private function courierMovesForward(?string $current, string $reported): bool
+    {
+        [$curRank, $curClass] = $this->courierRank($current);
+        [$newRank, $newClass] = $this->courierRank($reported);
+        if ($newRank > $curRank) {
+            return true;
+        }
+
+        return $newRank === $curRank && $newClass === $curClass;
     }
 
     private function maybeRaiseFailureEvent(Order $order, CourierMethod $method): void

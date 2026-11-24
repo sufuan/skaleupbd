@@ -100,7 +100,7 @@ export default function Automation({ flows, templates, strip }) {
                         <div className="mk-strip">
                             <div className="mk-kpi"><b>{fmtNum(strip.sent)}</b><span>{t('SMS sent this month')}</span></div>
                             <div className="mk-kpi"><b>{fmt(strip.cost)}</b><span>{t('SMS cost this month')}</span></div>
-                            <div className="mk-kpi"><b>{t(':count orders', { count: fmtNum(strip.orders) })}</b><span>{t('Came from Automation and campaigns (:sales)', { sales: fmt(strip.sales) })}</span></div>
+                            <div className="mk-kpi"><b>{t(':count orders', { count: fmtNum(strip.orders) })}</b><span>{t('Came from Automation (:sales)', { sales: fmt(strip.sales) })}</span></div>
                         </div>
                         {GROUPS.map(([g, label]) => (
                             <div key={g}>

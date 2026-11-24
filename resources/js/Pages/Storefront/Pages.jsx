@@ -87,7 +87,9 @@ export default function Pages({ pages }) {
                                         {p.hasUnpublishedChanges && <span className="pill amber" style={{ marginTop: 2, marginLeft: 4 }}>{t('Unpublished changes')}</span>}
                                     </td>
                                     <td>
-                                        <span style={{ fontSize: 13, wordBreak: 'break-all' }}>{p.url.replace(/^https?:\/\//, '')}</span>
+                                        <span style={{ fontSize: 13, overflowWrap: 'anywhere' }}>{p.url.replace(/^https?:\/\//, '').split('/').map((seg, i) => (
+                                            <span key={i}>{i > 0 && <>{'/'}<wbr /></>}{seg}</span>
+                                        ))}</span>
                                         <button className="btn" style={{ marginLeft: 6, height: 28, padding: '0 9px', fontSize: 12.5 }} onClick={() => copy(p)}>{copiedId === p.id ? t('Copied!') : t('Copy')}</button>
                                     </td>
                                     <td><span className={`pill ${sTone}`}>{t(sLabel)}</span></td>
@@ -105,7 +107,7 @@ export default function Pages({ pages }) {
                                 </tr>
                             );
                         })}
-                        {pages.length === 0 && <tr><td colSpan={7} style={{ textAlign: 'center', color: 'var(--muted)', padding: 18 }}>{t('No pages yet.')}</td></tr>}
+                        {pages.length === 0 && <tr><td colSpan={7} className="sf-pages-empty" style={{ textAlign: 'center', color: 'var(--muted)', padding: 18 }}>{t('No pages yet.')}</td></tr>}
                     </tbody>
                 </table>
             </div>

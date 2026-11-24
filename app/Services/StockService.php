@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Branch;
 use App\Models\BranchStock;
 use App\Models\Product;
 use App\Models\StockLedger;
@@ -16,11 +17,81 @@ use Illuminate\Support\Facades\DB;
  */
 class StockService
 {
+    public function __construct(private readonly SettingsService $settings) {}
+
+    /** Is per-branch stock counting turned on for this business? */
+    public function branchStockEnabled(int $businessId): bool
+    {
+        return (bool) $this->settings->bizGet($businessId, "inventory.{$businessId}.branch_stock_enabled", 'inventory.branch_stock_enabled', false);
+    }
+
+    /**
+     * The branch that holds the shop's whole stock pool: the first active
+     * branch (the same convention the Branches page derivation and the
+     * product-create opening stock use), falling back to the first branch.
+     */
+    public function defaultBranchId(int $businessId): ?int
+    {
+        return Branch::where('business_id', $businessId)->where('is_active', true)->orderBy('id')->value('id')
+            ?? Branch::where('business_id', $businessId)->orderBy('id')->value('id');
+    }
+
+    /**
+     * Rebuild branch_stock from the products table: the whole real pool
+     * sits on the default branch, every other branch reads zero. Called
+     * the moment branch stock is switched ON, so the figures the seller
+     * sees from that moment are true (the seeded/legacy rows disagreed
+     * with products and nothing ever reconciled them - Hunt K-H4).
+     */
+    public function rederiveBranchStock(int $businessId): void
+    {
+        DB::transaction(function () use ($businessId) {
+            BranchStock::where('business_id', $businessId)->delete();
+            $defaultBranchId = $this->defaultBranchId($businessId);
+            if ($defaultBranchId === null) {
+                return;
+            }
+            foreach (Product::where('business_id', $businessId)->get(['id', 'stock_qty']) as $p) {
+                BranchStock::create([
+                    'business_id' => $businessId,
+                    'branch_id' => $defaultBranchId,
+                    'product_id' => $p->id,
+                    'qty' => (int) $p->stock_qty,
+                ]);
+            }
+        });
+    }
+
+    /**
+     * Keep branch_stock in step with a products.stock_qty movement: while
+     * branch stock is ON, every change to the pool total lands on the
+     * default branch by the same amount, so SUM(branch_stock) per product
+     * always equals products.stock_qty. Every stock-writing path (this
+     * service's adjust/damage and OrderService's ship/return moves) calls
+     * this one method - the sync logic lives here, never scattered.
+     */
+    public function syncDefaultBranchStock(Product $product, int $delta): void
+    {
+        if ($delta === 0 || ! $this->branchStockEnabled((int) $product->business_id)) {
+            return;
+        }
+        $defaultBranchId = $this->defaultBranchId((int) $product->business_id);
+        if ($defaultBranchId === null) {
+            return;
+        }
+        $row = BranchStock::firstOrCreate(
+            ['branch_id' => $defaultBranchId, 'product_id' => $product->id],
+            ['business_id' => $product->business_id, 'qty' => 0]
+        );
+        $row->increment('qty', $delta);
+    }
+
     public function adjust(Product $product, int $delta, string $reason, ?string $note, ?User $actor, string $reference = 'ADJUST', ?float $unitCost = null): StockLedger
     {
         return DB::transaction(function () use ($product, $delta, $reason, $note, $actor, $reference, $unitCost) {
             $prev = $product->stock_qty;
             $product->increment('stock_qty', $delta);
+            $this->syncDefaultBranchStock($product, $delta);
             $cost = $unitCost ?? (float) $product->cost;
 
             $ledger = StockLedger::create([
@@ -70,6 +141,7 @@ class StockService
         return DB::transaction(function () use ($product, $qty, $note, $actor) {
             $prev = $product->stock_qty;
             $product->decrement('stock_qty', $qty);
+            $this->syncDefaultBranchStock($product, -$qty);
 
             return StockLedger::create([
                 'business_id' => $product->business_id,

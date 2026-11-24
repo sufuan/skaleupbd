@@ -67,6 +67,14 @@ class StorefrontPage extends Model
 
     public function hasUnpublishedChanges(): bool
     {
+        // A page that has never been published has no live version to
+        // differ from - its Draft status already says everything, so the
+        // "Unpublished changes" badge only applies once a published
+        // version exists and the draft has moved away from it.
+        if (empty($this->published_blocks)) {
+            return false;
+        }
+
         return json_encode($this->draft_blocks) !== json_encode($this->published_blocks);
     }
 

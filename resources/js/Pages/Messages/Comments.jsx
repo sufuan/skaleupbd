@@ -21,7 +21,7 @@ const STATUS = {
 const PILL = (bg, tx) => ({ display: 'inline-block', fontSize: 11, fontWeight: 700, borderRadius: 99, padding: '2px 9px', background: bg, color: tx });
 const chip = (active) => ({ display: 'inline-block', fontSize: 12, fontWeight: 700, borderRadius: 99, padding: '5px 13px', background: active ? '#411550' : '#f3f4f6', color: active ? '#fff' : '#374151', cursor: 'pointer' });
 
-function CommentCard({ c }) {
+function CommentCard({ c, shop_name }) {
     const [replyOpen, setReplyOpen] = useState(false);
     const [replyText, setReplyText] = useState('');
     const ch = CH[c.channel] || CH.facebook;
@@ -134,7 +134,7 @@ export default function Comments({ comments, counts, posts, shop_name }) {
                     ))}
                 </div>
                 <div>
-                    {list.map((c) => <CommentCard key={c.id} c={c} />)}
+                    {list.map((c) => <CommentCard key={c.id} c={c} shop_name={shop_name} />)}
                     {list.length === 0 && <div className="card" style={{ padding: 22, textAlign: 'center', color: '#64748B', fontSize: 13.5 }}>{t('No comments in this filter.')}</div>}
                 </div>
             </div>

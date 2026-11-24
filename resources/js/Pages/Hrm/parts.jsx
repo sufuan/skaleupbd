@@ -44,13 +44,13 @@ export function LeaveCards({ leaves, canManage }) {
             {leaves.map((l) => (
                 <div key={l.id} className="leave-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, padding: '9px 0', borderBottom: '1px solid #F1F5F9', flexWrap: 'wrap' }}>
                     <div style={{ fontSize: 13.5 }}>
-                        <b>{l.name}</b> - {t('Leave from :from to :to (:days days)', { from: l.from, to: l.to, days: l.days })}
+                        <b>{l.name}</b> - {t(l.days === 1 ? 'Leave from :from to :to (:days day)' : 'Leave from :from to :to (:days days)', { from: l.from, to: l.to, days: l.days })}
                         {l.reason && <span style={{ color: '#64748B' }}> · {t('Reason')}: {l.reason}</span>}
                     </div>
                     {canManage && (
                         <div className="row-actions">
                             <button type="button" className="btn-mini" onClick={() => decide(l.id, 'approved')}>{t('Approve')}</button>
-                            <button type="button" className="btn-mini danger" onClick={() => decide(l.id, 'rejected')}>{t('Cancel')}</button>
+                            <button type="button" className="btn-mini danger" onClick={() => decide(l.id, 'rejected')}>{t('Reject')}</button>
                         </div>
                     )}
                 </div>

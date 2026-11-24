@@ -50,6 +50,7 @@ export default function WooConnectSection({ t }) {
     const [busy, setBusy] = useState(false);
     const [message, setMessage] = useState(null);
     const [events, setEvents] = useState(null);
+    const [hasPoints, setHasPoints] = useState(null);
     const poll = useRef(null);
 
     const load = useCallback(async () => {
@@ -60,7 +61,10 @@ export default function WooConnectSection({ t }) {
 
     const loadEvents = useCallback(async () => {
         const r = await call('GET', '/events');
-        if (r.ok) setEvents(r.json.events ?? []);
+        if (r.ok) {
+            setEvents(r.json.events ?? []);
+            setHasPoints(r.json.has_points ?? null);
+        }
     }, []);
 
     useEffect(() => {
@@ -279,7 +283,8 @@ export default function WooConnectSection({ t }) {
                                             <td>{statusLabel(e.status)}</td>
                                             <td style={{ fontSize: 13 }}>
                                                 {e.error && e.error !== 'paused_no_points' ? t(e.error) : ''}
-                                                {e.error === 'paused_no_points' ? t('Waiting for points top-up') : ''}
+                                                {e.error === 'paused_no_points' && hasPoints ? t('Waiting to be processed') : ''}
+                                                {e.error === 'paused_no_points' && !hasPoints ? t('Waiting for points top-up') : ''}
                                             </td>
                                         </tr>
                                     ))}

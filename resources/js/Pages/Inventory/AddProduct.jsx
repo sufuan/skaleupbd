@@ -3,14 +3,14 @@ import AppLayout from '@/Layouts/AppLayout';
 import { t } from '@/lib/i18n';
 import ProductFields, { BTN_OUTLINE, BTN_PRIMARY } from './ProductFields';
 
-export default function AddProduct({ categories, brands, businessName }) {
+export default function AddProduct({ categories, brands, businessName, allProducts = [] }) {
     const { data, setData, post, processing, errors } = useForm({
         name: '', sku: '', price: '', cost: '', original_price: '', offer_price: '', offer_starts_at: '', offer_ends_at: '', aliases: '', max_discount_pct: '', stock_qty: 0, alert_qty: 5,
         manage_stock: true, featured: false, is_active: true, type: 'single',
         category_id: '', brand_id: '', weight: '', weight_unit: 'kg',
         short_description: '', long_description: '', shipping_note: '', admin_note: '',
         warranty_policy: '', warranty_coverage: '', gallery: [], image: null,
-        mode: 'single', variants: [],
+        mode: 'single', variants: [], components: [],
     });
 
     const submit = (e) => {
@@ -45,7 +45,8 @@ export default function AddProduct({ categories, brands, businessName }) {
                     <form className="space-y-6" onSubmit={submit}>
                         <ProductFields data={data} setData={setData} categories={categories} brands={brands}
                             businessName={businessName} mode={data.mode} setMode={(v) => setData('mode', v)}
-                            variants={data.variants} setVariants={(v) => setData('variants', v)} />
+                            variants={data.variants} setVariants={(v) => setData('variants', v)}
+                            allProducts={allProducts} components={data.components} setComponents={(v) => setData('components', v)} />
                         <div className="flex items-center justify-end gap-2">
                             <Link href="/inventory/products" className={BTN_OUTLINE}>{t('Cancel')}</Link>
                             <button type="submit" className={BTN_PRIMARY} disabled={processing || !data.name.trim() || data.price === ''}>{t('Create Product')}</button>

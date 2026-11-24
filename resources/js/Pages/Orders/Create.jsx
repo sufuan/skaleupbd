@@ -66,10 +66,22 @@ export default function Create({ sources, products, couriers, defaults, toggles,
 
     const addProduct = (p) => {
         setPicked((prev) => {
-            const ex = prev.find((i) => i.product_id === p.id);
-            if (ex) return prev.map((i) => i.product_id === p.id ? { ...i, qty: i.qty + 1 } : i);
-            return [...prev, { product_id: p.id, name: p.name, sku: p.sku, qty: 1, price: p.price, stock: p.stock }];
+            const ex = prev.find((i) => i.product_id === p.id && !i.variant_id);
+            if (ex) return prev.map((i) => i === ex ? { ...i, qty: i.qty + 1 } : i);
+            return [...prev, { product_id: p.id, name: p.name, sku: p.sku, qty: 1, price: p.price, stock: p.stock, base_price: p.price, base_stock: p.stock, variant_id: null, variant_name: null, variants: p.variants || [] }];
         });
+    };
+    // Variant picker on a picked line: choosing a variant points the
+    // line at that variant (its price + its own stock pool); clearing
+    // it falls back to the product itself.
+    const pickVariant = (ix, vid) => {
+        setPicked((prev) => prev.map((i, j) => {
+            if (j !== ix) return i;
+            const v = (i.variants || []).find((x) => String(x.id) === String(vid));
+            return v
+                ? { ...i, variant_id: v.id, variant_name: v.name, price: v.price, stock: v.stock }
+                : { ...i, variant_id: null, variant_name: null, price: i.base_price, stock: i.base_stock };
+        }));
     };
     const addCustom = () => {
         if (!custom.name || Number(custom.price) < 0) return;
@@ -219,13 +231,16 @@ export default function Create({ sources, products, couriers, defaults, toggles,
                                         <div className="prod-list">
                                             {visible.map((p) => {
                                                 const added = picked.some((i) => i.product_id === p.id);
-                                                const dis = added || (p.stock === 0 && mode !== 'preorder');
+                                                // A product with variants sells from the variants'
+                                                // own pools - the card counts those, not the parent row.
+                                                const cardStock = (p.variants && p.variants.length) ? p.variants.reduce((a, v) => a + v.stock, 0) : p.stock;
+                                                const dis = added || (cardStock === 0 && mode !== 'preorder');
                                                 return (
                                                     <button type="button" key={p.id} className="prod-card" disabled={dis} onClick={() => addProduct(p)}>
                                                         {p.image && <img className="pc-photo" src={p.image} alt="" onError={(e) => { e.currentTarget.style.display = 'none'; }} />}
                                                         <span className="pc-name">{p.name}</span>
                                                         <span className="muted-sm">SKU: {p.sku}</span>
-                                                        <span className="muted-sm">{t('Price')}: {fmt(p.price)} · {t('Stock')}: {p.stock}{p.stock === 0 ? ` - ${t('Pre-order allowed')}` : ''}</span>
+                                                        <span className="muted-sm">{t('Price')}: {fmt(p.price)} · {t('Stock')}: {cardStock}{cardStock === 0 ? ` - ${t('Pre-order allowed')}` : ''}</span>
                                                         <span className="pc-fav" onClick={(e) => toggleFav(e, p.id)}>{favs.has(p.id) ? t('Remove from featured') : t('Mark as featured')}</span>
                                                     </button>
                                                 );
@@ -238,7 +253,14 @@ export default function Create({ sources, products, couriers, defaults, toggles,
                                         {picked.length === 0 && <div id="ordEmpty" className="empty-note" style={{ marginTop: 10 }}>{t('Search and add products from the "Click To Add Products" panel.')}</div>}
                                         {picked.map((i, ix) => (
                                             <div className="ord-row" key={ix}>
-                                                <span><b>{i.name}</b><br /><span className="muted-sm">SKU {i.sku || '-'} · {fmt(i.price)} · {t('Stock')}:{i.stock === null ? '-' : i.stock}</span></span>
+                                                <span><b>{i.name}</b><br /><span className="muted-sm">SKU {i.sku || '-'} · {fmt(i.price)} · {t('Stock')}:{i.stock === null ? '-' : i.stock}</span>
+                                                    {(i.variants && i.variants.length > 0) && (
+                                                        <><br /><select className="fld" style={{ marginTop: 6, maxWidth: 260 }} value={i.variant_id || ''} onChange={(e) => pickVariant(ix, e.target.value)}>
+                                                            <option value="">{t('No variant')}</option>
+                                                            {i.variants.map((v) => <option key={v.id} value={v.id}>{v.name} · {fmt(v.price)} · {t('Stock')}: {v.stock}</option>)}
+                                                        </select></>
+                                                    )}
+                                                </span>
                                                 <span className="qty">{t('Qty')} <button type="button" onClick={() => setPicked(picked.map((x, j) => j === ix ? { ...x, qty: Math.max(1, x.qty - 1) } : x))}>−</button><b>{i.qty}</b><button type="button" onClick={() => setPicked(picked.map((x, j) => j === ix ? { ...x, qty: x.qty + 1 } : x))}>+</button></span>
                                                 <span className="qty">{t('Price')} <button type="button" onClick={() => setPicked(picked.map((x, j) => j === ix ? { ...x, price: Math.max(0, x.price - 10) } : x))}>−</button><b>{i.price}</b><button type="button" onClick={() => setPicked(picked.map((x, j) => j === ix ? { ...x, price: x.price + 10 } : x))}>+</button></span>
                                                 <b>{t('Total')} {fmt(i.price * i.qty)}</b>

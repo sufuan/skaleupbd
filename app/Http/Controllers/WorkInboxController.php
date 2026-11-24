@@ -34,10 +34,18 @@ class WorkInboxController extends Controller
             return $t->assignee?->name ?? 'Staff';
         }
         if ($t->assignee_role) {
-            return WorkInboxService::ASSIGNEES[$t->assignee_role] ?? $t->assignee_role;
+            return __(WorkInboxService::ASSIGNEES[$t->assignee_role] ?? $t->assignee_role);
         }
 
-        return 'কেউ না (পুল)';
+        return __('Nobody (Pool)');
+    }
+
+    /** Age text in the current locale (Bangla units or English units). */
+    private function age($from, $to = null): string
+    {
+        return app()->getLocale() === 'bn'
+            ? WorkInboxService::bnAge($from, $to)
+            : WorkInboxService::ageEn($from, $to);
     }
 
     private function createdLabel(WorkTask $t): string
@@ -46,13 +54,13 @@ class WorkInboxController extends Controller
         if (DhakaTime::fmt($c, 'Y-m-d') === DhakaTime::today()) {
             $mins = (int) $c->diffInMinutes(now());
             if ($mins < 60) {
-                return $mins . ' মিনিট আগে';
+                return __(':count minutes ago', ['count' => $mins]);
             }
 
-            return intdiv($mins, 60) . ' ঘণ্টা আগে';
+            return __(':count hours ago', ['count' => intdiv($mins, 60)]);
         }
         if ($c->isYesterday()) {
-            return 'গতকাল ' . $c->format('H:i');
+            return __('Yesterday :time', ['time' => $c->format('H:i')]);
         }
 
         return $c->format('d M H:i');
@@ -65,17 +73,17 @@ class WorkInboxController extends Controller
         }
         if ($t->due_at->isPast()) {
             // A task can be born overdue (manual task with a past due time):
-            // never claim it has been overdue longer than it has existed —
-            // the card also shows "তৈরি: X আগে", and the two contradicted.
+            // never claim it has been overdue longer than it has existed -
+            // the card also shows "Created: X ago", and the two contradicted.
             $since = $t->due_at->greaterThan($t->created_at) ? $t->due_at : $t->created_at;
 
-            return ['text' => 'Overdue · ' . WorkInboxService::bnAge($since) . ' পার', 'chip' => 'chip-red'];
+            return ['text' => __('Overdue · :age over', ['age' => $this->age($since)]), 'chip' => 'chip-red'];
         }
         if (DhakaTime::fmt($t->due_at, 'Y-m-d') === DhakaTime::today()) {
-            return ['text' => 'আজকের মধ্যে', 'chip' => 'chip-amber'];
+            return ['text' => __('Due today'), 'chip' => 'chip-amber'];
         }
         if ($t->due_at->lte(now()->addDay())) {
-            return ['text' => 'সময় বাকি ' . WorkInboxService::bnAge(now(), $t->due_at), 'chip' => 'chip-amber'];
+            return ['text' => __('Time left :age', ['age' => $this->age(now(), $t->due_at)]), 'chip' => 'chip-amber'];
         }
 
         return null;
@@ -86,20 +94,20 @@ class WorkInboxController extends Controller
         $link = (string) $t->link;
 
         return match (true) {
-            str_starts_with($link, '/messages/inbox') => 'Chat খোলো',
-            str_starts_with($link, '/messages/comments') => 'Comments খোলো',
-            str_starts_with($link, '/delivery/ready') => 'Ready to Ship খোলো',
-            str_starts_with($link, '/delivery/parcels') => 'Courier page খোলো',
-            str_starts_with($link, '/delivery/ledger') => 'Ledger খোলো',
-            str_starts_with($link, '/inventory/ledger') => 'Ledger খোলো',
-            str_starts_with($link, '/inventory/products') => 'Product খোলো',
-            str_starts_with($link, '/inventory/warranty') => 'Warranty খোলো',
-            str_starts_with($link, '/orders/block-list') => 'Block List খোলো',
-            str_starts_with($link, '/orders/autocall') => 'Auto Call খোলো',
-            str_starts_with($link, '/orders') => 'Order খোলো',
-            str_starts_with($link, '/finance') => 'Finance খোলো',
-            str_starts_with($link, '/marketing') => 'SMS page খোলো',
-            default => 'খোলো',
+            str_starts_with($link, '/messages/inbox') => __('Open chat'),
+            str_starts_with($link, '/messages/comments') => __('Open comments'),
+            str_starts_with($link, '/delivery/ready') => __('Open Ready to Ship'),
+            str_starts_with($link, '/delivery/parcels') => __('Open courier page'),
+            str_starts_with($link, '/delivery/ledger') => __('Open ledger'),
+            str_starts_with($link, '/inventory/ledger') => __('Open ledger'),
+            str_starts_with($link, '/inventory/products') => __('Open product'),
+            str_starts_with($link, '/inventory/warranty') => __('Open warranty'),
+            str_starts_with($link, '/orders/block-list') => __('Open Block List'),
+            str_starts_with($link, '/orders/autocall') => __('Open Auto Call'),
+            str_starts_with($link, '/orders') => __('Open order'),
+            str_starts_with($link, '/finance') => __('Open finance'),
+            str_starts_with($link, '/marketing') => __('Open SMS page'),
+            default => __('Open'),
         };
     }
 
@@ -162,7 +170,8 @@ class WorkInboxController extends Controller
             array_filter(explode(',', $filters['rule'])),
             array_keys($catalog),
         ));
-        $ruleLabel = implode(' · ', array_map(fn ($k) => $catalog[$k]['name'], $ruleKeys));
+        // Names are lang keys - the page translates each one with t().
+        $ruleLabel = array_map(fn ($k) => $catalog[$k]['name'], $ruleKeys);
 
         $open = WorkTask::where('business_id', $biz)->open();
         // "Not assigned" means no PERSON holds the task — the same
@@ -231,7 +240,7 @@ class WorkInboxController extends Controller
     {
         $biz = $this->biz($request);
         if (! $this->wi->myWorkEnabled($biz)) {
-            return redirect('/work-inbox/control')->with('error', 'My Work আপাতত বন্ধ আছে - সব কাজ Work Control থেকে হবে');
+            return redirect('/work-inbox/control')->with('error', __('My Work is off for now - all work runs from Work Control'));
         }
         $me = $request->user()->id;
         $mine = WorkTask::where('business_id', $biz)
@@ -366,9 +375,9 @@ class WorkInboxController extends Controller
         $biz = $this->biz($request);
         $data = $request->validate(['ids' => ['required', 'array'], 'ids.*' => ['integer']]);
         $res = $this->wi->bulkDone($biz, $request->user(), $data['ids']);
-        $msg = $res['done'] . 'টা কাজ শেষ করা হয়েছে';
+        $msg = __(':count tasks marked done', ['count' => $res['done']]);
         if ($res['skipped'] > 0) {
-            $msg .= ' · ' . $res['skipped'] . 'টা note-বাধ্যতামূলক কাজ বাদ গেছে (আলাদা করে Done করো)';
+            $msg .= ' · ' . __(':count note-required tasks were skipped (mark them Done one by one)', ['count' => $res['skipped']]);
         }
 
         return back()->with('success', $msg);

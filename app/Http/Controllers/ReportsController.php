@@ -53,7 +53,7 @@ class ReportsController extends Controller
 
     private function periodWord(string $preset): string
     {
-        return match ($preset) { 'today' => 'আজ', '7d' => 'গত 7 দিনে', default => 'এই মাসে' };
+        return match ($preset) { 'today' => __('Today'), '7d' => __('In the last 7 days'), default => __('This month') };
     }
 
     private function pct(int $part, int $whole): int
@@ -76,18 +76,18 @@ class ReportsController extends Controller
         $deliveredCount = Order::where('business_id', $biz)->where('status', 'Delivered')
             ->whereBetween('updated_at', [$from, $to])->count();
 
-        $rows = [['label' => 'মোট বিক্রি', 'amount' => (float) $f['revenue']]];
+        $rows = [['label' => __('Total sales'), 'amount' => (float) $f['revenue']]];
         if ((float) $f['otherIncome'] > 0) {
-            $rows[] = ['label' => 'অন্য আয়', 'amount' => (float) $f['otherIncome']];
+            $rows[] = ['label' => __('Other income'), 'amount' => (float) $f['otherIncome']];
         }
-        $rows[] = ['label' => 'পণ্যের খরচ', 'amount' => -(float) $f['productCost']];
-        $rows[] = ['label' => 'Delivery খরচ', 'amount' => -(float) $f['courierCharges']];
-        $rows[] = ['label' => 'Ad খরচ', 'amount' => -$adExpense];
-        $rows[] = ['label' => 'অন্য খরচ (ভাড়া, packaging, SMS)', 'amount' => -$otherExpense];
+        $rows[] = ['label' => __('Product cost'), 'amount' => -(float) $f['productCost']];
+        $rows[] = ['label' => __('Delivery cost'), 'amount' => -(float) $f['courierCharges']];
+        $rows[] = ['label' => __('Ad cost'), 'amount' => -$adExpense];
+        $rows[] = ['label' => __('Other expenses (rent, packaging, SMS)'), 'amount' => -$otherExpense];
         if ((float) $f['rtoLoss'] > 0) {
-            $rows[] = ['label' => 'Return ক্ষতি', 'amount' => -(float) $f['rtoLoss']];
+            $rows[] = ['label' => __('Return loss'), 'amount' => -(float) $f['rtoLoss']];
         }
-        $rows[] = ['label' => 'নিট লাভ', 'amount' => (float) $f['profit'], 'total' => true];
+        $rows[] = ['label' => __('Net profit'), 'amount' => (float) $f['profit'], 'total' => true];
 
         $estimateEnabled = (bool) $this->settings->get("reports.{$biz}.estimate_enabled", false);
         $estimate = null;
@@ -356,41 +356,41 @@ class ReportsController extends Controller
         $lines = [];
         switch ($key) {
             case 'pl':
-                $lines[] = ['খাত', 'টাকা'];
+                $lines[] = [__('Sector'), __('Amount')];
                 foreach ($this->plData($biz, $from, $to)['rows'] as $r) {
                     $lines[] = [$r['label'], $r['amount']];
                 }
                 break;
             case 'order':
-                $lines[] = ['উৎস', 'Order', 'Delivered %', 'Returned %', 'বিক্রি'];
+                $lines[] = [__('Source'), 'Order', 'Delivered %', 'Returned %', __('Sales')];
                 foreach ($this->orderData($biz, $from, $to)['rows'] as $r) {
                     $lines[] = [$r['source'], $r['orders'], $r['delivered_pct'], $r['returned_pct'], $r['sales']];
                 }
                 break;
             case 'courier':
-                $lines[] = ['Courier', 'পাঠানো', 'Delivered %', 'Return %', 'গড় সময় (দিন)'];
+                $lines[] = ['Courier', __('Parcels sent'), 'Delivered %', 'Return %', __('Average time (days)')];
                 foreach ($this->courierData($biz, $from, $to)['rows'] as $r) {
                     $lines[] = [$r['courier'], $r['sent'], $r['delivered_pct'], $r['return_pct'], $r['avg_days'] ?? ''];
                 }
                 break;
             case 'product':
-                $lines[] = ['Product', 'বিক্রি হয়েছে', 'আয়', 'লাভ', 'Margin %'];
+                $lines[] = ['Product', __('Sold'), __('Income'), __('Profit'), 'Margin %'];
                 foreach ($this->productData($biz, $from, $to)['rows'] as $r) {
                     $lines[] = [$r['product'], $r['qty'], $r['revenue'], $r['profit'], $r['margin']];
                 }
                 break;
             case 'employee':
-                $lines[] = ['নাম', 'Order process করেছে', 'Delivered %', 'Return %'];
+                $lines[] = [__('Name'), __('Orders processed'), 'Delivered %', 'Return %'];
                 foreach ($this->employeeData($biz, $from, $to)['rows'] as $r) {
                     $lines[] = [$r['name'], $r['processed'], $r['delivered_pct'] ?? '', $r['return_pct'] ?? ''];
                 }
                 break;
             case 'call':
                 $k = $this->callData($biz, $from, $to)['kpis'];
-                $lines = [['মোট call', $k['total']], ['Call ধরা হয়েছে %', $k['answered_pct']], ['Call থেকে order', $k['orders']], ['গড় কথার সময়', $k['avg']]];
+                $lines = [[__('Total calls'), $k['total']], [__('Calls answered %'), $k['answered_pct']], [__('Orders from calls'), $k['orders']], [__('Average talk time'), $k['avg']]];
                 break;
             case 'customer':
-                $lines[] = ['সেরা customer', 'Order', 'মোট কেনা'];
+                $lines[] = [__('Top customer'), 'Order', __('Total spent')];
                 foreach ($this->customerData($biz, $from, $to)['rows'] as $r) {
                     $lines[] = [$r['name'], $r['orders'], $r['spent']];
                 }

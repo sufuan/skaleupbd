@@ -15,10 +15,20 @@ class NegotiationService
     {
     }
 
-    /** @return array{max:int, step:int, free_delivery_min:float} */
-    public function config(): array
+    /**
+     * The negotiation ladder for one shop. A shop's own saved values
+     * (ai.{biz}.negotiation) win; until a shop saves its own, the
+     * platform-global ai.negotiation is the fallback every shop shares.
+     * No business given = the platform defaults themselves.
+     *
+     * @return array{max:int, step:int, free_delivery_min:float}
+     */
+    public function config(?int $businessId = null): array
     {
-        $n = $this->settings->get('ai.negotiation', []);
+        $n = $businessId !== null && $businessId > 0
+            ? $this->settings->bizGet($businessId, "ai.{$businessId}.negotiation", 'ai.negotiation', [])
+            : $this->settings->get('ai.negotiation', []);
+        $n = is_array($n) ? $n : [];
 
         return [
             'max' => (int) ($n['max_discount'] ?? 15),
@@ -30,7 +40,7 @@ class NegotiationService
     /** Max discount for one product: its own setting wins over the shop-wide one. */
     public function maxDiscount(Product $product): int
     {
-        return $product->max_discount_pct !== null ? (int) $product->max_discount_pct : $this->config()['max'];
+        return $product->max_discount_pct !== null ? (int) $product->max_discount_pct : $this->config((int) $product->business_id)['max'];
     }
 
     public function floor(Product $product): float
@@ -43,7 +53,7 @@ class NegotiationService
     /** The full ladder for a product: [price, step1, step2, ..., floor]. */
     public function ladder(Product $product): array
     {
-        $cfg = $this->config();
+        $cfg = $this->config((int) $product->business_id);
         $price = $product->effectivePrice();
         $rungs = [$price];
         $steps = (int) floor($this->maxDiscount($product) / $cfg['step']);

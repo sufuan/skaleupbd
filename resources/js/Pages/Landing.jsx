@@ -1,4 +1,5 @@
 import { Head, Link } from '@inertiajs/react';
+import { t } from '@/lib/i18n';
 
 // Public landing page for Scalenow Bd. Professional front page for the
 // seller platform (header, hero, features, how it works, CTA, footer).
@@ -195,7 +196,7 @@ export default function Landing() {
                         <a href="#contact">Contact</a>
                     </nav>
                     <Link className="lp-login" href="/admin/login">Log in</Link>
-                    <Link className="lp-btn" href={route('register')}>Create an account</Link>
+                    <Link className="lp-btn" href={route('register')}>{t('Become a seller')}</Link>
                 </div>
             </header>
 

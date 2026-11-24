@@ -20,9 +20,14 @@ class SweepInboundWooEvents extends Command
 
     public function handle(IntegrationHost $host): int
     {
+        // 'failed' is included on purpose: a connection can land in failed
+        // (e.g. a partial webhook registration) while its held orders are
+        // perfectly processable, and ProcessWooWebhookJob only refuses
+        // 'disabled'. Held events must resume once points return, whatever
+        // the connection's failure state.
         $connIds = IntegrationConnection::query()
             ->where('platform', 'woo')
-            ->whereIn('status', ['active', 'degraded', 'pending'])
+            ->whereIn('status', ['active', 'degraded', 'pending', 'failed'])
             ->pluck('id');
 
         if ($connIds->isEmpty()) {

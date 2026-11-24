@@ -164,7 +164,9 @@ class CourierSettingsController extends Controller
     {
         abort_unless($courier->business_id === $this->businessId($request), 404);
         CourierMethod::where('business_id', $courier->business_id)->update(['is_default' => false]);
-        $courier->update(['is_default' => true, 'is_active' => true]);
+        // Default and Fallback are mutually exclusive roles: taking the
+        // Default role hands the Fallback role back.
+        $courier->update(['is_default' => true, 'is_preferred' => false, 'is_active' => true]);
 
         return back()->with('success', 'Default courier set');
     }
@@ -173,7 +175,9 @@ class CourierSettingsController extends Controller
     {
         abort_unless($courier->business_id === $this->businessId($request), 404);
         CourierMethod::where('business_id', $courier->business_id)->update(['is_preferred' => false]);
-        $courier->update(['is_preferred' => true, 'is_active' => true]);
+        // Default and Fallback are mutually exclusive roles: taking the
+        // Fallback role hands the Default role back.
+        $courier->update(['is_preferred' => true, 'is_default' => false, 'is_active' => true]);
 
         return back()->with('success', 'Fallback courier set');
     }

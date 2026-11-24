@@ -87,7 +87,7 @@ function PendingClaimCard({ claim, paymentInstructions, platformPayment }) {
     );
 }
 
-export default function Index({ balance, pointsPerOrder, threshold, blocked, low, pack, packs, onboardingFee, firstPurchase, paymentInstructions, platformPayment, openClaim, pastClaims, preselectedPackId, ledger }) {
+export default function Index({ balance, pointsPerOrder, threshold, blocked, low, pendingApproval, pack, packs, onboardingFee, firstPurchase, paymentInstructions, platformPayment, openClaim, pastClaims, preselectedPackId, ledger }) {
     const pages = [];
     for (let p = 1; p <= (ledger.last_page || 1); p++) pages.push(p);
     const lastRejected = !openClaim && pastClaims && pastClaims.length > 0 && pastClaims[0].status === 'rejected' ? pastClaims[0] : null;
@@ -109,12 +109,16 @@ export default function Index({ balance, pointsPerOrder, threshold, blocked, low
 .claim-form .fld { display:block; width:100%; height:40px; border-radius:8px; font-size:14px; border:1px solid #D9CDE4; background:#fff; padding:0 12px; margin-top:5px; font-family:inherit; color:var(--ink); box-sizing:border-box; }`}</style><h3 style={{ fontSize: 19, marginBottom: 4 }}>{t('Points & Billing')}</h3>
             <div style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 14 }}>{t('One point is spent every time a new order enters your shop. Points are never returned - even if the order is later cancelled or returned.')}</div>
 
-            {blocked && (
+            {pendingApproval ? (
+                <div style={{ background: '#EFF6FF', border: '1px solid #B9D4F5', color: '#1E3A5F', borderRadius: 10, padding: '12px 14px', marginBottom: 14, fontSize: 14 }}>
+                    <b>{t('Your account is under review')}</b> {t('You can already buy a points pack, so your shop is ready the moment it is approved.')}
+                </div>
+            ) : blocked && (
                 <div style={{ background: '#FDECEC', border: '1px solid #F3B4B4', color: '#8B1E1E', borderRadius: 10, padding: '12px 14px', marginBottom: 14, fontSize: 14 }}>
                     <b>{t('Your shop is view-only right now.')}</b> {t('Your points are finished, so new orders and changes are paused. Buy a points pack to start again - everything you see here stays safe.')}
                 </div>
             )}
-            {!blocked && low && (
+            {!pendingApproval && !blocked && low && (
                 <div style={{ background: '#FFF6E0', border: '1px solid #F0D48A', color: '#7A5200', borderRadius: 10, padding: '12px 14px', marginBottom: 14, fontSize: 14 }}>
                     <b>{t('Points are running low.')}</b> {t('Top up soon so your orders never stop.')}
                 </div>
@@ -157,6 +161,7 @@ export default function Index({ balance, pointsPerOrder, threshold, blocked, low
                     <div className="card">
                         <h4 style={{ fontSize: 15, marginBottom: 4 }}>{openClaim ? t('Packs') : t('Choose a pack')}</h4>
                         <div style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 10 }}>{t('Pay by bKash / Nagad, submit the payment details, and we credit your points as soon as we confirm.')}</div>
+                        <div style={{ fontSize: 13, color: '#7A5200', background: '#FFF6E0', border: '1px solid #F0D48A', borderRadius: 8, padding: '8px 10px', marginBottom: 10 }}>{t('A monthly pack replaces your current points balance when it is approved - leftover points do not carry over.')}</div>
                         {platformPayment && platformPayment.length > 0 && (
                             <div style={{ background: 'var(--surface2, #F6F1FA)', borderRadius: 8, padding: '10px 12px', marginBottom: 10 }}>
                                 <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4 }}>{t('Pay to these numbers (Personal)')}</div>

@@ -268,7 +268,7 @@ class MetaWebhookController extends Controller
             'attachment' => $attachment,
             'referral' => $referral,
         ];
-        if ($this->debounceSeconds() > 0) {
+        if ($this->debounceSeconds($biz) > 0) {
             // Store now; the whole burst is answered once, after a quiet window.
             $storedMsg = $this->brain->storeIncoming($conv, $text, $opts);
             if (($attachment['type'] ?? null) === 'image') {
@@ -277,7 +277,7 @@ class MetaWebhookController extends Controller
             if (in_array($attachment['type'] ?? null, ['audio', 'voice'], true)) {
                 \App\Jobs\ProcessVoiceMessageJob::dispatch($storedMsg->id);
             }
-            \App\Jobs\ProcessAiReplyJob::dispatch($conv->id)->delay(now()->addSeconds($this->debounceSeconds()));
+            \App\Jobs\ProcessAiReplyJob::dispatch($conv->id)->delay(now()->addSeconds($this->debounceSeconds($biz)));
 
             return;
         }
@@ -297,9 +297,11 @@ class MetaWebhookController extends Controller
         }
     }
 
-    private function debounceSeconds(): int
+    private function debounceSeconds(int $biz): int
     {
-        $behavior = (array) $this->settings->get('ai.behavior', []);
+        // The shop's own behaviour save wins; the platform-global
+        // ai.behavior is the fallback until the shop saves its own.
+        $behavior = (array) $this->settings->bizGet($biz, "ai.{$biz}.behavior", 'ai.behavior', []);
 
         return max(0, (int) ($behavior['debounce_seconds'] ?? 0));
     }
@@ -409,7 +411,7 @@ class MetaWebhookController extends Controller
                         'external_id' => $waId !== '' ? $waId : null,
                         'attachment' => $attachment,
                     ];
-                    if ($this->debounceSeconds() > 0) {
+                    if ($this->debounceSeconds($biz) > 0) {
                         $storedMsg = $this->brain->storeIncoming($conv, $text, $waOpts);
                         if (($attachment['type'] ?? null) === 'image') {
                             \App\Jobs\ProcessMediaMessageJob::dispatch($storedMsg->id);
@@ -417,7 +419,7 @@ class MetaWebhookController extends Controller
                         if (in_array($attachment['type'] ?? null, ['audio', 'voice'], true)) {
                             \App\Jobs\ProcessVoiceMessageJob::dispatch($storedMsg->id);
                         }
-                        \App\Jobs\ProcessAiReplyJob::dispatch($conv->id)->delay(now()->addSeconds($this->debounceSeconds()));
+                        \App\Jobs\ProcessAiReplyJob::dispatch($conv->id)->delay(now()->addSeconds($this->debounceSeconds($biz)));
                         continue;
                     }
                     $reply = $this->brain->handleIncoming($conv, $text, $waOpts);

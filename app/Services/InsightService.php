@@ -220,7 +220,11 @@ class InsightService
             ['kind' => 'interested', 'priority' => 3, 'rows' => $segment(1)],
         ];
 
-        $aov = (float) (Order::where('business_id', $biz)->where('created_at', '>=', now()->subDays(90))->avg('grand_total') ?? 0);
+        // One average-order-value definition across the app (owner
+        // rule): delivered orders only, the same one the Reports use.
+        // Averaging every order lets cancelled/returned orders inflate
+        // the estimate behind the task card.
+        $aov = (float) (Order::where('business_id', $biz)->where('status', 'Delivered')->where('created_at', '>=', now()->subDays(90))->avg('grand_total') ?? 0);
         $made = [];
         $openCount = InsightTask::where('business_id', $biz)->whereDate('task_date', $today)->where('status', 'open')->count();
         foreach ($defs as $def) {

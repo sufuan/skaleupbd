@@ -142,7 +142,11 @@ class HonorificService
      */
     public function forName(int $businessId, ?string $customerName): string
     {
-        $behavior = $this->settings->get('ai.behavior', []);
+        // The shop's own behaviour save wins; the platform-global
+        // ai.behavior is the fallback until the shop saves its own.
+        $behavior = $businessId > 0
+            ? $this->settings->bizGet($businessId, "ai.{$businessId}.behavior", 'ai.behavior', [])
+            : $this->settings->get('ai.behavior', []);
         $mode = is_array($behavior) ? (string) ($behavior['honorific'] ?? 'auto') : 'auto';
 
         return match ($mode) {

@@ -149,7 +149,7 @@ function MyDashboard({ my, onBasis, onHourlyToday }) {
                         </span></div>
                     <div style={{ display: 'flex', alignItems: 'center', margin: '12px 0', flexWrap: 'wrap' }}>
                         <span className="seg-light" style={{ gap: 2, alignItems: 'center' }}>
-                            <span style={{ fontSize: 11, letterSpacing: '.08em', color: 'var(--mut2)', fontWeight: 700, padding: '0 6px 0 8px' }}>VIEW</span>
+                            <span style={{ fontSize: 11, letterSpacing: '.08em', color: 'var(--mut2)', fontWeight: 700, padding: '0 6px 0 8px' }}>{t('VIEW')}</span>
                             <span className="seg-light" style={{ background: 'transparent', padding: 0 }}>
                                 <button type="button" className={srcMode === 'Source' ? 'on' : ''} onClick={() => setSrcMode('Source')}>{t('Source')}</button>
                                 <button type="button" className={srcMode === 'Channel' ? 'on' : ''} onClick={() => setSrcMode('Channel')}>{t('Channel')}</button>
@@ -655,11 +655,9 @@ export default function Dashboard({ my, ov, dc, ops, prod, mkt, team, act, billi
     return (
         <AppLayout>
             <Head title={t('Dashboard')} />
-            {billing && billing.blocked && (
-                <div style={{ background: '#FDECEC', border: '1px solid #F3B4B4', color: '#8B1E1E', borderRadius: 10, padding: '12px 14px', marginBottom: 12, fontSize: 14 }}>
-                    <b>{t('Your points are finished. The shop is view-only.')}</b> {t('New orders are paused until you buy a points pack.')} <a href="/billing" style={{ fontWeight: 700, color: '#8B1E1E', textDecoration: 'underline' }}>{t('Go to Points & Billing')}</a>
-                </div>
-            )}
+            {/* The blocked (zero-balance) banner is NOT repeated here:
+                the AppLayout top strip already shows it on every page,
+                with the same Points & Billing link. */}
             {billing && !billing.blocked && (billing.low || billing.ending_soon) && (
                 <div style={{ background: '#FFF6E0', border: '1px solid #F0D48A', color: '#7A5200', borderRadius: 10, padding: '12px 14px', marginBottom: 12, fontSize: 14 }}>
                     <b>{t('Points are running low')}</b>: {billing.balance} {t('points left')}{billing.cycle_end ? ` · ${t('pack resets')} ${billing.cycle_end}` : ''}{billing.wallet_expires_at ? ` · ${t('wallet ends')} ${billing.wallet_expires_at}` : ''}. <a href="/billing" style={{ fontWeight: 700, color: '#7A5200', textDecoration: 'underline' }}>{t('Top up')}</a>

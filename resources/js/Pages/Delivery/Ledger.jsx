@@ -30,7 +30,7 @@ export default function Ledger({ rows, total, ratecard, receivables, buckets, di
 
                 <div className="kpi-grid" style={{ gridTemplateColumns: 'repeat(3,1fr)' }}>
                     <div className="card kpi"><div className="lbl">{t('Collected by courier')}</div><div className="val">{fmt(total.collected)}</div><div className="sub">{t('Cash couriers collected from your customers')}</div></div>
-                    <div className="card kpi"><div className="lbl">{t('Settled to you')}</div><div className="val">{fmt(total.settled)}</div><div className="sub">{t('Money already paid to you')}</div></div>
+                    <div className="card kpi"><div className="lbl">{t('Settled to you')}</div><div className="val">{fmt(total.settled)}</div><div className="sub">{t('Money already paid to you')}</div><div className="sub">{t('Courier charges')}: {fmt(total.charges || 0)} - {t('Kept by the courier as delivery charges')}</div></div>
                     <div className="card kpi"><div className="lbl">{t('Still with courier')}</div><div className="val">{fmt(total.still)}</div><div className="sub">{t('Collected, but not paid to you yet')}</div></div>
                 </div>
 
@@ -41,12 +41,12 @@ export default function Ledger({ rows, total, ratecard, receivables, buckets, di
                 {tab === 'Overview' && (
                     <div className="card" style={{ padding: 24 }}>
                         <div className="tbl-wrap"><table className="tbl">
-                            <thead><tr><th>{t('Courier')}</th><th>{t('Delivered')}</th><th>{t('Collected')}</th><th>{t('Settled to you')}</th><th>{t('Still with courier')}</th><th>{t('Status')}</th></tr></thead>
+                            <thead><tr><th>{t('Courier')}</th><th>{t('Delivered')}</th><th>{t('Collected')}</th><th>{t('Courier charges')}</th><th>{t('Settled to you')}</th><th>{t('Still with courier')}</th><th>{t('Status')}</th></tr></thead>
                             <tbody>
                                 {rows.map((r) => (
                                     <tr key={r.courier}>
                                         <td className="b">{r.company}{r.manual && <span className="muted-sm"> ({t('manual')})</span>}</td>
-                                        <td>{r.delivered}</td><td>{fmt(r.collected)}</td><td>{fmt(r.settled)}</td><td>{fmt(r.still)}</td>
+                                        <td>{r.delivered}</td><td>{fmt(r.collected)}</td><td>{fmt(r.charges || 0)}</td><td>{fmt(r.settled)}</td><td>{fmt(r.still)}</td>
                                         <td>{differences.some((d) => d.courier === r.courier)
                                             ? <span className="pill amber">{t('Difference Found')}</span>
                                             : r.still <= 0.01
@@ -54,7 +54,7 @@ export default function Ledger({ rows, total, ratecard, receivables, buckets, di
                                                 : <span className="muted-sm">-</span>}</td>
                                     </tr>
                                 ))}
-                                {rows.length === 0 && <tr><td colSpan={6} style={{ textAlign: 'center', padding: 26 }} className="mut">{t('No couriers configured yet')}</td></tr>}
+                                {rows.length === 0 && <tr><td colSpan={7} style={{ textAlign: 'center', padding: 26 }} className="mut">{t('No couriers configured yet')}</td></tr>}
                             </tbody>
                         </table></div>
                         <p className="empty-note" style={{ marginTop: 12 }}>{t('Committed charge is estimated from the rate card: zone Dhaka means Inside, anything else Outside; weight assumed up to 0.5 kg. Issue types tracked: COD Difference, Charge Mismatch, Duplicate Tracking, Invoice Line Missing, Charge Overcharge.')}</p>
@@ -85,16 +85,17 @@ export default function Ledger({ rows, total, ratecard, receivables, buckets, di
 
                 {tab === 'Differences' && (
                     <div className="card" style={{ padding: 24 }}>
-                        <div className="card-sub">{t('Parcels that were paid less than expected. Each one also raises a task in the Work Inbox - nothing passes silently.')}</div>
+                        <div className="card-sub">{t('Parcels that were paid less than expected. If a difference is still unresolved after 3 days, it raises a task in the Work Inbox.')}</div>
                         <div className="tbl-wrap"><table className="tbl">
-                            <thead><tr><th>{t('Invoice')}</th><th>{t('Courier')}</th><th>{t('Type')}</th><th>{t('Severity')}</th><th>{t('Expected')}</th><th>{t('Actual')}</th><th>{t('Difference')}</th></tr></thead>
+                            <thead><tr><th>{t('Invoice')}</th><th>{t('Courier')}</th><th>{t('Type')}</th><th>{t('Severity')}</th><th>{t('Expected')}</th><th>{t('Actual')}</th><th>{t('Difference')}</th><th>{t('Status')}</th></tr></thead>
                             <tbody>
                                 {differences.map((d, i) => (
                                     <tr key={i}><td className="b">{d.invoice}</td><td>{d.courier}</td><td>{t(d.type)}</td>
                                         <td><span className={`pill ${d.severity === 'High' ? 'red' : d.severity === 'Medium' ? 'amber' : ''}`}>{t(d.severity)}</span></td>
-                                        <td>{fmt(d.expected)}</td><td>{fmt(d.actual)}</td><td style={{ color: 'var(--bad)' }}>{fmt(d.difference)}</td></tr>
+                                        <td>{fmt(d.expected)}</td><td>{fmt(d.actual)}</td><td style={{ color: 'var(--bad)' }}>{fmt(d.difference)}</td>
+                                        <td>{d.state === 'Disputed' ? <span className="pill red">{t('Disputed')}</span> : <span className="muted-sm">{t(d.state || 'Still open')}</span>}</td></tr>
                                 ))}
-                                {differences.length === 0 && <tr><td colSpan={7} style={{ textAlign: 'center', padding: 22 }} className="mut">{t('No differences - every parcel matches')}</td></tr>}
+                                {differences.length === 0 && <tr><td colSpan={8} style={{ textAlign: 'center', padding: 22 }} className="mut">{t('No differences - every parcel matches')}</td></tr>}
                             </tbody>
                         </table></div>
                     </div>

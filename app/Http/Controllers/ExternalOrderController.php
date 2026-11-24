@@ -56,7 +56,7 @@ class ExternalOrderController extends Controller
         if ($idem !== '') {
             $existing = Order::where('business_id', $business->id)->where('idempotency_key', $idem)->first();
             if ($existing) {
-                return $this->envelope(true, 200, 'Duplicate request — order already exists', [
+                return $this->envelope(true, 200, 'Duplicate request - order already exists', [
                     'orderId' => $existing->id, 'invoice' => $existing->invoice_no,
                 ]);
             }
@@ -86,6 +86,20 @@ class ExternalOrderController extends Controller
 
         if (! PhoneNormalizer::isValid($data['customerNumber'])) {
             return $this->envelope(false, 422, 'customerNumber is not a valid mobile number');
+        }
+
+        // Dedup on the caller's own order reference, not only on the
+        // optional idempotency header: externalRef is the identifier every
+        // caller already sends (the status lookup keys on it too), and the
+        // in-app docs never mention the header. A retried POST must return
+        // the original order - never a second order or a second point.
+        if (! empty($data['externalRef'])) {
+            $existing = Order::where('business_id', $business->id)->where('external_ref', $data['externalRef'])->first();
+            if ($existing) {
+                return $this->envelope(true, 200, 'Duplicate request - order already exists', [
+                    'orderId' => $existing->id, 'invoice' => $existing->invoice_no,
+                ]);
+            }
         }
 
         try {

@@ -110,7 +110,7 @@ class WooConnectController extends Controller
         $conn = $this->connection($biz);
 
         if (! $conn) {
-            return $this->json(['events' => []]);
+            return $this->json(['events' => [], 'has_points' => $this->host->hasPoints($biz)]);
         }
 
         $events = DB::table('integration_events')
@@ -129,7 +129,9 @@ class WooConnectController extends Controller
                 'at'        => $e->created_at,
             ]);
 
-        return $this->json(['events' => $events]);
+        // has_points lets the events list stop telling the seller an event
+        // is "Waiting for points top-up" after the top-up has landed.
+        return $this->json(['events' => $events, 'has_points' => $this->host->hasPoints($biz)]);
     }
 
     // ------------------------------------------------------------------ state builder

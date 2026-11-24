@@ -383,8 +383,8 @@ class PlatformController extends Controller
         }
 
         return back()->with('success', $activatesSeller
-            ? 'Payment approved — points credited and the seller is now active'
-            : 'Payment approved — points credited');
+            ? 'Payment approved - points credited and the seller is now active'
+            : 'Payment approved - points credited');
     }
 
     /** Reject a claim with a note the seller will see. */
@@ -412,6 +412,31 @@ class PlatformController extends Controller
         SellerPayment::create($data + ['business_id' => $business->id, 'paid_at' => now()]);
 
         return back()->with('success', 'Payment recorded');
+    }
+
+    /**
+     * Free-form manual points credit (M19): the platform admin tops a
+     * seller up by an exact amount with a note. Goes through
+     * TokenService::manualCredit, so the ledger kind is manual_credit,
+     * the balance simply rises (no pack reset), no payment is booked,
+     * and a zero-balance seller is unblocked by the same resume hooks
+     * every other top-up path uses.
+     */
+    public function addPoints(Request $request, Business $business): RedirectResponse
+    {
+        $data = $request->validate([
+            'amount' => ['required', 'integer', 'min:1'],
+            'note' => ['required', 'string', 'max:200'],
+        ]);
+        try {
+            app(\App\Services\TokenService::class)->manualCredit(
+                $business->id, (int) $data['amount'], $data['note'], $request->user()?->id,
+            );
+        } catch (\DomainException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        return back()->with('success', 'Points added');
     }
 
     public function updateSeller(Request $request, Business $business): RedirectResponse

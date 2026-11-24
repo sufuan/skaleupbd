@@ -64,8 +64,59 @@ class PurchaseService
                 ]);
             }
 
+            // Hunt G-4: money the supplier already holds for this shop
+            // (unallocated overpayment credit) settles the new bill
+            // first, so the due this bill presents is net of credit.
+            $this->applySupplierCredit($biz, $purchase);
+
             return $purchase;
         });
+    }
+
+    /**
+     * Allocate the supplier's unallocated payments (overpayment credit)
+     * against a purchase's due, oldest credit first - the same FIFO
+     * allocation machinery paySupplier uses. A credit row larger than
+     * the due is split: the applied part moves onto the purchase, the
+     * remainder stays unallocated. No Finance entry is created or
+     * changed: the cash already moved when the payment was made.
+     */
+    private function applySupplierCredit(int $biz, Purchase $purchase): void
+    {
+        if (! $purchase->supplier_id) {
+            return;
+        }
+        $due = $purchase->due();
+        if ($due <= 0) {
+            return;
+        }
+        $creditRows = PurchasePayment::where('business_id', $biz)
+            ->where('supplier_id', $purchase->supplier_id)->whereNull('purchase_id')
+            ->orderBy('date')->orderBy('id')->get();
+        foreach ($creditRows as $row) {
+            if ($due <= 0) {
+                break;
+            }
+            $amount = (float) $row->amount;
+            if ($amount <= 0) {
+                continue;
+            }
+            $apply = min($due, $amount);
+            if ($apply >= $amount) {
+                $row->update(['purchase_id' => $purchase->id]);
+            } else {
+                $row->update(['amount' => round($amount - $apply, 2)]);
+                PurchasePayment::create([
+                    'business_id' => $biz,
+                    'supplier_id' => $purchase->supplier_id,
+                    'purchase_id' => $purchase->id,
+                    'amount' => $apply,
+                    'date' => $row->date,
+                    'finance_entry_id' => $row->finance_entry_id,
+                ]);
+            }
+            $due = round($due - $apply, 2);
+        }
     }
 
     /**
@@ -168,7 +219,7 @@ class PurchaseService
                 'type' => 'expense',
                 'amount' => $amount,
                 'category_id' => $this->paymentCategory($biz)->id,
-                'note' => $note ?: ('Supplier payment — ' . $supplier->name),
+                'note' => $note ?: ('Supplier payment - ' . $supplier->name),
                 'source' => 'purchase',
                 'ref_type' => 'purchase_payment',
                 'ref_id' => $supplier->id,
@@ -227,7 +278,7 @@ class PurchaseService
                 'type' => 'expense',
                 'amount' => $amount,
                 'category_id' => $this->paymentCategory($biz)->id,
-                'note' => $note ?: ('Supplier payment — ' . ($purchase->supplier?->name ?? '')),
+                'note' => $note ?: ('Supplier payment - ' . ($purchase->supplier?->name ?? '')),
                 'source' => 'purchase',
                 'ref_type' => 'purchase_payment',
                 'ref_id' => $purchase->id,
@@ -250,10 +301,10 @@ class PurchaseService
 
     public function totalDue(int $biz): float
     {
-        $paid = PurchasePayment::where('business_id', $biz)->whereNotNull('purchase_id')->sum('amount');
-        $billed = Purchase::where('business_id', $biz)->where('kind', 'bill')->sum('total');
-
-        return round(max(0, (float) $billed - (float) $paid), 2);
+        // Per-supplier net (Hunt G-4): credit held by supplier A must
+        // never cancel what the shop owes supplier B, so the business
+        // total is the sum of the per-supplier net dues.
+        return round((float) collect($this->supplierSummaries($biz))->sum('due'), 2);
     }
 
     /** Purchases of this business with their derived due attached. */
@@ -280,11 +331,19 @@ class PurchaseService
         $bills = $this->billsWithDue($biz);
         $lastActivity = PurchasePayment::where('business_id', $biz)
             ->selectRaw('supplier_id, MAX(date) as d')->groupBy('supplier_id')->pluck('d', 'supplier_id');
+        $allocBySupplier = PurchasePayment::where('business_id', $biz)->whereNotNull('purchase_id')
+            ->selectRaw('supplier_id, SUM(amount) as paid')->groupBy('supplier_id')->pluck('paid', 'supplier_id');
+        $creditBySupplier = PurchasePayment::where('business_id', $biz)->whereNull('purchase_id')
+            ->selectRaw('supplier_id, SUM(amount) as paid')->groupBy('supplier_id')->pluck('paid', 'supplier_id');
 
         $out = [];
         foreach (Supplier::where('business_id', $biz)->orderBy('name')->get() as $s) {
             $mine = $bills->where('supplier_id', $s->id);
-            $due = round($mine->sum('due_amount'), 2);
+            $paidAllocated = round((float) ($allocBySupplier[$s->id] ?? 0), 2);
+            $credit = round((float) ($creditBySupplier[$s->id] ?? 0), 2);
+            // One money definition everywhere (Hunt G-4):
+            // due = bill - paid_allocated - credit_unallocated.
+            $due = round(max(0, (float) $mine->sum('total') - $paidAllocated - $credit), 2);
             $overdueRows = $mine->filter(fn (Purchase $p) => $p->due_amount > 0
                 && $p->date->copy()->addDays((int) $s->terms_days)->toDateString() < $today);
             $oldest = $overdueRows->isEmpty()
@@ -296,6 +355,8 @@ class PurchaseService
                 'supplier' => $s,
                 'purchases_count' => $mine->count(),
                 'total_purchased' => round((float) $mine->sum('total'), 2),
+                'paid_allocated' => $paidAllocated,
+                'credit' => $credit,
                 'due' => $due,
                 'bills_due' => $mine->where('due_amount', '>', 0)->count(),
                 'overdue' => round((float) $overdueRows->sum('due_amount'), 2),

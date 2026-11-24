@@ -236,7 +236,7 @@ function WarrantySettings({ vocab }) {
         reject_reasons: lists.reject_reasons.split('\n').map((s) => s.trim()).filter(Boolean),
         cancel_reasons: lists.cancel_reasons.split('\n').map((s) => s.trim()).filter(Boolean),
         turnaround_days: Number(days),
-    }, { preserveScroll: true });
+    }, { preserveScroll: true, onSuccess: () => router.reload({ only: ['vocab'], preserveScroll: true }) });
     return (
         <div className="rounded-xl border bg-card p-5 space-y-4 max-w-2xl">
             <div className="font-semibold">{t('Warranty Settings')}</div>

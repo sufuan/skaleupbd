@@ -132,7 +132,11 @@ class MarketingController extends Controller
         $biz = $this->biz($request);
         $audiences = [];
         foreach ($this->sms->audiences($biz) as $key => $a) {
-            $sendable = collect($a['phones'])->reject(fn ($p) => $this->sms->onDoNotSend($biz, $p))->count();
+            // Sendable = the phones a send would really reach right now:
+            // the do-not-send list AND the frequency caps, through the
+            // same check the sender itself applies (SmsService::
+            // marketingSkipReason) - never a second, looser count.
+            $sendable = collect($a['phones'])->reject(fn ($p) => $this->sms->marketingSkipReason($biz, $p) !== null)->count();
             $audiences[] = ['key' => $key, 'label' => $a['label'], 'count' => count($a['phones']), 'sendable' => $sendable];
         }
         $templates = MessageTemplate::where('business_id', $biz)->orderBy('id')->get(['id', 'name', 'body']);
@@ -145,17 +149,20 @@ class MarketingController extends Controller
             $a = $attrRows->get((string) $c->id);
 
             return ['id' => $c->id, 'name' => $c->name, 'audience_label' => $c->audience_label,
-                'recipients' => $c->recipients, 'total_cost' => (float) $c->total_cost,
+                'recipients' => $c->recipients, 'total_cost' => (float) $c->total_cost, 'status' => $c->status,
                 'orders' => $a['orders'] ?? 0, 'sales' => $a['sales'] ?? 0.0, 'profit' => $a['profit'] ?? 0.0,
                 'date' => DhakaTime::fmt($c->created_at, 'd M')];
         });
 
-        // Success rate over messages that actually reached a gateway
-        // (provider set). Blocked attempts — no balance, no gateway, caps,
-        // DND — were never "sent", and counting them produced nonsense like
-        // 6%. Settings test sends are not customer messaging either.
+        // Success rate over the shop's real sends of the last month,
+        // whatever mode they went out in. Demo sends are logged with no
+        // provider but are simulated successes, so they count like any
+        // other send - filtering on provider made the card permanently
+        // "-" for exactly the shops still setting up. Blocked attempts
+        // (caps, DND, no balance) were never "sent" and stay out of both
+        // numbers; settings test sends are not customer messaging either.
         $lastMonth = SmsLog::where('business_id', $biz)->where('created_at', '>=', Carbon::now()->subDays(30))
-            ->whereNotNull('provider')->where('source_type', '!=', 'test')->get();
+            ->where('source_type', '!=', 'test')->get();
         $sentOk = $lastMonth->where('status', 'sent')->count();
         $attempts = $lastMonth->whereIn('status', ['sent', 'failed'])->count();
 
@@ -205,7 +212,15 @@ class MarketingController extends Controller
                 $cost += (float) $log->cost;
             }
         }
-        $campaign->update(['recipients' => $sent, 'total_cost' => round($cost, 2), 'status' => 'sent']);
+        // A campaign nobody could be reached by is not "sent": it keeps
+        // its honest 0 recipients / ৳0 and a status that says so, instead
+        // of sitting in the list with a profit verdict for a send that
+        // never happened.
+        $campaign->update(['recipients' => $sent, 'total_cost' => round($cost, 2), 'status' => $sent > 0 ? 'sent' : 'not_sent']);
+
+        if ($sent === 0) {
+            return back()->with('error', 'No SMS could be sent - every recipient was stopped by the do-not-send list or the daily/weekly SMS limit.');
+        }
 
         return back()->with('success', "Campaign sent - {$sent} SMS delivered, cost ৳".number_format($cost, 2));
     }

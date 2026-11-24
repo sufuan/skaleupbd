@@ -1,10 +1,17 @@
 import { Head, router, useForm } from '@inertiajs/react';
+import { useState } from 'react';
 import AppLayout from '@/Layouts/AppLayout';
 import { t } from '@/lib/i18n';
 
 export default function Storefronts({ storefronts, reports, activeDomains, domainCap, domainWarnAt }) {
     const note = useForm({ note: '' });
     const resolve = useForm({ status: 'resolved', note: '' });
+    const [takedown, setTakedown] = useState(null);
+    const [reason, setReason] = useState('');
+    const confirmTakedown = () => {
+        if (!takedown) return;
+        router.post(`/admin/storefronts/${takedown.id}/takedown`, { note: reason }, { preserveScroll: true, onSuccess: () => setTakedown(null) });
+    };
     const capTone = activeDomains >= domainCap ? '#B3261E' : activeDomains >= domainWarnAt ? '#B45309' : 'inherit';
 
     return (
@@ -33,7 +40,7 @@ export default function Storefronts({ storefronts, reports, activeDomains, domai
                                 <td style={{ whiteSpace: 'nowrap' }}>
                                     {s.domainStatus === 'verified' && <button className="btn" onClick={() => router.post(`/admin/storefronts/${s.id}/domain-added`, {}, { preserveScroll: true })}>{t('Mark domain added')}</button>}{' '}
                                     {s.status !== 'taken_down'
-                                        ? <button className="btn" onClick={() => { const n = prompt(t('Reason for the takedown (optional)')); if (n !== null) router.post(`/admin/storefronts/${s.id}/takedown`, { note: n }, { preserveScroll: true }); }}>{t('Take down')}</button>
+                                        ? <button className="btn" onClick={() => { setReason(''); setTakedown(s); }}>{t('Take down')}</button>
                                         : <button className="btn pri" onClick={() => router.post(`/admin/storefronts/${s.id}/restore`, {}, { preserveScroll: true })}>{t('Restore')}</button>}
                                 </td>
                             </tr>
@@ -67,6 +74,21 @@ export default function Storefronts({ storefronts, reports, activeDomains, domai
                     </tbody>
                 </table></div>
             </div>
+
+            {takedown && (
+                <div className="overlay" onClick={() => setTakedown(null)}>
+                    <div className="modal" style={{ maxWidth: 420 }} onClick={(e) => e.stopPropagation()}>
+                        <p style={{ fontSize: 15, lineHeight: 1.55, margin: '4px 0 6px', fontWeight: 600 }}>{t('Take down')} - {takedown.shop}</p>
+                        <p className="sm mut" style={{ margin: '0 0 14px' }}>{t('This storefront will stop showing to customers until you restore it.')}</p>
+                        <label className="fl" style={{ display: 'block', marginBottom: 6 }}>{t('Reason for the takedown (optional)')}</label>
+                        <input className="inp" style={{ width: '100%' }} value={reason} onChange={(e) => setReason(e.target.value)} maxLength={500} />
+                        <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 18 }}>
+                            <button type="button" className="btn" onClick={() => setTakedown(null)}>{t('Cancel')}</button>
+                            <button type="button" className="btn pri" style={{ background: '#B91C1C' }} onClick={confirmTakedown}>{t('Take down')}</button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </AppLayout>
     );
 }

@@ -18,7 +18,7 @@ export const dhakaToday = () => new Date().toLocaleDateString('en-CA', { timeZon
 // Page header in the EcomDrive shape: title left, Guide + primary action right.
 export function PageHead({ title, children }) {
     return (
-        <div className="flex" style={{ alignItems: 'center', marginBottom: 16 }}>
+        <div className="flex pur-head" style={{ alignItems: 'center', marginBottom: 16 }}>
             <h1 className="page-h" style={{ margin: 0 }}>{title}</h1>
             <span className="spacer" />
             <div className="flex" style={{ gap: 8 }}>{children}</div>

@@ -19,7 +19,6 @@ const I = {
 export default function Index({ rows, counts, filters, pagination, pendingCount, filterOptions }) {
     const [search, setSearch] = useState(filters.search || '');
     const [showFilter, setShowFilter] = useState(false);
-    const [selected, setSelected] = useState([]);
     const [adv, setAdv] = useState({ from: filters.from || '', to: filters.to || '', source: filters.source || '', processed_by: filters.processed_by || '', product_code: filters.product_code || '', tag: filters.tag || '' });
     const advCount = Object.values(adv).filter((v) => v !== '').length;
     const base = { status: filters.status, search: filters.search, per_page: filters.per_page, from: filters.from || '', to: filters.to || '', source: filters.source || '', processed_by: filters.processed_by || '', product_code: filters.product_code || '', tag: filters.tag || '' };
@@ -31,9 +30,6 @@ export default function Index({ rows, counts, filters, pagination, pendingCount,
         clearTimeout(timer.current);
         timer.current = setTimeout(() => go({ search: v, page: 1 }), 500);
     };
-    const toggleSel = (id) => setSelected((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
-    const allChecked = rows.length > 0 && rows.every((o) => selected.includes(o.id));
-
     return (
         <AppLayout>
             <Head title={t('Orders')} />
@@ -72,12 +68,11 @@ export default function Index({ rows, counts, filters, pagination, pendingCount,
                     <div className="tbl-wrap">
                         <table className="tbl ord-tbl">
                             <colgroup>
-                                <col style={{ width: 32 }} /><col style={{ width: 114 }} /><col style={{ width: 52 }} /><col style={{ width: 176 }} />
+                                <col style={{ width: 114 }} /><col style={{ width: 52 }} /><col style={{ width: 176 }} />
                                 <col style={{ width: 88 }} /><col style={{ width: 112 }} /><col style={{ width: 74 }} /><col style={{ width: 150 }} />
                                 <col style={{ width: 94 }} /><col style={{ width: 110 }} /><col style={{ width: 92 }} /><col style={{ width: 128 }} />
                             </colgroup>
                             <thead><tr>
-                                <th><input type="checkbox" checked={allChecked} onChange={(e) => setSelected(e.target.checked ? rows.map((o) => o.id) : [])} /></th>
                                 <th>{t('Invoice')}</th><th>{t('Auto Call')}</th><th>{t('Customer')}</th><th>{t('Order Items')}</th>
                                 <th>{t('Success Rate')}</th><th>{t('Tags')}</th><th>{t('Site')}</th><th>{t('Status')}</th>
                                 <th>{t('PBX Calls')}</th><th>{t('Processed By')}</th><th>{t('Actions')}</th>
@@ -85,7 +80,6 @@ export default function Index({ rows, counts, filters, pagination, pendingCount,
                             <tbody>
                                 {rows.map((o) => (
                                     <tr key={o.id}>
-                                        <td><input type="checkbox" checked={selected.includes(o.id)} onChange={() => toggleSel(o.id)} /></td>
                                         <td><b style={{ fontSize: 13, whiteSpace: 'nowrap' }}>{o.invoice}</b><br />
                                             <span style={{ fontSize: 12, color: '#64748B', whiteSpace: 'nowrap' }}>{o.created.replace(/ \d{4}$/, '')}, {o.created_time.replace(/^0/, '').toLowerCase()}</span>
                                             <span className="ord-m-total">{fmt(o.total)}</span></td>
@@ -124,13 +118,12 @@ export default function Index({ rows, counts, filters, pagination, pendingCount,
                                         </span></td>
                                     </tr>
                                 ))}
-                                {rows.length === 0 && <tr><td colSpan={12} className="mut" style={{ textAlign: 'center', padding: 26 }}>{t('No orders here')} - {t('try another tab or search.')}</td></tr>}
+                                {rows.length === 0 && <tr><td colSpan={11} className="mut" style={{ textAlign: 'center', padding: 26 }}>{t('No orders here')} - {t('try another tab or search.')}</td></tr>}
                             </tbody>
                         </table>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '12px 6px 4px', flexWrap: 'wrap' }}>
                         <span style={{ fontSize: 13.5 }}>{t('Page')} {pagination.current}</span>
-                        {selected.length > 0 && <span className="sm mut">{selected.length} {t('selected')}</span>}
                         <span style={{ fontSize: 13.5, color: 'var(--tgl-ink)' }}>{t('Rows per page')}
                             <select value={filters.per_page} onChange={(e) => go({ per_page: e.target.value, page: 1 })}
                                 style={{ marginLeft: 8, height: 30, border: '1px solid var(--track-line)', borderRadius: 6, background: 'var(--field-bg)', color: 'var(--ink)', fontFamily: 'inherit' }}>

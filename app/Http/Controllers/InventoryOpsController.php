@@ -50,20 +50,25 @@ class InventoryOpsController extends Controller
         $rows = $q->orderByDesc('id')->paginate(25)->withQueryString();
 
         $all = StockLedger::where('business_id', $biz);
-        $inQty = (clone $all)->whereIn('type', ['return_in', 'adjust_in', 'transfer_in'])->sum('qty');
-        $outQty = (clone $all)->whereIn('type', ['ship_out', 'adjust_out', 'transfer_out', 'damage'])->sum('qty');
+        // Variant movements (variant_id set) belong to the variant's own
+        // stock pool, which products.stock_qty never carried - folding
+        // them into the product-pool cards/replay would fake a mismatch
+        // on every variant sale. They still list as rows below.
+        $poolRows = (clone $all)->whereNull('variant_id');
+        $inQty = (clone $poolRows)->whereIn('type', ['return_in', 'adjust_in', 'transfer_in'])->sum('qty');
+        $outQty = (clone $poolRows)->whereIn('type', ['ship_out', 'adjust_out', 'transfer_out', 'damage'])->sum('qty');
         // The "Stock Out" card means units that left through SALES (ship_out)
         // — adjustments and damage have their own cards, and folding them in
         // here counted a ±20 adjustment as sales out.
-        $salesOutQty = (clone $all)->where('type', 'ship_out')->sum('qty');
-        $adjNet = (clone $all)->where('type', 'adjust_in')->sum('qty') - (clone $all)->where('type', 'adjust_out')->sum('qty');
-        $damageQty = (clone $all)->where('type', 'damage')->sum('qty');
+        $salesOutQty = (clone $poolRows)->where('type', 'ship_out')->sum('qty');
+        $adjNet = (clone $poolRows)->where('type', 'adjust_in')->sum('qty') - (clone $poolRows)->where('type', 'adjust_out')->sum('qty');
+        $damageQty = (clone $poolRows)->where('type', 'damage')->sum('qty');
         $closing = (int) Product::where('business_id', $biz)->sum('stock_qty');
 
         // Integrity: replay each product's ledger (signed) and compare with its stored stock_qty.
         $signed = ['reserve' => 0, 'release_reserve' => 0, 'ship_out' => -1, 'return_in' => 1,
             'adjust_in' => 1, 'adjust_out' => -1, 'transfer_in' => 0, 'transfer_out' => 0, 'damage' => -1];
-        $balances = StockLedger::where('business_id', $biz)->get(['product_id', 'type', 'qty'])
+        $balances = StockLedger::where('business_id', $biz)->whereNull('variant_id')->get(['product_id', 'type', 'qty'])
             ->groupBy('product_id')
             ->map(fn ($rows) => $rows->sum(fn ($r) => ($signed[$r->type] ?? 0) * $r->qty));
         $products = Product::where('business_id', $biz)->get();
@@ -82,15 +87,14 @@ class InventoryOpsController extends Controller
                 $findings[] = ['kind' => 'Ledger Mismatch', 'product' => $p->name, 'sku' => $p->sku,
                     'text' => "ledger says {$expected}, stock shows {$p->stock_qty}"];
             }
-            if ($p->type === 'combo') {
-                $minComp = DB::table('combo_components')->where('combo_product_id', $p->id)
-                    ->join('products', 'products.id', '=', 'combo_components.component_product_id')
-                    ->select(DB::raw('MIN(FLOOR((products.stock_qty - products.reserved_qty) / combo_components.qty)) as avail'))
-                    ->value('avail');
-                $ownAvail = $p->stock_qty - $p->reserved_qty;
-                if ($minComp !== null && (int) $minComp !== $ownAvail) {
+            if ($p->type === 'combo' && $p->components()->exists()) {
+                // A combo with a recipe carries no stock of its own -
+                // every movement belongs on its components (K-H1). Any
+                // units sitting on the combo's own row are drift: they
+                // promise stock no component backs.
+                if ((int) $p->stock_qty !== 0 || (int) $p->reserved_qty !== 0) {
                     $findings[] = ['kind' => 'Combo Parent Drift', 'product' => $p->name, 'sku' => $p->sku,
-                        'text' => "combo availability {$ownAvail} vs components allow " . (int) $minComp];
+                        'text' => "combo carries its own stock ({$p->stock_qty}) / reservations ({$p->reserved_qty}) - movements belong on its components"];
                 }
             }
         }
@@ -169,14 +173,38 @@ class InventoryOpsController extends Controller
     public function branches(Request $request)
     {
         $biz = $this->biz($request);
-        $branches = Branch::where('business_id', $biz)->orderBy('id')->get()->map(function ($b) {
-            $stock = BranchStock::where('branch_id', $b->id)->get();
+        $branchStockEnabled = (bool) $this->settings->bizGet($biz, "inventory.{$biz}.branch_stock_enabled", 'inventory.branch_stock_enabled', false);
+        // Hunt G-3: while branch stock is OFF, nothing keeps branch_stock
+        // in sync (receives, imports, shipments and deletes never touch
+        // it), so the page must not present it as live fact. Derive the
+        // figures from the products table instead: the whole real stock
+        // pool sits in the default branch (the first active branch, the
+        // same convention storeProduct uses for opening stock), and every
+        // other branch honestly shows zero.
+        $realProducts = $branchStockEnabled ? collect() : Product::where('business_id', $biz)->orderBy('name')->get();
+        $defaultBranchId = Branch::where('business_id', $biz)->where('is_active', true)->orderBy('id')->value('id')
+            ?? Branch::where('business_id', $biz)->orderBy('id')->value('id');
+        $branches = Branch::where('business_id', $biz)->orderBy('id')->get()->map(function ($b) use ($branchStockEnabled, $realProducts, $defaultBranchId) {
+            if ($branchStockEnabled) {
+                $stock = BranchStock::where('branch_id', $b->id)->get();
+                $rows = $stock->map(fn ($s) => ['product_id' => $s->product_id, 'qty' => $s->qty])->values();
+                $count = $stock->count();
+                $total = (int) $stock->sum('qty');
+            } elseif ($b->id === $defaultBranchId) {
+                $rows = $realProducts->map(fn ($prod) => ['product_id' => $prod->id, 'qty' => (int) $prod->stock_qty])->values();
+                $count = $realProducts->count();
+                $total = (int) $realProducts->sum('stock_qty');
+            } else {
+                $rows = collect();
+                $count = 0;
+                $total = 0;
+            }
             return [
                 'id' => $b->id, 'name' => $b->name, 'type' => $b->type, 'address' => $b->address,
                 'phone' => $b->phone, 'is_active' => (bool) $b->is_active,
-                'products_count' => $stock->count(),
-                'total_qty' => (int) $stock->sum('qty'),
-                'stock' => $stock->map(fn ($s) => ['product_id' => $s->product_id, 'qty' => $s->qty])->values(),
+                'products_count' => $count,
+                'total_qty' => $total,
+                'stock' => $rows,
             ];
         });
         $transfers = StockTransfer::where('business_id', $biz)->orderByDesc('id')->get()->map(fn ($t) => [
@@ -193,7 +221,7 @@ class InventoryOpsController extends Controller
                 'warehouses' => $branches->where('type', 'warehouse')->count(),
                 'central' => $branches->where('type', 'central')->count(),
             ],
-            'branchStockEnabled' => (bool) $this->settings->bizGet($biz, "inventory.{$biz}.branch_stock_enabled", 'inventory.branch_stock_enabled', false),
+            'branchStockEnabled' => $branchStockEnabled,
             'cartonsEnabled' => (bool) $this->settings->bizGet($biz, "inventory.{$biz}.warehouse_cartons", 'inventory.warehouse_cartons', false),
             'transfers' => $transfers,
             'products' => Product::where('business_id', $biz)->orderBy('name')->get(['id', 'name', 'sku', 'stock_qty']),
@@ -205,6 +233,13 @@ class InventoryOpsController extends Controller
         $biz = $this->biz($request);
         $enabled = ! (bool) $this->settings->bizGet($biz, "inventory.{$biz}.branch_stock_enabled", 'inventory.branch_stock_enabled', false);
         $this->settings->set("inventory.{$biz}.branch_stock_enabled", $enabled, $request->user()?->id);
+        if ($enabled) {
+            // Hunt K-H4: turning the feature ON must start from the truth.
+            // The stored branch_stock rows were never kept in sync while
+            // the feature was off (and the seeded rows never matched), so
+            // re-derive them from products before the page believes them.
+            $this->stock->rederiveBranchStock($biz);
+        }
 
         return back()->with('success', $enabled ? 'Branch stock turned on' : 'Branch stock turned off');
     }
@@ -256,7 +291,27 @@ class InventoryOpsController extends Controller
             'cartons' => ['nullable', 'integer', 'min:0'],
             'note' => ['nullable', 'string', 'max:255'],
         ]);
-        $transfer = StockTransfer::create(['business_id' => $this->biz($request), 'user_id' => $request->user()->id, 'status' => 'sent'] + $data);
+        $biz = $this->biz($request);
+        // Hunt K-H5: a transfer may not exceed what the source branch
+        // actually holds for this product - the old check-less path let
+        // one typo drive a branch to -997. "Available" mirrors exactly
+        // what the Branches page shows: the branch_stock row while the
+        // feature is ON; while OFF, the whole pool on the default branch
+        // and zero anywhere else (the page's own derivation).
+        $product = Product::where('business_id', $biz)->find($data['product_id']);
+        $available = 0;
+        if ($product) {
+            if ($this->stock->branchStockEnabled($biz)) {
+                $available = (int) (BranchStock::where('branch_id', $data['from_branch_id'])
+                    ->where('product_id', $product->id)->value('qty') ?? 0);
+            } elseif ((int) $data['from_branch_id'] === (int) $this->stock->defaultBranchId($biz)) {
+                $available = (int) $product->stock_qty;
+            }
+        }
+        if (! $product || (int) $data['qty'] > $available) {
+            return back()->with('error', __('Not enough stock in the source branch - only :available available.', ['available' => $available]));
+        }
+        $transfer = StockTransfer::create(['business_id' => $biz, 'user_id' => $request->user()->id, 'status' => 'sent'] + $data);
         $this->stock->applyTransfer($transfer, $request->user());
 
         return back()->with('success', 'Transfer sent');

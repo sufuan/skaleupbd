@@ -14,9 +14,15 @@ const STAGES = [
 const STUCK_LABELS = ['Only wrote', 'Interested, did not move on', 'Ready to order, not ordered', 'Ordered'];
 const STUCK_COLORS = ['#94A3B8', '#411550', '#7C3AED', '#12805C'];
 const TASK_TEXT = {
-    complaint: { title: ':count complaints waiting for a reply', reason: 'They mentioned a wrong product, a delay or damage. Look at these first.', cta: 'See complaints', urgent: 'Urgent' },
-    ready: { title: ':count people are ready to order, but have not ordered', reason: 'They shared contact details. A fast follow-up wins the sale.', cta: 'Send message', urgent: 'Now' },
-    interested: { title: ':count people asked about price or delivery and stopped', reason: 'They asked, then went quiet. A message can bring them back.', cta: 'Send offer', urgent: 'Today' },
+    complaint: { title: ':count complaints waiting for a reply', title1: ':count complaint waiting for a reply', reason: 'They mentioned a wrong product, a delay or damage. Look at these first.', cta: 'See complaints', urgent: 'Urgent' },
+    ready: { title: ':count people are ready to order, but have not ordered', title1: ':count person is ready to order, but has not ordered', reason: 'They shared contact details. A fast follow-up wins the sale.', cta: 'Send message', urgent: 'Now' },
+    interested: { title: ':count people asked about price or delivery and stopped', title1: ':count person asked about price or delivery and stopped', reason: 'They asked, then went quiet. A message can bring them back.', cta: 'Send offer', urgent: 'Today' },
+};
+// Singular title when the count is exactly 1 ("1 people" reads wrong).
+const taskTitle = (kind, count) => {
+    const tx = TASK_TEXT[kind];
+    if (!tx) return '';
+    return t(count === 1 && tx.title1 ? tx.title1 : tx.title, { count: fmtNum(count) });
 };
 const REASON_LABELS = {
     intent_price: 'Asked about the price', intent_stock: 'Asked about stock', intent_delivery: 'Asked about delivery',
@@ -119,7 +125,7 @@ export default function Growth({ summary, tasks, can_revenue }) {
                         </div>
 
                         {s.low_data && (
-                            <div className="gw-note">{period === '30d' ? t('Not much data in this period (:count people). Percentages would not be trustworthy yet.', { count: fmtNum(s.wrote) }) : t('Not much data in this period (:count people). Percentages would not be trustworthy - try 30 days.', { count: fmtNum(s.wrote) })}</div>
+                            <div className="gw-note">{period === '30d' ? t(s.wrote === 1 ? 'Not much data in this period (:count person). Percentages would not be trustworthy yet.' : 'Not much data in this period (:count people). Percentages would not be trustworthy yet.', { count: fmtNum(s.wrote) }) : t(s.wrote === 1 ? 'Not much data in this period (:count person). Percentages would not be trustworthy - try 30 days.' : 'Not much data in this period (:count people). Percentages would not be trustworthy - try 30 days.', { count: fmtNum(s.wrote) })}</div>
                         )}
 
                         <div className="gw-cols">
@@ -139,7 +145,7 @@ export default function Growth({ summary, tasks, can_revenue }) {
                                                     <span className="gw-bar" style={{ width: w + '%' }}>{v ? fmtNum(v) : '-'}</span>
                                                 </button>
                                                 {i < 3 && reached[i] - (reached[i + 1] || 0) > 0 && (
-                                                    <div className="gw-drop">{t(':count people did not move to the next stage', { count: fmtNum(reached[i] - (reached[i + 1] || 0)) })}</div>
+                                                    <div className="gw-drop">{t(reached[i] - (reached[i + 1] || 0) === 1 ? ':count person did not move to the next stage' : ':count people did not move to the next stage', { count: fmtNum(reached[i] - (reached[i + 1] || 0)) })}</div>
                                                 )}
                                                 {openStage === i && <div className="gw-def"><b>{t(st.name)}:</b> {t(st.def)}</div>}
                                             </div>
@@ -160,7 +166,7 @@ export default function Growth({ summary, tasks, can_revenue }) {
                                     return (
                                         <div key={task.id} className="gw-task">
                                             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'flex-start' }}>
-                                                <b style={{ fontSize: 15 }}>{t(tx.title, { count: fmtNum(task.count) })}</b>
+                                                <b style={{ fontSize: 15 }}>{taskTitle(task.kind, task.count)}</b>
                                                 <span className={`gw-pill${task.kind === 'complaint' ? ' hot' : ''}`}>{t(tx.urgent)}</span>
                                             </div>
                                             <div style={{ color: '#64748B', fontSize: 13, marginTop: 2 }}>{t(tx.reason)}</div>
@@ -180,7 +186,7 @@ export default function Growth({ summary, tasks, can_revenue }) {
                                     <div style={{ marginTop: 10 }}>
                                         {taskList.filter((x) => x.status === 'done').map((task) => (
                                             <div key={task.id} className="gw-done-row">
-                                                <span>{t(TASK_TEXT[task.kind]?.title || '', { count: fmtNum(task.count) })}</span>
+                                                <span>{taskTitle(task.kind, task.count)}</span>
                                                 <button type="button" className="btn-s" onClick={() => setStatus(task, 'open')}>{t('Reopen')}</button>
                                             </div>
                                         ))}
@@ -215,7 +221,7 @@ export default function Growth({ summary, tasks, can_revenue }) {
                 <div className="mkt gw-overlay" onClick={(e) => { if (e.target === e.currentTarget) setDrawer(null); }}>
                     <div className="gw-drawer">
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
-                            <h4 style={{ margin: 0, fontSize: 16 }}>{t(TASK_TEXT[drawer.task.kind]?.title || '', { count: fmtNum(drawer.task.count) })}</h4>
+                            <h4 style={{ margin: 0, fontSize: 16 }}>{taskTitle(drawer.task.kind, drawer.task.count)}</h4>
                             <button type="button" className="btn-s" onClick={() => setDrawer(null)}>{t('Close')}</button>
                         </div>
                         <p style={{ color: '#64748B', fontSize: 13, marginTop: 8 }}>{t('The AI makes a draft for each person. You review and send it from the Inbox - nothing is sent on its own.')}</p>

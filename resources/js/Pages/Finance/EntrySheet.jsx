@@ -57,6 +57,9 @@ export default function EntrySheet({ open, kind, setKind, accounts = [], categor
                 .entry-sheet .cat-chips button{border:1px solid #E7EAF0;background:#fff;border-radius:99px;padding:7px 14px;font-size:13.5px;cursor:pointer}
                 .entry-sheet .cat-chips button.on{background:#411550;color:#fff;border-color:#411550}
                 .entry-sheet .lbl{display:block;font-size:13px;font-weight:600;color:#334155;margin-bottom:5px}
+                .entry-sheet .btn-p{background:#411550;color:#fff;border:none;padding:8px 14px;border-radius:8px;font-weight:600;cursor:pointer;font-size:13.5px;font-family:inherit;white-space:nowrap}
+                .entry-sheet .btn-p:disabled{opacity:.55;cursor:not-allowed}
+                .entry-sheet .btn-s{background:#fff;color:#411550;border:1px solid #D8CBE3;padding:8px 14px;border-radius:8px;font-weight:600;cursor:pointer;font-size:13.5px;font-family:inherit;white-space:nowrap}
             `}</style>
             <form className="entry-sheet" onSubmit={submit} style={{ padding: 20 }}>
                 <h3 style={{ fontSize: 17, marginBottom: 12 }}>{t('New transaction')}</h3>

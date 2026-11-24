@@ -96,8 +96,18 @@ final class ConnectionHealthController extends Controller
         if (! $hasPoints) {
             return 'paused';          // No points — our side is disconnected.
         }
-        if ($conn->status === 'error') {
+        // The connection status vocabulary is active / pending / failed /
+        // degraded / disabled / paused — there is no 'error' status, so
+        // checking for it let failed (and disabled/pending) connections
+        // fall through to the card's green "active" rendering.
+        if ($conn->status === 'failed' || $conn->status === 'error') {
             return 'error';
+        }
+        if ($conn->status === 'disabled') {
+            return 'disabled';
+        }
+        if ($conn->status === 'pending') {
+            return 'pending';
         }
         if (($conn->failure_count ?? 0) >= 3) {
             return 'degraded';        // Repeated failures but not fully errored.

@@ -89,8 +89,14 @@ class PurchaseController extends Controller
             ->with('items')->get();
         $bills = $periodPurchases->where('kind', 'bill');
         $periodIds = $periodPurchases->pluck('id');
+        // Paid = ALLOCATED payments dated inside the period - the exact
+        // definition the Purchase Report uses (Hunt G-4). Unallocated
+        // overpayment is credit, not paid, and never inflates this card.
         $paidOnPeriod = (float) PurchasePayment::where('business_id', $biz)
-            ->whereIn('purchase_id', $periodIds)->sum('amount');
+            ->whereNotNull('purchase_id')
+            ->whereDate('date', '>=', $from->toDateString())->whereDate('date', '<=', $to->toDateString())
+            ->when($supplierId, fn ($q) => $q->where('supplier_id', $supplierId))
+            ->sum('amount');
         $receivedValue = round((float) $periodPurchases->sum(
             fn (Purchase $p) => $p->items->sum(fn (PurchaseItem $i) => $i->qty_received * (float) $i->unit_cost)
         ), 2);
@@ -212,7 +218,9 @@ class PurchaseController extends Controller
                     'product' => $i->product?->name ?? '',
                     'ordered' => $i->qty_ordered, 'received' => $i->qty_received,
                     'damaged' => $i->qty_damaged, 'left' => $i->left(),
-                    'status' => 'Not received',
+                    // Honest per-line state (Hunt G-8): any goods already
+                    // in (received or damaged) means partially received.
+                    'status' => ($i->qty_received + $i->qty_damaged) > 0 ? 'Partially received' : 'Not received',
                 ];
             })->all();
             $props['pager'] = ['page' => $items->currentPage(), 'pages' => $items->lastPage(), 'total' => $items->total()];
@@ -362,7 +370,11 @@ class PurchaseController extends Controller
                 ])->all(),
                 'attachments' => $purchase->attachments->map(fn (PurchaseAttachment $a) => [
                     'id' => $a->id, 'name' => $a->original_name,
-                    'url' => Storage::disk('public')->url($a->path),
+                    // Relative URL on the host in use - the same resolution
+                    // Product::imageUrl() uses. Storage::url() prefixes the
+                    // configured APP_URL, so the link was dead on any host
+                    // that differs from APP_URL (Hunt K-M2).
+                    'url' => '/storage/' . ltrim($a->path, '/'),
                 ])->all(),
             ],
             'accounts' => $this->accounts($biz),
@@ -471,6 +483,7 @@ class PurchaseController extends Controller
                 'terms_days' => (int) $r['supplier']->terms_days,
                 'purchases' => $r['purchases_count'],
                 'total_purchased' => $r['total_purchased'],
+                'credit' => $r['credit'],
                 'due' => $r['due'], 'bills_due' => $r['bills_due'],
                 'overdue' => $r['overdue'],
                 'oldest_due_date' => $r['oldest_due_date'],
@@ -499,14 +512,23 @@ class PurchaseController extends Controller
         $reportRows = collect($summaries)->map(function ($r) use ($biz, $from, $to) {
             $purchased = (float) Purchase::where('business_id', $biz)->where('supplier_id', $r['supplier']->id)
                 ->where('kind', 'bill')->whereDate('date', '>=', $from)->whereDate('date', '<=', $to)->sum('total');
+            // Same definitions as everywhere else (Hunt G-4): Paid is
+            // allocated payments only; unallocated overpayment is shown
+            // as its own Credit figure, so Purchased = Paid + Due holds
+            // and Paid + Credit = every taka that left the till.
             $paid = (float) PurchasePayment::where('business_id', $biz)->where('supplier_id', $r['supplier']->id)
+                ->whereNotNull('purchase_id')
+                ->whereDate('date', '>=', $from)->whereDate('date', '<=', $to)->sum('amount');
+            $credit = (float) PurchasePayment::where('business_id', $biz)->where('supplier_id', $r['supplier']->id)
+                ->whereNull('purchase_id')
                 ->whereDate('date', '>=', $from)->whereDate('date', '<=', $to)->sum('amount');
 
             return [
                 'id' => $r['supplier']->id, 'name' => $r['supplier']->name,
-                'purchased' => round($purchased, 2), 'paid' => round($paid, 2), 'due' => $r['due'],
+                'purchased' => round($purchased, 2), 'paid' => round($paid, 2),
+                'credit' => round($credit, 2), 'due' => $r['due'],
             ];
-        })->filter(fn ($r) => $r['purchased'] > 0 || $r['paid'] > 0 || $r['due'] > 0)->values()->all();
+        })->filter(fn ($r) => $r['purchased'] > 0 || $r['paid'] > 0 || $r['credit'] > 0 || $r['due'] > 0)->values()->all();
 
         return Inertia::render('Purchase/Suppliers', [
             'tab' => $tab, 'q' => $q,

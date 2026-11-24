@@ -173,6 +173,7 @@ Route::middleware(['auth', 'verified', 'totp'])->group(function () {
     Route::post('/orders/{order}/approve', [OrderController::class, 'approve'])->name('orders.approve');
     Route::post('/orders/{order}/sms', [OrderController::class, 'sendSms'])->name('orders.sms');
     Route::post('/orders/{order}/block', [OrderController::class, 'block'])->name('orders.block');
+    Route::post('/orders/{order}/refund-advance', [OrderController::class, 'refundAdvance'])->name('orders.refundAdvance');
     Route::delete('/orders/{order}', [OrderController::class, 'destroy'])->name('orders.destroy');
     Route::get('/orders/{order}/invoice', [OrderController::class, 'invoice'])->name('orders.invoice');
 
@@ -306,8 +307,6 @@ Route::middleware(['auth', 'verified', 'totp'])->group(function () {
     Route::delete('/inventory/brands/{brand}', [\App\Http\Controllers\InventoryController::class, 'destroyBrand'])->name('inventory.brands.destroy');
     Route::post('/inventory/products/{product}/variants', [\App\Http\Controllers\InventoryController::class, 'storeVariant'])->name('inventory.variants.store');
     Route::delete('/inventory/variants/{variant}', [\App\Http\Controllers\InventoryController::class, 'destroyVariant'])->name('inventory.variants.destroy');
-    Route::post('/inventory/groups/{kind}', [\App\Http\Controllers\InventoryController::class, 'storeGroup'])->name('inventory.groups.store');
-    Route::delete('/inventory/groups/{kind}/{group}', [\App\Http\Controllers\InventoryController::class, 'destroyGroup'])->name('inventory.groups.destroy');
     Route::get('/inventory/ledger', [\App\Http\Controllers\InventoryOpsController::class, 'ledger'])->name('inventory.ledger');
     Route::post('/inventory/reconcile', [\App\Http\Controllers\InventoryOpsController::class, 'reconcile'])->name('inventory.reconcile');
     Route::get('/inventory/branches', [\App\Http\Controllers\InventoryOpsController::class, 'branches'])->name('inventory.branches');
@@ -375,6 +374,7 @@ Route::middleware(['auth', 'verified', 'totp'])->group(function () {
     Route::post('/admin/sellers/{business}/subscribe', [\App\Http\Controllers\PlatformController::class, 'subscribe'])->name('platform.seller.subscribe');
     Route::post('/admin/sellers/{business}/refund-first-purchase', [\App\Http\Controllers\PlatformController::class, 'refundFirstPurchase'])->name('platform.seller.refund');
     Route::post('/admin/sellers/{business}/payments', [\App\Http\Controllers\PlatformController::class, 'storePayment'])->name('platform.seller.payment');
+    Route::post('/admin/sellers/{business}/points', [\App\Http\Controllers\PlatformController::class, 'addPoints'])->name('platform.seller.points');
     Route::post('/admin/sellers/{business}/view', [\App\Http\Controllers\ViewAsController::class, 'enter'])->name('platform.viewAs.enter');
     Route::post('/admin/view-as/exit', [\App\Http\Controllers\ViewAsController::class, 'exit'])->name('platform.viewAs.exit');
     Route::post('/admin/sellers/{business}/approve', [\App\Http\Controllers\PlatformController::class, 'approveSeller'])->name('platform.seller.approve');

@@ -130,16 +130,22 @@ final class WooCommerceStockPushService
             'stock_status'   => $qty > 0 ? 'instock' : 'outofstock',
         ];
 
-        if ($variationId) {
-            // PUT /wp-json/wc/v3/products/{id}/variations/{variation_id}
-            $this->client->put(
-                $conn,
-                "products/{$wooId}/variations/{$variationId}",
-                $payload,
-            );
-        } else {
-            // PUT /wp-json/wc/v3/products/{id}
-            $this->client->put($conn, "products/{$wooId}", $payload);
+        $creds = $conn->credentials_enc ?? [];
+        $ck    = (string) ($creds['ck'] ?? '');
+        $cs    = (string) ($creds['cs'] ?? '');
+
+        // PUT /wp-json/wc/v3/products/{id} or .../products/{id}/variations/{variation_id}
+        $path = $variationId
+            ? "products/{$wooId}/variations/{$variationId}"
+            : "products/{$wooId}";
+        $url = rtrim((string) $conn->site_url, '/') . '/wp-json/wc/v3/' . $path;
+
+        $response = $this->client->putJson($url, $ck, $cs, json_encode($payload));
+
+        if (! $response->successful()) {
+            // Throw so pushProduct does NOT record last_pushed_stock for a
+            // push that never landed; the job can retry.
+            throw new \RuntimeException('WooCommerce stock push failed: HTTP ' . $response->status());
         }
 
         Log::info('WooStockPush: pushed', [

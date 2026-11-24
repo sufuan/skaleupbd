@@ -9,9 +9,7 @@ use App\Models\Product;
 use App\Models\ProductBrand;
 use App\Models\ProductCategory;
 use App\Models\ProductVariant;
-use App\Models\SharedInventoryGroup;
 use App\Models\StockLedger;
-use App\Models\StockLinkGroup;
 use App\Models\WarrantyClaim;
 use App\Support\DhakaTime;
 use App\Services\StockService;
@@ -98,19 +96,19 @@ class InventoryController extends Controller
 
         $attention = [];
         foreach ($out as $p) {
-            $attention[] = ['kind' => 'out', 'text' => "{$p->name} is out of stock", 'product_id' => $p->id];
+            $attention[] = ['kind' => 'out', 'text' => __(':product is out of stock', ['product' => $p->name]), 'product_id' => $p->id];
         }
         foreach ($negative as $p) {
-            $attention[] = ['kind' => 'negative', 'text' => "{$p->name} has negative stock ({$this->available($p)})", 'product_id' => $p->id];
+            $attention[] = ['kind' => 'negative', 'text' => __(':product has negative stock (:count)', ['product' => $p->name, 'count' => $this->available($p)]), 'product_id' => $p->id];
         }
         foreach ($low as $p) {
-            $attention[] = ['kind' => 'low', 'text' => "{$p->name} is low - only {$this->available($p)} left", 'product_id' => $p->id];
+            $attention[] = ['kind' => 'low', 'text' => __(':product is low - only :count left', ['product' => $p->name, 'count' => $this->available($p)]), 'product_id' => $p->id];
         }
         $overdue = WarrantyClaim::where('business_id', $biz)
             ->whereNotIn('status', ['closed', 'rejected', 'cancelled'])
             ->whereNotNull('due_date')->where('due_date', '<', DhakaTime::today())->count();
         if ($overdue > 0) {
-            $attention[] = ['kind' => 'warranty', 'text' => "{$overdue} warranty claim(s) overdue", 'product_id' => null];
+            $attention[] = ['kind' => 'warranty', 'text' => __(':count warranty claim(s) overdue', ['count' => $overdue]), 'product_id' => null];
         }
 
         // Smart Restock: 30-day sales velocity per product
@@ -182,36 +180,34 @@ class InventoryController extends Controller
             return array_merge($this->productRow($p), ['components' => $comps]);
         })->values();
 
-        $shared = SharedInventoryGroup::where('business_id', $biz)->get()->map(fn ($g) => [
-            'id' => $g->id, 'name' => $g->name,
-            'product_ids' => DB::table('shared_inventory_members')->where('group_id', $g->id)->pluck('product_id'),
-        ]);
-        $links = StockLinkGroup::where('business_id', $biz)->get()->map(fn ($g) => [
-            'id' => $g->id, 'name' => $g->name,
-            'product_ids' => DB::table('stock_link_members')->where('group_id', $g->id)->pluck('product_id'),
-        ]);
         $variants = ProductVariant::where('business_id', $biz)->get()->groupBy('product_id')
             ->map(fn ($rows) => $rows->map(fn ($v) => ['id' => $v->id, 'name' => $v->name, 'sku' => $v->sku, 'price' => $v->price, 'cost' => $v->cost, 'stock_qty' => $v->stock_qty])->values());
 
         return Inertia::render('Inventory/Products', [
             'products' => $products->through(fn ($p) => $this->productRow($p)),
+            // Header totals describe the ACTIVE catalogue - the same set
+            // the order/purchase pickers and the storefront use (Hunt
+            // G-5). Inactive products stay listed and managed below, but
+            // their stock must not inflate the totals a seller acts on.
             'summary' => [
-                'products' => $all->count(),
+                'products' => $all->where('is_active', true)->count(),
                 'categories' => $categories->count(),
-                'total_stock' => (int) $all->sum('stock_qty'),
-                'est_value' => $all->sum(fn ($p) => $p->stock_qty * (float) $p->cost),
-                'sell_value' => $all->sum(fn ($p) => $p->stock_qty * (float) $p->price),
-                'cost_value' => $all->sum(fn ($p) => $p->stock_qty * (float) $p->cost),
-                'out_of_stock' => $all->filter(fn ($p) => $this->available($p) <= 0)->count(),
+                'total_stock' => (int) $all->where('is_active', true)->sum('stock_qty'),
+                'est_value' => $all->where('is_active', true)->sum(fn ($p) => $p->stock_qty * (float) $p->cost),
+                'sell_value' => $all->where('is_active', true)->sum(fn ($p) => $p->stock_qty * (float) $p->price),
+                'cost_value' => $all->where('is_active', true)->sum(fn ($p) => $p->stock_qty * (float) $p->cost),
+                'out_of_stock' => $all->where('is_active', true)->filter(fn ($p) => $this->available($p) <= 0)->count(),
             ],
             'inactive' => $all->where('is_active', false)->map(fn ($p) => $this->productRow($p))->values(),
             'combos' => $combos,
             'wraps' => $all->where('type', 'wrap')->map(fn ($p) => $this->productRow($p))->values(),
-            'sharedGroups' => $shared,
-            'linkGroups' => $links,
             'variants' => $variants,
             'categories' => $categories,
             'brands' => $brands,
+            // Full catalogue (id/name/sku) for the Edit form's combo
+            // components picker - the paginated table rows are not all
+            // products, and the picker must offer every one of them.
+            'allProducts' => $all->map(fn ($p) => ['id' => $p->id, 'name' => $p->name, 'sku' => $p->sku])->values(),
             'filters' => ['search' => $request->query('search', '')],
         ]);
     }
@@ -310,9 +306,9 @@ class InventoryController extends Controller
         }
         if ($product->type === 'combo') {
             foreach ((array) $request->input('components', []) as $c) {
-                if (! empty($c['product_id'])) {
+                if (! empty($c['product_id']) && (int) $c['product_id'] !== $product->id) {
                     ComboComponent::create(['business_id' => $biz, 'combo_product_id' => $product->id,
-                        'component_product_id' => (int) $c['product_id'], 'qty' => (int) ($c['qty'] ?? 1)]);
+                        'component_product_id' => (int) $c['product_id'], 'qty' => max(1, (int) ($c['qty'] ?? 1))]);
                 }
             }
         }
@@ -362,6 +358,7 @@ class InventoryController extends Controller
             }
             $nums = [];
             $badField = null;
+            $badNegative = false;
             foreach (['price', 'cost', 'stock_qty', 'alert_qty'] as $f) {
                 $v = $rec[$f] ?? null;
                 if ($v === null || trim((string) $v) === '') {
@@ -373,11 +370,21 @@ class InventoryController extends Controller
                     $badField = $f;
                     break;
                 }
+                // Same minimums as the single-product form (min:0): a
+                // negative price, cost, stock or alert quantity must never
+                // import (Hunt G-2).
+                if ($clean + 0 < 0) {
+                    $badField = $f;
+                    $badNegative = true;
+                    break;
+                }
                 $nums[$f] = $clean + 0;
             }
             if ($badField !== null) {
                 $skipped++;
-                $errors[] = "Row {$rowNo}: {$badField} is not a number";
+                $errors[] = $badNegative
+                    ? "Row {$rowNo}: {$badField} cannot be negative"
+                    : "Row {$rowNo}: {$badField} is not a number";
                 continue;
             }
 
@@ -717,12 +724,38 @@ class InventoryController extends Controller
         unset($data['stock_qty']); // stock changes go through Adjust, never the edit form
         $product->update($data);
 
+        // Combo recipe (K-M3): the product form's components picker sends
+        // components[] together with components_present=1 - only then is
+        // the recipe replaced, so an edit that never touches the picker
+        // (or an older form) leaves the existing recipe alone. Same
+        // acceptance shape as storeProduct().
+        if ($product->type === 'combo' && $request->boolean('components_present')) {
+            ComboComponent::where('combo_product_id', $product->id)->delete();
+            foreach ((array) $request->input('components', []) as $c) {
+                if (! empty($c['product_id']) && (int) $c['product_id'] !== $product->id) {
+                    ComboComponent::create(['business_id' => $product->business_id, 'combo_product_id' => $product->id,
+                        'component_product_id' => (int) $c['product_id'], 'qty' => max(1, (int) ($c['qty'] ?? 1))]);
+                }
+            }
+        }
+
         return back()->with('success', 'Product updated');
     }
 
     public function destroyProduct(Request $request, Product $product)
     {
         abort_unless($product->business_id === $this->biz($request), 403);
+        // Guard (Hunt G-1): deleting a product cascades away its whole
+        // stock ledger and nulls its order items, so a product with any
+        // history - or stock still reserved on a live order - must never
+        // be hard-deleted. Same honesty as the purchase delete guard:
+        // refuse and point the seller to deactivate instead.
+        $hasHistory = (int) $product->reserved_qty > 0
+            || \App\Models\OrderItem::where('product_id', $product->id)->exists()
+            || StockLedger::where('product_id', $product->id)->exists();
+        if ($hasHistory) {
+            return back()->with('error', __('This product cannot be deleted - it has orders, stock history or reserved stock. Deactivate it instead.'));
+        }
         $product->delete();
 
         return back()->with('success', 'Product deleted');
@@ -826,33 +859,4 @@ class InventoryController extends Controller
         return back()->with('success', 'Variant deleted');
     }
 
-    public function storeGroup(Request $request, string $kind)
-    {
-        abort_unless(in_array($kind, ['shared', 'links'], true), 404);
-        $data = $request->validate([
-            'name' => ['required', 'string', 'max:120'],
-            'product_ids' => ['required', 'array', 'min:2'],
-        ]);
-        $biz = $this->biz($request);
-        $model = $kind === 'shared' ? SharedInventoryGroup::class : StockLinkGroup::class;
-        $memberTable = $kind === 'shared' ? 'shared_inventory_members' : 'stock_link_members';
-        $group = $model::create(['business_id' => $biz, 'name' => $data['name']]);
-        foreach ($data['product_ids'] as $pid) {
-            DB::table($memberTable)->insert(['group_id' => $group->id, 'product_id' => (int) $pid, 'created_at' => now(), 'updated_at' => now()]);
-        }
-
-        return back()->with('success', 'Group created');
-    }
-
-    public function destroyGroup(Request $request, string $kind, int $group)
-    {
-        abort_unless(in_array($kind, ['shared', 'links'], true), 404);
-        $model = $kind === 'shared' ? SharedInventoryGroup::class : StockLinkGroup::class;
-        $memberTable = $kind === 'shared' ? 'shared_inventory_members' : 'stock_link_members';
-        $row = $model::where('business_id', $this->biz($request))->findOrFail($group);
-        DB::table($memberTable)->where('group_id', $row->id)->delete();
-        $row->delete();
-
-        return back()->with('success', 'Group deleted');
-    }
 }

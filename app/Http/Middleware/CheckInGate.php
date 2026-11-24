@@ -44,6 +44,6 @@ class CheckInGate
             return $next($request);
         }
 
-        return redirect('/hrm/attendance')->with('error', 'আজ এখনো Check-in হয়নি — আগে Check-in করুন, তারপর বাকি কাজ খুলবে।');
+        return redirect('/hrm/attendance')->with('error', __('You have not checked in yet today - check in first, then the rest of the work will open.'));
     }
 }

@@ -48,13 +48,38 @@ class Product extends Model
             : '/storage/' . $this->image;
     }
 
-    /**
-     * Stock that can still be promised: on hand minus what confirmed
-     * orders already reserved. The one definition behind the Inventory
-     * list's "available" and every product picker's Stock figure.
-     */
-    public function available(): int
+    /** The recipe rows of a combo product (empty for other types). */
+    public function components(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
+        return $this->hasMany(ComboComponent::class, 'combo_product_id');
+    }
+
+    /**
+     * Stock that can still be promised. The one definition behind the
+     * Inventory list's "available" and every product picker's Stock
+     * figure (owner rule, 2026-11-24: one product has ONE listing and
+     * its own stock - the Stock Link / Shared Inventory pools were
+     * removed on his order):
+     * - a combo with a recipe: how many full combos its components can
+     *   still make (the combo's own stock row never carries units);
+     * - anything else: its own stock_qty - reserved_qty.
+     */
+    public function available(int $depth = 0): int
+    {
+        if ($this->type === 'combo' && $depth < 3) {
+            $comps = ComboComponent::where('combo_product_id', $this->id)->get();
+            if ($comps->isNotEmpty()) {
+                $min = null;
+                foreach ($comps as $c) {
+                    $cp = static::where('business_id', $this->business_id)->find($c->component_product_id);
+                    $can = $cp ? intdiv($cp->available($depth + 1), max(1, (int) $c->qty)) : 0;
+                    $min = $min === null ? $can : min($min, $can);
+                }
+
+                return $min ?? 0;
+            }
+        }
+
         return (int) $this->stock_qty - (int) $this->reserved_qty;
     }
 

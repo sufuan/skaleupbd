@@ -109,7 +109,30 @@ export default function ConnectionHealthCard({ connectionId, topUpUrl, t }) {
         );
     }
 
+    // ----- Disabled (connection removed / turned off) ---------------------------
+    if (h.status_label === 'disabled') {
+        return (
+            <div className="card" style={{ borderLeft: '4px solid #6b7280', padding: '1rem' }}>
+                <p style={{ fontWeight: 600, color: '#374151' }}>
+                    {t('This connection is turned off. Reconnect to start receiving orders again.')}
+                </p>
+            </div>
+        );
+    }
+
+    // ----- Pending (connection test still running) ------------------------------
+    if (h.status_label === 'pending') {
+        return (
+            <div className="card" style={{ borderLeft: '4px solid #6b7280', padding: '1rem' }}>
+                <p style={{ fontWeight: 600, color: '#374151' }}>
+                    {t('Connection is being tested. This can take up to one minute.')}
+                </p>
+            </div>
+        );
+    }
+
     // ----- Active -- build a list of items that need attention -----------------
+    if (h.status_label === 'active') {
     const warnings = [];
 
     if (h.unmatched_products > 0) {
@@ -166,6 +189,14 @@ export default function ConnectionHealthCard({ connectionId, topUpUrl, t }) {
             <ul style={{ margin: 0, paddingLeft: '1.25rem', color: '#92400e' }}>
                 {warnings}
             </ul>
+        </div>
+    );
+    }
+
+    // ----- Any other label: never claim the connection is fine ----------------
+    return (
+        <div className="card" style={{ padding: '1rem', color: '#666' }}>
+            {t('Connection status unavailable.')}
         </div>
     );
 }

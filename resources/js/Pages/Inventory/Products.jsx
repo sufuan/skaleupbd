@@ -7,8 +7,8 @@ import { t } from '@/lib/i18n';
 import ProductFields, { BTN_OUTLINE, BTN_PRIMARY, INPUT } from './ProductFields';
 
 // Products page - structure copied from the prototype's inv-products panel:
-// header actions, 4 stat chips, 8 tabs, toolbar + data table + pagination.
-const TABS = ['Products', 'Inactive Products', 'Combo Products', 'Wraps', 'Shared Inventory', 'Stock Links', 'Variations', 'Categories & Brands'];
+// header actions, 4 stat chips, 6 tabs, toolbar + data table + pagination.
+const TABS = ['Products', 'Inactive Products', 'Combo Products', 'Wraps', 'Variations', 'Categories & Brands'];
 const money = (n) => '৳' + Number(n || 0).toLocaleString('en-IN');
 
 const TAB_BTN = (active) => `inline-flex items-center justify-center text-sm font-medium ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 group relative h-full whitespace-nowrap rounded-md border px-3 py-1.5 transition-colors duration-200 ${active ? 'border-primary/30 bg-primary/10 text-primary' : 'border-transparent bg-background text-muted-foreground hover:text-foreground/80'}`;
@@ -32,13 +32,13 @@ function Pill({ on }) {
 function Switch({ checked, onClick, label }) {
     return (
         <button type="button" role="switch" aria-checked={checked} aria-label={label} onClick={onClick}
-            className={`inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${checked ? 'bg-primary' : 'bg-input'}`}>
+            className={`inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${checked ? 'bg-primary' : 'invx-switch-off'}`}>
             <span className={`pointer-events-none block h-5 w-5 rounded-full bg-background shadow-lg ring-0 transition-transform ${checked ? 'translate-x-5' : 'translate-x-0'}`} />
         </button>
     );
 }
 
-export default function Products({ products, summary, inactive, combos, wraps, sharedGroups, linkGroups, variants, categories, brands, filters }) {
+export default function Products({ products, summary, inactive, combos, wraps, variants, categories, brands, filters, allProducts = [] }) {
     const [tab, setTab] = useState('Products');
     const [search, setSearch] = useState(filters.search || '');
     // Row action menu: rendered in a portal with fixed positioning - the
@@ -100,7 +100,7 @@ export default function Products({ products, summary, inactive, combos, wraps, s
                     {rows.map((p) => (
                         <tr key={p.id} className="border-b transition-colors hover:bg-muted/50">
                             <td className={TD}><span className="block h-4 w-4 rounded-sm border border-primary" /></td>
-                            <td className={TD}><div className="font-medium">{p.sku}</div></td>
+                            <td className={TD}><div className="font-medium inv-sku">{p.sku}</div></td>
                             <td className={TD}>
                                 <div className="flex items-start gap-3">
                                     <Thumb src={p.image} />
@@ -215,9 +215,6 @@ export default function Products({ products, summary, inactive, combos, wraps, s
 
                     {tab === 'Wraps' && table(wraps, t('No wraps yet'))}
 
-                    {tab === 'Shared Inventory' && <Groups kind="shared" groups={sharedGroups} allRows={[...allRows, ...combos, ...wraps]} />}
-                    {tab === 'Stock Links' && <Groups kind="links" groups={linkGroups} allRows={[...allRows, ...combos, ...wraps]} />}
-
                     {tab === 'Variations' && <Variations allRows={allRows} variants={variants} />}
 
                     {tab === 'Categories & Brands' && <Taxonomy categories={categories} brands={brands} />}
@@ -234,46 +231,11 @@ export default function Products({ products, summary, inactive, combos, wraps, s
                 </div>
             ), document.body)}
 
-            {editFor && <EditModal product={editFor} categories={categories} brands={brands} close={() => setEditFor(null)} />}
+            {editFor && <EditModal product={editFor} categories={categories} brands={brands} allProducts={allProducts}
+                initialComponents={(combos.find((c) => c.id === editFor.id) || {}).components || []} close={() => setEditFor(null)} />}
             {adjustFor && <AdjustModal product={adjustFor} close={() => setAdjustFor(null)} />}
             {ioOpen && <ImportExportModal close={() => setIoOpen(false)} />}
         </AppLayout>
-    );
-}
-
-function Groups({ kind, groups, allRows }) {
-    const [name, setName] = useState('');
-    const [picked, setPicked] = useState([]);
-    const nameOf = (id) => allRows.find((r) => r.id === id)?.name || ('#' + id);
-    const create = () => { if (name.trim() && picked.length >= 2) router.post(`/inventory/groups/${kind}`, { name: name.trim(), product_ids: picked }, { preserveScroll: true }); };
-    return (
-        <div className="space-y-4">
-            <div className="grid gap-3 sm:grid-cols-2">
-                {groups.map((g) => (
-                    <div key={g.id} className="rounded-xl border bg-card p-4 space-y-2">
-                        <div className="flex items-center justify-between">
-                            <div className="font-semibold">{g.name}</div>
-                            <button type="button" className="text-xs text-red-600" onClick={async () => { if (await confirmDialog(t('Delete this group?'))) router.delete(`/inventory/groups/${kind}/${g.id}`, { preserveScroll: true }); }}>{t('Delete')}</button>
-                        </div>
-                        <div className="flex flex-wrap gap-1">
-                            {g.product_ids.map((id) => <span key={id} className="rounded-full border px-2 py-0.5 text-xs">{nameOf(id)}</span>)}
-                        </div>
-                    </div>
-                ))}
-                {groups.length === 0 && <div className="text-sm text-muted-foreground">{t('No groups yet')}</div>}
-            </div>
-            <div className="rounded-xl border bg-card p-4 space-y-3">
-                <div className="font-semibold text-sm">{t('Create Group')}</div>
-                <input className={INPUT} placeholder={t('Group name')} value={name} onChange={(e) => setName(e.target.value)} />
-                <div className="flex flex-wrap gap-1">
-                    {allRows.map((p) => (
-                        <button key={p.id} type="button" onClick={() => setPicked(picked.includes(p.id) ? picked.filter((x) => x !== p.id) : [...picked, p.id])}
-                            className={`rounded-full border px-2 py-0.5 text-xs ${picked.includes(p.id) ? 'bg-primary text-primary-foreground' : ''}`}>{p.name}</button>
-                    ))}
-                </div>
-                <button type="button" className={BTN_PRIMARY + ' h-9'} onClick={create}>{t('Create Group')}</button>
-            </div>
-        </div>
     );
 }
 
@@ -347,7 +309,7 @@ function Taxonomy({ categories, brands }) {
     );
 }
 
-function EditModal({ product, categories, brands, close }) {
+function EditModal({ product, categories, brands, close, allProducts = [], initialComponents = [] }) {
     // NOTE: submit via POST + _method spoofing - PHP cannot parse a
     // multipart/form-data body on a real PATCH request (the name field
     // would arrive empty), so forceFormData must go through POST.
@@ -362,6 +324,10 @@ function EditModal({ product, categories, brands, close }) {
         shipping_note: product.shipping_note || '', admin_note: product.admin_note || '',
         warranty_policy: product.warranty_policy || '', warranty_coverage: product.warranty_coverage || '',
         gallery: product.gallery || [], image: null,
+        // Combo recipe editing (K-M3): seeded from the combo's stored
+        // components; components_present tells the server this submit
+        // carries the recipe (an empty list then really means "clear").
+        components: initialComponents.map((c) => ({ product_id: c.product_id, qty: c.qty })), components_present: 1,
     });
     const submit = (e) => { e.preventDefault(); post(`/inventory/products/${product.id}`, { forceFormData: true, onSuccess: close }); };
     return (
@@ -377,7 +343,8 @@ function EditModal({ product, categories, brands, close }) {
                             {Object.values(errors)[0]}
                         </div>
                     )}
-                    <ProductFields data={data} setData={setData} categories={categories} brands={brands} forEdit readiness={{ score: product.ai_score, missing: product.ai_missing }} />
+                    <ProductFields data={data} setData={setData} categories={categories} brands={brands} forEdit readiness={{ score: product.ai_score, missing: product.ai_missing }}
+                        allProducts={allProducts} components={data.components} setComponents={(v) => setData('components', v)} selfId={product.id} />
                     <div className="flex items-center justify-end gap-2 mt-5">
                         <button type="button" className={BTN_OUTLINE} onClick={close}>{t('Cancel')}</button>
                         <button type="submit" className={BTN_PRIMARY} disabled={processing}>{t('Save Changes')}</button>

@@ -54,7 +54,7 @@ class PermissionGate
 
         $declaration = RouteRegistry::for($name);
         if ($declaration === null || ! RouteRegistry::allows($user, $declaration)) {
-            abort(403, 'এই page দেখার permission নেই।');
+            abort(403, __('You do not have permission to see this page.'));
         }
 
         return $next($request);

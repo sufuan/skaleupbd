@@ -38,7 +38,11 @@ class WorkInboxService
         private readonly SmsService $sms,
     ) {}
 
-    public const PRIORITIES = ['normal' => 'সাধারণ', 'urgent' => 'জরুরি', 'critical' => 'খুব জরুরি'];
+    // Labels are English source strings (lang keys): the Settings and
+    // Control pages translate them with t() at render, and strings that
+    // get stored (notification bodies) keep the English literal - the
+    // same mechanism order notifications use.
+    public const PRIORITIES = ['normal' => 'Normal', 'urgent' => 'Urgent', 'critical' => 'Critical'];
 
     public const GROUPS = [
         'orders' => 'Orders',
@@ -46,48 +50,48 @@ class WorkInboxService
         'messages' => 'Messages',
         'inventory' => 'Inventory',
         'purchase' => 'Purchase',
-        'followup' => 'Call Center ও Follow-up',
+        'followup' => 'Call Center & Follow-up',
         'finance' => 'Finance',
         'system' => 'System',
     ];
 
     public const ASSIGNEES = [
-        'pool' => 'পুল (Unassigned)',
+        'pool' => 'Pool (Unassigned)',
         'delivery' => 'Delivery role',
         'accounts' => 'Accounts role',
         'purchase' => 'Purchase role',
-        'processor' => 'যে process করেছে',
+        'processor' => 'The one who processed it',
         'claim' => 'Claim handler',
-        'chat' => 'যে chat-এ ছিল',
-        'admin' => 'মালিক / Admin',
-        'staff' => 'নির্দিষ্ট staff',
+        'chat' => 'The one who was in the chat',
+        'admin' => 'Owner / Admin',
+        'staff' => 'Specific staff',
     ];
 
     private const ROLE_MODES = ['delivery', 'accounts', 'purchase', 'claim', 'admin'];
 
-    /** Why a task closed itself, per rule — kept in the task history. */
+    /** Why a task closed itself, per rule - kept in the task history. */
     private const RESOLVE_REASONS = [
-        'pending_stuck' => 'order Pending থেকে সরে যাওয়ায় task নিজে থেকে বন্ধ হয়েছে',
-        'risky_fraud' => 'fraud সিদ্ধান্ত হয়ে যাওয়ায় task নিজে থেকে বন্ধ হয়েছে',
-        'blocklist_review' => 'block সরিয়ে দেওয়ায় task নিজে থেকে বন্ধ হয়েছে',
-        'preorder_notify' => 'customer-কে জানানো হয়ে যাওয়ায় task নিজে থেকে বন্ধ হয়েছে',
-        'ready_to_ship' => 'order courier-এ পাঠানো হয়ে যাওয়ায় task নিজে থেকে বন্ধ হয়েছে',
-        'booking_failing' => 'booking সফল হয়ে যাওয়ায় task নিজে থেকে বন্ধ হয়েছে',
-        'shipped_stuck' => 'order Delivered হয়ে যাওয়ায় task নিজে থেকে বন্ধ হয়েছে',
-        'return_undecided' => 'return-এর সিদ্ধান্ত হয়ে যাওয়ায় task নিজে থেকে বন্ধ হয়েছে',
-        'ai_handover' => 'chat ধরা হয়ে যাওয়ায় task নিজে থেকে বন্ধ হয়েছে',
-        'window_closing' => 'উত্তর পাঠানো হয়ে যাওয়ায় task নিজে থেকে বন্ধ হয়েছে',
-        'ai_draft_stuck' => 'draft পাঠানো/সরানো হয়ে যাওয়ায় task নিজে থেকে বন্ধ হয়েছে',
-        'comment_reply' => 'comment-এর জবাব হয়ে যাওয়ায় task নিজে থেকে বন্ধ হয়েছে',
-        'low_stock' => 'stock ফিরে আসায় task নিজে থেকে বন্ধ হয়েছে',
-        'supplier_due' => 'supplier-এর পাওনা শোধ হয়ে যাওয়ায় task নিজে থেকে বন্ধ হয়েছে',
-        'ledger_mismatch' => 'ledger মিলে যাওয়ায় task নিজে থেকে বন্ধ হয়েছে',
-        'warranty_overdue' => 'claim বন্ধ হয়ে যাওয়ায় task নিজে থেকে বন্ধ হয়েছে',
-        'negative_stock' => 'stock ঠিক হয়ে যাওয়ায় task নিজে থেকে বন্ধ হয়েছে',
-        'sms_balance_low' => 'balance recharge করায় task নিজে থেকে বন্ধ হয়েছে',
-        'token_balance_low' => 'points recharge করায় task নিজে থেকে বন্ধ হয়েছে',
-        'channel_broken' => 'connection আবার ঠিক হয়ে যাওয়ায় task নিজে থেকে বন্ধ হয়েছে',
-        'courier_unverified' => 'webhook secret সেভ করায় task নিজে থেকে বন্ধ হয়েছে',
+        'pending_stuck' => 'Task closed itself because the order moved out of Pending',
+        'risky_fraud' => 'Task closed itself because the fraud decision was made',
+        'blocklist_review' => 'Task closed itself because the block was removed',
+        'preorder_notify' => 'Task closed itself because the customer was notified',
+        'ready_to_ship' => 'Task closed itself because the order was sent to the courier',
+        'booking_failing' => 'Task closed itself because the booking succeeded',
+        'shipped_stuck' => 'Task closed itself because the order was Delivered',
+        'return_undecided' => 'Task closed itself because the return decision was made',
+        'ai_handover' => 'Task closed itself because the chat was picked up',
+        'window_closing' => 'Task closed itself because the reply was sent',
+        'ai_draft_stuck' => 'Task closed itself because the draft was sent or removed',
+        'comment_reply' => 'Task closed itself because the comment was answered',
+        'low_stock' => 'Task closed itself because the stock came back',
+        'supplier_due' => 'Task closed itself because the supplier due was paid',
+        'ledger_mismatch' => 'Task closed itself because the ledger matches again',
+        'warranty_overdue' => 'Task closed itself because the claim was closed',
+        'negative_stock' => 'Task closed itself because the stock was fixed',
+        'sms_balance_low' => 'Task closed itself because the balance was recharged',
+        'token_balance_low' => 'Task closed itself because the points were recharged',
+        'channel_broken' => 'Task closed itself because the connection is healthy again',
+        'courier_unverified' => 'Task closed itself because the webhook secret was saved',
     ];
 
     /**
@@ -114,59 +118,59 @@ class WorkInboxService
         };
 
         // ---- Orders (M2) ----
-        $add(1, 'pending_stuck', 'orders', 'Pending order confirm না হয়ে পড়ে আছে', 'Order Pending অবস্থায় এই সময় পার হলে', true, 2, 'hours', 'urgent', 'pool');
-        $add(2, 'risky_fraud', 'orders', 'Fraud check-এ Risky, সিদ্ধান্ত হয়নি', 'Risky আসার পর advance/সিদ্ধান্ত ছাড়া এই সময় পার হলে', true, 1, 'hours', 'critical', 'processor', ['note_required' => true]);
-        $add(3, 'blocklist_review', 'orders', 'Block List-এর order review হয়নি', 'Block List-এ আটকানোর পর এই সময় পার হলে', true, 4, 'hours', 'normal', 'pool');
-        $add(4, 'preorder_notify', 'orders', 'Preorder এসেছে, customer-কে জানানো হয়নি', 'Preorder-এর product stock-এ আসার পর এই সময় পার হলে', true, 4, 'hours', 'normal', 'pool');
-        $add(5, 'advance_unmatched', 'orders', 'Advance টাকা এসেছে, order-এ মেলেনি', 'Payment আসার পর কোনো order-এ না মিললে', true, 1, 'days', 'urgent', 'accounts');
-        $add(6, 'repeat_canceller', 'orders', 'একই customer বারবার cancel করছে', 'একই customer 3 বার cancel করলেই', false, 0, 'immediate', 'normal', 'pool', ['dedupe' => 'ever', 'autoclose' => false]);
+        $add(1, 'pending_stuck', 'orders', 'Pending order not confirmed yet', 'When an order stays in Pending past this time', true, 2, 'hours', 'urgent', 'pool');
+        $add(2, 'risky_fraud', 'orders', 'Risky in fraud check, no decision yet', 'When this time passes after a Risky result with no advance or decision', true, 1, 'hours', 'critical', 'processor', ['note_required' => true]);
+        $add(3, 'blocklist_review', 'orders', 'Block List order not reviewed', 'When this time passes after being stopped on the Block List', true, 4, 'hours', 'normal', 'pool');
+        $add(4, 'preorder_notify', 'orders', 'Preorder arrived, customer not told', 'When this time passes after the preorder product comes into stock', true, 4, 'hours', 'normal', 'pool');
+        $add(5, 'advance_unmatched', 'orders', 'Advance money arrived, not matched to an order', 'When a payment arrives and matches no order', true, 1, 'days', 'urgent', 'accounts');
+        $add(6, 'repeat_canceller', 'orders', 'Same customer keeps cancelling', 'As soon as the same customer cancels 3 times', false, 0, 'immediate', 'normal', 'pool', ['dedupe' => 'ever', 'autoclose' => false]);
 
-        // ---- Delivery / Courier (M3) — Done note mandatory (courier/return rules) ----
+        // ---- Delivery / Courier (M3) - Done note mandatory (courier/return rules) ----
         $courier = ['note_required' => true];
-        $add(7, 'ready_to_ship', 'delivery', 'Ready to Ship-এ আছে, পাঠানো হয়নি', 'Ready to Ship-এ ঢোকার পর এই সময় পার হলে', true, 1, 'days', 'urgent', 'delivery', $courier);
-        $add(8, 'booking_failing', 'delivery', 'Courier booking বারবার fail করছে', 'একই order-এর booking 3 বার fail করলেই', true, 0, 'immediate', 'critical', 'delivery', $courier + ['dedupe' => 'ever']);
-        $add(9, 'shipped_stuck', 'delivery', 'Shipped, অনেকদিন Delivered হচ্ছে না', 'Shipped হওয়ার পর এই কদিন পার হলে (প্রতি 12 ঘণ্টায় আবার যাচাই)', true, 4, 'days', 'urgent', 'delivery', $courier);
-        $add(10, 'courier_hold', 'delivery', 'Courier hold — parcel নড়ছে না', 'Parcel-এর status এই কদিন না বদলালে', true, 2, 'days', 'urgent', 'delivery', $courier + ['dedupe' => 'ever']);
-        $add(11, 'pathao_return', 'delivery', 'Pathao-তে return requested', 'Pathao panel-এ return request এলেই (সিস্টেম ~5 মিনিটে যাচাই করে)', true, 30, 'minutes', 'urgent', 'delivery', $courier + ['dedupe' => 'ever']);
-        $add(12, 'steadfast_cancel', 'delivery', 'Steadfast-এ cancel requested', 'Steadfast-এ cancel request এলেই', true, 30, 'minutes', 'urgent', 'delivery', $courier + ['dedupe' => 'ever']);
-        $add(13, 'parcel_lost_damaged', 'delivery', 'Parcel lost / damaged', 'Courier webhook-এ lost/damaged এলেই সাথে সাথে', true, 0, 'immediate', 'critical', 'delivery', $courier + ['dedupe' => 'ever']);
-        $add(14, 'parcel_resent', 'delivery', 'Parcel আবার পাঠানো (resent) হয়েছে', 'Resent হলেই — চোখ রাখার জন্য', false, 0, 'hours', 'normal', 'delivery', $courier + ['dedupe' => 'ever']);
-        $add(15, 'return_undecided', 'delivery', 'Return এসেছে, সিদ্ধান্ত হয়নি', 'Return পৌঁছানোর পর এই সময়ে সিদ্ধান্ত না হলে', true, 1, 'days', 'urgent', 'delivery', $courier);
-        $add(16, 'courier_money', 'delivery', 'Courier-এর টাকা মেলেনি', 'Ledger-এ unmatched টাকা এই কদিন পড়ে থাকলে', true, 3, 'days', 'urgent', 'accounts', $courier + ['dedupe' => 'ever', 'autoclose' => false]);
-        $add(38, 'courier_unverified', 'delivery', 'Courier connection-এ webhook secret নেই', 'Connected courier-এ webhook-এর secret/token না থাকলেই সাথে সাথে', true, 0, 'immediate', 'urgent', 'admin');
+        $add(7, 'ready_to_ship', 'delivery', 'Sitting in Ready to Ship, not sent', 'When this time passes after entering Ready to Ship', true, 1, 'days', 'urgent', 'delivery', $courier);
+        $add(8, 'booking_failing', 'delivery', 'Courier booking keeps failing', 'As soon as the booking for the same order fails 3 times', true, 0, 'immediate', 'critical', 'delivery', $courier + ['dedupe' => 'ever']);
+        $add(9, 'shipped_stuck', 'delivery', 'Shipped, not Delivered for a long time', 'When these days pass after shipping (checked again every 12 hours)', true, 4, 'days', 'urgent', 'delivery', $courier);
+        $add(10, 'courier_hold', 'delivery', 'Courier hold - parcel not moving', 'When the parcel status does not change for these days', true, 2, 'days', 'urgent', 'delivery', $courier + ['dedupe' => 'ever']);
+        $add(11, 'pathao_return', 'delivery', 'Return requested at Pathao', 'As soon as a return request appears on the Pathao panel (the system checks every ~5 minutes)', true, 30, 'minutes', 'urgent', 'delivery', $courier + ['dedupe' => 'ever']);
+        $add(12, 'steadfast_cancel', 'delivery', 'Cancel requested at Steadfast', 'As soon as a cancel request appears at Steadfast', true, 30, 'minutes', 'urgent', 'delivery', $courier + ['dedupe' => 'ever']);
+        $add(13, 'parcel_lost_damaged', 'delivery', 'Parcel lost / damaged', 'Immediately when a lost/damaged event arrives on the courier webhook', true, 0, 'immediate', 'critical', 'delivery', $courier + ['dedupe' => 'ever']);
+        $add(14, 'parcel_resent', 'delivery', 'Parcel was sent again (resent)', 'As soon as it is resent - to keep an eye on it', false, 0, 'hours', 'normal', 'delivery', $courier + ['dedupe' => 'ever']);
+        $add(15, 'return_undecided', 'delivery', 'Return arrived, no decision yet', 'When no decision is made within this time after the return arrives', true, 1, 'days', 'urgent', 'delivery', $courier);
+        $add(16, 'courier_money', 'delivery', 'Courier money did not match', 'When unmatched money sits in the ledger for these days', true, 3, 'days', 'urgent', 'accounts', $courier + ['dedupe' => 'ever', 'autoclose' => false]);
+        $add(38, 'courier_unverified', 'delivery', 'Courier connection has no webhook secret', 'Immediately when a connected courier has no webhook secret/token', true, 0, 'immediate', 'urgent', 'admin');
 
         // ---- Messages (M6) ----
-        $add(17, 'ai_handover', 'messages', 'AI handover করেছে, কেউ ধরেনি', 'Handover-এর পর এই সময়ে কেউ chat না ধরলে', true, 15, 'minutes', 'critical', 'chat');
-        $add(18, 'window_closing', 'messages', '24 ঘণ্টার window শেষ হওয়ার পথে, উত্তর বাকি', 'Window শেষ হওয়ার এই সময় আগে, উত্তর বাকি থাকলে', true, 2, 'hours', 'urgent', 'pool');
-        $add(19, 'ai_draft_stuck', 'messages', 'AI draft পড়ে আছে, কেউ পাঠায়নি', 'Draft তৈরি হওয়ার পর এই সময় পার হলে', true, 1, 'hours', 'normal', 'pool');
-        $add(20, 'comment_reply', 'messages', 'Comment-এর private reply-এর সময় শেষের পথে', '7 দিনের সীমা শেষ হওয়ার এই সময় আগে', true, 1, 'days', 'normal', 'pool');
-        $add(21, 'channel_broken', 'messages', 'Channel ভেঙে গেছে', 'Token-এর মেয়াদ শেষ / connection broken হলেই সাথে সাথে', true, 0, 'immediate', 'critical', 'admin');
+        $add(17, 'ai_handover', 'messages', 'AI handed over, nobody picked it up', 'When nobody picks up the chat within this time after the handover', true, 15, 'minutes', 'critical', 'chat');
+        $add(18, 'window_closing', 'messages', '24-hour window about to end, reply still due', 'When a reply is still due this long before the window ends', true, 2, 'hours', 'urgent', 'pool');
+        $add(19, 'ai_draft_stuck', 'messages', 'AI draft sitting unsent', 'When this time passes after the draft was created', true, 1, 'hours', 'normal', 'pool');
+        $add(20, 'comment_reply', 'messages', 'Comment private reply time about to run out', 'This long before the 7-day limit ends', true, 1, 'days', 'normal', 'pool');
+        $add(21, 'channel_broken', 'messages', 'Channel is broken', 'Immediately when the token expires or the connection breaks', true, 0, 'immediate', 'critical', 'admin');
 
         // ---- Inventory (M4) ----
-        $add(22, 'low_stock', 'inventory', 'Stock শেষ / low stock — কেনার সিদ্ধান্ত হয়নি', 'Stock শেষ হওয়ার পর এই কদিন সিদ্ধান্ত না হলে', true, 2, 'days', 'normal', 'purchase');
-        $add(23, 'ledger_mismatch', 'inventory', 'Stock ledger-এ গরমিল', 'Integrity scan-এ গরমিল ধরা পড়লেই সাথে সাথে', true, 0, 'immediate', 'urgent', 'admin');
-        $add(24, 'warranty_overdue', 'inventory', 'Warranty claim overdue', 'Claim-এর নির্ধারিত দিন পার হলেই', true, 0, 'days', 'urgent', 'claim');
-        $add(25, 'negative_stock', 'inventory', 'Stock negative হয়ে গেছে', 'কোনো product-এর stock 0-এর নিচে গেলেই', true, 0, 'immediate', 'urgent', 'pool');
+        $add(22, 'low_stock', 'inventory', 'Out of stock / low stock - no buying decision yet', 'When no decision is made in these days after the stock runs out', true, 2, 'days', 'normal', 'purchase');
+        $add(23, 'ledger_mismatch', 'inventory', 'Mismatch in the stock ledger', 'Immediately when the integrity scan finds a mismatch', true, 0, 'immediate', 'urgent', 'admin');
+        $add(24, 'warranty_overdue', 'inventory', 'Warranty claim overdue', 'As soon as the claim due date passes', true, 0, 'days', 'urgent', 'claim');
+        $add(25, 'negative_stock', 'inventory', 'Stock has gone negative', 'As soon as any product stock goes below 0', true, 0, 'immediate', 'urgent', 'pool');
 
-        // ---- Purchase (M5 — module not built yet: catalog only) ----
-        $add(26, 'purchase_late', 'purchase', 'Purchase পাঠানো হয়েছে, goods আসেনি', 'Purchase-এর পর এই কদিনে goods না এলে', true, 3, 'days', 'normal', 'purchase');
-        $add(27, 'supplier_due', 'purchase', 'Supplier-এর পাওনা overdue', 'পাওনার নির্ধারিত তারিখ পার হলেই', true, 0, 'days', 'urgent', 'accounts');
-        $add(28, 'receive_damaged', 'purchase', 'Receive-এ damaged/missing — সিদ্ধান্ত বাকি', 'Damaged/missing ওঠার পর এই সময়ে সিদ্ধান্ত না হলে', true, 1, 'days', 'normal', 'purchase');
+        // ---- Purchase (M5 - module not built yet: catalog only) ----
+        $add(26, 'purchase_late', 'purchase', 'Purchase sent, goods not arrived', 'When the goods do not arrive within these days after the purchase', true, 3, 'days', 'normal', 'purchase');
+        $add(27, 'supplier_due', 'purchase', 'Supplier due is overdue', 'As soon as the due date of the payable passes', true, 0, 'days', 'urgent', 'accounts');
+        $add(28, 'receive_damaged', 'purchase', 'Damaged/missing in receive - decision pending', 'When no decision is made within this time after damaged/missing is reported', true, 1, 'days', 'normal', 'purchase');
 
-        // ---- Call Center ও Follow-up (M8 / M9) ----
-        $add(29, 'callback_missed', 'followup', 'Callback প্রতিশ্রুতি, call হয়নি', 'প্রতিশ্রুত সময়ের পর এই সময় পার হলে', true, 30, 'minutes', 'urgent', 'chat');
-        $add(30, 'followup_overdue', 'followup', 'Follow-up-এর নির্ধারিত call হয়নি', 'Follow-up-এর সময় পার হওয়ার পর', true, 1, 'hours', 'urgent', 'pool');
-        $add(31, 'autocall_fail', 'followup', 'Auto Call fail / balance শেষের পথে', 'বারবার call fail হলে বা balance থ্রেশহোল্ডের নিচে গেলে', true, 0, 'immediate', 'urgent', 'admin', ['dedupe' => 'ever', 'autoclose' => false]);
+        // ---- Call Center & Follow-up (M8 / M9) ----
+        $add(29, 'callback_missed', 'followup', 'Callback promised, call not made', 'When this time passes after the promised time', true, 30, 'minutes', 'urgent', 'chat');
+        $add(30, 'followup_overdue', 'followup', 'Scheduled follow-up call not made', 'After the follow-up time has passed', true, 1, 'hours', 'urgent', 'pool');
+        $add(31, 'autocall_fail', 'followup', 'Auto Call failing / balance running out', 'When calls keep failing or the balance falls below the threshold', true, 0, 'immediate', 'urgent', 'admin', ['dedupe' => 'ever', 'autoclose' => false]);
 
         // ---- Finance (M14) ----
-        $add(32, 'cash_mismatch', 'finance', 'দিনের cash হিসাব মেলেনি', 'আগের দিনের হিসাব না মিললে পরদিন সকালে', true, 0, 'hours', 'urgent', 'accounts', ['dedupe' => 'ever', 'autoclose' => false]);
-        $add(33, 'customer_due', 'finance', 'Customer-এর বকেয়া অনেকদিন', 'বকেয়া এই কদিন পার হলে', false, 7, 'days', 'normal', 'pool');
+        $add(32, 'cash_mismatch', 'finance', "The day's cash does not match", "Next morning, when the previous day's accounts do not match", true, 0, 'hours', 'urgent', 'accounts', ['dedupe' => 'ever', 'autoclose' => false]);
+        $add(33, 'customer_due', 'finance', 'Customer due is very old', 'When the due is older than these days', false, 7, 'days', 'normal', 'pool');
 
         // ---- System ----
-        $add(34, 'device_approval', 'system', 'নতুন device approval অপেক্ষায়', 'নতুন device এলেই সাথে সাথে', true, 0, 'immediate', 'normal', 'admin');
-        $add(35, 'sms_balance_low', 'system', 'SMS / Auto Call balance কম', 'Balance থ্রেশহোল্ডের নিচে গেলেই', true, 0, 'immediate', 'urgent', 'admin');
-        $add(36, 'channel_data_expiry', 'system', 'Channel-এর data access-এর মেয়াদ শেষের পথে', 'মেয়াদ শেষ হওয়ার এই কদিন আগে', true, 7, 'days', 'urgent', 'admin');
-        $add(37, 'token_balance_low', 'system', 'Points / token balance কম', 'Points balance থ্রেশহোল্ডের নিচে গেলেই', true, 0, 'immediate', 'urgent', 'admin');
+        $add(34, 'device_approval', 'system', 'New device waiting for approval', 'Immediately when a new device appears', true, 0, 'immediate', 'normal', 'admin');
+        $add(35, 'sms_balance_low', 'system', 'SMS / Auto Call balance is low', 'As soon as the balance falls below the threshold', true, 0, 'immediate', 'urgent', 'admin');
+        $add(36, 'channel_data_expiry', 'system', 'Channel data access about to expire', 'These days before the access expires', true, 7, 'days', 'urgent', 'admin');
+        $add(37, 'token_balance_low', 'system', 'Points / token balance is low', 'As soon as the points balance falls below the threshold', true, 0, 'immediate', 'urgent', 'admin');
 
         return $r;
     }
@@ -272,6 +276,22 @@ class WorkInboxService
         return intdiv($hours, 24) . ' দিন';
     }
 
+    /** English twin of bnAge() - used in stored strings (task titles). */
+    public static function ageEn(Carbon $from, ?Carbon $to = null): string
+    {
+        $to ??= now();
+        $mins = max(0, (int) $from->diffInMinutes($to));
+        if ($mins < 60) {
+            return $mins . ' minutes';
+        }
+        $hours = intdiv($mins, 60);
+        if ($hours < 24) {
+            return $hours . ' hours';
+        }
+
+        return intdiv($hours, 24) . ' days';
+    }
+
     private function resolveAssignee(int $biz, array $def, array $cfg, array $problem): array
     {
         $assign = $cfg['assign'] ?? $def['assign'];
@@ -287,7 +307,7 @@ class WorkInboxService
         if ($assign === 'processor' && ! empty($problem['processor_id'])) {
             $u = User::find($problem['processor_id']);
             if ($u) {
-                return ['mode' => 'user', 'role' => null, 'user' => $u->id, 'label' => $u->name . ' (যে process করেছে)'];
+                return ['mode' => 'user', 'role' => null, 'user' => $u->id, 'label' => $u->name . ' (the one who processed it)'];
             }
         }
         if ($assign === 'chat' && ! empty($problem['chat_user_id'])) {
@@ -297,7 +317,7 @@ class WorkInboxService
             }
         }
 
-        return ['mode' => 'pool', 'role' => null, 'user' => null, 'label' => 'কেউ না (পুল)'];
+        return ['mode' => 'pool', 'role' => null, 'user' => null, 'label' => 'Nobody (Pool)'];
     }
 
     private function notify(string $title, ?string $body, ?string $link, int $biz): void
@@ -358,7 +378,7 @@ class WorkInboxService
                 ]);
                 $stats['created']++;
                 if ($notifyNew) {
-                    $this->notify('নতুন কাজ — ' . $task->title, 'নিয়ম ' . $def['num'] . ': ' . $def['name'] . ' · দায়িত্বে: ' . $who['label'], '/work-inbox/control', $biz);
+                    $this->notify('New task - ' . $task->title, 'Rule ' . $def['num'] . ': ' . $def['name'] . ' · Assigned to: ' . $who['label'], '/work-inbox/control', $biz);
                 }
             }
 
@@ -370,7 +390,7 @@ class WorkInboxService
                     if (! in_array($task->fingerprint, $liveFingerprints, true)) {
                         $task->update([
                             'status' => 'auto_closed',
-                            'auto_close_reason' => self::RESOLVE_REASONS[$key] ?? 'সমস্যা নিজে থেকে মিটে গেছে',
+                            'auto_close_reason' => self::RESOLVE_REASONS[$key] ?? 'The problem cleared on its own',
                             'closed_at' => now(),
                         ]);
                         $stats['auto_closed']++;
@@ -385,7 +405,7 @@ class WorkInboxService
             ->whereNotNull('due_at')->where('due_at', '<', now())->get();
         foreach ($open as $task) {
             if ($notifyOverdue && ! $task->overdue_notified_at) {
-                $this->notify('Overdue কাজ — ' . $task->title, 'নির্ধারিত সময় পার হয়ে গেছে। Work Control-এ দেখো।', '/work-inbox/control', $biz);
+                $this->notify('Overdue task - ' . $task->title, 'The due time has passed. See it in Work Control.', '/work-inbox/control', $biz);
                 $task->overdue_notified_at = now();
                 $task->save();
                 $stats['overdue_notified']++;
@@ -399,7 +419,7 @@ class WorkInboxService
                     $task->update(['escalated' => true, 'escalated_at' => now(), 'priority' => $bump]);
                     $stats['escalated']++;
                     if ($notifyOverdue) {
-                        $this->notify('আটকে থাকা কাজ — ' . $task->title, 'Overdue হয়ে গুরুত্ব বেড়ে গেছে (' . self::PRIORITIES[$bump] . ')।', '/work-inbox/control', $biz);
+                        $this->notify('Stuck task - ' . $task->title, 'Overdue - priority raised to ' . self::PRIORITIES[$bump] . '.', '/work-inbox/control', $biz);
                     }
                 }
             }
@@ -469,7 +489,7 @@ class WorkInboxService
         $note = trim((string) $note);
         if ($this->noteRequired($task) && $note === '') {
             throw ValidationException::withMessages([
-                'note' => 'এই কাজটায় note লেখা বাধ্যতামূলক — এক লাইন লিখে দাও।',
+                'note' => __('A note is required for this task - write one line.'),
             ]);
         }
         $task->update([
@@ -542,7 +562,7 @@ class WorkInboxService
             ->orderBy('created_at')->limit(200)->get()->each(function (Order $o) use (&$out) {
                 $out[] = [
                     'fingerprint' => 'order:' . $o->id,
-                    'title' => $o->invoice_no . ' order-টা ' . self::bnAge($o->created_at) . ' ধরে Pending — confirm করে Processing-এ নাও',
+                    'title' => 'Order ' . $o->invoice_no . ' has been Pending for ' . self::ageEn($o->created_at) . ' - confirm it and move it to Processing',
                     'source_type' => 'order', 'source_id' => $o->id,
                     'source_label' => $this->orderLabel($o), 'link' => '/orders/' . $o->id,
                     'processor_id' => $o->processed_by,
@@ -561,7 +581,7 @@ class WorkInboxService
             ->orderBy('created_at')->limit(200)->get()->each(function (Order $o) use (&$out) {
                 $out[] = [
                     'fingerprint' => 'order:' . $o->id,
-                    'title' => $o->invoice_no . ' order-টা fraud check-এ Risky এসেছে — advance নেওয়ার সিদ্ধান্ত নাও',
+                    'title' => 'Order ' . $o->invoice_no . ' came out Risky in the fraud check - decide about taking an advance',
                     'source_type' => 'order', 'source_id' => $o->id,
                     'source_label' => $this->orderLabel($o), 'link' => '/orders/' . $o->id,
                     'processor_id' => $o->processed_by,
@@ -580,7 +600,7 @@ class WorkInboxService
                 $what = $b->value ?: 'Block';
                 $out[] = [
                     'fingerprint' => 'block:' . $b->id,
-                    'title' => 'Block List-এ ' . $what . ' আটকে আছে — review করে সিদ্ধান্ত নাও',
+                    'title' => $what . ' is stuck on the Block List - review it and decide',
                     'source_type' => 'block', 'source_id' => $b->id,
                     'source_label' => 'Block · ' . $what, 'link' => '/orders/block-list',
                 ];
@@ -605,7 +625,7 @@ class WorkInboxService
                 }
                 $out[] = [
                     'fingerprint' => 'order:' . $o->id,
-                    'title' => $o->invoice_no . ' preorder-এর product stock-এ এসেছে — customer-কে জানাও',
+                    'title' => 'The product for preorder ' . $o->invoice_no . ' is in stock - tell the customer',
                     'source_type' => 'order', 'source_id' => $o->id,
                     'source_label' => $this->orderLabel($o), 'link' => '/orders/' . $o->id,
                     'processor_id' => $o->processed_by,
@@ -628,7 +648,7 @@ class WorkInboxService
             }
             $out[] = [
                 'fingerprint' => 'phone:' . $row->customer_phone . ':' . $row->n,
-                'title' => $last->customer_name . ' (' . $row->customer_phone . ') বারবার order cancel করছে — মোট ' . $row->n . ' বার, pattern-টা দেখো',
+                'title' => $last->customer_name . ' (' . $row->customer_phone . ') keeps cancelling orders - ' . $row->n . ' times in total, look at the pattern',
                 'source_type' => 'phone', 'source_id' => $last->id,
                 'source_label' => 'Customer · ' . $last->customer_name, 'link' => '/orders/' . $last->id,
             ];
@@ -647,7 +667,7 @@ class WorkInboxService
                 $since = $o->approved_at ?? $o->updated_at;
                 $out[] = [
                     'fingerprint' => 'order:' . $o->id,
-                    'title' => $o->invoice_no . ' order-টা ' . self::bnAge($since) . ' ধরে Ready to Ship-এ পড়ে আছে — courier-এ পাঠাও',
+                    'title' => 'Order ' . $o->invoice_no . ' has been sitting in Ready to Ship for ' . self::ageEn($since) . ' - send it to the courier',
                     'source_type' => 'order', 'source_id' => $o->id,
                     'source_label' => $this->orderLabel($o), 'link' => '/delivery/ready',
                     'processor_id' => $o->processed_by,
@@ -688,11 +708,11 @@ class WorkInboxService
             }
             $inv = $order?->invoice_no ?? 'Parcel';
             $title = match ($want) {
-                'lost' => $inv . '-এর parcel lost / damaged — customer-কে জানিয়ে নতুন করে পাঠানো বা refund-এর সিদ্ধান্ত নাও',
-                'resent' => $inv . '-এর parcel আবার পাঠানো (resent) হয়েছে — চোখ রাখো',
-                'return' => $inv . '-এর return request এসেছে — দেখে সিদ্ধান্ত নাও',
-                'cancel' => $inv . '-এর cancel request এসেছে — দেখে সিদ্ধান্ত নাও',
-                default => $inv . '-এর parcel courier-এ আটকে আছে — নড়ছে না, খোঁজ নাও',
+                'lost' => 'Parcel for ' . $inv . ' is lost / damaged - tell the customer and decide: send again or refund',
+                'resent' => 'Parcel for ' . $inv . ' was sent again (resent) - keep an eye on it',
+                'return' => 'A return request came for ' . $inv . ' - look and decide',
+                'cancel' => 'A cancel request came for ' . $inv . ' - look and decide',
+                default => 'Parcel for ' . $inv . ' is stuck at the courier - not moving, follow up',
             };
             $out[] = [
                 'fingerprint' => 'we:' . $e->id,
@@ -728,7 +748,7 @@ class WorkInboxService
             }
             $out[] = [
                 'fingerprint' => 'we:' . $e->id,
-                'title' => ($order?->invoice_no ?? 'Order') . ' order-এর courier booking বারবার fail করছে — কারণটা দেখো',
+                'title' => ($order?->invoice_no ?? 'Order') . ' order: courier booking keeps failing - check the reason',
                 'detail' => $e->body,
                 'source_type' => 'work_event', 'source_id' => $e->id,
                 'source_label' => $order ? $this->orderLabel($order) : 'Order',
@@ -775,7 +795,7 @@ class WorkInboxService
                 if ($shippedAt && $shippedAt->lte($cut)) {
                     $out[] = [
                         'fingerprint' => 'order:' . $o->id,
-                        'title' => $o->invoice_no . ' order-টা ' . self::bnAge($shippedAt) . ' ধরে Shipped — এখনো Delivered হয়নি, courier-এর সাথে যোগাযোগ করো',
+                        'title' => 'Order ' . $o->invoice_no . ' has been Shipped for ' . self::ageEn($shippedAt) . ' - still not Delivered, contact the courier',
                         'source_type' => 'order', 'source_id' => $o->id,
                         'source_label' => $this->orderLabel($o), 'link' => '/orders/' . $o->id,
                         'processor_id' => $o->processed_by,
@@ -795,7 +815,7 @@ class WorkInboxService
             ->each(function (Order $o) use (&$out) {
                 $out[] = [
                     'fingerprint' => 'order:' . $o->id,
-                    'title' => $o->invoice_no . '-এর return পৌঁছেছে — সিদ্ধান্ত নাও (আবার বিক্রি / stock-এ তোলা / damage)',
+                    'title' => 'Return for ' . $o->invoice_no . ' has arrived - decide (sell again / put back in stock / damaged)',
                     'source_type' => 'order', 'source_id' => $o->id,
                     'source_label' => $this->orderLabel($o), 'link' => '/orders/' . $o->id,
                     'processor_id' => $o->processed_by,
@@ -814,7 +834,7 @@ class WorkInboxService
             ->each(function (WorkEvent $e) use (&$out) {
                 $out[] = [
                     'fingerprint' => 'we:' . $e->id,
-                    'title' => 'Courier-এর টাকা মেলেনি — ' . $e->title,
+                    'title' => 'Courier money did not match - ' . $e->title,
                     'detail' => $e->body,
                     'source_type' => 'work_event', 'source_id' => $e->id,
                     'source_label' => 'Courier Ledger', 'link' => '/delivery/ledger',
@@ -840,7 +860,7 @@ class WorkInboxService
                     ->whereNotNull('user_id')->orderByDesc('id')->first();
                 $out[] = [
                     'fingerprint' => 'conv:' . $conv->id,
-                    'title' => 'AI customer-কে মানুষের হাতে দিয়েছে — ' . $conv->customer_name . ' ' . self::bnAge($conv->updated_at) . ' ধরে অপেক্ষা করছে, chat-টা ধরো',
+                    'title' => 'AI handed the customer over to a human - ' . $conv->customer_name . ' has been waiting for ' . self::ageEn($conv->updated_at) . ', pick up the chat',
                     'source_type' => 'conversation', 'source_id' => $conv->id,
                     'source_label' => 'Chat · ' . $conv->customer_name . ' (' . $this->channelLabel($conv->channel) . ')',
                     'link' => '/messages/inbox',
@@ -874,7 +894,7 @@ class WorkInboxService
                 }
                 $out[] = [
                     'fingerprint' => 'conv:' . $conv->id . ':' . $lastIn->id,
-                    'title' => $conv->customer_name . '-এর chat-এর 24 ঘণ্টার window শেষ হওয়ার পথে — উত্তর বাকি আছে',
+                    'title' => $conv->customer_name . "'s chat 24-hour window is about to end - a reply is still due",
                     'source_type' => 'conversation', 'source_id' => $conv->id,
                     'source_label' => 'Chat · ' . $conv->customer_name . ' (' . $this->channelLabel($conv->channel) . ')',
                     'link' => '/messages/inbox',
@@ -894,7 +914,7 @@ class WorkInboxService
                 $name = $m->conversation?->customer_name ?? 'Customer';
                 $out[] = [
                     'fingerprint' => 'msg:' . $m->id,
-                    'title' => 'AI draft ' . self::bnAge($m->created_at) . ' ধরে পড়ে আছে — পাঠিয়ে দাও বা বদলে দাও (' . $name . ')',
+                    'title' => 'An AI draft has been sitting for ' . self::ageEn($m->created_at) . ' - send it or change it (' . $name . ')',
                     'source_type' => 'chat_message', 'source_id' => $m->id,
                     'source_label' => 'Chat · ' . $name, 'link' => '/messages/inbox',
                 ];
@@ -916,7 +936,7 @@ class WorkInboxService
                 }
                 $out[] = [
                     'fingerprint' => 'comment:' . $cm->id,
-                    'title' => $cm->author_name . '-এর comment-এর private reply-এর সময় শেষের পথে — জবাব দাও',
+                    'title' => $cm->author_name . "'s comment private reply time is about to run out - reply now",
                     'source_type' => 'comment', 'source_id' => $cm->id,
                     'source_label' => 'Comment · ' . $cm->author_name, 'link' => '/messages/comments',
                 ];
@@ -934,7 +954,7 @@ class WorkInboxService
             ->orderBy('stock_qty')->limit(200)->get()->each(function (Product $p) use (&$out) {
                 $out[] = [
                     'fingerprint' => 'product:' . $p->id,
-                    'title' => $p->name . '-এর stock ' . ($p->stock_qty <= 0 ? 'শেষ' : 'কমে গেছে (' . $p->stock_qty . 'টা আছে)') . ' — কেনার সিদ্ধান্ত নাও, না কিনলে product-টা বন্ধ রাখো',
+                    'title' => $p->name . ' stock ' . ($p->stock_qty <= 0 ? 'is finished' : 'is low (' . $p->stock_qty . ' left)') . ' - decide about buying, or keep the product off',
                     'source_type' => 'product', 'source_id' => $p->id,
                     'source_label' => 'Product · ' . $p->name, 'link' => '/inventory/products',
                 ];
@@ -958,7 +978,7 @@ class WorkInboxService
             $s = $row['supplier'];
             $out[] = [
                 'fingerprint' => 'supplier:' . $s->id,
-                'title' => $s->name . '-এর পাওনা overdue — ৳' . number_format($row['overdue'], 0, '.', ',') . ' বকেয়া, সবচেয়ে পুরনো due ' . ($row['oldest_due_date'] ?? ''),
+                'title' => $s->name . ' due is overdue - ৳' . number_format($row['overdue'], 0, '.', ',') . ' outstanding, oldest due ' . ($row['oldest_due_date'] ?? ''),
                 'source_type' => 'supplier', 'source_id' => $s->id,
                 'source_label' => 'Supplier · ' . $s->name, 'link' => '/suppliers',
             ];
@@ -970,7 +990,10 @@ class WorkInboxService
     private function ruleLedgerMismatch(int $biz, array $def, array $c): array
     {
         $out = [];
-        $productIds = StockLedger::where('business_id', $biz)->whereNull('branch_id')
+        // Variant rows (variant_id set) track the variant's own stock
+        // pool, not the product's - their new_stock must not be compared
+        // against the product's stock_qty.
+        $productIds = StockLedger::where('business_id', $biz)->whereNull('branch_id')->whereNull('variant_id')
             ->whereNotNull('new_stock')->distinct()->pluck('product_id');
         foreach ($productIds as $pid) {
             $p = Product::where('business_id', $biz)->find($pid);
@@ -978,11 +1001,11 @@ class WorkInboxService
                 continue;
             }
             $latest = StockLedger::where('business_id', $biz)->where('product_id', $pid)
-                ->whereNull('branch_id')->whereNotNull('new_stock')->orderByDesc('id')->first();
+                ->whereNull('branch_id')->whereNull('variant_id')->whereNotNull('new_stock')->orderByDesc('id')->first();
             if ($latest && (int) $latest->new_stock !== (int) $p->stock_qty) {
                 $out[] = [
                     'fingerprint' => 'product:' . $p->id,
-                    'title' => 'Stock ledger-এ গরমিল — ' . $p->name . ': ledger-এ ' . $latest->new_stock . ', product-এ ' . $p->stock_qty,
+                    'title' => 'Stock ledger mismatch - ' . $p->name . ': ledger says ' . $latest->new_stock . ', product says ' . $p->stock_qty,
                     'source_type' => 'product', 'source_id' => $p->id,
                     'source_label' => 'Product · ' . $p->name, 'link' => '/inventory/ledger',
                 ];
@@ -1001,7 +1024,7 @@ class WorkInboxService
             ->orderBy('due_date')->limit(200)->get()->each(function (WarrantyClaim $w) use (&$out) {
                 $out[] = [
                     'fingerprint' => 'claim:' . $w->id,
-                    'title' => 'Warranty claim ' . $w->claim_no . '-এর নির্ধারিত দিন পার হয়ে গেছে — supplier-এর সাথে কথা বলে customer-কে জানাও',
+                    'title' => 'Warranty claim ' . $w->claim_no . ' is past its due date - talk to the supplier and update the customer',
                     'source_type' => 'claim', 'source_id' => $w->id,
                     'source_label' => 'Claim ' . $w->claim_no, 'link' => '/inventory/warranty',
                 ];
@@ -1017,7 +1040,7 @@ class WorkInboxService
             ->orderBy('stock_qty')->limit(200)->get()->each(function (Product $p) use (&$out) {
                 $out[] = [
                     'fingerprint' => 'product:' . $p->id,
-                    'title' => $p->name . '-এর stock negative হয়ে গেছে (' . $p->stock_qty . ') — এখনই ঠিক করো',
+                    'title' => $p->name . ' stock has gone negative (' . $p->stock_qty . ') - fix it now',
                     'source_type' => 'product', 'source_id' => $p->id,
                     'source_label' => 'Product · ' . $p->name, 'link' => '/inventory/products',
                 ];
@@ -1036,7 +1059,7 @@ class WorkInboxService
 
         return [[
             'fingerprint' => 'autocall:' . now()->toDateString(),
-            'title' => 'Auto Call বারবার fail করছে — গত 24 ঘণ্টায় ' . $n . 'টা order-এর call fail হয়েছে',
+            'title' => 'Auto Call keeps failing - calls for ' . $n . ' orders failed in the last 24 hours',
             'source_type' => 'system', 'source_id' => null,
             'source_label' => 'Auto Call', 'link' => '/orders/autocall',
         ]];
@@ -1050,7 +1073,7 @@ class WorkInboxService
             ->orderByDesc('date')->limit(100)->get()->each(function (DailyClosing $d) use (&$out) {
                 $out[] = [
                     'fingerprint' => 'closing:' . $d->id,
-                    'title' => $d->date->format('d M') . '-এর cash হিসাব ৳' . number_format(abs((float) $d->difference)) . ' মেলেনি — হিসাব মেলাও',
+                    'title' => 'Cash for ' . $d->date->format('d M') . ' is off by ৳' . number_format(abs((float) $d->difference)) . ' - reconcile the accounts',
                     'source_type' => 'closing', 'source_id' => $d->id,
                     'source_label' => 'Finance · ' . ($d->account?->name ?? 'Cash'), 'link' => '/finance',
                 ];
@@ -1077,7 +1100,7 @@ class WorkInboxService
             $name = trim((string) ($conn->display_name ?? '')) ?: (string) $conn->external_id;
             $out[] = [
                 'fingerprint' => 'channel:' . $conn->id,
-                'title' => $label . '-এর connection ভেঙে গেছে (' . $name . ') — Settings থেকে আবার connect করো',
+                'title' => $label . ' connection is broken (' . $name . ') - reconnect it from Settings',
                 'detail' => $conn->last_error,
                 'source_type' => 'system', 'source_id' => $conn->id,
                 'source_label' => 'Messaging Channels · ' . $label, 'link' => '/settings?group=api',
@@ -1102,8 +1125,8 @@ class WorkInboxService
             $label = $m->label();
             $out[] = [
                 'fingerprint' => 'courier-method:' . $m->id,
-                'title' => $label . '-এর webhook secret সেভ করা নেই — delivery update যাচাই করা যাচ্ছে না, Settings থেকে secret বসাও',
-                'detail' => 'এই courier-এর webhook দিয়ে আসা delivery update কোনো যাচাই ছাড়াই গ্রহণ হচ্ছে। Settings → API Connection → Courier Integration-এ গিয়ে ' . $label . ' connection-এ webhook secret/token বসালেই update যাচাই শুরু হবে।',
+                'title' => $label . ' has no webhook secret saved - delivery updates cannot be verified, add the secret in Settings',
+                'detail' => 'Delivery updates coming through this courier\'s webhook are being accepted without any verification. Add the webhook secret/token on the ' . $label . ' connection in Settings → API Connection → Courier Integration and updates will be verified.',
                 'source_type' => 'system', 'source_id' => $m->id,
                 'source_label' => 'Courier Integration · ' . $label, 'link' => '/settings?group=api',
             ];
@@ -1121,7 +1144,7 @@ class WorkInboxService
 
         return [[
             'fingerprint' => 'sms_balance',
-            'title' => 'SMS balance কমে গেছে — মাত্র ৳' . number_format($balance) . ' আছে, recharge করো',
+            'title' => 'SMS balance is low - only ৳' . number_format($balance) . ' left, recharge now',
             'source_type' => 'system', 'source_id' => null,
             'source_label' => 'SMS Balance', 'link' => '/marketing/sms',
         ]];
@@ -1142,8 +1165,8 @@ class WorkInboxService
         return [[
             'fingerprint' => 'token_balance',
             'title' => $empty
-                ? 'Points শেষ হয়ে গেছে — নতুন order বন্ধ আছে, pack কিনে আবার চালু করো'
-                : 'Points balance কমে গেছে — মাত্র ' . number_format($balance) . ' points আছে, pack কিনে নাও',
+                ? 'Points are finished - new orders are blocked, buy a pack to start again'
+                : 'Points balance is low - only ' . number_format($balance) . ' points left, buy a pack',
             'source_type' => 'system', 'source_id' => null,
             'source_label' => 'Points Balance', 'link' => '/billing',
         ]];

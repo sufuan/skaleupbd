@@ -51,10 +51,10 @@ class FinanceController extends Controller
     private function typeLabel(FinanceTransaction $t): string
     {
         return match ($t->type) {
-            'income' => 'আয়', 'expense' => 'খরচ', 'transfer' => 'Transfer',
-            'owner_in' => 'মালিকের জমা', 'owner_out' => 'মালিকের তোলা',
-            'advance' => 'Order advance', 'courier_payout' => 'Courier payout',
-            'deposit' => 'জমা', 'withdrawal' => 'তোলা', default => $t->type,
+            'income' => __('Income'), 'expense' => __('Expense'), 'transfer' => __('Transfer'),
+            'owner_in' => __('Owner deposit'), 'owner_out' => __('Owner withdrawal'),
+            'advance' => __('Order advance'), 'courier_payout' => __('Courier payout'),
+            'deposit' => __('Deposit'), 'withdrawal' => __('Withdrawal'), default => $t->type,
         };
     }
 
@@ -114,6 +114,7 @@ class FinanceController extends Controller
         // Weekly payout check: delivered more than 7 days ago and still not fully settled.
         $settlements = app(\App\Services\SettlementService::class);
         $stale = Order::where('business_id', $biz)->where('status', 'Delivered')
+            ->whereNotNull('courier_method_id')
             ->where('updated_at', '<', $today->copy()->subDays(7))->get()
             ->filter(fn (Order $o) => $settlements->settledNet($o) < $settlements->expectedNet($o) - 0.01);
         $staleAmount = round($stale->sum(fn (Order $o) => $settlements->expectedNet($o) - $settlements->settledNet($o)), 2);
@@ -123,7 +124,7 @@ class FinanceController extends Controller
         $closing = null;
         if ($cash) {
             $closing = DailyClosing::where('business_id', $biz)->where('account_id', $cash->id)
-                ->where('date', $today->toDateString())->first();
+                ->whereDate('date', $today->toDateString())->first();
         }
 
         $props += [
@@ -156,8 +157,8 @@ class FinanceController extends Controller
             return [
                 'id' => $a->id, 'name' => $a->name, 'type' => $a->type, 'active' => (bool) $a->active,
                 'balance' => $this->fin->accountBalance($a),
-                'today_in' => round((float) FinanceTransaction::where('account_id', $a->id)->where('direction', 'in')->where('txn_date', $today)->whereNull('voided_at')->whereNull('reversal_of')->sum('amount'), 2),
-                'today_out' => round((float) FinanceTransaction::where('account_id', $a->id)->where('direction', 'out')->where('txn_date', $today)->whereNull('voided_at')->whereNull('reversal_of')->sum('amount'), 2),
+                'today_in' => round((float) FinanceTransaction::where('account_id', $a->id)->where('direction', 'in')->whereDate('txn_date', $today)->whereNull('voided_at')->whereNull('reversal_of')->sum('amount'), 2),
+                'today_out' => round((float) FinanceTransaction::where('account_id', $a->id)->where('direction', 'out')->whereDate('txn_date', $today)->whereNull('voided_at')->whereNull('reversal_of')->sum('amount'), 2),
             ];
         })->all();
 
@@ -180,7 +181,7 @@ class FinanceController extends Controller
             'business_id' => $biz, 'name' => $data['name'], 'type' => $data['type'],
             'opening_balance' => $data['opening_balance'] ?? 0,
         ]);
-        return back()->with('success', 'Account যোগ হয়েছে।');
+        return back()->with('success', __('Account added.'));
     }
 
     public function updateAccount(Request $request, FinanceAccount $account): RedirectResponse
@@ -192,7 +193,7 @@ class FinanceController extends Controller
             'active' => 'sometimes|boolean',
         ]);
         $account->update($data);
-        return back()->with('success', 'Account বদলানো হয়েছে।');
+        return back()->with('success', __('Account updated.'));
     }
 
     /** The one entry sheet: income / expense / deposit / withdrawal / transfer / owner / courier payout. */
@@ -215,7 +216,7 @@ class FinanceController extends Controller
             if ($data['kind'] === 'transfer') {
                 $to = FinanceAccount::where('business_id', $biz)->findOrFail($data['to_account_id']);
                 if ($to->id === $account->id) {
-                    return back()->with('error', 'একই account-এ transfer হয় না।');
+                    return back()->with('error', __('Transfer within the same account is not possible.'));
                 }
                 $this->fin->transfer($biz, $account->id, $to->id, (float) $data['amount'], $data['note'] ?? null, $request->user(), $date);
             } else {
@@ -234,23 +235,23 @@ class FinanceController extends Controller
         } catch (\RuntimeException $e) {
             return back()->with('error', $e->getMessage());
         }
-        return back()->with('success', 'লেনদেন যোগ হয়েছে।');
+        return back()->with('success', __('Transaction added.'));
     }
 
     public function voidTransaction(Request $request, FinanceTransaction $transaction): RedirectResponse
     {
         abort_unless($transaction->business_id === $this->biz($request), 404);
         if ($transaction->voided_at) {
-            return back()->with('error', 'এটা আগেই বাতিল করা।');
+            return back()->with('error', __('This is already voided.'));
         }
         if ($transaction->reversal_of) {
-            return back()->with('error', 'উল্টো entry বাতিল করা যায় না।');
+            return back()->with('error', __('A reversal entry cannot be voided.'));
         }
         if ($this->fin->monthLocked($transaction->business_id, $transaction->txn_date->toDateString())) {
-            return back()->with('error', 'এই মাস বন্ধ - বাতিল করা যাবে না।');
+            return back()->with('error', __('This month is closed - it cannot be voided.'));
         }
         $this->fin->void($transaction, $request->user());
-        return back()->with('success', 'Entry বাতিল হয়েছে - উল্টো entry দিয়ে হিসাব ঠিক রাখা হয়েছে।');
+        return back()->with('success', __('Entry voided - the account is kept right with a reversal entry.'));
     }
 
     /** In-place edit of a single income/expense entry (amount, date, category, note). */
@@ -258,16 +259,16 @@ class FinanceController extends Controller
     {
         abort_unless($transaction->business_id === $this->biz($request), 404);
         if ($transaction->voided_at) {
-            return back()->with('error', 'বাতিল করা entry বদলানো যায় না।');
+            return back()->with('error', __('A voided entry cannot be changed.'));
         }
         if ($transaction->reversal_of !== null) {
-            return back()->with('error', 'উল্টো entry বদলানো যায় না।');
+            return back()->with('error', __('A reversal entry cannot be changed.'));
         }
         if ($transaction->transfer_pair_id !== null) {
-            return back()->with('error', 'Transfer entry সরাসরি বদলানো যায় না।');
+            return back()->with('error', __('A transfer entry cannot be changed directly.'));
         }
         if (! in_array($transaction->type, ['income', 'expense'], true)) {
-            return back()->with('error', 'এই ধরনের entry এখান থেকে বদলানো যায় না।');
+            return back()->with('error', __('This type of entry cannot be changed here.'));
         }
         $data = $request->validate([
             'amount' => 'required|numeric|min:0.01',
@@ -277,14 +278,14 @@ class FinanceController extends Controller
         ]);
         if ($this->fin->monthLocked($transaction->business_id, $transaction->txn_date->toDateString())
             || $this->fin->monthLocked($transaction->business_id, $data['txn_date'])) {
-            return back()->with('error', 'এই মাস বন্ধ - বদলানো যাবে না।');
+            return back()->with('error', __('This month is closed - it cannot be changed.'));
         }
         $categoryId = null;
         if (! empty($data['category_id'])) {
             $cat = FinanceCategory::where('business_id', $transaction->business_id)
                 ->where('kind', $transaction->type)->find((int) $data['category_id']);
             if (! $cat) {
-                return back()->with('error', 'Category ঠিক নেই।');
+                return back()->with('error', __('The category is invalid.'));
             }
             $categoryId = $cat->id;
         }
@@ -295,7 +296,7 @@ class FinanceController extends Controller
             'note' => $data['note'] ?? null,
         ]);
 
-        return back()->with('success', 'Entry বদলানো হয়েছে।');
+        return back()->with('success', __('Entry changed.'));
     }
 
     public function incomeExpense(Request $request): InertiaResponse
@@ -351,7 +352,7 @@ class FinanceController extends Controller
         $biz = $this->biz($request);
         $data = $request->validate(['name' => 'required|string|max:60', 'kind' => 'required|in:income,expense']);
         FinanceCategory::firstOrCreate(['business_id' => $biz, 'name' => $data['name'], 'kind' => $data['kind']]);
-        return back()->with('success', 'Category যোগ হয়েছে।');
+        return back()->with('success', __('Category added.'));
     }
 
     public function updateCategory(Request $request, FinanceCategory $category): RedirectResponse
@@ -359,20 +360,20 @@ class FinanceController extends Controller
         abort_unless($category->business_id === $this->biz($request), 404);
         $data = $request->validate(['name' => 'required|string|max:60']);
         $category->update(['name' => $data['name']]);
-        return back()->with('success', 'Category বদলানো হয়েছে।');
+        return back()->with('success', __('Category changed.'));
     }
 
     public function deleteCategory(Request $request, FinanceCategory $category): RedirectResponse
     {
         abort_unless($category->business_id === $this->biz($request), 404);
         if ($category->is_system) {
-            return back()->with('error', 'System category মোছা যায় না।');
+            return back()->with('error', __('A system category cannot be deleted.'));
         }
         if (FinanceTransaction::where('category_id', $category->id)->exists()) {
-            return back()->with('error', 'এই category-তে entry আছে - মোছা যাবে না।');
+            return back()->with('error', __('This category has entries - it cannot be deleted.'));
         }
         $category->delete();
-        return back()->with('success', 'Category মোছা হয়েছে।');
+        return back()->with('success', __('Category deleted.'));
     }
 
     public function cashflow(Request $request): InertiaResponse
@@ -389,11 +390,11 @@ class FinanceController extends Controller
         $days = [];
         for ($i = 0; $i < 7; $i++) {
             $d = $today->copy()->subDays($i);
-            $q = FinanceTransaction::where('business_id', $biz)->where('txn_date', $d->toDateString())
+            $q = FinanceTransaction::where('business_id', $biz)->whereDate('txn_date', $d->toDateString())
                 ->whereNull('voided_at')->whereNull('reversal_of');
             $in = round((float) (clone $q)->where('direction', 'in')->sum('amount'), 2);
             $out = round((float) (clone $q)->where('direction', 'out')->sum('amount'), 2);
-            $days[] = ['label' => $i === 0 ? 'আজ' : $d->format('d M'), 'in' => $in, 'out' => $out, 'net' => round($in - $out, 2)];
+            $days[] = ['label' => $i === 0 ? __('Today') : $d->format('d M'), 'in' => $in, 'out' => $out, 'net' => round($in - $out, 2)];
         }
 
         $rows = FinanceTransaction::where('business_id', $biz)->with(['account', 'category', 'creator'])
@@ -437,7 +438,7 @@ class FinanceController extends Controller
         $biz = $this->biz($request);
         $month = now('Asia/Dhaka')->subMonthNoOverflow()->format('Y-m');
         app(\App\Services\SettingsService::class)->set('finance.' . $biz . '.closed_through', $month, $request->user()->id);
-        return back()->with('success', 'আগের মাস বন্ধ করা হয়েছে - ওই মাসের entry আর বদলানো/বাতিল হবে না।');
+        return back()->with('success', __('The previous month is closed - entries in that month can no longer be changed or voided.'));
     }
 
     public function dailyClose(Request $request): RedirectResponse
@@ -452,17 +453,17 @@ class FinanceController extends Controller
             ['expected' => $expected, 'counted' => $data['counted'], 'difference' => $diff, 'closed_by' => $request->user()->id]
         );
         if (abs($diff) > 0.01) {
-            $this->fin->raiseMismatchEvent($biz, $account->name . ' - আশা ছিল ৳' . number_format($expected) . ', হাতে পাওয়া ৳' . number_format((float) $data['counted']) . ' (তফাত ৳' . number_format($diff) . ')।');
-            return back()->with('error', 'হিসাব মেলেনি - তফাত ৳' . number_format($diff) . '। Work Inbox-এ task তোলা হয়েছে।');
+            $this->fin->raiseMismatchEvent($biz, __(':account - expected ৳:expected, counted ৳:counted (difference ৳:diff).', ['account' => $account->name, 'expected' => number_format($expected), 'counted' => number_format((float) $data['counted']), 'diff' => number_format($diff)]));
+            return back()->with('error', __('The accounts did not match - difference ৳:diff. A task has been raised in Work Inbox.', ['diff' => number_format($diff)]));
         }
-        return back()->with('success', 'আজকের হিসাব মিলেছে।');
+        return back()->with('success', __("Today's accounts matched."));
     }
 
     public function raisePayoutTask(Request $request): RedirectResponse
     {
         $biz = $this->biz($request);
-        $this->fin->raiseMismatchEvent($biz, '৭ দিনের বেশি পুরনো Delivered parcel-এর courier payout এখনো আসেনি - Courier Ledger-এ মিলিয়ে দেখুন।');
-        return back()->with('success', 'Work Inbox-এ task তোলা হয়েছে।');
+        $this->fin->raiseMismatchEvent($biz, __('The courier payout for a delivered parcel older than 7 days has not arrived yet - please check it in the Courier Ledger.'));
+        return back()->with('success', __('A task has been raised in Work Inbox.'));
     }
 
     public function exportCsv(Request $request)
@@ -470,14 +471,19 @@ class FinanceController extends Controller
         $biz = $this->biz($request);
         $rows = FinanceTransaction::where('business_id', $biz)->whereIn('type', ['income', 'expense'])
             ->with(['account', 'category'])->orderByDesc('txn_date')->orderByDesc('id')->limit(1000)->get();
-        $csv = "Date,Description,Category,Account,Type,Amount\n";
+        $csv = "Date,Description,Category,Account,Type,Amount,Status\n";
         foreach ($rows as $t) {
+            // Voided originals and their reversals stay in the file (the pair
+            // is part of the audit trail) but are marked, so the export foots
+            // the same way the page does: sum the Active rows, or sum signed
+            // values - both reach the page totals.
+            $status = $t->voided_at ? 'Voided' : ($t->reversal_of ? 'Reversal' : 'Active');
             $csv .= implode(',', [
                 $t->txn_date->toDateString(),
                 '"' . str_replace('"', '""', $t->note ?: $this->typeLabel($t)) . '"',
                 '"' . ($t->category?->name ?? '') . '"',
                 '"' . ($t->account?->name ?? '') . '"',
-                $t->type, ($t->direction === 'in' ? '' : '-') . $t->amount,
+                $t->type, ($t->direction === 'in' ? '' : '-') . $t->amount, $status,
             ]) . "\n";
         }
         return Response::make($csv, 200, [

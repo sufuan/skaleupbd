@@ -31,13 +31,13 @@ export default function Control({ kpis, poolTasks, tasks, staff, filters, ruleLa
                 <div className="wi-kpis c4">
                     <div className="wi-kpi"><b>{kpis.open_total}</b><span>{t('Total open work')}</span></div>
                     <div className="wi-kpi amber"><b>{kpis.unassigned}</b><span>{t('Not assigned to anyone')}</span></div>
-                    <div className="wi-kpi red"><b>{kpis.overdue}</b><span>Overdue</span></div>
+                    <div className="wi-kpi red"><b>{kpis.overdue}</b><span>{t('Overdue')}</span></div>
                     <div className="wi-kpi"><b>{kpis.done_today}</b><span>{t('Finished today')}</span></div>
                 </div>
 
                 {f.rule !== '' && (
                     <div className="pool-box" style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-                        <div style={{ fontWeight: 700, color: '#92400E' }}>{t('Filtered')}: {ruleLabel || f.rule}</div>
+                        <div style={{ fontWeight: 700, color: '#92400E' }}>{t('Filtered')}: {ruleLabel.length ? ruleLabel.map((n) => t(n)).join(' · ') : f.rule}</div>
                         <button type="button" className="btn-s" onClick={() => apply({ ...f, rule: '' })}>{t('Show all work')}</button>
                     </div>
                 )}
@@ -53,7 +53,7 @@ export default function Control({ kpis, poolTasks, tasks, staff, filters, ruleLa
                 <h4 style={{ fontSize: 16, margin: '6px 0 10px' }}>{t('Everyone\'s open work')}</h4>
 
                 <div className="wi-tools">
-                    <input type="text" placeholder={t('Search by invoice, customer or phone')} style={{ flex: 1, minWidth: 200 }} value={f.q}
+                    <input type="text" placeholder={t('Search invoice, customer or phone')} style={{ flex: 1, minWidth: 200 }} value={f.q}
                         onChange={(e) => setF({ ...f, q: e.target.value })}
                         onKeyDown={(e) => e.key === 'Enter' && apply(f)} />
                     <select value={f.status} onChange={(e) => apply({ ...f, status: e.target.value })}>
@@ -64,7 +64,7 @@ export default function Control({ kpis, poolTasks, tasks, staff, filters, ruleLa
                     </select>
                     <select value={f.source} onChange={(e) => apply({ ...f, source: e.target.value })}>
                         <option value="">{t('All sources')}</option>
-                        {Object.entries(sources).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                        {Object.entries(sources).map(([k, v]) => <option key={k} value={k}>{t(v)}</option>)}
                     </select>
                     <select value={f.assignee} onChange={(e) => apply({ ...f, assignee: e.target.value })}>
                         <option value="">{t('Everyone')}</option>
@@ -74,7 +74,7 @@ export default function Control({ kpis, poolTasks, tasks, staff, filters, ruleLa
                     <select value={f.due} onChange={(e) => apply({ ...f, due: e.target.value })}>
                         <option value="">{t('Any time')}</option>
                         <option value="today">{t('Due today')}</option>
-                        <option value="overdue">Overdue</option>
+                        <option value="overdue">{t('Overdue')}</option>
                     </select>
                 </div>
 
@@ -87,15 +87,15 @@ export default function Control({ kpis, poolTasks, tasks, staff, filters, ruleLa
                         {tasks.map((task) => (
                             <tr key={task.id}>
                                 <td style={{ fontWeight: 600, color: '#1E293B' }}>{task.title}</td>
-                                <td>{sources[task.source] || task.source}</td>
+                                <td>{t(sources[task.source] || task.source)}</td>
                                 <td>{task.assignee_label}</td>
                                 <td>{task.due ? task.due.text : (task.status === 'done' || task.status === 'auto_closed' ? '-' : t('Due today'))}</td>
-                                <td><span className={`chip ${PRIORITY_CHIP[task.priority] || 'chip-grey'}`}>{task.priority_label}</span></td>
+                                <td><span className={`chip ${PRIORITY_CHIP[task.priority] || 'chip-grey'}`}>{t(task.priority_label)}</span></td>
                                 <td>
                                     {task.status === 'done' && <span className="chip chip-green">{t('Done')}</span>}
                                     {task.status === 'auto_closed' && <span className="chip chip-grey">{t('Resolved on its own')}</span>}
                                     {task.status === 'open' && <span className="chip chip-grey">{t('Open')}</span>}
-                                    {task.status === 'in_progress' && <span className="chip chip-purple">চলছে</span>}
+                                    {task.status === 'in_progress' && <span className="chip chip-purple">{t('In progress')}</span>}
                                 </td>
                                 <td>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -119,7 +119,7 @@ export default function Control({ kpis, poolTasks, tasks, staff, filters, ruleLa
                             </tr>
                         ))}
                         {tasks.length === 0 && (
-                            <tr><td colSpan="7" style={{ color: '#64748B' }}>কোনো কাজ নেই - সব পরিষ্কার।</td></tr>
+                            <tr><td colSpan="7" style={{ color: '#64748B' }}>{t('No tasks - all clear.')}</td></tr>
                         )}
                     </tbody>
                 </table>

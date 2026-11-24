@@ -189,7 +189,7 @@ class OrderController extends Controller
             $out = fopen('php://output', 'w');
             fputcsv($out, ['Invoice', 'Date', 'Customer', 'Phone', 'Address', 'District', 'Source', 'Status', 'Items', 'Subtotal', 'Discount', 'Delivery Charge', 'Advance', 'Due', 'Grand Total', 'Processed By']);
             foreach ($orders as $o) {
-                fputcsv($out, [$o->invoice_no, $o->created_at?->format('d M Y h:i A'), $o->customer_name, $o->customer_phone,
+                fputcsv($out, [$o->invoice_no, DhakaTime::fmt($o->created_at, 'd M Y h:i A'), $o->customer_name, $o->customer_phone,
                     $o->customer_address, $o->district, $o->source, $o->status,
                     $o->items->map(fn ($i) => $i->name.($i->qty > 1 ? " x{$i->qty}" : ''))->implode(', '),
                     $o->subtotal, $o->discount, $o->delivery_charge, $o->advance, $o->due, $o->grand_total, $o->processor?->name]);
@@ -218,7 +218,13 @@ class OrderController extends Controller
                 ->get(['code', 'label']),
             'products' => Product::where('business_id', $biz)->where('is_active', true)->orderBy('name')
                 ->get()->map(fn ($p) => ['id' => $p->id, 'name' => $p->name, 'sku' => $p->sku,
-                    'price' => (float) $p->price, 'stock' => $p->available(), 'image' => $p->imageUrl()]),
+                    'price' => (float) $p->price, 'stock' => $p->available(), 'image' => $p->imageUrl(),
+                    // Variant picker (K-H2): the New Order form lets the
+                    // seller pick which variant leaves; the line stores
+                    // the variant id + name and stock moves on the
+                    // variant's own pool.
+                    'variants' => $p->activeVariants()->map(fn ($v) => ['id' => $v->id, 'name' => $v->name,
+                        'price' => (float) $v->effectivePrice(), 'stock' => $v->available()])->all()]),
             'couriers' => app(\App\Services\DeliveryMethodList::class)->forBusiness($biz),
             'allTags' => Order::where('business_id', $biz)->pluck('tags')->filter()
                 ->flatMap(fn ($t) => is_array($t) ? $t : [])->unique()->values(),
@@ -273,6 +279,8 @@ class OrderController extends Controller
             'items.*.product_id' => ['nullable', 'integer'],
             'items.*.name' => ['required', 'string', 'max:160'],
             'items.*.sku' => ['nullable', 'string', 'max:60'],
+            'items.*.variant_id' => ['nullable', 'integer'],
+            'items.*.variant_name' => ['nullable', 'string', 'max:160'],
             'items.*.qty' => ['required', 'integer', 'min:1'],
             'items.*.price' => ['required', 'numeric', 'min:0'],
             'attachment' => ['nullable', 'file', 'max:5120'],
@@ -309,20 +317,15 @@ class OrderController extends Controller
         }
 
         if ($data['mode'] === 'approved') {
-            // Created in Approved mode: run the same approve transaction.
+            // Created in Approved mode. Stock was already reserved exactly
+            // once inside OrderService::create() (the order is created in
+            // Processing) - this branch must NOT reserve again (Round 3,
+            // H1: the old inline loop here double-reserved every Approved
+            // form order and leaked a phantom unit on cancel).
             $order->processed_by = $request->user()->id;
             $order->approved_at = now();
             $order->processing_status = 'Processing';
             $order->save();
-            foreach ($order->items as $item) {
-                if ($item->product_id) {
-                    $product = Product::where('business_id', $order->business_id)->find($item->product_id);
-                    if ($product) {
-                        $product->increment('reserved_qty', $item->qty);
-                        \App\Models\StockLedger::create(['business_id' => $order->business_id, 'product_id' => $product->id, 'order_id' => $order->id, 'type' => 'reserve', 'qty' => $item->qty, 'note' => "Reserved on approve of {$order->invoice_no}"]);
-                    }
-                }
-            }
             $order->logHistory('Pending', 'Processing', $request->user(), 'Created as approved');
         }
 
@@ -347,6 +350,11 @@ class OrderController extends Controller
 
         $suggestion = app(\App\Services\SuggestCourierService::class)->suggest($order);
 
+        // Collected-advance state: on a cancelled order the advance money is
+        // still sitting in Finance until the seller refunds it from here.
+        $finService = app(\App\Services\FinanceService::class);
+        $advanceTxn = $finService->orderAdvanceTxn($order);
+
         $perCourier = [];
         foreach (['Steadfast', 'Pathao', 'RedX', 'Carrybee'] as $c) {
             $delivered = Order::where('business_id', $biz)->where('customer_phone', $order->customer_phone)
@@ -366,6 +374,10 @@ class OrderController extends Controller
                 'discount' => (float) $order->discount,
                 'delivery_charge' => (float) $order->delivery_charge,
                 'advance' => (float) $order->advance,
+                'advance_collected' => $advanceTxn !== null,
+                'advance_amount' => $advanceTxn ? (float) $advanceTxn->amount : (float) $order->advance,
+                'advance_method' => $advanceTxn?->account?->name ?? $order->payment_method,
+                'advance_refunded' => $finService->advanceRefunded($order),
                 'due' => $order->due,
                 'txn_id' => $order->txn_id,
                 'alt_phone' => $order->alt_phone,
@@ -388,8 +400,8 @@ class OrderController extends Controller
                 'shipped_at' => DhakaTime::fmt($order->shipped_at, 'd M Y, h:i A'),
                 'history' => $order->history->map(fn ($h) => [
                     'text' => $h->note === 'Approved'
-                        ? "Approved by {$h->actor_name} — {$h->from_status} → {$h->to_status}"
-                        : ($h->from_status ? "Status: {$h->from_status} → {$h->to_status}" : "Order created").($h->note && $h->note !== 'Approved' ? " — {$h->note}" : ''),
+                        ? "Approved by {$h->actor_name} - {$h->from_status} → {$h->to_status}"
+                        : ($h->from_status ? "Status: {$h->from_status} → {$h->to_status}" : "Order created").($h->note && $h->note !== 'Approved' ? " - {$h->note}" : ''),
                     'time' => DhakaTime::fmt($h->created_at, 'h:i A'),
                     'date' => DhakaTime::fmt($h->created_at, 'd M'),
                 ]),
@@ -443,7 +455,12 @@ class OrderController extends Controller
         ]);
 
         if (($data['processing_status'] ?? null) === 'Cancel') {
-            $this->orders->changeStatus($order, 'Cancelled', $request->user(), $data['cancellation_reason'] ?? 'Customer Request');
+            try {
+                $this->orders->changeStatus($order, 'Cancelled', $request->user(), $data['cancellation_reason'] ?? 'Customer Request');
+            } catch (\Illuminate\Validation\ValidationException $e) {
+                // e.g. M4: a Delivered order cannot be cancelled.
+                return back()->with('error', collect($e->errors())->flatten()->first());
+            }
 
             return back()->with('success', "Order {$order->invoice_no} cancelled");
         }
@@ -500,10 +517,9 @@ class OrderController extends Controller
             'qty' => $data['qty'], 'price' => $product->price, 'cost' => $product->cost,
         ]);
         if ($order->status === 'Processing') {
-            $product->increment('reserved_qty', $data['qty']);
-            \App\Models\StockLedger::create(['business_id' => $order->business_id, 'product_id' => $product->id,
-                'order_id' => $order->id, 'type' => 'reserve', 'qty' => $data['qty'],
-                'note' => "Reserved for product added to {$order->invoice_no}"]);
+            // Through the shared exactly-once routine (Round 3, H1): it
+            // reserves only the newly added item's shortfall.
+            $this->orders->ensureReserved($order->fresh(['items']), $request->user(), "Reserved for product added to {$order->invoice_no}");
         }
         $order->subtotal = $order->items()->get()->sum(fn ($i) => (float) $i->price * $i->qty);
         $order->grand_total = (float) $order->subtotal - (float) $order->discount + (float) $order->delivery_charge;
@@ -545,10 +561,19 @@ class OrderController extends Controller
         $label = $type === 'reminder' ? 'Reminder SMS' : 'Advance SMS';
 
         $template = MessageTemplate::where('business_id', $biz)->where('key', $type)->first();
+        // Substitute the FULL placeholder set the templates use - the
+        // automation substitutes {phone} from the shop contact number,
+        // and the seeded reminder/advance bodies also carry {phone} /
+        // {number}; leaving them raw sent literal braces to customers
+        // (who were charged for the send).
+        $contact = $this->settings->shopContact($biz, 'mobile');
         $rendered = strtr($template?->body ?? '', [
             '{name}' => $order->customer_name, '{invoice}' => $order->invoice_no,
             '{amount}' => number_format((float) $order->grand_total), '{advance}' => number_format(max(100, (float) $order->due)),
             '{shop}' => $this->settings->shopName($biz),
+            '{phone}' => $contact, '{number}' => $contact,
+            '{courier}' => $order->delivery_method ?: 'Courier', '{cn}' => $order->consignment_id ?: $order->tracking_id ?: '',
+            '{product}' => $order->items->first()?->name ?? '',
         ]);
 
         // A real send through the one SMS service, under the same flow keys
@@ -561,7 +586,7 @@ class OrderController extends Controller
         ], $order->customer_id);
 
         if ($log->status === 'sent') {
-            $order->logActivity('sms', "{$label} sent to customer — \"{$rendered}\"", $request->user());
+            $order->logActivity('sms', "{$label} sent to customer - \"{$rendered}\"", $request->user());
 
             return back()->with('success', "{$label} sent");
         }
@@ -571,7 +596,7 @@ class OrderController extends Controller
             'skipped_cap' => 'SMS limit reached for this customer',
             default => $log->error ?: 'SMS could not be sent',
         };
-        $order->logActivity('sms', "{$label} not sent — {$reason}", $request->user());
+        $order->logActivity('sms', "{$label} not sent - {$reason}", $request->user());
 
         return back()->with('error', "{$label} not sent - {$reason}");
     }
@@ -594,20 +619,36 @@ class OrderController extends Controller
         return back()->with('success', ucfirst($type).' blocked');
     }
 
+    /**
+     * Refund a cancelled order's collected advance. The money sat in Finance
+     * as ordinary income until now; this posts the one reversing expense
+     * entry (FinanceService::refundOrderAdvance, idempotent per order).
+     */
+    public function refundAdvance(Request $request, Order $order): RedirectResponse
+    {
+        $this->own($request, $order);
+        if ($order->status !== 'Cancelled') {
+            return back()->with('error', __('Only a cancelled order can have its advance refunded.'));
+        }
+        try {
+            $txn = app(\App\Services\FinanceService::class)->refundOrderAdvance($order, $request->user());
+        } catch (\DomainException | \RuntimeException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+        if ($txn->wasRecentlyCreated) {
+            $order->logActivity('action', 'Advance refunded: ৳'.number_format((float) $txn->amount)." by {$request->user()->name}", $request->user());
+        }
+
+        return back()->with('success', __('Advance refunded for order :invoice', ['invoice' => $order->invoice_no]));
+    }
+
     public function destroy(Request $request, Order $order): RedirectResponse
     {
         $this->own($request, $order);
         $reason = (string) $request->input('reason', 'Deleted by staff');
         if ($order->status === 'Processing') {
-            foreach ($order->items as $item) {
-                if ($item->product_id) {
-                    $product = Product::where('business_id', $order->business_id)->find($item->product_id);
-                    if ($product) {
-                        $product->decrement('reserved_qty', $item->qty);
-                        \App\Models\StockLedger::create(['business_id' => $order->business_id, 'product_id' => $product->id, 'order_id' => $order->id, 'type' => 'release_reserve', 'qty' => $item->qty, 'note' => "Released on delete of {$order->invoice_no}"]);
-                    }
-                }
-            }
+            // Release exactly what the order holds (Round 3, H1).
+            $this->orders->releaseHeldReservations($order, 'Released on delete', $request->user());
         }
         DeletionLog::create(['business_id' => $order->business_id, 'order_ref' => $order->invoice_no,
             'deleted_by' => $request->user()->name, 'reason' => $reason]);

@@ -212,7 +212,7 @@ export default function CourierSettings({ couriers }) {
                             <span className="b">{t(r.scope === 'product' ? 'Product rule' : r.scope === 'category' ? 'Category rule' : r.scope === 'district' ? 'District rule' : 'Area rule')}</span>
                             <span className="sm mut"> - {r.scope === 'product' ? (products.find((p) => p.id === r.product_id)?.name || r.product_id) : r.scope === 'category' ? r.category : r.scope === 'district' ? r.district : r.area} → {r.method_label} · {t('Priority')} {r.priority}</span>
                         </div>
-                        <button className="btn" onClick={() => router.delete(`/settings/courier-rules/${r.id}`)}>{t('Remove')}</button>
+                        <button className="btn" onClick={async () => { if (await confirmDialog(t('Remove this rule?'))) router.delete(`/settings/courier-rules/${r.id}`); }}>{t('Remove')}</button>
                     </div>
                 ))}
                 <div className="flex" style={{ gap: 8, flexWrap: 'wrap', marginTop: 12 }}>
