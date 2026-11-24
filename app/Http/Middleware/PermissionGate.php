@@ -53,6 +53,18 @@ class PermissionGate
         }
 
         $declaration = RouteRegistry::for($name);
+        if ($declaration !== null
+            && ($declaration['context'] ?? null) === 'shop'
+            && $user->business_id
+            && ! $user->isPlatformAdmin()
+            && ! RouteRegistry::isOwnerLevel($user)
+            && $user->staff_active === false) {
+            // A deactivated staff member can still sign in (their
+            // credentials are unchanged), but every shop page is shut.
+            // Say why, in their language, instead of the bare denial:
+            // their access was switched off by their shop.
+            abort(403, __('Your access has been switched off by your shop. Please ask the shop owner to turn it back on.'));
+        }
         if ($declaration === null || ! RouteRegistry::allows($user, $declaration)) {
             abort(403, __('You do not have permission to see this page.'));
         }

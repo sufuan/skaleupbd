@@ -312,7 +312,7 @@ class PurchaseController extends Controller
         }
 
         return redirect()->route('purchases.index', ['tab' => 'receive'])
-            ->with('success', 'Purchase created.');
+            ->with('success', __('Purchase created.'));
     }
 
     public function quickForm(Request $request): Response
@@ -342,7 +342,7 @@ class PurchaseController extends Controller
         $this->svc->createQuickStock($biz, ['date' => $data['date'], 'note' => $data['note'] ?? null], $data['items'], $request->user());
 
         return redirect()->route('purchases.index', ['tab' => 'quick'])
-            ->with('success', 'Stock added.');
+            ->with('success', __('Stock added.'));
     }
 
     public function show(Request $request, Purchase $purchase): Response
@@ -416,7 +416,7 @@ class PurchaseController extends Controller
         }
 
         return redirect()->route('purchases.index', ['tab' => 'receive'])
-            ->with('success', 'Goods received.');
+            ->with('success', __('Goods received.'));
     }
 
     public function payPurchase(Request $request, Purchase $purchase): RedirectResponse
@@ -430,7 +430,7 @@ class PurchaseController extends Controller
             'note' => 'nullable|string|max:300',
         ]);
         if ((float) $data['amount'] > $purchase->due() + 0.001) {
-            return back()->with('error', 'Amount cannot be more than the due on this purchase.');
+            return back()->with('error', __('Amount cannot be more than the due on this purchase.'));
         }
         try {
             $this->svc->payPurchase($biz, $purchase, (float) $data['amount'], (int) $data['account_id'], $data['date'], $data['note'] ?? null, $request->user());
@@ -438,7 +438,7 @@ class PurchaseController extends Controller
             return back()->with('error', $e->getMessage());
         }
 
-        return back()->with('success', 'Payment recorded.');
+        return back()->with('success', __('Payment recorded.'));
     }
 
     public function destroy(Request $request, Purchase $purchase): RedirectResponse
@@ -448,7 +448,7 @@ class PurchaseController extends Controller
         $hasReceived = (int) $purchase->items()->sum('qty_received') > 0
             || (int) $purchase->items()->sum('qty_damaged') > 0;
         if ($hasReceived || $purchase->payments()->exists()) {
-            return back()->with('error', 'This purchase cannot be deleted - goods were received or a payment was made against it.');
+            return back()->with('error', __('This purchase cannot be deleted - goods were received or a payment was made against it.'));
         }
         foreach ($purchase->attachments as $a) {
             Storage::disk('public')->delete($a->path);
@@ -457,7 +457,7 @@ class PurchaseController extends Controller
         $purchase->items()->delete();
         $purchase->delete();
 
-        return back()->with('success', 'Purchase deleted.');
+        return back()->with('success', __('Purchase deleted.'));
     }
 
     // ---------- Suppliers (+ Ledger merged) ----------
@@ -566,7 +566,7 @@ class PurchaseController extends Controller
             'terms_days' => $data['terms_days'] ?? 30, 'note' => $data['note'] ?? null,
         ]);
 
-        return back()->with('success', 'Supplier added.');
+        return back()->with('success', __('Supplier added.'));
     }
 
     public function updateSupplier(Request $request, Supplier $supplier): RedirectResponse
@@ -587,7 +587,7 @@ class PurchaseController extends Controller
             'terms_days' => $data['terms_days'] ?? 30, 'note' => $data['note'] ?? null,
         ]);
 
-        return back()->with('success', 'Supplier updated.');
+        return back()->with('success', __('Supplier updated.'));
     }
 
     public function destroySupplier(Request $request, Supplier $supplier): RedirectResponse
@@ -595,11 +595,11 @@ class PurchaseController extends Controller
         $biz = $this->biz($request);
         abort_unless($supplier->business_id === $biz, 404);
         if ($supplier->purchases()->exists()) {
-            return back()->with('error', 'This supplier cannot be deleted - purchases exist against it.');
+            return back()->with('error', __('This supplier cannot be deleted - purchases exist against it.'));
         }
         $supplier->delete();
 
-        return back()->with('success', 'Supplier deleted.');
+        return back()->with('success', __('Supplier deleted.'));
     }
 
     public function paySupplier(Request $request, Supplier $supplier): RedirectResponse
@@ -618,6 +618,6 @@ class PurchaseController extends Controller
             return back()->with('error', $e->getMessage());
         }
 
-        return back()->with('success', 'Payment recorded.');
+        return back()->with('success', __('Payment recorded.'));
     }
 }

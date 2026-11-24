@@ -76,7 +76,7 @@ class PaperflyDriver implements CourierDriver
 
             return ['ok' => false, 'error' => (string) ($body['message'] ?? 'Paperfly rejected the booking (HTTP ' . $res->status() . ')'), 'raw' => $body];
         } catch (\Throwable $e) {
-            return ['ok' => false, 'error' => 'Could not reach Paperfly: ' . $e->getMessage()];
+            return ['ok' => false, 'error' => __('Could not reach :courier: :detail', ['courier' => 'Paperfly', 'detail' => $e->getMessage()])];
         }
     }
 
@@ -102,7 +102,7 @@ class PaperflyDriver implements CourierDriver
 
             return ['ok' => false, 'error' => (string) ($body['message'] ?? 'Exchange booking failed (HTTP ' . $res->status() . ')'), 'raw' => $body];
         } catch (\Throwable $e) {
-            return ['ok' => false, 'error' => 'Could not reach Paperfly: ' . $e->getMessage()];
+            return ['ok' => false, 'error' => __('Could not reach :courier: :detail', ['courier' => 'Paperfly', 'detail' => $e->getMessage()])];
         }
     }
 
@@ -130,7 +130,7 @@ class PaperflyDriver implements CourierDriver
             return ['ok' => true, 'courier_status' => (string) $status, 'raw' => $d];
         }
 
-        return ['ok' => false, 'error' => 'Status check failed'];
+        return ['ok' => false, 'error' => __('Status check failed')];
     }
 
     public function cancelBooking(Order $order, CourierMethod $method): array
@@ -159,22 +159,22 @@ class PaperflyDriver implements CourierDriver
     {
         $c = $method->credentials ?? [];
         if (empty($c['username']) || empty($c['password'])) {
-            return ['ok' => false, 'message' => 'Add your Paperfly panel Username + Password — the connection test signs in with them'];
+            return ['ok' => false, 'message' => __('Add your Paperfly panel Username + Password - the connection test signs in with them')];
         }
         try {
             $res = $this->http($method)
                 ->withBasicAuth((string) $c['username'], (string) $c['password'])
                 ->post($this->base . '/API-Order-Tracking', ['ReferenceNumber' => 'SKALEUP-CONNECT-TEST']);
             if ($res->status() === 401 || $res->status() === 403) {
-                return ['ok' => false, 'message' => 'Paperfly did not accept this panel username + password (HTTP ' . $res->status() . ')'];
+                return ['ok' => false, 'message' => __('Paperfly did not accept this panel username + password (HTTP :status)', ['status' => $res->status()])];
             }
 
             // Any JSON answer (even "order not found") proves the login works.
             return $res->json() !== null
-                ? ['ok' => true, 'message' => 'Connected — Paperfly accepted the panel login']
-                : ['ok' => false, 'message' => 'Paperfly answered unexpectedly (HTTP ' . $res->status() . ')'];
+                ? ['ok' => true, 'message' => __('Connected - Paperfly accepted the panel login')]
+                : ['ok' => false, 'message' => __('Paperfly answered unexpectedly (HTTP :status)', ['status' => $res->status()])];
         } catch (\Throwable $e) {
-            return ['ok' => false, 'message' => 'Could not reach Paperfly: ' . $e->getMessage()];
+            return ['ok' => false, 'message' => __('Could not reach :courier: :detail', ['courier' => 'Paperfly', 'detail' => $e->getMessage()])];
         }
     }
 

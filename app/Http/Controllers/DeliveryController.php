@@ -63,7 +63,9 @@ class DeliveryController extends Controller
             $suggestion = $this->suggester->suggest($o, $activeMethods) ?? ['method' => null, 'reason' => null];
 
             $district = $o->effectiveDistrict();
-            $waiting = '—';
+            // S-F8: no em-dash in UI text (owner rule) - a plain hyphen
+            // marks "no approval stamp to measure from".
+            $waiting = '-';
             if ($o->approved_at) {
                 $mins = (int) $o->approved_at->diffInMinutes(now());
                 $waiting = $mins >= 1440
@@ -109,7 +111,7 @@ class DeliveryController extends Controller
             return back()->with('error', $result['error']);
         }
 
-        return back()->with('success', 'Sent via ' . $result['method']->label() . ' · ' . ($result['tracking_id'] ?? ''));
+        return back()->with('success', __('Sent via :method · :tracking', ['method' => $result['method']->label(), 'tracking' => $result['tracking_id'] ?? '']));
     }
 
     public function sendBulk(Request $request)
@@ -122,16 +124,26 @@ class DeliveryController extends Controller
         ]);
         $ok = 0;
         $failed = 0;
+        $skipped = 0;
         foreach ($data['order_ids'] as $id) {
             $order = Order::where('business_id', $this->biz($request))->where('status', 'Processing')->find($id);
             if (! $order) {
+                // S-F7: ids that are not Processing (already shipped,
+                // another shop's, deleted) were silently dropped and the
+                // flash still claimed success - "Sent 0 order(s)" for a
+                // batch where nothing moved. Count them and say so.
+                $skipped++;
                 continue;
             }
             $result = $this->booking->send($order, $data['method_id'] ?? null, $data['cn_map'][$id] ?? null, null, $request->user());
             $result['ok'] ? $ok++ : $failed++;
         }
 
-        return back()->with($failed ? 'error' : 'success', "Sent {$ok} order(s)" . ($failed ? ", {$failed} failed - they stay in the queue with the reason on the row" : ''));
+        if ($ok === 0 && $failed === 0 && $skipped > 0) {
+            return back()->with('error', __('Nothing was sent - :count order(s) were skipped because they are not in Processing.', ['count' => $skipped]));
+        }
+
+        return back()->with($failed ? 'error' : 'success', "Sent {$ok} order(s)" . ($failed ? ", {$failed} failed - they stay in the queue with the reason on the row" : '') . ($skipped ? ' ' . __(':count skipped (not in Processing).', ['count' => $skipped]) : ''));
     }
 
     public function retry(Request $request, Order $order)
@@ -139,7 +151,7 @@ class DeliveryController extends Controller
         abort_unless($order->business_id === $this->biz($request), 404);
         $result = $this->booking->retry($order, $request->user());
 
-        return back()->with($result['ok'] ? 'success' : 'error', $result['ok'] ? 'Sent via ' . $result['method']->label() : $result['error']);
+        return back()->with($result['ok'] ? 'success' : 'error', $result['ok'] ? __('Sent via :method', ['method' => $result['method']->label()]) : $result['error']);
     }
 
     public function changeCourier(Request $request, Order $order)
@@ -156,7 +168,7 @@ class DeliveryController extends Controller
         abort_unless($order->business_id === $this->biz($request), 404);
         $this->booking->cancelBooking($order, $request->user());
 
-        return back()->with('success', 'Booking cancelled');
+        return back()->with('success', __('Booking cancelled'));
     }
 
     public function parcels(Request $request)
@@ -270,7 +282,7 @@ class DeliveryController extends Controller
         ]);
         $order->update($data);
 
-        return back()->with('success', 'Parcel updated');
+        return back()->with('success', __('Parcel updated'));
     }
 
     public function forceCheck(Request $request, Order $order)

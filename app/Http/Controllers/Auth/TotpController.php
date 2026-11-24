@@ -63,7 +63,7 @@ class TotpController extends Controller
         $request->session()->forget('totp_setup_secret');
         $request->session()->put('totp_passed_at', now()->toDateTimeString());
 
-        return redirect()->intended(route('dashboard'))->with('success', 'Two-factor authentication is on for your account.');
+        return redirect()->intended(route('dashboard'))->with('success', __('Two-factor authentication is on for your account.'));
     }
 
     public function challenge(Request $request): Response|RedirectResponse

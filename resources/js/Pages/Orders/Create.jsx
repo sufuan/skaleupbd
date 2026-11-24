@@ -231,16 +231,24 @@ export default function Create({ sources, products, couriers, defaults, toggles,
                                         <div className="prod-list">
                                             {visible.map((p) => {
                                                 const added = picked.some((i) => i.product_id === p.id);
-                                                // A product with variants sells from the variants'
-                                                // own pools - the card counts those, not the parent row.
-                                                const cardStock = (p.variants && p.variants.length) ? p.variants.reduce((a, v) => a + v.stock, 0) : p.stock;
-                                                const dis = added || (cardStock === 0 && mode !== 'preorder');
+                                                // R8: ONE stock figure per product - the same
+                                                // Product::available() figure the picked line
+                                                // starts from (p.stock, the pool a no-variant
+                                                // line draws on). The old card summed the
+                                                // variants' pools while the line showed the
+                                                // parent pool, quoting two different "Stock"
+                                                // numbers for one product on one screen. Each
+                                                // variant's own pool stays on its picker option,
+                                                // and picking one points the line at that pool.
+                                                const cardStock = p.stock;
+                                                const variantTotal = (p.variants && p.variants.length) ? p.variants.reduce((a, v) => a + v.stock, 0) : 0;
+                                                const dis = added || (cardStock + variantTotal === 0 && mode !== 'preorder');
                                                 return (
                                                     <button type="button" key={p.id} className="prod-card" disabled={dis} onClick={() => addProduct(p)}>
                                                         {p.image && <img className="pc-photo" src={p.image} alt="" onError={(e) => { e.currentTarget.style.display = 'none'; }} />}
                                                         <span className="pc-name">{p.name}</span>
                                                         <span className="muted-sm">SKU: {p.sku}</span>
-                                                        <span className="muted-sm">{t('Price')}: {fmt(p.price)} · {t('Stock')}: {cardStock}{cardStock === 0 ? ` - ${t('Pre-order allowed')}` : ''}</span>
+                                                        <span className="muted-sm">{t('Price')}: {fmt(p.price)} · {t('Stock')}: {cardStock}{cardStock + variantTotal === 0 ? ` - ${t('Pre-order allowed')}` : ''}</span>
                                                         <span className="pc-fav" onClick={(e) => toggleFav(e, p.id)}>{favs.has(p.id) ? t('Remove from featured') : t('Mark as featured')}</span>
                                                     </button>
                                                 );
@@ -277,8 +285,10 @@ export default function Create({ sources, products, couriers, defaults, toggles,
                             <div style={{ position: 'sticky', top: 61 }}>
                                 <div className="card" style={{ marginBottom: 16 }}><h3>{t('Calculation Details')}</h3>
                                     <label className="fld-l frow" style={{ marginTop: 12 }}>{t('Discount (৳)')}<input className="fld" type="number" min="0" value={form.data.discount} onChange={(e) => form.setData('discount', e.target.value)} /></label>
+                                    {err('discount')}
                                     <label className="fld-l frow" style={{ marginTop: 12 }}>{t('Delivery Charge (৳)')}<input className="fld" type="number" min="0" value={form.data.delivery_charge} onChange={(e) => form.setData('delivery_charge', e.target.value)} /></label>
                                     <label className="fld-l frow" style={{ marginTop: 12 }}>{t('Advance (৳)')}<input className="fld" type="number" min="0" value={form.data.advance} onChange={(e) => form.setData('advance', e.target.value)} /></label>
+                                    {err('advance')}
                                     <label className="fld-l frow" style={{ marginTop: 12 }}>{t('Transaction ID')}<input className="fld" placeholder={t('TrxId (bKash/Nagad/Bank)')} disabled={Number(form.data.advance || 0) <= 0} value={form.data.txn_id} onChange={(e) => form.setData('txn_id', e.target.value)} /></label>
                                     {err('txn_id')}
                                 </div>

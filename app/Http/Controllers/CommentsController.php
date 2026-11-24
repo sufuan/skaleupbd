@@ -8,6 +8,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
+use App\Support\DhakaTime;
 
 class CommentsController extends Controller
 {
@@ -26,6 +27,7 @@ class CommentsController extends Controller
         $biz = $this->biz($request);
         $comments = Comment::where('business_id', $biz)->with(['replies' => fn ($q) => $q->orderBy('id')])
             ->orderByDesc('id')->get();
+        [$todayFrom, $todayTo] = DhakaTime::dayBoundsUtc(DhakaTime::today());
 
         return Inertia::render('Messages/Comments', [
             'shop_name' => app(\App\Services\SettingsService::class)->shopName($biz),
@@ -43,7 +45,9 @@ class CommentsController extends Controller
                 ])->all(),
             ])->all(),
             'counts' => [
-                'today' => $comments->count(),
+                // "Today" means the Dhaka calendar day (the app's one
+                // timezone rule), not every comment ever (Hunt V5).
+                'today' => $comments->filter(fn ($c) => $c->created_at && $c->created_at->between($todayFrom, $todayTo))->count(),
                 'awaiting' => $comments->where('status', 'awaiting')->count(),
                 'ai_handled' => $comments->filter(fn ($c) => $c->replies->where('sender', 'ai')->count() > 0 || $c->hidden_by_ai)->count(),
             ],
@@ -55,7 +59,7 @@ class CommentsController extends Controller
     {
         $this->guard($request, $comment);
         if ($comment->status === 'hidden') {
-            return back()->with('error', 'Hidden comment - unhide it first');
+            return back()->with('error', __('Hidden comment - unhide it first'));
         }
         $data = $request->validate(['body' => ['required', 'string', 'max:2000']]);
         CommentReply::create(['business_id' => $comment->business_id, 'comment_id' => $comment->id, 'kind' => 'public', 'sender' => 'staff', 'body' => $data['body'], 'status' => 'sent']);
@@ -63,20 +67,20 @@ class CommentsController extends Controller
         $comment->status = 'replied';
         $comment->save();
 
-        return $ok ? back()->with('success', 'Reply sent') : back()->with('error', 'Saved, but Meta did not accept it: ' . $err);
+        return $ok ? back()->with('success', __('Reply sent')) : back()->with('error', __('Saved, but Meta did not accept it: :error', ['error' => $err]));
     }
 
     public function privateReply(Request $request, Comment $comment): RedirectResponse
     {
         $this->guard($request, $comment);
         if ($comment->private_reply_at) {
-            return back()->with('error', 'Private reply already sent - one per comment within 7 days');
+            return back()->with('error', __('Private reply already sent - one per comment within 7 days'));
         }
         if ($comment->status === 'hidden') {
-            return back()->with('error', 'Hidden comment - unhide it first');
+            return back()->with('error', __('Hidden comment - unhide it first'));
         }
         if ($comment->created_at && $comment->created_at->lt(now()->subDays(7))) {
-            return back()->with('error', 'Private reply window closed (7 days)');
+            return back()->with('error', __('Private reply window closed (7 days)'));
         }
         $body = trim((string) $request->input('body', ''));
         if ($body === '') {
@@ -93,7 +97,7 @@ class CommentsController extends Controller
         $comment->save();
         [$ok, $err] = app(\App\Services\MetaGraphService::class)->privateReplyToComment($comment, $body);
 
-        return $ok ? back()->with('success', 'Private reply sent') : back()->with('error', 'Saved, but Meta did not accept it: ' . $err);
+        return $ok ? back()->with('success', __('Private reply sent')) : back()->with('error', __('Saved, but Meta did not accept it: :error', ['error' => $err]));
     }
 
     public function like(Request $request, Comment $comment): RedirectResponse
@@ -138,7 +142,7 @@ class CommentsController extends Controller
         $comment->replies()->delete();
         $comment->delete();
 
-        return back()->with('success', 'Comment deleted');
+        return back()->with('success', __('Comment deleted'));
     }
 
     public function approveReply(Request $request, CommentReply $reply): RedirectResponse
@@ -148,7 +152,7 @@ class CommentsController extends Controller
         if ($body !== '' && $body !== $reply->body) {
             \App\Models\AiRuleProposal::create([
                 'business_id' => $reply->business_id,
-                'title' => 'Staff edit থেকে শেখা — comment reply বদলানো হয়েছে',
+                'title' => 'Staff edit থেকে শেখা - comment reply বদলানো হয়েছে',
                 'detail' => 'আগের draft: "' . $reply->body . '" → staff পাঠিয়েছে: "' . $body . '"',
                 'rule_data' => ['source_reply_id' => $reply->id, 'edited_body' => $body],
                 'status' => 'pending',
@@ -169,7 +173,7 @@ class CommentsController extends Controller
             }
         }
 
-        return back()->with('success', 'Reply sent');
+        return back()->with('success', __('Reply sent'));
     }
 
     public function rejectReply(Request $request, CommentReply $reply): RedirectResponse
@@ -177,6 +181,6 @@ class CommentsController extends Controller
         abort_unless((int) $reply->business_id === $this->biz($request), 403);
         $reply->delete();
 
-        return back()->with('success', 'Draft rejected');
+        return back()->with('success', __('Draft rejected'));
     }
 }

@@ -2,8 +2,8 @@ import { useEffect } from 'react';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import AppLayout from '@/Layouts/AppLayout';
 import { t } from '@/lib/i18n';
+import { tk } from '@/lib/money';
 
-const tk = (n) => `৳${Number(n || 0).toLocaleString('en-IN')}`;
 const num = (n) => Number(n || 0).toLocaleString('en-IN');
 
 const KIND = {
@@ -146,7 +146,8 @@ export default function Index({ balance, pointsPerOrder, threshold, blocked, low
                     <div style={{ fontSize: 12.5, color: 'var(--muted)' }}>
                         {pack && pack.validity_type === 'monthly' && pack.cycle_end ? `${t('Points reset on')} ${pack.cycle_end}` : ''}
                         {pack && pack.validity_type === 'yearly_wallet' && pack.wallet_expires_at ? `${t('Wallet valid until')} ${pack.wallet_expires_at}` : ''}
-                        {!pack ? t('Buy a pack below to start taking orders') : ''}
+                        {!pack && Number(balance) <= 0 ? t('Buy a pack below to start taking orders') : ''}
+                        {!pack && Number(balance) > 0 ? t('Points added by the SkaleUp team') : ''}
                     </div>
                 </div>
                 <div className="card">

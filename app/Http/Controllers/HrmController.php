@@ -42,7 +42,7 @@ class HrmController extends Controller
 
     private function deny(): RedirectResponse
     {
-        return back()->with('error', 'এই কাজ করার permission নেই।');
+        return back()->with('error', __('You do not have permission for this action.'));
     }
 
     /** Shared "today" row shape for the dashboard and attendance pages. */
@@ -240,11 +240,11 @@ class HrmController extends Controller
             if ($record && $record->break_started_at) {
                 $this->att->endBreak($request->user());
 
-                return back()->with('success', 'Break শেষ - কাজে ফিরেছেন।');
+                return back()->with('success', __('Break ended - back to work.'));
             }
             $this->att->startBreak($request->user());
 
-            return back()->with('success', 'Break শুরু হলো।');
+            return back()->with('success', __('Break started.'));
         } catch (\RuntimeException $e) {
             return back()->with('error', $e->getMessage());
         }
@@ -263,13 +263,24 @@ class HrmController extends Controller
             ...$data,
         ]);
 
-        return back()->with('success', 'ছুটির আবেদন পাঠানো হয়েছে।');
+        return back()->with('success', __('Leave request sent.'));
     }
 
     public function decideLeave(Request $request, LeaveRequest $leave): RedirectResponse
     {
         if (! $this->canManage($request) || $leave->business_id !== $this->biz($request)) {
             return $this->deny();
+        }
+        // A decision is final (Hunt W W4): re-deciding overwrote
+        // decided_by/at and, on an approval -> rejection flip, left the
+        // leave days the approval had written into attendance in place.
+        if ($leave->status !== 'pending') {
+            return back()->with('error', __('This leave request has already been decided.'));
+        }
+        // The applicant never decides their own leave (Hunt W W5): the
+        // leave days feed payroll, so the decision needs a second person.
+        if ((int) $leave->user_id === (int) $request->user()->id) {
+            return back()->with('error', __('You cannot decide your own leave request.'));
         }
         $data = $request->validate(['decision' => 'required|in:approved,rejected']);
         $leave->update([
@@ -285,7 +296,7 @@ class HrmController extends Controller
             }
         }
 
-        return back()->with('success', $data['decision'] === 'approved' ? 'ছুটি অনুমোদন হয়েছে।' : 'ছুটির আবেদন বাতিল করা হয়েছে।');
+        return back()->with('success', $data['decision'] === 'approved' ? __('Leave approved.') : __('Leave request rejected.'));
     }
 
     // ---------- Departments & SOP ----------
@@ -331,7 +342,7 @@ class HrmController extends Controller
         $dept = Department::create(['business_id' => $biz, 'name' => $data['name'], 'head_user_id' => $data['head_user_id'] ?? null]);
         $this->syncMembers($dept, $data['member_ids'] ?? []);
 
-        return back()->with('success', 'Department তৈরি হয়েছে।');
+        return back()->with('success', __('Department created.'));
     }
 
     public function updateDepartment(Request $request, Department $department): RedirectResponse
@@ -349,7 +360,7 @@ class HrmController extends Controller
         $department->update(['name' => $data['name'], 'head_user_id' => $data['head_user_id'] ?? null]);
         $this->syncMembers($department, $data['member_ids'] ?? []);
 
-        return back()->with('success', 'Department বদলানো হয়েছে।');
+        return back()->with('success', __('Department updated.'));
     }
 
     public function destroyDepartment(Request $request, Department $department): RedirectResponse
@@ -358,11 +369,11 @@ class HrmController extends Controller
             return $this->deny();
         }
         if ($department->members()->count() > 0) {
-            return back()->with('error', 'এই Department-এ এখনো কর্মী আছে - আগে তাদের সরান, তারপর মুছুন।');
+            return back()->with('error', __('This department still has staff - move them first, then delete it.'));
         }
         $department->delete();
 
-        return back()->with('success', 'Department মোছা হয়েছে।');
+        return back()->with('success', __('Department deleted.'));
     }
 
     /** One primary department per user: assigning here moves them out of any other. */
@@ -393,7 +404,7 @@ class HrmController extends Controller
             'steps' => $this->parseSteps($data['steps_text']),
         ]);
 
-        return back()->with('success', 'SOP তৈরি হয়েছে।');
+        return back()->with('success', __('SOP created.'));
     }
 
     public function updateSop(Request $request, Sop $sop): RedirectResponse
@@ -413,7 +424,7 @@ class HrmController extends Controller
             'steps' => $this->parseSteps($data['steps_text']),
         ]);
 
-        return back()->with('success', 'SOP বদলানো হয়েছে।');
+        return back()->with('success', __('SOP updated.'));
     }
 
     public function destroySop(Request $request, Sop $sop): RedirectResponse
@@ -423,7 +434,7 @@ class HrmController extends Controller
         }
         $sop->delete();
 
-        return back()->with('success', 'SOP মোছা হয়েছে।');
+        return back()->with('success', __('SOP deleted.'));
     }
 
     private function parseSteps(string $text): array
@@ -445,7 +456,7 @@ class HrmController extends Controller
         ]);
         Shift::create(['business_id' => $this->biz($request), ...$data]);
 
-        return back()->with('success', 'Shift তৈরি হয়েছে।');
+        return back()->with('success', __('Shift created.'));
     }
 
     public function updateShift(Request $request, Shift $shift): RedirectResponse
@@ -460,7 +471,7 @@ class HrmController extends Controller
         ]);
         $shift->update($data);
 
-        return back()->with('success', 'Shift বদলানো হয়েছে।');
+        return back()->with('success', __('Shift updated.'));
     }
 
     public function destroyShift(Request $request, Shift $shift): RedirectResponse
@@ -469,11 +480,11 @@ class HrmController extends Controller
             return $this->deny();
         }
         if ($shift->members()->count() > 0) {
-            return back()->with('error', 'এই Shift-এ এখনো কর্মী আছে - আগে তাদের সরান, তারপর মুছুন।');
+            return back()->with('error', __('This shift still has staff - move them first, then delete it.'));
         }
         $shift->delete();
 
-        return back()->with('success', 'Shift মোছা হয়েছে।');
+        return back()->with('success', __('Shift deleted.'));
     }
 
     public function assignShift(Request $request, Shift $shift): RedirectResponse
@@ -491,7 +502,7 @@ class HrmController extends Controller
         }
         $shift->members()->sync($data['member_ids'] ?? []);
 
-        return back()->with('success', 'Shift-এর কর্মী ঠিক করা হয়েছে।');
+        return back()->with('success', __('Shift staff assigned.'));
     }
 
     // Staff logins and roles live in Settings → Staff & Roles
@@ -537,7 +548,7 @@ class HrmController extends Controller
             $this->att->setSetting($biz, $name, $value, $request->user()->id);
         }
 
-        return back()->with('success', 'HR Settings বদলানো হয়েছে।');
+        return back()->with('success', __('HR settings updated.'));
     }
 
     public function storeHoliday(Request $request): RedirectResponse

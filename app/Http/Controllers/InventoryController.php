@@ -15,6 +15,7 @@ use App\Support\DhakaTime;
 use App\Services\StockService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -226,6 +227,7 @@ class InventoryController extends Controller
 
     private function productData(Request $request): array
     {
+        $biz = $this->biz($request);
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'sku' => ['nullable', 'string', 'max:120'],
@@ -237,14 +239,17 @@ class InventoryController extends Controller
             'offer_ends_at' => ['nullable', 'date'],
             'aliases' => ['nullable', 'string', 'max:500'],
             'max_discount_pct' => ['nullable', 'integer', 'min:0', 'max:90'],
-            'stock_qty' => ['nullable', 'integer'],
+            'stock_qty' => ['nullable', 'integer', 'min:0'],
             'alert_qty' => ['nullable', 'integer', 'min:0'],
             'manage_stock' => ['boolean'],
             'featured' => ['boolean'],
             'is_active' => ['boolean'],
             'type' => ['nullable', 'string', 'in:single,combo,wrap'],
-            'category_id' => ['nullable', 'integer'],
-            'brand_id' => ['nullable', 'integer'],
+            // Scoped to the caller's own shop (Hunt W W10): a bare
+            // integer let a form store another shop's category/brand,
+            // leaving a dangling reference that renders blank.
+            'category_id' => ['nullable', 'integer', Rule::exists('product_categories', 'id')->where('business_id', $biz)],
+            'brand_id' => ['nullable', 'integer', Rule::exists('product_brands', 'id')->where('business_id', $biz)],
             'weight' => ['nullable', 'numeric', 'min:0'],
             'weight_unit' => ['nullable', 'string', 'in:kg,g'],
             'short_description' => ['nullable', 'string'],
@@ -274,9 +279,20 @@ class InventoryController extends Controller
         return $data;
     }
 
+    /** Combo components must be the caller's own products (Hunt W W10): a foreign component id stored a recipe that could never sell. */
+    private function validateComponents(Request $request, int $biz): void
+    {
+        $request->validate([
+            'components' => ['nullable', 'array'],
+            'components.*.product_id' => ['nullable', 'integer', Rule::exists('products', 'id')->where('business_id', $biz)],
+            'components.*.qty' => ['nullable', 'integer', 'min:1'],
+        ]);
+    }
+
     public function storeProduct(Request $request)
     {
         $biz = $this->biz($request);
+        $this->validateComponents($request, $biz);
         $data = $this->productData($request);
         $data['business_id'] = $biz;
         $data['sku'] = $data['sku'] ?? ('PRODUCT-AUTO-' . strtoupper(substr(uniqid(), -6)));
@@ -313,7 +329,7 @@ class InventoryController extends Controller
             }
         }
 
-        return redirect()->route('inventory.products')->with('success', 'Product created');
+        return redirect()->route('inventory.products')->with('success', __('Product created'));
     }
 
     /** Bulk import/export sheet columns, in template order (A..K). */
@@ -442,7 +458,14 @@ class InventoryController extends Controller
                 if ($nums['stock_qty'] !== null) {
                     $delta = (int) $nums['stock_qty'] - (int) $product->stock_qty;
                     if ($delta !== 0) {
-                        $this->stock->adjust($product, $delta, 'Import', 'Stock set by import', $user);
+                        try {
+                            $this->stock->adjust($product, $delta, 'Import', 'Stock set by import', $user);
+                        } catch (\RuntimeException $e) {
+                            // The stock floor (below zero / into reserved)
+                            // refused this row's target: a bad row never
+                            // aborts the file, so record it and move on.
+                            $errors[] = "Row {$rowNo}: stock not set - " . $e->getMessage();
+                        }
                         $product->refresh();
                     }
                 }
@@ -720,6 +743,7 @@ class InventoryController extends Controller
     public function updateProduct(Request $request, Product $product)
     {
         abort_unless($product->business_id === $this->biz($request), 403);
+        $this->validateComponents($request, (int) $product->business_id);
         $data = $this->productData($request);
         unset($data['stock_qty']); // stock changes go through Adjust, never the edit form
         $product->update($data);
@@ -739,7 +763,7 @@ class InventoryController extends Controller
             }
         }
 
-        return back()->with('success', 'Product updated');
+        return back()->with('success', __('Product updated'));
     }
 
     public function destroyProduct(Request $request, Product $product)
@@ -758,7 +782,7 @@ class InventoryController extends Controller
         }
         $product->delete();
 
-        return back()->with('success', 'Product deleted');
+        return back()->with('success', __('Product deleted'));
     }
 
     public function copyProduct(Request $request, Product $product)
@@ -766,12 +790,42 @@ class InventoryController extends Controller
         abort_unless($product->business_id === $this->biz($request), 403);
         $copy = $product->replicate();
         $copy->name = $product->name . ' (Copy)';
-        $copy->sku = $product->sku . '-COPY';
+        // Unique SKU per copy (Hunt W W9): always appending the same
+        // "-COPY" made a second copy of the same product crash on the
+        // (business_id, sku) unique constraint. Increment the suffix
+        // until it is free.
+        $baseSku = $product->sku . '-COPY';
+        $sku = $baseSku;
+        $n = 2;
+        while (Product::where('business_id', $product->business_id)->where('sku', $sku)->exists()) {
+            $sku = $baseSku . '-' . $n;
+            $n++;
+        }
+        $copy->sku = $sku;
         $copy->stock_qty = 0;
         $copy->reserved_qty = 0;
         $copy->save();
 
-        return back()->with('success', 'Product copied');
+        // The copy must sell like the original: carry the variant rows
+        // (with their stock - it is a fresh listing of the same goods)
+        // and the combo recipe. Before this, both were silently lost
+        // and the copy could never be sold (Hunt W W9).
+        foreach (ProductVariant::where('product_id', $product->id)->get() as $v) {
+            $vc = $v->replicate();
+            $vc->product_id = $copy->id;
+            $vc->reserved_qty = 0;
+            $vc->save();
+        }
+        foreach (ComboComponent::where('combo_product_id', $product->id)->get() as $c) {
+            ComboComponent::create([
+                'business_id' => $product->business_id,
+                'combo_product_id' => $copy->id,
+                'component_product_id' => $c->component_product_id,
+                'qty' => $c->qty,
+            ]);
+        }
+
+        return back()->with('success', __('Product copied'));
     }
 
     public function toggleProduct(Request $request, Product $product)
@@ -792,19 +846,24 @@ class InventoryController extends Controller
             'reason' => ['nullable', 'string', 'max:120'],
             'note' => ['nullable', 'string', 'max:255'],
         ]);
-        $this->stock->adjust($product, $data['delta'], $data['reason'] ?? 'Manual Adjustment', $data['note'] ?? null, $request->user());
+        try {
+            $this->stock->adjust($product, $data['delta'], $data['reason'] ?? 'Manual Adjustment', $data['note'] ?? null, $request->user());
+        } catch (\RuntimeException $e) {
+            // StockService floor refusal (below zero / into reserved).
+            return back()->with('error', $e->getMessage());
+        }
 
-        return back()->with('success', 'Stock adjusted');
+        return back()->with('success', __('Stock adjusted'));
     }
 
     // ---------------- Taxonomy / variants / groups ----------------
 
     public function storeCategory(Request $request)
     {
-        $data = $request->validate(['name' => ['required', 'string', 'max:120'], 'parent_id' => ['nullable', 'integer']]);
+        $data = $request->validate(['name' => ['required', 'string', 'max:120'], 'parent_id' => ['nullable', 'integer', Rule::exists('product_categories', 'id')->where('business_id', $this->biz($request))]]);
         ProductCategory::create(['business_id' => $this->biz($request)] + $data);
 
-        return back()->with('success', 'Category created');
+        return back()->with('success', __('Category created'));
     }
 
     public function destroyCategory(Request $request, ProductCategory $category)
@@ -813,7 +872,7 @@ class InventoryController extends Controller
         Product::where('category_id', $category->id)->update(['category_id' => null]);
         $category->delete();
 
-        return back()->with('success', 'Category deleted');
+        return back()->with('success', __('Category deleted'));
     }
 
     public function storeBrand(Request $request)
@@ -821,7 +880,7 @@ class InventoryController extends Controller
         $data = $request->validate(['name' => ['required', 'string', 'max:120']]);
         ProductBrand::create(['business_id' => $this->biz($request)] + $data);
 
-        return back()->with('success', 'Brand created');
+        return back()->with('success', __('Brand created'));
     }
 
     public function destroyBrand(Request $request, ProductBrand $brand)
@@ -830,7 +889,7 @@ class InventoryController extends Controller
         Product::where('brand_id', $brand->id)->update(['brand_id' => null]);
         $brand->delete();
 
-        return back()->with('success', 'Brand deleted');
+        return back()->with('success', __('Brand deleted'));
     }
 
     public function storeVariant(Request $request, Product $product)
@@ -841,22 +900,33 @@ class InventoryController extends Controller
             'sku' => ['nullable', 'string', 'max:120'],
             'price' => ['nullable', 'numeric', 'min:0'],
             'cost' => ['nullable', 'numeric', 'min:0'],
-            'stock_qty' => ['nullable', 'integer'],
+            'stock_qty' => ['nullable', 'integer', 'min:0'],
         ]);
         // A cleared stock box arrives as null, but the column is NOT NULL
         // (same family as the product cost fix) — an omitted stock is 0.
         $data['stock_qty'] = $data['stock_qty'] ?? 0;
         ProductVariant::create(['business_id' => $product->business_id, 'product_id' => $product->id] + $data);
 
-        return back()->with('success', 'Variant added');
+        return back()->with('success', __('Variant added'));
     }
 
     public function destroyVariant(Request $request, ProductVariant $variant)
     {
         abort_unless($variant->business_id === $this->biz($request), 403);
+        // Guard (Hunt W W8), same family as the product delete guard:
+        // deleting a variant that holds stock makes those units vanish
+        // with no ledger row, and order items keep a variant_id that
+        // points at nothing (the column has no foreign key). Refuse
+        // while the variant holds stock or appears on any order item.
+        $hasHistory = (int) $variant->stock_qty > 0
+            || (int) $variant->reserved_qty > 0
+            || \App\Models\OrderItem::where('variant_id', $variant->id)->exists();
+        if ($hasHistory) {
+            return back()->with('error', __('This variant cannot be deleted - it has stock or appears on orders.'));
+        }
         $variant->delete();
 
-        return back()->with('success', 'Variant deleted');
+        return back()->with('success', __('Variant deleted'));
     }
 
 }

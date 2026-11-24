@@ -25,9 +25,12 @@ use Carbon\Carbon;
  *  - total sales = order grand_total summed with Cancelled excluded
  *    (the platform's existing sellerRow definition, NOT the shop
  *    dashboard's Delivered-only one);
- *  - platform income = SUM of seller_payments.amount, which is NET:
- *    TokenService writes pack + onboarding rows and NEGATIVE refund
- *    rows, and manual admin entries count as income too;
+ *  - package income (the PACKAGE INCOME / INCOME THIS MONTH cards) =
+ *    package payments only, under the same definition as the seller
+ *    detail purchase history: pack purchases, the one-time onboarding
+ *    fee and their (negative) refunds. Free-form manual payments are
+ *    recorded money, but they are not package income and never count
+ *    on those cards;
  *  - points sold = token_ledger rows of kind "purchase" (credits,
  *    not money).
  * "Today" and "this month" figures use Dhaka calendar bounds, like
@@ -35,6 +38,18 @@ use Carbon\Carbon;
  */
 class PlatformHomeService
 {
+    /**
+     * Package payments only — the exact definition the seller detail
+     * page's purchase history already uses (PlatformController@show):
+     * pack purchases, the one-time onboarding fee, and their refunds.
+     */
+    private function packagePayments(): \Illuminate\Database\Eloquent\Builder
+    {
+        return SellerPayment::query()->where(fn ($q) => $q->where('note', 'like', '%pack purchase%')
+            ->orWhere('note', 'like', 'Onboarding fee%')
+            ->orWhere('note', 'like', 'Refund — %'));
+    }
+
     private function currentSub(int $businessId): ?SellerSubscription
     {
         return SellerSubscription::where('business_id', $businessId)->with('package')
@@ -63,6 +78,15 @@ class PlatformHomeService
             $expiresAt = $until?->format('d M Y');
             $daysLeft = $until ? (int) today()->diffInDays($until, false) : null;
         }
+        // Granted points (Hunt W W11): a shop the platform credited by
+        // hand has a wallet with a usable balance but no pack purchase,
+        // so neither branch above fires and the shop read "No package"
+        // while actively trading. Active means: the shop can take
+        // orders - a current pack (handled above) OR a positive points
+        // balance.
+        if ($status === 'none' && $wallet && (int) $wallet->balance > 0) {
+            $status = 'active';
+        }
 
         return [
             'id' => $b->id,
@@ -70,7 +94,7 @@ class PlatformHomeService
             'public_id' => $b->public_id,
             'approval_status' => $b->status ?: 'approved',
             'status_note' => $b->status_note,
-            'approved_at' => $b->approved_at?->format('d M Y, h:i A'),
+            'approved_at' => DhakaTime::fmt($b->approved_at, 'd M Y, h:i A'),
             'owner_name' => $b->owner_name,
             'phone' => $b->phone,
             'email' => $b->email,
@@ -84,11 +108,13 @@ class PlatformHomeService
             'paid_total' => (float) SellerPayment::where('business_id', $b->id)->sum('amount'),
             'token_balance' => $wallet ? (int) $wallet->balance : 0,
             'token_pack' => $wallet?->packName(),
-            'token_until' => ($wallet->cycle_end ?? $wallet->wallet_expires_at)?->format('d M Y'),
+            'token_until' => ($wallet?->cycle_end ?? $wallet?->wallet_expires_at)?->format('d M Y'),
             'orders' => (clone $orders)->count(),
-            // "Sales" = the shop's booked order value, cancelled excluded —
-            // the same definition as the seller's Order Report. Delivered-only
-            // made every active seller read ৳0 until parcels completed.
+            // Booked order value, cancelled excluded — deliberately NOT the
+            // sellers' Delivered-only revenue, so the platform UI labels it
+            // "Booked order value", never "Sales"/"Revenue" (one number, one
+            // definition, one name). Delivered-only made every active seller
+            // read ৳0 until parcels completed.
             'revenue' => (float) (clone $orders)->whereNotIn('status', ['Cancelled'])->sum('grand_total'),
             'customers' => Customer::where('business_id', $b->id)->count(),
         ];
@@ -105,7 +131,7 @@ class PlatformHomeService
         // of each month - same warning as DashboardController@earnings).
         $monthStart = Carbon::now(DhakaTime::TZ)->startOfMonth()->utc();
         $monthEnd = Carbon::now(DhakaTime::TZ)->endOfMonth()->utc();
-        $monthIncome = (float) SellerPayment::whereBetween('paid_at', [$monthStart, $monthEnd])->sum('amount');
+        $monthIncome = (float) $this->packagePayments()->whereBetween('paid_at', [$monthStart, $monthEnd])->sum('amount');
         [$todayFrom, $todayTo] = DhakaTime::dayBoundsUtc(DhakaTime::today());
 
         return [
@@ -113,7 +139,7 @@ class PlatformHomeService
                 'sellers' => $sellers->count(),
                 'active' => $sellers->where('status', 'active')->count(),
                 'expired' => $sellers->where('status', 'expired')->count(),
-                'income_total' => (float) SellerPayment::sum('amount'),
+                'income_total' => (float) $this->packagePayments()->sum('amount'),
                 'income_month' => $monthIncome,
                 'expiring_soon' => $sellers->filter(fn ($s) => $s['status'] === 'active' && $s['days_left'] !== null && $s['days_left'] <= 7)->count(),
                 // ধাপ ৩ additions (prep map section 2, items 2-6).
@@ -126,7 +152,7 @@ class PlatformHomeService
             'sellers' => $sellers->all(),
             'recentPayments' => $payments->map(fn ($p) => [
                 'id' => $p->id, 'seller' => $p->business?->name, 'amount' => (float) $p->amount,
-                'method' => $p->method, 'note' => $p->note, 'when' => $p->paid_at?->format('d M Y, h:i A'),
+                'method' => $p->method, 'note' => $p->note, 'when' => DhakaTime::fmt($p->paid_at, 'd M Y, h:i A'),
             ])->all(),
             'topSellers' => $sellers->sortByDesc('revenue')->take(5)->values()->all(),
             'expiring' => $sellers->filter(fn ($s) => $s['status'] === 'active' && $s['days_left'] !== null && $s['days_left'] <= 7)->values()->all(),

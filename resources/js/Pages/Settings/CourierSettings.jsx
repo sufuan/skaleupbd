@@ -9,35 +9,35 @@ export const FIELD_DEFS = {
         ['client_id', 'Client Id'], ['client_secret', 'Client Secret', 'secret'],
         ['client_email', 'Client Email'], ['password', 'Password', 'secret'], ['store_id', 'Store Id'],
         ['default_city_id', 'Default City ID'], ['default_zone_id', 'Default Zone ID'], ['default_area_id', 'Default Area ID'],
-        ['webhook_secret', 'Webhook Secret (Optional)', 'secret'],
+        ['webhook_secret', 'Webhook Secret', 'secret'],
     ],
     STEADFAST: [
         ['api_key', 'ApiKey', 'secret'], ['api_secret', 'Api Secret', 'secret'],
-        ['webhook_token', 'Webhook Token (Optional)', 'secret'],
+        ['webhook_token', 'Webhook Token', 'secret'],
     ],
     REDX: [
         ['access_token', 'Access Token', 'secret'], ['pickup_store', 'Pickup Store ID'],
         ['default_area', 'Default Area'], ['default_area_id', 'Default Area ID'],
         ['default_weight', 'Default Parcel Weight (kg)'],
-        ['webhook_token', 'Webhook Token (Optional)', 'secret'],
+        ['webhook_token', 'Webhook Token', 'secret'],
     ],
     CARRYBEE: [
         ['client_id', 'Client ID'], ['client_secret', 'Client Secret', 'secret'], ['client_context', 'Client Context', 'secret'],
         ['store_id', 'Store ID'], ['product_type', 'Product Type Code'], ['delivery_type', 'Delivery Type Code'],
         ['default_weight', 'Default Parcel Weight (kg)'],
         ['default_city_id', 'Default City ID'], ['default_zone_id', 'Default Zone ID'], ['default_area_id', 'Default Area ID'],
-        ['webhook_secret', 'Webhook Secret (Optional)', 'secret'],
+        ['webhook_secret', 'Webhook Secret', 'secret'],
     ],
     ECOURIER: [
         ['api_key', 'API Key', 'secret'], ['api_secret', 'API Secret', 'secret'], ['user_id', 'User ID'],
         ['package_code', 'Default Package Code (Optional)'], ['pickup_hub_id', 'Pickup Hub ID (Optional)'],
-        ['webhook_secret', 'Webhook Secret (Optional)', 'secret'],
+        ['webhook_secret', 'Webhook Secret', 'secret'],
     ],
     PAPERFLY: [
         ['api_key', 'API Key', 'secret'],
         ['username', 'Panel Username'], ['password', 'Panel Password', 'secret'],
         ['pickup_store', 'Pickup Store Name'],
-        ['webhook_secret', 'Webhook Secret (Optional)', 'secret'],
+        ['webhook_secret', 'Webhook Secret', 'secret'],
     ],
     BAHOK: [],
     OTHERS: [],
@@ -124,6 +124,9 @@ function MethodModal({ method, onClose }) {
                                 placeholder={method?.credentials?.[key]?.set ? `${t('Saved')} ${method.credentials[key].masked} - ${t('leave blank to keep')}` : ''}
                                 onChange={(e) => setCreds({ ...creds, [key]: e.target.value })} />
                         )}
+                        {(key === 'webhook_secret' || key === 'webhook_token') && (
+                            <div className="sm mut" style={{ flexBasis: '100%' }}>{t('Required for automatic delivery status updates. Without it, courier updates are rejected.')}</div>
+                        )}
                     </div>
                 ))}
                 {SANDBOX_TYPES.includes(type) && (
@@ -188,7 +191,7 @@ export default function CourierSettings({ couriers }) {
                             <div className="sm mut">{m.label} · {t('Inside Dhaka')} ৳{m.charge_inside_dhaka} · {t('Outside Dhaka')} ৳{m.charge_outside_dhaka}
                                 {m.stores.length > 0 && <> · {m.stores.length} {t('pickup stores')}</>}</div>
                             {m.webhook_unverified && (
-                                <div className="sm" style={{ color: 'var(--warn)', marginTop: 4 }}>{t('No webhook secret saved - delivery updates for this courier cannot be verified.')}</div>
+                                <div className="sm" style={{ color: 'var(--warn)', marginTop: 4 }}>{t('No webhook secret saved - automatic delivery status updates for this courier are off. Save the webhook secret to turn them on.')}</div>
                             )}
                         </div>
                         <button className="btn" onClick={() => setEditing(m)}>{t('Configure')}</button>

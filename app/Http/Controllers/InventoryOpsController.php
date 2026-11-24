@@ -13,6 +13,7 @@ use App\Services\StockService;
 use App\Support\DhakaTime;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
 class InventoryOpsController extends Controller
@@ -141,8 +142,10 @@ class InventoryOpsController extends Controller
             'findings' => $findings,
             'products' => Product::where('business_id', $biz)->orderBy('name')->get(['id', 'name', 'sku', 'stock_qty']),
             'insights' => [
-                'low_stock' => Product::where('business_id', $biz)->get()->filter(fn ($p) => ($p->stock_qty - $p->reserved_qty) > 0 && ($p->stock_qty - $p->reserved_qty) <= $p->alert_qty)->count(),
-                'stockout_risk' => Product::where('business_id', $biz)->get()->filter(fn ($p) => ($p->stock_qty - $p->reserved_qty) <= 0)->count(),
+                // Through Product::available() — a combo's own row is
+                // always 0; what matters is how many combos it can make.
+                'low_stock' => Product::where('business_id', $biz)->get()->filter(fn ($p) => $p->available() > 0 && $p->available() <= $p->alert_qty)->count(),
+                'stockout_risk' => Product::where('business_id', $biz)->get()->filter(fn ($p) => $p->available() <= 0)->count(),
                 'fast_moving' => StockLedger::where('business_id', $biz)->where('type', 'ship_out')->select('product_id', DB::raw('SUM(qty) as total'))->groupBy('product_id')->having('total', '>=', 10)->count(),
                 'high_adjustments' => StockLedger::where('business_id', $biz)->whereIn('type', ['adjust_in', 'adjust_out'])->select('product_id', DB::raw('COUNT(*) as c'))->groupBy('product_id')->having('c', '>=', 3)->count(),
             ],
@@ -158,14 +161,28 @@ class InventoryOpsController extends Controller
         ]);
         $biz = $this->biz($request);
         $changed = 0;
+        $refused = null;
         foreach ($data['counts'] as $pid => $counted) {
             $p = Product::where('business_id', $biz)->find($pid);
-            if ($p && $this->stock->reconcile($p, (int) $counted, $request->user())) {
-                $changed++;
+            if (! $p) {
+                continue;
+            }
+            try {
+                if ($this->stock->reconcile($p, (int) $counted, $request->user())) {
+                    $changed++;
+                }
+            } catch (\RuntimeException $e) {
+                // A count below the reserved quantity is refused by the
+                // stock floor; keep the other rows and say why this one
+                // was not saved.
+                $refused = $e->getMessage();
             }
         }
+        if ($refused !== null) {
+            return back()->with('error', $refused);
+        }
 
-        return back()->with('success', $changed ? "Reconciliation saved - {$changed} product(s) adjusted" : 'Everything already matches');
+        return back()->with('success', $changed ? __('Reconciliation saved - :count product(s) adjusted', ['count' => $changed]) : __('Everything already matches'));
     }
 
     // ---------------- Branches + Transfers ----------------
@@ -241,7 +258,7 @@ class InventoryOpsController extends Controller
             $this->stock->rederiveBranchStock($biz);
         }
 
-        return back()->with('success', $enabled ? 'Branch stock turned on' : 'Branch stock turned off');
+        return back()->with('success', $enabled ? __('Branch stock turned on') : __('Branch stock turned off'));
     }
 
     public function storeBranch(Request $request)
@@ -254,7 +271,7 @@ class InventoryOpsController extends Controller
         ]);
         Branch::create(['business_id' => $this->biz($request)] + $data);
 
-        return back()->with('success', 'Branch added');
+        return back()->with('success', __('Branch added'));
     }
 
     public function updateBranch(Request $request, Branch $branch)
@@ -269,7 +286,7 @@ class InventoryOpsController extends Controller
         ]);
         $branch->update($data);
 
-        return back()->with('success', 'Branch updated');
+        return back()->with('success', __('Branch updated'));
     }
 
     public function destroyBranch(Request $request, Branch $branch)
@@ -278,7 +295,7 @@ class InventoryOpsController extends Controller
         BranchStock::where('branch_id', $branch->id)->delete();
         $branch->delete();
 
-        return back()->with('success', 'Branch deleted');
+        return back()->with('success', __('Branch deleted'));
     }
 
     public function storeTransfer(Request $request)
@@ -308,20 +325,47 @@ class InventoryOpsController extends Controller
                 $available = (int) $product->stock_qty;
             }
         }
+        // R6: reservations are fulfilled from the default branch (every
+        // ship/return sync lands there), so what the default branch
+        // holds against pending orders is not transferable - moving it
+        // out left the branch to be driven negative the moment the
+        // order shipped. Other branches owe no reservations and keep
+        // their full physical quantity.
+        if ($product && (int) $data['from_branch_id'] === (int) $this->stock->defaultBranchId($biz)) {
+            $available = max(0, $available - (int) $product->reserved_qty);
+        }
         if (! $product || (int) $data['qty'] > $available) {
             return back()->with('error', __('Not enough stock in the source branch - only :available available.', ['available' => $available]));
         }
         $transfer = StockTransfer::create(['business_id' => $biz, 'user_id' => $request->user()->id, 'status' => 'sent'] + $data);
         $this->stock->applyTransfer($transfer, $request->user());
 
-        return back()->with('success', 'Transfer sent');
+        return back()->with('success', __('Transfer sent'));
     }
 
     public function updateTransfer(Request $request, StockTransfer $transfer)
     {
         abort_unless($transfer->business_id === $this->biz($request), 403);
         $data = $request->validate(['status' => ['required', 'string', 'in:received,cancelled']]);
+        // R7: a cancelled transfer is terminal. Its movement was already
+        // reversed, so flipping it to 'received' would claim goods
+        // arrived that were taken back out, and a second cancel would
+        // reverse the same units twice.
+        if ($transfer->status === 'cancelled') {
+            return back()->with('error', __('This transfer is already cancelled.'));
+        }
         if ($data['status'] === 'cancelled' && $transfer->status === 'sent') {
+            // R7: reversing takes the units back out of the receiving
+            // branch - refuse when it no longer holds them (they may
+            // have been transferred on or sold), instead of driving
+            // that branch negative.
+            if ($this->stock->branchStockEnabled($transfer->business_id)) {
+                $heldAtReceiver = (int) (BranchStock::where('branch_id', $transfer->to_branch_id)
+                    ->where('product_id', $transfer->product_id)->value('qty') ?? 0);
+                if ($heldAtReceiver < (int) $transfer->qty) {
+                    return back()->with('error', __('Cannot cancel this transfer - the receiving branch no longer holds the units.'));
+                }
+            }
             // reverse the branch movement
             $reverse = $transfer->replicate();
             $reverse->from_branch_id = $transfer->to_branch_id;
@@ -330,7 +374,7 @@ class InventoryOpsController extends Controller
         }
         $transfer->update(['status' => $data['status']]);
 
-        return back()->with('success', 'Transfer updated');
+        return back()->with('success', __('Transfer updated'));
     }
 
     // ---------------- Warranty ----------------
@@ -396,7 +440,7 @@ class InventoryOpsController extends Controller
     {
         $biz = $this->biz($request);
         $data = $request->validate([
-            'product_id' => ['nullable', 'integer'],
+            'product_id' => ['nullable', 'integer', Rule::exists('products', 'id')->where('business_id', $biz)],
             'customer_name' => ['required', 'string', 'max:120'],
             'customer_phone' => ['nullable', 'string', 'max:30'],
             'serial_no' => ['nullable', 'string', 'max:120'],
@@ -414,7 +458,7 @@ class InventoryOpsController extends Controller
             'due_date' => date('Y-m-d', strtotime($received . " +{$days} days")),
         ] + $data);
 
-        return back()->with('success', 'Warranty claim created');
+        return back()->with('success', __('Warranty claim created'));
     }
 
     public function updateClaim(Request $request, WarrantyClaim $claim)
@@ -432,7 +476,7 @@ class InventoryOpsController extends Controller
         }
         $claim->update($data);
 
-        return back()->with('success', 'Claim updated');
+        return back()->with('success', __('Claim updated'));
     }
 
     public function saveWarrantySettings(Request $request)
@@ -458,6 +502,6 @@ class InventoryOpsController extends Controller
             $this->settings->set("warranty.{$biz}.turnaround_days", (int) $data['turnaround_days'], $request->user()?->id);
         }
 
-        return back()->with('success', 'Warranty settings saved');
+        return back()->with('success', __('Warranty settings saved'));
     }
 }

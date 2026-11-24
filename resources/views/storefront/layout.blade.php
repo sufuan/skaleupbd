@@ -40,11 +40,13 @@ window.sfTrack=function(ev,params,eventID){
 <body>
 <header class="sf-header">
   <div class="sf-wrap sf-header-in">
-    @if($brand['logo'])<img class="sf-logo" src="{{ $brand['logo'] }}" alt="">@else<div class="sf-logo-fallback">{{ mb_strtoupper(mb_substr($brand['name'],0,1)) }}</div>@endif
-    <div>
-      <div class="sf-shopname">{{ $brand['name'] }}</div>
-      <div class="sf-shopsub">Cash on delivery · সারা দেশে ডেলিভারি</div>
-    </div>
+    <a class="sf-brand" href="/">
+      @if($brand['logo'])<img class="sf-logo" src="{{ $brand['logo'] }}" alt="">@else<div class="sf-logo-fallback">{{ mb_strtoupper(mb_substr($brand['name'],0,1)) }}</div>@endif
+      <div>
+        <div class="sf-shopname">{{ $brand['name'] }}</div>
+        <div class="sf-shopsub">Cash on delivery · সারা দেশে ডেলিভারি</div>
+      </div>
+    </a>
   </div>
 </header>
 

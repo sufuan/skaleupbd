@@ -230,7 +230,7 @@ class StorefrontService
             $mk('product_grid', ['source' => 'all', 'category_id' => null, 'count' => 24, 'title' => 'Our products']),
             $mk('faq', ['title' => 'Questions', 'items' => [
                 ['q' => 'How do I order?', 'a' => 'Pick a product, fill in your name, phone and address, and press Order. We will call to confirm.'],
-                ['q' => 'How do I pay?', 'a' => 'Cash on delivery — pay when your product arrives.'],
+                ['q' => 'How do I pay?', 'a' => 'Cash on delivery - pay when your product arrives.'],
             ]]),
             $mk('legal', ['kind' => 'terms', 'title' => 'Terms & Conditions', 'text' => self::defaultLegalText('terms')]),
             $mk('legal', ['kind' => 'privacy', 'title' => 'Privacy Policy', 'text' => self::defaultLegalText('privacy')]),
@@ -693,7 +693,7 @@ class StorefrontService
                     'business_id' => $sf->business_id,
                     'rule_key' => null,
                     'source' => 'storefront',
-                    'title' => 'Storefront unpublished — your pack has ended',
+                    'title' => 'Storefront unpublished - your pack has ended',
                     'detail' => 'Your storefront was taken offline because your points pack ended and the grace period is over. Buy a pack and publish again from Storefront → Overview.',
                     'priority' => 'urgent',
                     'status' => 'open',
@@ -1119,9 +1119,38 @@ class StorefrontService
         return $page;
     }
 
+    /**
+     * The editor's publish-blocking checks, enforced on the server too —
+     * the React dialog's disabled button is not a boundary, and a direct
+     * POST must not publish what the UI calls unpublishable. Mirrors the
+     * ERROR level of computeChecks() in Editor.jsx exactly: a hero needs
+     * a title, and a visible countdown needs an end time in the future.
+     * Warnings (stock, FAQ gaps) never block, here or there.
+     */
+    private function assertPublishable(\App\Models\StorefrontPage $page): void
+    {
+        $errors = [];
+        foreach ((array) ($page->draft_blocks ?? []) as $b) {
+            $p = (array) ($b['props'] ?? []);
+            if (($b['type'] ?? '') === 'hero' && trim((string) ($p['title'] ?? '')) === '') {
+                $errors[] = 'Top banner title is empty';
+            }
+            if (($b['type'] ?? '') === 'countdown' && empty($p['hidden'])) {
+                $end = isset($p['ends_at']) && (string) $p['ends_at'] !== '' ? strtotime((string) $p['ends_at']) : false;
+                if ($end === false || $end <= time()) {
+                    $errors[] = 'Countdown end time is missing or has passed';
+                }
+            }
+        }
+        if ($errors !== []) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['blocks' => array_values(array_unique($errors))]);
+        }
+    }
+
     /** Publish changes: snapshot the current live blocks (keep 5), then copy draft → live. */
     public function publishChanges(\App\Models\StorefrontPage $page): void
     {
+        $this->assertPublishable($page);
         \Illuminate\Support\Facades\DB::transaction(function () use ($page) {
             if (! empty($page->published_blocks)) {
                 $page->versions()->create(['blocks' => $page->published_blocks]);

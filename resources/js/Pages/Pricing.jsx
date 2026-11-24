@@ -1,6 +1,7 @@
 import { Head, Link, usePage } from '@inertiajs/react';
 import { useMemo, useState } from 'react';
 import { t } from '@/lib/i18n';
+import { tk } from '@/lib/money';
 
 // M19 - public pricing page. Same visual family as the landing page
 // (own pp- styles), but its own layout: pack cards rendered live from
@@ -8,7 +9,6 @@ import { t } from '@/lib/i18n';
 // and the legal footer block verbatim (Meta verification).
 
 const ACCENT = '#411550';
-const tk = (n) => `৳${Number(n || 0).toLocaleString('en-IN')}`;
 const num = (n) => Number(n || 0).toLocaleString('en-IN');
 
 const CSS = `

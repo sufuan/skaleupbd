@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace App\Services\Integrations;
 
 use App\Models\IntegrationConnection;
+use App\Models\Product;
+use App\Models\ProductVariant;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 
 /**
  * Pushes stock quantities from our system back to a WooCommerce store.
@@ -35,16 +38,7 @@ final class WooCommerceStockPushService
      */
     public function pushProduct(IntegrationConnection $conn, int $productId): bool
     {
-        // Load our product row — column names marked ADAPT if yours differ.
-        $product = DB::table('products')
-            ->where('id', $productId)
-            ->where('business_id', $conn->business_id)
-            ->select([
-                'id',
-                'stock_qty',      // ADAPT: your actual column name
-                'reserved_qty',   // ADAPT: your actual column name
-            ])
-            ->first();
+        $product = Product::where('business_id', $conn->business_id)->find($productId);
 
         if (! $product) {
             Log::warning('WooStockPush: product not found', [
@@ -54,14 +48,17 @@ final class WooCommerceStockPushService
             return false;
         }
 
-        $available = max(0, (int) $product->stock_qty - (int) $product->reserved_qty);
-
         // Look up the external mapping(s) — a single internal product may map to a
         // WC simple product or one or more WC variations.
+        $columns = ['id', 'external_id', 'external_variation_id', 'last_pushed_stock', 'sku', 'product_id'];
+        $hasVariantColumn = Schema::hasColumn('external_products', 'variant_id');
+        if ($hasVariantColumn) {
+            $columns[] = 'variant_id';
+        }
         $mappings = DB::table('external_products')
             ->where('connection_id', $conn->id)
             ->where('product_id', $productId)
-            ->get(['id', 'external_id', 'external_variation_id', 'last_pushed_stock']);
+            ->get($columns);
 
         if ($mappings->isEmpty()) {
             return false; // Not mapped; nothing to push.
@@ -70,8 +67,22 @@ final class WooCommerceStockPushService
         $pushed = false;
 
         foreach ($mappings as $map) {
-            // Skip if stock has not changed since last push.
-            if ((int) $map->last_pushed_stock === $available) {
+            // R2: every mapping gets the figure of the entity it actually
+            // points at - the variant pool for a variation mapping,
+            // Product::available() otherwise (a combo's makeable count
+            // included). The old code pushed the parent row's
+            // stock-minus-reserved to every mapping, which marked
+            // variations and combos out of stock on the seller's real
+            // store while they held stock.
+            $variant = $this->resolveVariant($product, $map, $hasVariantColumn);
+            $available = $variant
+                ? max(0, (int) $variant->stock_qty - (int) $variant->reserved_qty)
+                : $product->available();
+
+            // Skip only when a previous push actually recorded this same
+            // figure. last_pushed_stock NULL means "never pushed" - it
+            // must not read as 0 and swallow a first push of 0.
+            if ($map->last_pushed_stock !== null && (int) $map->last_pushed_stock === $available) {
                 continue;
             }
 
@@ -85,6 +96,33 @@ final class WooCommerceStockPushService
         }
 
         return $pushed;
+    }
+
+    /**
+     * The local variant a variation mapping points at: the remembered
+     * variant_id when the mapping carries one, else the product's
+     * variant with the mapping's SKU. A resolved variant is remembered
+     * back onto the mapping row, so imports and later pushes resolve
+     * the same way (R2/R4).
+     */
+    private function resolveVariant(Product $product, object $map, bool $hasVariantColumn): ?ProductVariant
+    {
+        if (empty($map->external_variation_id)) {
+            return null;
+        }
+        $variant = null;
+        if ($hasVariantColumn && ! empty($map->variant_id)) {
+            $variant = $product->variants()->find((int) $map->variant_id);
+        }
+        if (! $variant && ! empty($map->sku)) {
+            $variant = $product->variants()->where('sku', $map->sku)->first();
+        }
+        if ($variant && $hasVariantColumn && (int) ($map->variant_id ?? 0) !== (int) $variant->id) {
+            DB::table('external_products')->where('id', $map->id)
+                ->update(['variant_id' => $variant->id, 'updated_at' => now()]);
+        }
+
+        return $variant;
     }
 
     /**

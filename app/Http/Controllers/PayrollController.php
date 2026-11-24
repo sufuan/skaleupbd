@@ -27,7 +27,7 @@ class PayrollController extends Controller
     private function guard(Request $request): ?RedirectResponse
     {
         if (! $this->payroll->enabled($this->biz($request))) {
-            return redirect('/hrm')->with('error', 'Payroll এখন বন্ধ আছে - চালু করতে HR Settings-এ যান।');
+            return redirect('/hrm')->with('error', __('Payroll is off right now - go to HR Settings to turn it on.'));
         }
 
         return null;
@@ -82,7 +82,7 @@ class PayrollController extends Controller
             return $deny;
         }
         if (! $this->canManage($request)) {
-            return back()->with('error', 'এই কাজ করার permission নেই।');
+            return back()->with('error', __('You do not have permission for this action.'));
         }
         $data = $request->validate(['month' => 'required|date_format:Y-m']);
         try {
@@ -91,7 +91,7 @@ class PayrollController extends Controller
             return back()->with('error', $e->getMessage());
         }
 
-        return redirect('/hrm/payroll?month='.$data['month'])->with('success', 'এই মাসের বেতনের হিসাব তৈরি হয়েছে।');
+        return redirect('/hrm/payroll?month='.$data['month'])->with('success', __('This month\'s payroll has been generated.'));
     }
 
     public function updateItem(Request $request, PayrollItem $item): RedirectResponse
@@ -101,10 +101,10 @@ class PayrollController extends Controller
         }
         $run = $item->run;
         if (! $this->canManage($request) || ! $run || $run->business_id !== $this->biz($request)) {
-            return back()->with('error', 'এই কাজ করার permission নেই।');
+            return back()->with('error', __('You do not have permission for this action.'));
         }
         if ($run->status === 'paid') {
-            return back()->with('error', 'বেতন দেওয়া হয়ে গেছে - আর বদলানো যাবে না।');
+            return back()->with('error', __('Salary has been paid - it cannot be changed anymore.'));
         }
         $data = $request->validate([
             'advance_cut' => 'nullable|numeric|min:0',
@@ -116,7 +116,7 @@ class PayrollController extends Controller
         $item->save();
         $this->payroll->refreshTotal($run);
 
-        return back()->with('success', 'হিসাব বদলানো হয়েছে।');
+        return back()->with('success', __('Calculation updated.'));
     }
 
     public function pay(Request $request, PayrollRun $run): RedirectResponse
@@ -125,12 +125,12 @@ class PayrollController extends Controller
             return $deny;
         }
         if (! $this->canManage($request) || $run->business_id !== $this->biz($request)) {
-            return back()->with('error', 'এই কাজ করার permission নেই।');
+            return back()->with('error', __('You do not have permission for this action.'));
         }
         $data = $request->validate(['account_id' => 'required|integer']);
         $account = FinanceAccount::where('business_id', $this->biz($request))->find($data['account_id']);
         if (! $account) {
-            return back()->with('error', 'Account পাওয়া যায়নি।');
+            return back()->with('error', __('Account not found.'));
         }
         try {
             $this->payroll->markPaid($run, $account->id, $request->user());
@@ -138,6 +138,6 @@ class PayrollController extends Controller
             return back()->with('error', $e->getMessage());
         }
 
-        return back()->with('success', 'বেতন দেওয়া হয়েছে - Finance-এ খরচ entry হয়েছে।');
+        return back()->with('success', __('Salary paid - an expense entry has been added in Finance.'));
     }
 }

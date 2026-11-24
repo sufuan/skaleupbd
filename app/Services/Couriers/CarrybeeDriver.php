@@ -93,7 +93,7 @@ class CarrybeeDriver implements CourierDriver
 
             return ['ok' => false, 'error' => (string) ($body['message'] ?? 'Carrybee rejected the booking (HTTP ' . $res->status() . ')'), 'raw' => $body];
         } catch (\Throwable $e) {
-            return ['ok' => false, 'error' => 'Could not reach Carrybee: ' . $e->getMessage()];
+            return ['ok' => false, 'error' => __('Could not reach :courier: :detail', ['courier' => 'Carrybee', 'detail' => $e->getMessage()])];
         }
     }
 
@@ -117,7 +117,7 @@ class CarrybeeDriver implements CourierDriver
             return ['ok' => true, 'courier_status' => (string) $status, 'raw' => $d];
         }
 
-        return ['ok' => false, 'error' => 'Status check failed'];
+        return ['ok' => false, 'error' => __('Status check failed')];
     }
 
     public function cancelBooking(Order $order, CourierMethod $method): array
@@ -143,10 +143,10 @@ class CarrybeeDriver implements CourierDriver
         try {
             $res = $this->http($method)->get($this->base($method) . '/api/v2/stores');
             return $res->successful()
-                ? ['ok' => true, 'message' => 'Connected — Carrybee accepted the credentials']
-                : ['ok' => false, 'message' => 'Carrybee did not accept these credentials (HTTP ' . $res->status() . ')'];
+                ? ['ok' => true, 'message' => __('Connected - Carrybee accepted the credentials')]
+                : ['ok' => false, 'message' => __('Carrybee did not accept these credentials (HTTP :status)', ['status' => $res->status()])];
         } catch (\Throwable $e) {
-            return ['ok' => false, 'message' => 'Could not reach Carrybee: ' . $e->getMessage()];
+            return ['ok' => false, 'message' => __('Could not reach :courier: :detail', ['courier' => 'Carrybee', 'detail' => $e->getMessage()])];
         }
     }
 
@@ -216,7 +216,7 @@ class CarrybeeDriver implements CourierDriver
         } catch (\Throwable $e) {
             return collect($orders)->map(fn (Order $o) => [
                 'invoice' => $o->invoice, 'ok' => false, 'tracking_id' => null, 'consignment_id' => null,
-                'error' => 'Could not reach Carrybee: ' . $e->getMessage(),
+                'error' => __('Could not reach :courier: :detail', ['courier' => 'Carrybee', 'detail' => $e->getMessage()]),
             ])->values()->all();
         }
     }
@@ -242,7 +242,7 @@ class CarrybeeDriver implements CourierDriver
             // created store object including its id — keep it when present.
             return ['ok' => $ok, 'store_id' => isset($body['data']['id']) ? (string) $body['data']['id'] : null, 'error' => $ok ? null : (string) ($body['message'] ?? 'Store creation failed (HTTP ' . $res->status() . ')'), 'raw' => $body];
         } catch (\Throwable $e) {
-            return ['ok' => false, 'error' => 'Could not reach Carrybee: ' . $e->getMessage()];
+            return ['ok' => false, 'error' => __('Could not reach :courier: :detail', ['courier' => 'Carrybee', 'detail' => $e->getMessage()])];
         }
     }
 
@@ -344,7 +344,7 @@ class CarrybeeDriver implements CourierDriver
 
             return ['ok' => false, 'error' => (string) ($body['message'] ?? 'Reverse pickup failed (HTTP ' . $res->status() . ')'), 'raw' => $body];
         } catch (\Throwable $e) {
-            return ['ok' => false, 'error' => 'Could not reach Carrybee: ' . $e->getMessage()];
+            return ['ok' => false, 'error' => __('Could not reach :courier: :detail', ['courier' => 'Carrybee', 'detail' => $e->getMessage()])];
         }
     }
 
@@ -369,7 +369,7 @@ class CarrybeeDriver implements CourierDriver
 
             return ['ok' => false, 'error' => (string) ($resp['message'] ?? 'Exchange booking failed (HTTP ' . $res->status() . ')'), 'raw' => $resp];
         } catch (\Throwable $e) {
-            return ['ok' => false, 'error' => 'Could not reach Carrybee: ' . $e->getMessage()];
+            return ['ok' => false, 'error' => __('Could not reach :courier: :detail', ['courier' => 'Carrybee', 'detail' => $e->getMessage()])];
         }
     }
 }

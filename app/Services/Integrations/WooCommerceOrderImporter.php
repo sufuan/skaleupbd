@@ -18,8 +18,11 @@
 namespace App\Services\Integrations;
 
 use App\Models\IntegrationConnection;
+use App\Models\Product;
+use App\Models\ProductVariant;
 use App\Services\OrderService;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class WooCommerceOrderImporter
 {
@@ -130,17 +133,28 @@ class WooCommerceOrderImporter
             $name = (string) ($item['name'] ?? 'Unknown product');
 
             // Try to find a matched local product via external_products.
+            $hasVariantColumn = Schema::hasColumn('external_products', 'variant_id');
             $ext = DB::table('external_products')
                 ->where('connection_id', $conn->id)
                 ->where('external_id', (string) $wooProductId)
                 ->where('external_variation_id', $wooVariationId > 0 ? (string) $wooVariationId : '')
                 ->where('state', 'matched')
-                ->first(['product_id', 'sku']);
+                ->first(array_filter(['id', 'product_id', 'sku', $hasVariantColumn ? 'variant_id' : null]));
 
             if ($ext && $ext->product_id) {
-                // Matched: use our product id.
+                // Matched: use our product id. A variation line must land
+                // on the VARIANT (R4): its id goes on the order line, so
+                // the create-time reservation and every later stock move
+                // use the variant's pool - the old code passed only the
+                // product, and the reservation was taken against the
+                // parent's (usually empty) row.
+                $variant = $wooVariationId > 0
+                    ? $this->resolveVariant($conn, $ext, $sku, $name, $hasVariantColumn)
+                    : null;
                 $items[] = [
                     'product_id' => $ext->product_id,
+                    'variant_id' => $variant?->id,
+                    'variant_name' => $variant?->name,
                     'name' => $name,
                     'sku' => $sku ?: $ext->sku,
                     'qty' => $quantity,
@@ -160,5 +174,41 @@ class WooCommerceOrderImporter
         }
 
         return $items;
+    }
+
+    /**
+     * The local variant a matched Woo variation line refers to: the
+     * mapping's remembered variant_id first, then the variant carrying
+     * the line's (or mapping's) SKU, then the variant named by the
+     * line name's suffix after the product name ("Shirt - Size XL").
+     * A resolved variant is remembered back onto the mapping row, so
+     * the stock push and later imports resolve the same way (R4/R2).
+     */
+    private function resolveVariant(IntegrationConnection $conn, object $ext, string $lineSku, string $lineName, bool $hasVariantColumn): ?ProductVariant
+    {
+        $product = Product::where('business_id', $conn->business_id)->find($ext->product_id);
+        if (! $product) {
+            return null;
+        }
+        $variant = null;
+        if ($hasVariantColumn && ! empty($ext->variant_id)) {
+            $variant = $product->variants()->find((int) $ext->variant_id);
+        }
+        $sku = $lineSku !== '' ? $lineSku : (string) ($ext->sku ?? '');
+        if (! $variant && $sku !== '') {
+            $variant = $product->variants()->where('sku', $sku)->first();
+        }
+        if (! $variant && $lineName !== '' && str_starts_with($lineName, $product->name)) {
+            $suffix = trim(substr($lineName, strlen($product->name)), " \t\n\r\0\x0B-–—");
+            if ($suffix !== '') {
+                $variant = $product->variants()->where('name', $suffix)->first();
+            }
+        }
+        if ($variant && $hasVariantColumn && (int) ($ext->variant_id ?? 0) !== (int) $variant->id) {
+            DB::table('external_products')->where('id', $ext->id)
+                ->update(['variant_id' => $variant->id, 'updated_at' => now()]);
+        }
+
+        return $variant;
     }
 }

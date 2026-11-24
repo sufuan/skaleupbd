@@ -79,10 +79,11 @@ function StaffRow({ person, roles, moduleLabels }) {
         role_id: person.role_id || '',
         monthly_salary: person.monthly_salary || '',
         staff_active: person.staff_active,
+        password: '',
     });
     const save = (e) => {
         e.preventDefault();
-        form.patch(`/settings/staff/${person.id}`, { preserveScroll: true, onSuccess: () => setEditing(false) });
+        form.patch(`/settings/staff/${person.id}`, { preserveScroll: true, onSuccess: () => { form.setData('password', ''); setEditing(false); } });
     };
     const seen = person.view_modules.map((k) => moduleLabels[k]).filter(Boolean);
     return (
@@ -121,6 +122,13 @@ function StaffRow({ person, roles, moduleLabels }) {
                                 <label className="fl">{t('Monthly salary (৳)')}</label>
                                 <input className="inp" type="number" min="0" step="any" value={form.data.monthly_salary} onChange={(e) => form.setData('monthly_salary', e.target.value)} placeholder="0" />
                             </div>
+                            {!person.is_owner && (
+                                <div className="frow">
+                                    <label className="fl">{t('New password')}</label>
+                                    <input className="inp" type="password" autoComplete="new-password" value={form.data.password} onChange={(e) => form.setData('password', e.target.value)} placeholder={t('Leave blank to keep the current password.')} />
+                                    {form.errors.password && <p style={{ color: '#DC2626', fontSize: 13 }}>{form.errors.password}</p>}
+                                </div>
+                            )}
                             <div className="frow">
                                 <label className="fl">{t('Status')}</label>
                                 <select className="inp" value={form.data.staff_active ? '1' : '0'} onChange={(e) => form.setData('staff_active', e.target.value === '1')}>
@@ -199,7 +207,7 @@ export default function StaffRoles({ data }) {
                     </div>
                     <div className="frow">
                         <label className="fl">{t('Password')}</label>
-                        <input className="inp" type="text" value={newStaff.data.password} onChange={(e) => newStaff.setData('password', e.target.value)} required />
+                        <input className="inp" type="password" value={newStaff.data.password} onChange={(e) => newStaff.setData('password', e.target.value)} required />
                     </div>
                     <div className="frow">
                         <label className="fl">{t('Role')}</label>

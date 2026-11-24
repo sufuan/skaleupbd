@@ -11,6 +11,7 @@ use App\Models\OrderStatusHistory;
 use App\Models\User;
 use App\Services\FinanceService;
 use App\Services\SettingsService;
+use App\Support\DhakaTime;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Response;
@@ -66,9 +67,14 @@ class ReportsController extends Controller
     private function plData(int $biz, Carbon $from, Carbon $to): array
     {
         $f = $this->fin->figures($biz, $from, $to);
+        // whereDate, not whereBetween on the raw column: txn_date can carry
+        // a time part in storage ('2026-11-24 00:00:00'), and a plain string
+        // between then drops the window's last day — today's Ad spend fell
+        // into "Other expenses" every single day. Same rule as figures().
         $adExpense = round((float) FinanceTransaction::where('business_id', $biz)->where('type', 'expense')
             ->whereNull('voided_at')->whereNull('reversal_of')
-            ->whereBetween('txn_date', [$from->copy()->setTimezone('Asia/Dhaka')->toDateString(), $to->copy()->setTimezone('Asia/Dhaka')->toDateString()])
+            ->whereDate('txn_date', '>=', $from->copy()->setTimezone('Asia/Dhaka')->toDateString())
+            ->whereDate('txn_date', '<=', $to->copy()->setTimezone('Asia/Dhaka')->toDateString())
             ->whereHas('category', fn ($q) => $q->where('name', 'Ad'))->sum('amount'), 2);
         // figures() counts live rows only; mirror its rule via the service totals.
         $adExpense = min($adExpense, (float) $f['expense']);
@@ -129,7 +135,7 @@ class ReportsController extends Controller
         $data = $request->validate(['enabled' => ['required', 'boolean']]);
         $this->settings->set("reports.{$this->biz($request)}.estimate_enabled", (bool) $data['enabled']);
 
-        return back()->with('success', 'P&L setting saved');
+        return back()->with('success', __('P&L setting saved'));
     }
 
     // ---------- Order Report ----------
@@ -145,7 +151,10 @@ class ReportsController extends Controller
 
             return ['source' => $labels[$code] ?? $code, 'orders' => $total,
                 'delivered_pct' => $this->pct($del, $total), 'returned_pct' => $this->pct($ret, $total),
-                'sales' => round($g->whereNotIn('status', ['Cancelled'])->sum('grand_total'), 2)];
+                // "Sales" is the settled definition used by Finance and the
+                // Dashboard: Delivered orders only. Returned and in-flight
+                // orders are not sales yet (Returned may never be).
+                'sales' => round($g->where('status', 'Delivered')->sum('grand_total'), 2)];
         })->sortByDesc('orders')->values()->all();
 
         return [
@@ -287,11 +296,18 @@ class ReportsController extends Controller
         $logs = CallLog::where('business_id', $biz)->whereBetween('created_at', [$from, $to])->get();
         $total = $logs->count();
         $avg = $total ? $logs->avg('minutes') : 0;
-        $avgText = sprintf('%d:%02d', (int) $avg, (int) round(($avg - (int) $avg) * 60));
+        // Normalise to whole seconds first, then split: formatting the
+        // fractional minute directly can round the seconds up to 60 and
+        // print "1:60" instead of carrying into the minutes.
+        $avgSeconds = (int) round($avg * 60);
+        $avgText = sprintf('%d:%02d', intdiv($avgSeconds, 60), $avgSeconds % 60);
         $linked = $logs->whereNotNull('order_id');
         $bestSlot = null;
         if ($linked->isNotEmpty()) {
-            $byHour = $linked->groupBy(fn ($l) => (int) $l->created_at->format('H'))
+            // Sellers read the slot in Dhaka time, like every other
+            // human-facing time in the app — bucketing the stored UTC
+            // hour showed a slot six hours off the working day.
+            $byHour = $linked->groupBy(fn ($l) => (int) DhakaTime::fmt($l->created_at, 'H'))
                 ->map->count()->sortDesc();
             $h = (int) $byHour->keys()->first();
             $bestSlot = sprintf('%02d:00–%02d:00', $h, ($h + 2) % 24);
@@ -313,16 +329,25 @@ class ReportsController extends Controller
 
     private function customerData(int $biz, Carbon $from, Carbon $to): array
     {
-        $orders = Order::where('business_id', $biz)->whereNotIn('status', ['Cancelled'])->get();
-        $byPhone = $orders->groupBy('customer_phone');
-        $withOrders = $byPhone->count();
-        $repeat = $byPhone->filter(fn ($g) => $g->count() >= 2)->count();
-        $periodOrders = $orders->whereBetween('created_at', [$from, $to]);
+        // The all-time repeat stats aggregate in SQL (one row per phone) —
+        // the old code loaded every non-Cancelled order the shop ever took
+        // into memory on every view just to count them.
+        $phoneCounts = Order::where('business_id', $biz)->whereNotIn('status', ['Cancelled'])
+            ->selectRaw('customer_phone, COUNT(*) as c')->groupBy('customer_phone')
+            ->pluck('c', 'customer_phone');
+        $withOrders = $phoneCounts->count();
+        $repeat = $phoneCounts->filter(fn ($c) => (int) $c >= 2)->count();
+        // The period rows are fetched with the period pushed into SQL.
+        $periodOrders = Order::where('business_id', $biz)->whereNotIn('status', ['Cancelled'])
+            ->whereBetween('created_at', [$from, $to])->get();
         // All customers with orders in the period, best first — the list
         // silently stopped at 5, which read as "only 5 customers exist".
         $top = $periodOrders->groupBy('customer_phone')->map(function ($g) {
             return ['name' => $g->first()->customer_name, 'orders' => $g->count(),
-                'spent' => round($g->sum('grand_total'), 2)];
+                // "Total spent" is the settled definition used by Finance:
+                // Delivered orders only — a Returned order's money came
+                // back, and an undelivered order has not been paid yet.
+                'spent' => round($g->where('status', 'Delivered')->sum('grand_total'), 2)];
         })->sortByDesc('spent')->values()->all();
 
         return ['kpis' => [

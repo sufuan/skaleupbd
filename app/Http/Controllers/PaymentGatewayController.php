@@ -41,17 +41,17 @@ class PaymentGatewayController extends Controller
         $businessId = $request->user()?->business_id;
         abort_unless($businessId, 403);
         $data = $request->validate($this->rules());
-        $this->gateway->save((int) $businessId, $data, $request->user()->id);
+        $this->gateway->save((int) $businessId, $data, $request->user());
 
-        return back()->with('success', 'Your payment gateway settings were saved.');
+        return back()->with('success', __('Your payment gateway settings were saved.'));
     }
 
     public function updatePlatform(Request $request): RedirectResponse
     {
         abort_unless($request->user()?->is_platform_admin, 403);
         $data = $request->validate($this->rules());
-        $this->gateway->save(null, $data, $request->user()->id);
+        $this->gateway->save(null, $data, $request->user());
 
-        return back()->with('success', 'Platform payment gateway settings were saved.');
+        return back()->with('success', __('Platform payment gateway settings were saved.'));
     }
 }

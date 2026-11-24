@@ -49,7 +49,7 @@ class StaffRolesController extends Controller
 
     private function deny(): RedirectResponse
     {
-        return back()->with('error', 'এই কাজ করার permission নেই। শুধু দোকানের Owner এই কাজ করতে পারে।');
+        return back()->with('error', __('You do not have permission for this action. Only the shop Owner can do this.'));
     }
 
     /** Props for the Staff & Roles group inside Settings. */
@@ -123,7 +123,7 @@ class StaffRolesController extends Controller
             'role_id' => $role->id, 'name' => $role->name, 'ticks' => $role->permissions,
         ]);
 
-        return back()->with('success', 'নতুন Role তৈরি হয়েছে।');
+        return back()->with('success', __('New role created.'));
     }
 
     public function updateRole(Request $request, Role $role): RedirectResponse
@@ -148,7 +148,7 @@ class StaffRolesController extends Controller
             'new' => ['name' => $role->name, 'ticks' => $role->permissions],
         ]);
 
-        return back()->with('success', 'Role বদলানো হয়েছে।');
+        return back()->with('success', __('Role updated.'));
     }
 
     public function destroyRole(Request $request, Role $role): RedirectResponse
@@ -157,14 +157,14 @@ class StaffRolesController extends Controller
             return $this->deny();
         }
         if ($role->users()->exists()) {
-            return back()->with('error', 'এই Role এ এখনো Staff আছে। আগে তাদের অন্য Role দিন, তারপর মুছুন।');
+            return back()->with('error', __('This role still has staff. Give them another role first, then delete it.'));
         }
         RoleChangeLog::record($this->biz($request), $request->user()->id, 'role.deleted', [
             'role_id' => $role->id, 'name' => $role->name,
         ]);
         $role->delete();
 
-        return back()->with('success', 'Role মোছা হয়েছে।');
+        return back()->with('success', __('Role deleted.'));
     }
 
     /**
@@ -176,13 +176,13 @@ class StaffRolesController extends Controller
         foreach (RolePermissions::OWNER_ONLY as $module) {
             foreach (RolePermissions::ACTIONS as $action) {
                 if (! empty($ticks[$module][$action])) {
-                    return back()->with('error', 'Points & Billing আর Settings শুধু Owner এর কাছে থাকে - এগুলো কোনো Role কে দেওয়া যায় না।');
+                    return back()->with('error', __('Points & Billing and Settings stay with the Owner only - they cannot be given to any role.'));
                 }
             }
         }
         $exceeds = RolePermissions::exceedsGrantable($request->user(), $ticks);
         if ($exceeds !== []) {
-            return back()->with('error', 'নিজের হাতে নেই এমন permission অন্য কাউকে দেওয়া যায় না।');
+            return back()->with('error', __('You cannot give a permission you do not have yourself.'));
         }
 
         return null;
@@ -221,7 +221,7 @@ class StaffRolesController extends Controller
             'user_id' => $user->id, 'email' => $user->email, 'role_id' => $role?->id, 'role_name' => $role?->name,
         ]);
 
-        return back()->with('success', 'নতুন Staff তৈরি হয়েছে।');
+        return back()->with('success', __('New staff created.'));
     }
 
     /** Moved from HRM User & Role (updateUser) and rebuilt around role assignment. */
@@ -236,6 +236,9 @@ class StaffRolesController extends Controller
             'role_id' => ['nullable', Rule::exists('roles', 'id')->where('business_id', $biz)],
             'monthly_salary' => 'nullable|numeric|min:0',
             'staff_active' => 'boolean',
+            // Same rule as staff creation, but optional here: blank
+            // keeps the current password.
+            'password' => 'nullable|string|min:8',
         ]);
         $active = $data['staff_active'] ?? true;
 
@@ -245,13 +248,13 @@ class StaffRolesController extends Controller
             // and for the shop's last active owner; name and salary
             // stay editable.
             if (! empty($data['role_id'])) {
-                return back()->with('error', 'Owner এর Role বদলানো যায় না।');
+                return back()->with('error', __('The Owner\'s role cannot be changed.'));
             }
             if (! $active && $user->id === $request->user()->id) {
-                return back()->with('error', 'নিজেকে বন্ধ করা যাবে না।');
+                return back()->with('error', __('You cannot deactivate yourself.'));
             }
             if (! $active && $this->isLastActiveOwner($user)) {
-                return back()->with('error', 'দোকানের শেষ Owner কে বন্ধ করা যায় না।');
+                return back()->with('error', __('The shop\'s last Owner cannot be deactivated.'));
             }
         }
 
@@ -259,16 +262,23 @@ class StaffRolesController extends Controller
         $user->name = $data['name'];
         $user->monthly_salary = $data['monthly_salary'] ?? 0;
         $user->staff_active = $active;
+        $passwordChanged = false;
         if ($user->role !== 'admin') {
             $role = ! empty($data['role_id']) ? Role::find($data['role_id']) : null;
             $user->role_id = $role?->id;
             $user->permissions = null;
             $user->finance_access = $this->financeAccessFor($role);
+            if (! empty($data['password'])) {
+                $user->password = Hash::make($data['password']);
+                $passwordChanged = true;
+            }
         }
         $user->save();
 
-        if (! $active) {
+        if (! $active || $passwordChanged) {
             // Deactivation logs the staff member out everywhere, now.
+            // A password reset does the same: every existing session
+            // must sign in again with the new password.
             DB::table('sessions')->where('user_id', $user->id)->delete();
         }
         RoleChangeLog::record($biz, $request->user()->id, 'staff.updated', [
@@ -276,9 +286,10 @@ class StaffRolesController extends Controller
             'old_role_id' => $oldRoleId,
             'new_role_id' => $user->role_id,
             'staff_active' => (bool) $user->staff_active,
+            'password_changed' => $passwordChanged,
         ]);
 
-        return back()->with('success', 'Staff বদলানো হয়েছে।');
+        return back()->with('success', __('Staff updated.'));
     }
 
     /** True when deactivating this user would leave the shop with no active owner. */

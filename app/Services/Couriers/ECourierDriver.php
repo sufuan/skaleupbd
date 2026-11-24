@@ -54,7 +54,7 @@ class ECourierDriver implements CourierDriver
 
             return ['ok' => false, 'error' => (string) ($body['message'] ?? 'eCourier rejected the booking (HTTP ' . $res->status() . ')'), 'raw' => $body];
         } catch (\Throwable $e) {
-            return ['ok' => false, 'error' => 'Could not reach eCourier: ' . $e->getMessage()];
+            return ['ok' => false, 'error' => __('Could not reach :courier: :detail', ['courier' => 'eCourier', 'detail' => $e->getMessage()])];
         }
     }
 
@@ -69,9 +69,9 @@ class ECourierDriver implements CourierDriver
                 return ['ok' => true, 'courier_status' => (string) $status, 'raw' => $body];
             }
 
-            return ['ok' => false, 'error' => 'Status check failed (HTTP ' . $res->status() . ')'];
+            return ['ok' => false, 'error' => __('Status check failed (HTTP :status)', ['status' => $res->status()])];
         } catch (\Throwable $e) {
-            return ['ok' => false, 'error' => 'Could not reach eCourier: ' . $e->getMessage()];
+            return ['ok' => false, 'error' => __('Could not reach :courier: :detail', ['courier' => 'eCourier', 'detail' => $e->getMessage()])];
         }
     }
 
@@ -112,10 +112,10 @@ class ECourierDriver implements CourierDriver
             $res = $this->http($method)->post($this->base . '/payment-status', ['tracking' => 'TEST']);
             // Wrong credentials come back 401 — anything short of a 2xx must NOT read as connected.
             return $res->successful()
-                ? ['ok' => true, 'message' => 'Connected — eCourier answered']
-                : ['ok' => false, 'message' => 'eCourier did not accept these credentials (HTTP ' . $res->status() . ')'];
+                ? ['ok' => true, 'message' => __('Connected - eCourier answered')]
+                : ['ok' => false, 'message' => __('eCourier did not accept these credentials (HTTP :status)', ['status' => $res->status()])];
         } catch (\Throwable $e) {
-            return ['ok' => false, 'message' => 'Could not reach eCourier: ' . $e->getMessage()];
+            return ['ok' => false, 'message' => __('Could not reach :courier: :detail', ['courier' => 'eCourier', 'detail' => $e->getMessage()])];
         }
     }
 

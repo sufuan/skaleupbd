@@ -618,8 +618,10 @@ class WorkInboxService
             ->with('items')->orderBy('created_at')->limit(200)->get()
             ->each(function (Order $o) use (&$out, $biz) {
                 $pids = $o->items->pluck('product_id')->filter()->all();
+                // Product::available() — a combo is "in stock" when its
+                // components can make one, not from its own (always 0) row.
                 $inStock = $pids !== [] && Product::where('business_id', $biz)->whereIn('id', $pids)
-                    ->whereRaw('stock_qty - reserved_qty > 0')->exists();
+                    ->get()->contains(fn ($p) => $p->available() > 0);
                 if (! $inStock) {
                     return;
                 }

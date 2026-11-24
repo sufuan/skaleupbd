@@ -241,12 +241,11 @@ class RuleBrainService
             }
         }
         $hay = mb_strtolower($text);
-        foreach (Product::where('business_id', $businessId)->orderBy('id')->get() as $p) {
-            foreach (preg_split('/\s+/', mb_strtolower($p->name)) as $word) {
-                if (mb_strlen($word) >= 4 && str_contains($hay, $word)) {
-                    return $p;
-                }
-            }
+        $products = Product::where('business_id', $businessId)->orderBy('id')->get();
+
+        // Exact signals win outright, as before: a SKU or a seller-taught
+        // alias names ONE product unambiguously.
+        foreach ($products as $p) {
             if ($p->sku && str_contains($hay, mb_strtolower($p->sku))) {
                 return $p;
             }
@@ -257,7 +256,58 @@ class RuleBrainService
             }
         }
 
-        return null;
+        // Name words are scored, never first-match (Round 6, P2): a single
+        // shared generic word ("pack" in both "T-Shirt Pack" and "Gift
+        // Combo Pack") must not hijack the match to the first product that
+        // happens to contain it. A product wins on COVERAGE first (how
+        // much of its name the customer actually said), then on how
+        // DISTINCTIVE the matched words are (a word appearing in many
+        // product names is weak evidence). A full-name mention is the
+        // strongest signal of all. An exact tie keeps the legacy
+        // first-by-id order - the reply always names the product it
+        // matched, so the customer can correct it, and its figures are
+        // that product's own live figures.
+        $freq = [];
+        $wordsOf = [];
+        foreach ($products as $p) {
+            $words = array_values(array_filter(
+                preg_split('/\s+/', mb_strtolower($p->name)) ?: [],
+                fn ($w) => mb_strlen($w) >= 4
+            ));
+            $wordsOf[$p->id] = $words;
+            foreach (array_unique($words) as $w) {
+                $freq[$w] = ($freq[$w] ?? 0) + 1;
+            }
+        }
+        $best = null;
+        $bestCoverage = -1.0;
+        $bestScore = -1.0;
+        foreach ($products as $p) {
+            $words = $wordsOf[$p->id];
+            if ($words === []) {
+                continue;
+            }
+            $matched = array_values(array_filter($words, fn ($w) => str_contains($hay, $w)));
+            if ($matched === []) {
+                continue;
+            }
+            $coverage = count($matched) / count($words);
+            $score = 0.0;
+            foreach ($matched as $w) {
+                $score += 1.0 / max(1, $freq[$w] ?? 1);
+            }
+            if (str_contains($hay, mb_strtolower($p->name))) {
+                $score += 100.0; // the customer said the whole name
+            }
+            if ($coverage > $bestCoverage + 1e-9
+                || (abs($coverage - $bestCoverage) <= 1e-9 && $score > $bestScore + 1e-9)) {
+                $best = $p;
+                $bestCoverage = $coverage;
+                $bestScore = $score;
+            }
+        }
+
+        return $best;
     }
 
     /**
@@ -372,7 +422,14 @@ class RuleBrainService
     /** Truth context for the claim guard, from live data. */
     private function claimCtx(int $businessId, ?Product $product, array $slotValues = []): array
     {
-        $available = $product ? max(0, (int) $product->stock_qty - (int) $product->reserved_qty) : null;
+        // The ONE availability definition (Round 6, P10): Product::available()
+        // - a combo is in stock when its COMPONENTS can still make one, even
+        // though its own stock row is 0. When a variant is the focus (its
+        // stock was slotted into the reply), the variant's own pool decides.
+        $available = $product ? max(0, $product->available()) : null;
+        if (isset($slotValues['stock'])) {
+            $available = max(0, (int) $slotValues['stock']);
+        }
         $price = isset($slotValues['offer']) ? (float) $slotValues['offer'] : ($product ? $product->effectivePrice() : 0.0);
 
         return [
@@ -380,6 +437,32 @@ class RuleBrainService
             'free_delivery_ok' => $product !== null && $price >= $this->negotiation->config($businessId)['free_delivery_min'],
             'shop_phone' => Business::find($businessId)?->phone,
         ];
+    }
+
+    /**
+     * Sellable units of the conversation's focus: the variant's own pool
+     * when a variant is in focus, else the product's available(). Null
+     * when there is no focus product to judge.
+     */
+    private function focusAvailable(?Product $product, ?\App\Models\ProductVariant $variant): ?int
+    {
+        if ($variant) {
+            return $variant->available();
+        }
+
+        return $product ? max(0, $product->available()) : null;
+    }
+
+    /**
+     * The honest zero-stock answer (Round 6, P1): the ONLY reply a
+     * 0-available focus gets - no order invitation, no collection, no
+     * promises the shop has not made itself.
+     */
+    private function outOfStockBody(int $businessId, ?string $customerName, Product $product, ?\App\Models\ProductVariant $variant = null): string
+    {
+        $name = $product->name . ($variant ? ' (' . $variant->name . ')' : '');
+
+        return $this->honorificPrefix($businessId, $customerName) . $name . ' এখন স্টকে নেই। অন্য কোনো পণ্য দেখতে চাইলে বলুন।';
     }
 
     /**
@@ -500,7 +583,11 @@ class RuleBrainService
     /** The order summary text + meta, shared by the direct and guided-collection paths. */
     private function buildSummary(Conversation $conversation, Product $product, ?\App\Models\ProductVariant $variant): array
     {
-        $delivery = 60.0;
+        // The shop's own delivery charge, through the same bizGet fallback
+        // chain the delivery answer uses (Round 6, P6) - never a flat 60
+        // the shop never set.
+        $biz = (int) $conversation->business_id;
+        $delivery = (float) $this->settings->bizGet($biz, "business.{$biz}.default_delivery_cost", 'business.default_delivery_cost', 60);
         // A price agreed in bargaining is the price the customer pays —
         // the summary must not jump back to the full price.
         $unit = $conversation->neg_offer !== null ? (float) $conversation->neg_offer : ($variant ? $variant->effectivePrice() : $product->effectivePrice());
@@ -713,6 +800,12 @@ class RuleBrainService
                 return null;
             }
             $variant = !empty($collect['variant_id']) ? \App\Models\ProductVariant::find($collect['variant_id']) : null;
+            // Stock 0 = NO order (owner addendum, Round 6 P1): if the item
+            // sold out while the details were being collected, the sale
+            // stops here with the honest answer - no summary, no order.
+            if ($this->focusAvailable($product, $variant) <= 0) {
+                return $this->simpleOutgoing($conversation, $this->outOfStockBody($biz, $conversation->customer_name, $product, $variant), 'out_of_stock', $mode, ['out_of_stock' => true]);
+            }
             $summary = $this->buildSummary($conversation, $product, $variant);
             $msg = ChatMessage::create([
                 'business_id' => $biz,
@@ -752,22 +845,56 @@ class RuleBrainService
         return $this->simpleOutgoing($conversation, $this->collectQuestion($biz, $next, $conversation->customer_name), 'collect_question', $mode, ['collect' => $next]);
     }
 
-    /** Every figure the business could honestly state right now. */
+    /**
+     * Every figure that could honestly be stated right now.
+     *
+     * With a focus product the set is PER-PRODUCT (Round 6, P4): the
+     * product's own price and campaign price, its variants' prices
+     * (Round 6, P3 - regular and effective), its negotiation ladder, the
+     * shop's delivery charges, and totals honestly derived from those
+     * (price + delivery). A figure that merely exists somewhere else in
+     * the shop - another product's price quoted for this one - is NOT in
+     * the set and fails the check. Without a focus product (comment
+     * replies, settings previews) the legacy shop-wide set applies.
+     */
     public function allowedFigures(int $businessId, ?Product $product): array
     {
-        $figures = [60.0, 120.0, (float) $this->settings->bizGet($businessId, "business.{$businessId}.default_delivery_cost", 'business.default_delivery_cost', 60), $this->negotiation->config($businessId)['free_delivery_min']];
+        $inside = (float) $this->settings->bizGet($businessId, "business.{$businessId}.default_delivery_cost", 'business.default_delivery_cost', 60);
+        $figures = [$inside, 120.0, $this->negotiation->config($businessId)['free_delivery_min']];
+        if ($product) {
+            $prices = [(float) $product->price, $product->effectivePrice()];
+            foreach ($product->activeVariants() as $v) {
+                if ($v->price !== null) {
+                    $prices[] = (float) $v->price;
+                }
+                $prices[] = $v->effectivePrice();
+            }
+            foreach ($this->negotiation->ladder($product) as $rung) {
+                $prices[] = (float) $rung;
+            }
+            foreach (array_unique($prices) as $p) {
+                $figures[] = $p;
+                $figures[] = $p + $inside;
+                $figures[] = $p + 120.0;
+            }
+
+            return $figures;
+        }
+        $figures[] = 60.0;
         foreach (Product::where('business_id', $businessId)->get() as $p) {
             $figures[] = (float) $p->price;
             $figures[] = $p->effectivePrice();
+            foreach ($p->activeVariants() as $v) {
+                if ($v->price !== null) {
+                    $figures[] = (float) $v->price;
+                }
+                $figures[] = $v->effectivePrice();
+            }
             foreach ($this->negotiation->ladder($p) as $rung) {
                 $figures[] = (float) $rung;
                 $figures[] = (float) $rung + 60.0;
                 $figures[] = (float) $rung + 120.0;
             }
-        }
-        if ($product) {
-            $figures[] = (float) $product->price + 60.0;
-            $figures[] = (float) $product->price + 120.0;
         }
 
         return $figures;
@@ -777,15 +904,17 @@ class RuleBrainService
      * Pre-send verification: every money figure in the text must be a real
      * one. Figures are extracted in every written form (Bangla digits,
      * টাকা/tk suffixes, number words, ranges) via the guard, so changing
-     * the script or wording cannot bypass the check.
+     * the script or wording cannot bypass the check. $extraFigures carries
+     * figures that are honest for THIS conversation only (a bargained
+     * offer the customer named and the shop accepted, and its totals).
      */
-    public function moneyCheck(int $businessId, string $text, ?Product $product): bool
+    public function moneyCheck(int $businessId, string $text, ?Product $product, array $extraFigures = []): bool
     {
         $figures = $this->guard->extractFigures($text);
         if ($figures === []) {
             return true;
         }
-        $allowed = $this->allowedFigures($businessId, $product);
+        $allowed = array_merge($this->allowedFigures($businessId, $product), $extraFigures);
         foreach ($figures as $amount) {
             $ok = false;
             foreach ($allowed as $f) {
@@ -1103,6 +1232,14 @@ class RuleBrainService
             $state['variant_pending'] = ['product_id' => $product->id, 'intent' => $rule->match_text];
             $conversation->state_data = $state;
             $conversation->save();
+        } elseif ($rule && in_array($rule->match_text, ['order_intent', 'bargain'], true) && $product
+            && ($this->focusAvailable($product, $variant) ?? 1) <= 0) {
+            // Stock 0 = NO order (owner addendum, Round 6 P1): the sale
+            // does not progress at all - no bargain quote, no collection,
+            // no summary. The honest out-of-stock answer is the whole reply.
+            $slottedBody = $this->outOfStockBody($biz, $conversation->customer_name, $product, $variant);
+            $kind = 'out_of_stock';
+            $meta = ['out_of_stock' => true];
         } elseif ($rule && $rule->match_text === 'bargain') {
             if (!$product) {
                 return null;
@@ -1168,7 +1305,15 @@ class RuleBrainService
             if (trim($slottedBody) === '') {
                 return null;
             }
-            if ($this->hasBrokenFigure($this->renderSlots($slottedBody, $product, $biz))) {
+            if ($rule->match_text === 'stock' && $product && ($this->focusAvailable($product, $variant) ?? 1) <= 0) {
+                // The stock template's zero branch (Round 6, P1): driven by
+                // Product::available() (the variant's own pool when a
+                // variant is in focus), the honest out-of-stock answer
+                // replaces the "in stock ({stock}টা)" template outright.
+                $slottedBody = $this->outOfStockBody($biz, $conversation->customer_name, $product, $variant);
+                $kind = 'out_of_stock';
+                $meta = ['out_of_stock' => true];
+            } elseif ($this->hasBrokenFigure($this->renderSlots($slottedBody, $product, $biz))) {
                 $slottedBody = $this->honorificPrefix($biz, $conversation->customer_name) . 'কোন পণ্যটার কথা বলছেন? পণ্যের নামটা বললে দাম আর স্টক জানিয়ে দিচ্ছি।';
                 $meta = ['clarify' => true];
             } else {
@@ -1226,8 +1371,9 @@ class RuleBrainService
         $slotValues = $slotValues ?? [];
         if ($kind === 'order_summary') {
             $draftRendered = $body;
-        } elseif ($kind === 'variant_question' || $kind === 'collect_question') {
-            // Fixed questions must reach the customer word-for-word — no phrasing.
+        } elseif ($kind === 'variant_question' || $kind === 'collect_question' || $kind === 'out_of_stock') {
+            // Fixed questions and the out-of-stock answer must reach the
+            // customer word-for-word — no phrasing.
             $draftRendered = $this->renderSlots($slottedBody, $product, $biz, $slotValues);
             $body = $draftRendered;
         } else {
@@ -1248,7 +1394,25 @@ class RuleBrainService
             }
         }
 
-        $verified = $this->moneyCheck($biz, $body, $product);
+        // Figures honest for THIS conversation only: a bargained offer
+        // (this message's, or the one already agreed on the conversation)
+        // and its delivery-inclusive totals.
+        $extraFigures = [];
+        if (isset($slotValues['offer'])) {
+            $extraFigures[] = (float) $slotValues['offer'];
+        }
+        if (isset($slotValues['total'])) {
+            $extraFigures[] = (float) $slotValues['total'];
+        }
+        if ($conversation->neg_offer !== null) {
+            $neg = (float) $conversation->neg_offer;
+            $insideNow = (float) $this->settings->bizGet($biz, "business.{$biz}.default_delivery_cost", 'business.default_delivery_cost', 60);
+            $extraFigures = array_merge($extraFigures, [$neg, $neg + $insideNow, $neg + 120.0]);
+        }
+        // The guards run over EVERY auto-send, whatever produced the text
+        // (template, keyword rule or talker) - claimViolations no longer
+        // exempts text that merely equals the draft (Round 6, P1).
+        $verified = $this->moneyCheck($biz, $body, $product, $extraFigures);
         $claimIssues = $this->guard->claimViolations($biz, $draftRendered, $body, $this->claimCtx($biz, $product, $slotValues));
         if (!$verified || $claimIssues !== []) {
             $status = 'flagged';
@@ -1294,6 +1458,57 @@ class RuleBrainService
     public function approveDraft(ChatMessage $msg, ?string $editedBody, ?int $userId): ChatMessage
     {
         $edited = $editedBody !== null && trim($editedBody) !== '' && trim($editedBody) !== $msg->body;
+
+        // Send-time re-verification (Round 6, P5): approval is a SEND, so
+        // the money + availability guards run again, now, against LIVE
+        // data. A draft written when the Saree cost 3,400 must not go out
+        // still quoting 3,400 after the price moved to 3,600 - it is held
+        // (flagged, with the reason on the record) for the approver to
+        // edit, never sent as-is.
+        $biz = (int) $msg->business_id;
+        $candidate = $edited ? trim((string) $editedBody) : (string) $msg->body;
+        $conv = $msg->conversation;
+        $focus = null;
+        $focusId = (int) ($conv?->product_id ?? 0) ?: (int) ($msg->meta['product_id'] ?? 0);
+        if ($focusId > 0) {
+            $focus = Product::where('business_id', $biz)->find($focusId);
+        }
+        $extras = [];
+        if ($conv && $conv->neg_offer !== null) {
+            $neg = (float) $conv->neg_offer;
+            $insideNow = (float) $this->settings->bizGet($biz, "business.{$biz}.default_delivery_cost", 'business.default_delivery_cost', 60);
+            $extras = [$neg, $neg + $insideNow, $neg + 120.0];
+        }
+        if (!empty($msg->meta['unit_price'])) {
+            $unit = (float) $msg->meta['unit_price'];
+            $insideNow = (float) $this->settings->bizGet($biz, "business.{$biz}.default_delivery_cost", 'business.default_delivery_cost', 60);
+            $extras = array_merge($extras, [$unit, $unit + $insideNow, $unit + 120.0]);
+        }
+        $slotValues = [];
+        if ($focus && !empty($msg->meta['variant_name'])) {
+            $heldVariant = $focus->variants()->where('name', (string) $msg->meta['variant_name'])->first();
+            if ($heldVariant) {
+                $slotValues['stock'] = $heldVariant->available();
+            }
+        }
+        $moneyOk = $this->moneyCheck($biz, $candidate, $focus, $extras);
+        $claimIssues = $this->guard->claimViolations($biz, $candidate, $candidate, $this->claimCtx($biz, $focus, $slotValues));
+        if (!$moneyOk || $claimIssues !== []) {
+            $reasons = $claimIssues;
+            if (!$moneyOk) {
+                $reasons[] = 'money';
+            }
+            $msg->status = 'flagged';
+            $msg->meta = array_merge((array) ($msg->meta ?? []), [
+                'guard' => $reasons,
+                'hold_reason' => __('This reply was held because its figures no longer match the live price or stock. Edit the reply, then approve again.'),
+            ]);
+            $msg->save();
+            $this->log($biz, 'flagged', ($conv?->customer_name ?? '') . ' — draft held at approval: figures no longer match live data', $msg->rule, $conv);
+
+            return $msg;
+        }
+
         if ($edited) {
             // Learning loop: the edit becomes a proposal — a human still has
             // to approve it in Settings before any rule changes.
@@ -1345,6 +1560,11 @@ class RuleBrainService
         }
         $product = $comment->product_id ? Product::where('business_id', $biz)->find($comment->product_id) : $this->productFor($biz, $comment->body);
         $slottedBody = $this->buildReply($rule, $product, $biz, true, $this->honorific($biz, $comment->author_name ?? null));
+        if ($rule->match_text === 'stock' && $product && $product->available() <= 0) {
+            // Same zero branch as the inbox (Round 6, P1): a public reply
+            // never claims stock the shop does not have.
+            $slottedBody = $this->outOfStockBody($biz, $comment->author_name ?? null, $product);
+        }
         $draftRendered = $this->renderSlots($slottedBody, $product, $biz);
         if (trim($slottedBody) === '' || $this->hasBrokenFigure($draftRendered)) {
             // Never post a public reply with a blank figure in it.

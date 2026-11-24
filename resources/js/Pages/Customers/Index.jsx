@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import AppLayout from '@/Layouts/AppLayout';
 import { t } from '@/lib/i18n';
+import { tk } from '@/lib/money';
 
-const tk = (n) => `৳${Number(n || 0).toLocaleString('en-IN')}`;
 
 export default function CustomersIndex({ customers, stats, q }) {
     const [search, setSearch] = useState(q || '');

@@ -88,7 +88,7 @@ class MarketingController extends Controller
         }
         $this->auto->saveConfig($biz, $cfg);
 
-        return back()->with('success', 'Automation saved');
+        return back()->with('success', __('Automation saved'));
     }
 
     public function storeTemplate(Request $request): RedirectResponse
@@ -101,7 +101,7 @@ class MarketingController extends Controller
         MessageTemplate::create(['business_id' => $biz, 'key' => 'tpl-'.Str::lower(Str::random(8)),
             'name' => $data['name'], 'body' => $data['body']]);
 
-        return back()->with('success', 'Template added');
+        return back()->with('success', __('Template added'));
     }
 
     public function updateTemplate(Request $request, MessageTemplate $template): RedirectResponse
@@ -113,7 +113,7 @@ class MarketingController extends Controller
         ]);
         $template->update($data);
 
-        return back()->with('success', 'Template saved');
+        return back()->with('success', __('Template saved'));
     }
 
     public function deleteTemplate(Request $request, MessageTemplate $template): RedirectResponse
@@ -122,7 +122,7 @@ class MarketingController extends Controller
         abort_if(in_array($template->key, AutomationService::TEMPLATE_KEYS, true), 422, 'Flow templates cannot be deleted');
         $template->delete();
 
-        return back()->with('success', 'Template deleted');
+        return back()->with('success', __('Template deleted'));
     }
 
     // ---------- SMS Marketing ----------
@@ -190,8 +190,23 @@ class MarketingController extends Controller
         $audience = $audiences[$data['audience_key']];
 
         $body = $data['message'];
+        if (! empty($data['coupon'])) {
+            // Fill the template slots the campaign itself knows: the
+            // coupon code, and the discount the compose form's coupon
+            // select promises for it ("10% off" / "৳50 off"). A raw
+            // {placeholder} must never reach a customer's phone (Hunt V2).
+            $vars = ['coupon' => $data['coupon']];
+            $discount = ['FEST10' => '10%', 'RETURN50' => '৳50'][$data['coupon']] ?? null;
+            if ($discount !== null) {
+                $vars['discount'] = $discount;
+            }
+            $body = $this->auto->fill($body, $vars);
+        }
         if (! empty($data['coupon']) && ! str_contains($body, $data['coupon'])) {
             $body .= ' Code: '.$data['coupon'];
+        }
+        if (preg_match_all('/\{[a-z_]+\}/', $body, $mm) && $mm[0]) {
+            return back()->with('error', __('The campaign was not sent - the message still has unfilled placeholders (:placeholders). Remove them or fill them in first.', ['placeholders' => implode(', ', array_unique($mm[0]))]));
         }
         $name = Str::limit(trim(preg_replace('/\s+/', ' ', $data['message'])), 42, '…');
 
@@ -219,10 +234,10 @@ class MarketingController extends Controller
         $campaign->update(['recipients' => $sent, 'total_cost' => round($cost, 2), 'status' => $sent > 0 ? 'sent' : 'not_sent']);
 
         if ($sent === 0) {
-            return back()->with('error', 'No SMS could be sent - every recipient was stopped by the do-not-send list or the daily/weekly SMS limit.');
+            return back()->with('error', __('No SMS could be sent - every recipient was stopped by the do-not-send list or the daily/weekly SMS limit.'));
         }
 
-        return back()->with('success', "Campaign sent - {$sent} SMS delivered, cost ৳".number_format($cost, 2));
+        return back()->with('success', __('Campaign sent - :sent SMS delivered, cost :cost', ['sent' => $sent, 'cost' => '৳' . number_format($cost, 2)]));
     }
 
     // ---------- SMS Report ----------
@@ -267,6 +282,6 @@ class MarketingController extends Controller
         $data = $request->validate(['days' => ['required', 'integer', 'min:1', 'max:90']]);
         $this->sms->setSetting($this->biz($request), 'attribution_days', (int) $data['days']);
 
-        return back()->with('success', 'Report rule saved');
+        return back()->with('success', __('Report rule saved'));
     }
 }

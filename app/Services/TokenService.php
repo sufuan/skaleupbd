@@ -221,6 +221,13 @@ class TokenService
         $wallet = DB::transaction(function () use ($businessId, $amount, $note, $byUserId) {
             $wallet = BusinessWallet::where('business_id', $businessId)->lockForUpdate()->first()
                 ?? $this->ensureWallet($businessId);
+            // A negative amount is a manual deduct — it may never take
+            // the wallet below zero. This service is the only manual
+            // adjustment door, so the floor lives here, not just in the
+            // one controller that happens to call it today.
+            if ($amount < 0 && (int) $wallet->balance + $amount < 0) {
+                throw new DomainException('This adjustment would take the points balance below zero.');
+            }
             $this->writeRow($wallet, 'manual_credit', $amount, [
                 'note' => $note, 'created_by' => $byUserId,
             ]);
@@ -290,8 +297,14 @@ class TokenService
 
     /**
      * The 7-day refund of the FIRST purchase (platform-admin action,
-     * once only): zeroes the bucket with a refund row and records the
-     * money going back as a negative payment.
+     * once only). The refund undoes the first purchase ONLY: its money
+     * goes back (the amount of the first purchase's own payment row,
+     * plus the onboarding fee that first purchase carried) and its
+     * points come out of the wallet. A later purchase is a separate
+     * contract — its money, its points and the wallet's current pack
+     * state stay untouched. (Reading the CURRENT pack snapshot here
+     * refunded the latest pack's price and zeroed every point the
+     * seller had, including points from later purchases.)
      */
     public function refundFirstPurchase(int $businessId, ?int $byUserId): BusinessWallet
     {
@@ -306,18 +319,25 @@ class TokenService
             if (now()->gt($wallet->first_purchase_at->copy()->addDays(7))) {
                 throw new DomainException('The 7-day refund window has passed.');
             }
-            if ((int) $wallet->balance !== 0) {
-                $this->writeRow($wallet, 'refund', -(int) $wallet->balance, [
-                    'note' => 'First purchase refunded (7-day window)', 'created_by' => $byUserId,
-                ]);
-            }
-            $price = (float) ($wallet->pack_snapshot['price_bdt'] ?? 0);
-            if ($price > 0) {
+
+            $purchases = TokenLedger::where('business_id', $businessId)->where('kind', 'purchase')
+                ->orderBy('id')->get();
+            $firstLedger = $purchases->first();
+
+            // Money: the FIRST purchase's own payment row — purchase()
+            // always leads the note with the pack name, so the earliest
+            // positive "pack purchase" payment is the first purchase.
+            $firstPayment = SellerPayment::where('business_id', $businessId)
+                ->where('note', 'like', '% pack purchase%')->where('amount', '>', 0)
+                ->orderBy('id')->first();
+            if ($firstPayment) {
                 SellerPayment::create([
-                    'business_id' => $businessId, 'amount' => -$price, 'method' => 'Refund',
+                    'business_id' => $businessId, 'amount' => -(float) $firstPayment->amount, 'method' => 'Refund',
                     'note' => 'Refund — first purchase (7-day window)', 'paid_at' => now(),
                 ]);
             }
+            // The onboarding fee is charged on the first purchase only,
+            // so an existing fee row is that purchase's fee.
             $feeRow = SellerPayment::where('business_id', $businessId)
                 ->where('note', 'like', 'Onboarding fee%')->where('amount', '>', 0)->first();
             if ($feeRow) {
@@ -326,10 +346,34 @@ class TokenService
                     'note' => 'Refund — onboarding fee (7-day window)', 'paid_at' => now(),
                 ]);
             }
-            $wallet->pack_id = null;
-            $wallet->cycle_start = null;
-            $wallet->cycle_end = null;
-            $wallet->wallet_expires_at = null;
+
+            // Points: reverse the first purchase's credits — but only
+            // what still survives of them. A later pack purchase that
+            // replaced the bucket already forfeited them through its
+            // reset row (and an expired cycle's reset did the same), so
+            // then there is nothing left to take; the later purchase's
+            // points are never touched. The take is also capped at the
+            // balance, so the wallet can never go below zero.
+            if ($firstLedger) {
+                $wiped = TokenLedger::where('business_id', $businessId)->where('kind', 'reset')
+                    ->where('id', '>', $firstLedger->id)->exists();
+                $owed = $wiped ? 0 : (int) $firstLedger->amount;
+                $take = min($owed, (int) $wallet->balance);
+                if ($take > 0) {
+                    $this->writeRow($wallet, 'refund', -$take, [
+                        'note' => 'First purchase refunded (7-day window)', 'created_by' => $byUserId,
+                    ]);
+                }
+            }
+
+            // Pack state belongs to the LATEST purchase: only clear it
+            // when the first purchase is also the only one.
+            if ($purchases->count() <= 1) {
+                $wallet->pack_id = null;
+                $wallet->cycle_start = null;
+                $wallet->cycle_end = null;
+                $wallet->wallet_expires_at = null;
+            }
             $wallet->refunded_at = now();
             $wallet->save();
 

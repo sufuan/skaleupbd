@@ -20,6 +20,7 @@ a{color:var(--sf-accent)}
 /* header */
 .sf-header{position:sticky;top:0;z-index:40;background:rgba(255,255,255,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--sf-line)}
 .sf-header-in{display:flex;align-items:center;gap:12px;padding:12px 0}
+.sf-brand{display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit}
 .sf-logo{width:40px;height:40px;border-radius:10px;object-fit:cover;border:1px solid var(--sf-line)}
 .sf-logo-fallback{width:40px;height:40px;border-radius:10px;background:var(--sf-accent);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:19px}
 .sf-shopname{font-size:19px;font-weight:700;line-height:1.2}

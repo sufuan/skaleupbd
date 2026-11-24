@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import AppLayout from '@/Layouts/AppLayout';
 import { t } from '@/lib/i18n';
+import { tk } from '@/lib/money';
 
-const tk = (n) => `৳${Number(n || 0).toLocaleString('en-IN')}`;
 
 export default function Sellers({ sellers, q, pendingApprovals }) {
     const [search, setSearch] = useState(q || '');
@@ -32,7 +32,7 @@ export default function Sellers({ sellers, q, pendingApprovals }) {
             <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
                 <div className="tbl-wrap">
                     <table className="tbl">
-                        <thead><tr><th>{t('Seller (Shop)')}</th><th>{t('Owner / Contact')}</th><th>{t('Package')}</th><th>{t('Points')}</th><th>{t('Status')}</th><th>{t('Approval')}</th><th>{t('Paid to us')}</th><th>{t('Orders')}</th><th>{t('Sales')}</th><th>{t('Customers')}</th><th></th></tr></thead>
+                        <thead><tr><th>{t('Seller (Shop)')}</th><th>{t('Owner / Contact')}</th><th>{t('Package')}</th><th>{t('Points')}</th><th>{t('Status')}</th><th>{t('Approval')}</th><th>{t('Paid to us')}</th><th>{t('Orders')}</th><th>{t('Booked order value')}</th><th>{t('Customers')}</th><th></th></tr></thead>
                         <tbody>
                             {sellers.map((s) => (
                                 <tr key={s.id}>

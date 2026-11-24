@@ -59,7 +59,8 @@ export default function Inbox({ conversations, selected, report, aiMode, aiPanic
     const [detailOpen, setDetailOpen] = useState(false);
     const reply = useForm({ body: '' });
     const ch = selected ? (CH[selected.channel] || CH.facebook) : null;
-    const list = conversations.filter((c) => (channel === 'all' || c.channel === channel) && c.customer_name.toLowerCase().includes(search.toLowerCase()));
+    const q = search.toLowerCase();
+    const list = conversations.filter((c) => (channel === 'all' || c.channel === channel) && (c.customer_name.toLowerCase().includes(q) || (c.phone || '').toLowerCase().includes(q) || (c.snippet || '').toLowerCase().includes(q)));
 
     const sendReply = (e) => {
         e.preventDefault();
@@ -182,7 +183,7 @@ export default function Inbox({ conversations, selected, report, aiMode, aiPanic
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6, flexWrap: 'wrap' }}>
                                     <b style={{ fontSize: 15.5 }}>{selected.customer_name}</b>
                                     <span style={PILL(ch.bg, ch.tx)}>{ch.label}</span>
-                                    <span style={PILL('var(--tgl-bg)', 'var(--tgl-ink)')}>{t('24h window: Open')}</span>
+                                    <span style={selected.window_open ? PILL('var(--tgl-bg)', 'var(--tgl-ink)') : PILL('#fee2e2', '#dc2626')}>{selected.window_open ? t('24h window: Open') : t('24h window: Closed')}</span>
                                     <span style={{ ...PILL('var(--tgl-bg)', 'var(--tgl-ink)'), marginLeft: 'auto' }}>{selected.ai_paused ? t('AI: Off for this chat') : t('AI: On for this chat')}</span>
                                     <button type="button" className="msg-detail-toggle" style={{ ...BTN2, padding: '7px 13px' }} onClick={() => setDetailOpen(true)}>{t('Customer details')}</button>
                                     <Link href="/orders/create" style={{ ...BTN, padding: '7px 13px', textDecoration: 'none' }}>{t('Create Order')}</Link>
@@ -245,7 +246,7 @@ export default function Inbox({ conversations, selected, report, aiMode, aiPanic
                                                 return (
                                                     <span key={i} style={{ display: 'contents' }}>
                                                         {i > 0 && <span>→</span>}
-                                                        <span style={{ background: isNow ? 'var(--acc-fill)' : isFloor ? '#fee2e2' : 'var(--tgl-bg)', color: isNow ? '#fff' : isFloor ? '#dc2626' : 'inherit', borderRadius: 8, padding: '5px 9px', fontSize: 12.5, fontWeight: isNow || isFloor ? 700 : 400 }}>৳{Number(rung).toLocaleString()}{i === 0 ? ` ${t('price')}` : isNow ? ` ${t('now')}` : isFloor ? ' floor' : ''}</span>
+                                                        <span style={{ background: isNow ? 'var(--acc-fill)' : isFloor ? '#fee2e2' : 'var(--tgl-bg)', color: isNow ? '#fff' : isFloor ? '#dc2626' : 'inherit', borderRadius: 8, padding: '5px 9px', fontSize: 12.5, fontWeight: isNow || isFloor ? 700 : 400 }}>৳{Number(rung).toLocaleString()}{i === 0 ? ` ${t('price')}` : isNow ? ` ${t('now')}` : isFloor ? ` ${t('floor')}` : ''}</span>
                                                     </span>
                                                 );
                                             })}

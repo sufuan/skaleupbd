@@ -11,7 +11,7 @@ class ManualDriver implements CourierDriver
     {
         $cn = trim((string) ($opts['cn'] ?? ''));
         if ($cn === '') {
-            return ['ok' => false, 'error' => 'Enter the CN number for this manual booking'];
+            return ['ok' => false, 'error' => __('Enter the CN number for this manual booking')];
         }
 
         return ['ok' => true, 'tracking_id' => $cn, 'consignment_id' => $cn, 'raw' => ['manual_cn' => $cn]];
@@ -19,7 +19,7 @@ class ManualDriver implements CourierDriver
 
     public function getStatus(Order $order, CourierMethod $method): array
     {
-        return ['ok' => false, 'error' => 'Manual courier — update the status by hand (Scan To Update)'];
+        return ['ok' => false, 'error' => __('Manual courier - update the status by hand (Scan To Update)')];
     }
 
     public function cancelBooking(Order $order, CourierMethod $method): array
@@ -34,7 +34,7 @@ class ManualDriver implements CourierDriver
 
     public function testConnection(CourierMethod $method): array
     {
-        return ['ok' => true, 'message' => 'Manual courier — no connection to test'];
+        return ['ok' => true, 'message' => __('Manual courier - no connection to test')];
     }
 
     public function syncStores(CourierMethod $method): array

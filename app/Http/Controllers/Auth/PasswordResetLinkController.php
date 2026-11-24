@@ -40,8 +40,14 @@ class PasswordResetLinkController extends Controller
             $request->only('email')
         );
 
-        if ($status == Password::RESET_LINK_SENT) {
-            return back()->with('status', __($status));
+        // The answer never reveals whether the email holds an account:
+        // a real account, an unknown email and a just-sent link all get
+        // the same non-committal line. The link itself is only ever
+        // mailed to a real account (the broker sees to that).
+        if ($status == Password::RESET_LINK_SENT
+            || $status == Password::INVALID_USER
+            || $status == Password::RESET_THROTTLED) {
+            return back()->with('status', __('If an account exists for that email, a password reset link is on its way.'));
         }
 
         throw ValidationException::withMessages([

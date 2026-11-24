@@ -147,7 +147,7 @@ class CourierLedgerController extends Controller
         $reference = ! empty($data['deposit_account']) ? 'Deposit: ' . $data['deposit_account'] : null;
         $result = $this->settlements->matchUpload($this->biz($request), $data['lines'], true, $request->user(), $data['source'] ?? 'upload', $reference);
 
-        return back()->with('success', 'Statement saved - ' . count($result['matched']) . ' parcel(s) settled' . (count($result['unmatched']) ? ', ' . count($result['unmatched']) . ' line(s) did not match' : ''));
+        return back()->with('success', __('Statement saved - :matched parcel(s) settled', ['matched' => count($result['matched'])]) . (count($result['unmatched']) ? __(', :unmatched line(s) did not match', ['unmatched' => count($result['unmatched'])]) : ''));
     }
 
     private function parseStatement(string $path): ?array
@@ -254,7 +254,7 @@ class CourierLedgerController extends Controller
         $method = CourierMethod::where('business_id', $this->biz($request))->findOrFail($data['method_id']);
         $this->settlements->recordPayment($method, (float) $data['amount'], $data['date'], $data['reference'] ?? null, $data['deposit_account'] ?? null, $data['allocations'], $request->user());
 
-        return back()->with('success', 'Payment recorded and matched to parcels');
+        return back()->with('success', __('Payment recorded and matched to parcels'));
     }
 
     public function pull(Request $request)
@@ -262,11 +262,11 @@ class CourierLedgerController extends Controller
         $data = $request->validate(['method_id' => 'required|integer']);
         $method = CourierMethod::where('business_id', $this->biz($request))->findOrFail($data['method_id']);
         if ($method->courierClass() !== 'A') {
-            return back()->with('error', 'Only Steadfast (Class A) pays out through the API - other couriers use statement upload or a payment entry');
+            return back()->with('error', __('Only Steadfast (Class A) pays out through the API - other couriers use statement upload or a payment entry'));
         }
         $result = $this->settlements->pullSettlements($method, $request->user());
 
-        return back()->with('success', "Pulled {$result['payments']} new payout(s), {$result['parcels']} parcel(s) matched");
+        return back()->with('success', __('Pulled :payments new payout(s), :parcels parcel(s) matched', ['payments' => $result['payments'], 'parcels' => $result['parcels']]));
     }
 
     public function markDisputed(Request $request, CourierSettlementAllocation $allocation)
@@ -278,6 +278,6 @@ class CourierLedgerController extends Controller
             ->findOrFail($allocation->id);
         $allocation->update(['disputed' => true]);
 
-        return back()->with('success', 'Marked as disputed');
+        return back()->with('success', __('Marked as disputed'));
     }
 }

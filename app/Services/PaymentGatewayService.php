@@ -71,8 +71,8 @@ class PaymentGatewayService
         ];
     }
 
-    /** Save one scope. Blank secret fields keep the stored secret. */
-    public function save(?int $businessId, array $data, ?int $userId = null): void
+    /** Save one scope. Blank secret fields keep the stored secret. Every write goes through the logged setter so the Settings Change History covers gateway saves too (Hunt W W3). */
+    public function save(?int $businessId, array $data, ?\App\Models\User $actor = null): void
     {
         $p = $this->prefix($businessId);
         $plain = [
@@ -85,16 +85,16 @@ class PaymentGatewayService
                 if (is_string($data[$field])) {
                     $this->forceStringType("{$p}.{$field}");
                 }
-                $this->settings->set("{$p}.{$field}", $data[$field], $userId);
+                $this->settings->setLogged("{$p}.{$field}", $data[$field], $actor);
             }
         }
         if (! empty($data['ssl_password'])) {
-            $this->settings->set("{$p}.ssl_password_enc", Crypt::encryptString((string) $data['ssl_password']), $userId);
-            $this->settings->set("{$p}.ssl_password", 'set', $userId);
+            $this->settings->setLogged("{$p}.ssl_password_enc", Crypt::encryptString((string) $data['ssl_password']), $actor);
+            $this->settings->setLogged("{$p}.ssl_password", 'set', $actor);
         }
         if (! empty($data['shurjo_password'])) {
-            $this->settings->set("{$p}.shurjo_password_enc", Crypt::encryptString((string) $data['shurjo_password']), $userId);
-            $this->settings->set("{$p}.shurjo_password", 'set', $userId);
+            $this->settings->setLogged("{$p}.shurjo_password_enc", Crypt::encryptString((string) $data['shurjo_password']), $actor);
+            $this->settings->setLogged("{$p}.shurjo_password", 'set', $actor);
         }
     }
 

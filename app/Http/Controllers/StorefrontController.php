@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\DhakaTime;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\ProductCategory;
@@ -68,7 +69,7 @@ class StorefrontController extends Controller
             // The shop's saved contact mobile (register form / business
             // profile) — the wizard's phone step starts filled with it.
             'contactMobile' => app(\App\Services\SettingsService::class)->shopContact((int) $sf->business_id, 'mobile'),
-            'publishedAt' => $sf->published_at?->format('d M Y, h:i A'),
+            'publishedAt' => DhakaTime::fmt($sf->published_at, 'd M Y, h:i A'),
             'unpublishedReason' => $sf->unpublished_reason,
             'platformDomain' => $this->svc->platformDomain(),
             'serverIp' => (string) config('storefront.server_ip'),
@@ -113,14 +114,14 @@ class StorefrontController extends Controller
             return back()->with('error', self::LOCK_MESSAGE);
         }
         if (! $sf->subdomain && $sf->domain_status !== 'active') {
-            return back()->with('error', 'Choose your free subdomain first (Storefront → Subdomain).');
+            return back()->with('error', __('Choose your free subdomain first (Storefront → Subdomain).'));
         }
         if (! $sf->phone_verified_at) {
-            return back()->with('error', 'Verify your mobile number first - publishing needs a verified phone.');
+            return back()->with('error', __('Verify your mobile number first - publishing needs a verified phone.'));
         }
         $hasPage = $sf->pages()->whereNotNull('published_blocks')->exists();
         if (! $hasPage && empty($sf->blocks)) {
-            return back()->with('error', 'Your page is empty. Create a page first (Storefront → My Pages).');
+            return back()->with('error', __('Your page is empty. Create a page first (Storefront → My Pages).'));
         }
         $sf->status = 'published';
         $sf->published_at = now();
@@ -128,7 +129,7 @@ class StorefrontController extends Controller
         $sf->save();
         $this->svc->forgetHostCache($sf);
 
-        return back()->with('success', 'Your storefront is now live.');
+        return back()->with('success', __('Your storefront is now live.'));
     }
 
     public function unpublish(Request $request)
@@ -139,7 +140,7 @@ class StorefrontController extends Controller
         $sf->save();
         $this->svc->forgetHostCache($sf);
 
-        return back()->with('success', 'Your storefront is unpublished. Visitors now see a "coming soon" page.');
+        return back()->with('success', __('Your storefront is unpublished. Visitors now see a "coming soon" page.'));
     }
 
     // ------------------------------------------------------------- phone OTP
@@ -155,10 +156,10 @@ class StorefrontController extends Controller
         if (! $res['sent']) {
             $reason = ! empty($res['error']) ? ' Reason: '.$res['error'].'.' : '';
 
-            return back()->with('error', 'The SMS could not be sent.'.$reason.' Please try again.');
+            return back()->with('error', __('The SMS could not be sent.:reason Please try again.', ['reason' => $reason]));
         }
 
-        return back()->with('success', 'A 6-digit code was sent to '.$res['phone'].'. It is valid for 10 minutes.');
+        return back()->with('success', __('A 6-digit code was sent to :phone. It is valid for 10 minutes.', ['phone' => $res['phone']]));
     }
 
     public function verifyOtp(Request $request)
@@ -166,10 +167,10 @@ class StorefrontController extends Controller
         $sf = $this->sf($request);
         $data = $request->validate(['code' => ['required', 'string', 'max:10']]);
         if (! $this->svc->verifyOtp($sf, $data['code'])) {
-            return back()->with('error', 'That code is wrong or has expired. Please request a new code.');
+            return back()->with('error', __('That code is wrong or has expired. Please request a new code.'));
         }
 
-        return back()->with('success', 'Mobile number verified. You can publish your storefront now.');
+        return back()->with('success', __('Mobile number verified. You can publish your storefront now.'));
     }
 
     // ------------------------------------------------------------- subdomain
@@ -187,7 +188,7 @@ class StorefrontController extends Controller
         $sf = $this->sf($request);
         if (! empty($sf->subdomain)) {
             // One subdomain per seller, chosen once — never changeable.
-            return back()->with('error', 'Your shop link is already set and cannot be changed. Only one subdomain will be applied.');
+            return back()->with('error', __('Your shop link is already set and cannot be changed. Only one subdomain will be applied.'));
         }
         if ($this->svc->addressLocked($sf)) {
             return back()->with('error', self::LOCK_MESSAGE);
@@ -206,7 +207,7 @@ class StorefrontController extends Controller
         }
         $this->svc->forgetHostCache($sf);
 
-        return back()->with('success', 'Your shop address is now '.$sf->subdomainUrl());
+        return back()->with('success', __('Your shop address is now :url', ['url' => $sf->subdomainUrl()]));
     }
 
     // ------------------------------------------------------------- branding
@@ -248,7 +249,7 @@ class StorefrontController extends Controller
         $sf->save();
         $this->svc->forgetHostCache($sf);
 
-        return back()->with('success', 'Branding saved.');
+        return back()->with('success', __('Branding saved.'));
     }
 
     // ------------------------------------------------------------- builder
@@ -261,7 +262,7 @@ class StorefrontController extends Controller
         $sf->save();
         $this->svc->forgetHostCache($sf);
 
-        return back()->with('success', 'Page saved.');
+        return back()->with('success', __('Page saved.'));
     }
 
     /** Builder/branding image upload — returns the stored WebP path as JSON. */
@@ -288,15 +289,15 @@ class StorefrontController extends Controller
         $domain = preg_replace('#/.*$#', '', $domain) ?? $domain;
         $domain = preg_replace('/^www\./', '', $domain) ?? $domain;
         if (! preg_match('/^(?=.{4,253}$)([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/', $domain)) {
-            return back()->with('error', 'That does not look like a valid domain name.');
+            return back()->with('error', __('That does not look like a valid domain name.'));
         }
         if (str_ends_with($domain, '.'.$this->svc->platformDomain()) || $domain === $this->svc->platformDomain()) {
-            return back()->with('error', 'That is a platform address. Enter your own domain, e.g. yourshop.com');
+            return back()->with('error', __('That is a platform address. Enter your own domain, e.g. yourshop.com'));
         }
         $taken = \App\Models\StorefrontDomain::where('domain', $domain)->where('business_id', '!=', $sf->business_id)->exists()
             || Storefront::where('custom_domain', $domain)->where('business_id', '!=', $sf->business_id)->exists();
         if ($taken) {
-            return back()->with('error', 'This domain is already connected to another shop.');
+            return back()->with('error', __('This domain is already connected to another shop.'));
         }
         $row = $sf->domains()->firstOrNew(['domain' => $domain]);
         $row->business_id = $sf->business_id;
@@ -308,7 +309,7 @@ class StorefrontController extends Controller
         $row->save();
         $this->svc->syncDomainMirror($sf);
 
-        return back()->with('success', 'Domain saved. Add the TXT record shown below, then press Check now.');
+        return back()->with('success', __('Domain saved. Add the TXT record shown below, then press Check now.'));
     }
 
     public function verifyDomain(Request $request, $domain)
@@ -321,10 +322,10 @@ class StorefrontController extends Controller
             $row->save();
             $this->svc->syncDomainMirror($sf);
 
-            return back()->with('success', 'Domain verified. Our team will now connect it - you will see it active here.');
+            return back()->with('success', __('Domain verified. Our team will now connect it - you will see it active here.'));
         }
 
-        return back()->with('error', 'We could not find the verification TXT record yet. DNS changes can take a while - check the record and try again.');
+        return back()->with('error', __('We could not find the verification TXT record yet. DNS changes can take a while - check the record and try again.'));
     }
 
     public function primaryDomain(Request $request, $domain)
@@ -336,7 +337,7 @@ class StorefrontController extends Controller
         $row->save();
         $this->svc->syncDomainMirror($sf);
 
-        return back()->with('success', 'Main domain updated.');
+        return back()->with('success', __('Main domain updated.'));
     }
 
     public function removeDomain(Request $request, $domain)
@@ -351,7 +352,7 @@ class StorefrontController extends Controller
         }
         $this->svc->syncDomainMirror($sf);
 
-        return back()->with('success', 'Custom domain removed. Your free subdomain keeps working.');
+        return back()->with('success', __('Custom domain removed. Your free subdomain keeps working.'));
     }
 
     // ------------------------------------------------------------- state
@@ -479,8 +480,8 @@ class StorefrontController extends Controller
             'orders' => $totals['orders'],
             'isRoot' => $p->isRoot(),
             'hasUnpublishedChanges' => $p->hasUnpublishedChanges(),
-            'publishedAt' => $p->published_at?->format('d M Y, h:i A'),
-            'updated' => $p->updated_at?->format('d M, h:i A'),
+            'publishedAt' => DhakaTime::fmt($p->published_at, 'd M Y, h:i A'),
+            'updated' => DhakaTime::fmt($p->updated_at, 'd M, h:i A'),
         ];
     }
 
@@ -500,7 +501,7 @@ class StorefrontController extends Controller
     {
         $sf = $this->sf($request);
         if (empty($sf->subdomain)) {
-            return back()->with('error', 'Create your store first - the wizard sets your shop link.');
+            return back()->with('error', __('Create your store first - the wizard sets your shop link.'));
         }
         $data = $request->validate([
             'name' => ['required', 'string', 'min:2', 'max:60'],
@@ -508,7 +509,7 @@ class StorefrontController extends Controller
         ]);
         $page = $this->svc->createPage($sf, trim($data['name']), $data['template']);
 
-        return redirect('/storefront/pages/'.$page->id.'/edit')->with('success', 'Page created as a draft. Edit it, then publish.');
+        return redirect('/storefront/pages/'.$page->id.'/edit')->with('success', __('Page created as a draft. Edit it, then publish.'));
     }
 
     private function ownPage(Request $request, int $page): \App\Models\StorefrontPage
@@ -528,7 +529,7 @@ class StorefrontController extends Controller
         $copy->draft_blocks = $p->draft_blocks;
         $copy->save();
 
-        return back()->with('success', 'Page duplicated as a draft.');
+        return back()->with('success', __('Page duplicated as a draft.'));
     }
 
     public function pausePage(Request $request, int $page)
@@ -540,7 +541,7 @@ class StorefrontController extends Controller
             $this->svc->forgetHostCache($p->storefront);
         }
 
-        return back()->with('success', 'Page paused. Visitors see a paused notice.');
+        return back()->with('success', __('Page paused. Visitors see a paused notice.'));
     }
 
     public function resumePage(Request $request, int $page)
@@ -552,19 +553,19 @@ class StorefrontController extends Controller
             $this->svc->forgetHostCache($p->storefront);
         }
 
-        return back()->with('success', 'Page is live again.');
+        return back()->with('success', __('Page is live again.'));
     }
 
     public function deletePage(Request $request, int $page)
     {
         $p = $this->ownPage($request, $page);
         if ($p->isRoot()) {
-            return back()->with('error', 'Your main shop page cannot be deleted. Unpublish the store instead.');
+            return back()->with('error', __('Your main shop page cannot be deleted. Unpublish the store instead.'));
         }
         $p->delete();
         $this->svc->forgetHostCache($p->storefront);
 
-        return back()->with('success', 'Page deleted. Orders it brought in keep their record.');
+        return back()->with('success', __('Page deleted. Orders it brought in keep their record.'));
     }
 
     // ------------------------------------------------------------- editor
@@ -591,7 +592,7 @@ class StorefrontController extends Controller
                 'draft' => $draft,
                 'published' => $p->published_blocks,
                 'versions' => $p->versions()->latest('id')->take(5)->get()
-                    ->map(fn ($v) => ['id' => $v->id, 'at' => $v->created_at?->format('d M Y, h:i A')])->all(),
+                    ->map(fn ($v) => ['id' => $v->id, 'at' => DhakaTime::fmt($v->created_at, 'd M Y, h:i A')])->all(),
             ],
             // The Design tab edits the store colour in place; it needs
             // the full current branding values to post them back with
@@ -620,7 +621,7 @@ class StorefrontController extends Controller
         $p->draft_blocks = $this->svc->sanitizePageBlocks($data['blocks']);
         $p->save();
 
-        return response()->json(['ok' => true, 'saved_at' => now()->format('h:i A')]);
+        return response()->json(['ok' => true, 'saved_at' => DhakaTime::fmt(now(), 'h:i A')]);
     }
 
     public function publishPage(Request $request, int $page)
@@ -628,7 +629,7 @@ class StorefrontController extends Controller
         $p = $this->ownPage($request, $page);
         $this->svc->publishChanges($p);
 
-        return back()->with('success', 'Changes published. Your live page is updated.');
+        return back()->with('success', __('Changes published. Your live page is updated.'));
     }
 
     public function restorePage(Request $request, int $page, int $version)
@@ -638,7 +639,7 @@ class StorefrontController extends Controller
         abort_unless($v, 404);
         $this->svc->restoreVersion($p, $v);
 
-        return back()->with('success', 'That version is in your draft - publish to make it live.');
+        return back()->with('success', __('That version is in your draft - publish to make it live.'));
     }
 
     /** Editor preview: the SAME renderer as the public page, on the draft. */
@@ -718,7 +719,7 @@ HTML;
                     'isPrimary' => (bool) $d->is_primary, 'txtValue' => $d->txt_token])->all(),
             'reports' => StorefrontReport::where('storefront_id', $sf->id)->latest('id')->take(10)->get()
                 ->map(fn ($r) => ['id' => $r->id, 'reason' => $r->reason, 'status' => $r->status,
-                    'created' => $r->created_at?->format('d M Y')])->all(),
+                    'created' => DhakaTime::fmt($r->created_at, 'd M Y')])->all(),
             'pageConnected' => $this->svc->facebookPageId($sf->business_id) !== null,
         ]);
     }
@@ -781,13 +782,13 @@ HTML;
             $settings['delivery_outside'] = (float) $data['delivery_outside'];
             $sf->settings = $settings;
         } else {
-            return back()->with('error', 'Unknown settings section.');
+            return back()->with('error', __('Unknown settings section.'));
         }
         $sf->branding = $b;
         $sf->save();
         $this->svc->forgetHostCache($sf);
 
-        return back()->with('success', 'Saved.');
+        return back()->with('success', __('Saved.'));
     }
 
     // ------------------------------------------------------------- door 2: connect website
@@ -801,14 +802,14 @@ HTML;
             ->where(fn ($q) => $q->where('source', 'WEB')->orWhereNotNull('external_ref'))
             ->latest('id')->take(5)->get()
             ->map(fn ($o) => ['invoice' => $o->invoice_no, 'customer' => $o->customer_name, 'total' => (float) $o->grand_total,
-                'status' => $o->status, 'at' => $o->created_at?->format('d M Y, h:i A')])->all();
+                'status' => $o->status, 'at' => DhakaTime::fmt($o->created_at, 'd M Y, h:i A')])->all();
 
         return Inertia::render('Storefront/Connect', [
             'sf' => $this->view($request, $sf),
             'endpoint' => url('/api/external/v1/orders'),
             'businessPublicId' => (string) (\App\Models\Business::find($biz)?->public_id ?? ''),
             'apiKey' => $key ? ['last4' => (string) $key->last4, 'label' => (string) $key->label,
-                'last_used_at' => $key->last_used_at?->format('d M Y, h:i A'), 'webhook_url' => (string) ($key->webhook_url ?? '')] : null,
+                'last_used_at' => DhakaTime::fmt($key->last_used_at, 'd M Y, h:i A'), 'webhook_url' => (string) ($key->webhook_url ?? '')] : null,
             'freshKey' => $request->session()->pull('fresh_api_key'),
             'apiOrders' => $apiOrders,
             'state' => $this->svc->menuState($biz),
@@ -846,7 +847,7 @@ HTML;
         ]);
 
         return redirect('/storefront/connect')->with('fresh_api_key', $plain)
-            ->with('success', 'Your new connection key is ready. Copy it now - it will not be shown in full again.');
+            ->with('success', __('Your new connection key is ready. Copy it now - it will not be shown in full again.'));
     }
 
     public function connectWebhook(Request $request)
@@ -855,12 +856,12 @@ HTML;
         $data = $request->validate(['webhook_url' => ['nullable', 'string', 'max:300', 'url']]);
         $key = $this->connectionKey($sf->business_id);
         if (! $key) {
-            return back()->with('error', 'Create your connection key first.');
+            return back()->with('error', __('Create your connection key first.'));
         }
         $key->webhook_url = $data['webhook_url'] ?: null;
         $key->save();
 
-        return back()->with('success', 'Webhook address saved.');
+        return back()->with('success', __('Webhook address saved.'));
     }
 
     /** A test order through the same intake the seller's website uses. */
@@ -890,6 +891,6 @@ HTML;
             return back()->with('error', $e->getMessage());
         }
 
-        return back()->with('success', 'Test order created: '.$order->invoice_no.'. It is in your Orders list like a real website order.');
+        return back()->with('success', __('Test order created: :invoice. It is in your Orders list like a real website order.', ['invoice' => $order->invoice_no]));
     }
 }

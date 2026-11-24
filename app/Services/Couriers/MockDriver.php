@@ -14,7 +14,7 @@ class MockDriver implements CourierDriver
     public function createBooking(Order $order, CourierMethod $method, array $opts = []): array
     {
         if (str_ends_with((string) $order->customer_phone, '0000')) {
-            return ['ok' => false, 'error' => 'Courier rejected the booking: recipient phone unreachable (mock failure)'];
+            return ['ok' => false, 'error' => __('Courier rejected the booking: recipient phone unreachable (mock failure)')];
         }
         $prefix = strtoupper(substr($method->courier_type, 0, 3));
 
@@ -47,7 +47,7 @@ class MockDriver implements CourierDriver
 
     public function testConnection(CourierMethod $method): array
     {
-        return ['ok' => true, 'message' => 'Connection OK (mock driver)'];
+        return ['ok' => true, 'message' => __('Connection OK (mock driver)')];
     }
 
     public function syncStores(CourierMethod $method): array

@@ -200,9 +200,12 @@ class AiGuardService
      */
     public function claimViolations(int $businessId, string $draft, string $text, array $ctx = []): array
     {
-        if (trim($text) === trim($draft)) {
-            return [];
-        }
+        // No early return for unchanged text (Round 6, P1): a template or
+        // keyword-rule reply is checked exactly like talker output. The
+        // added-claim checks below compare against the draft, so text the
+        // brain itself wrote can only fail the AVAILABILITY truth check -
+        // which is precisely the one a stock template gets wrong when the
+        // product sells out ("স্টকে আছে (0টা)").
         $violations = [];
         $hay = mb_strtolower($text);
         $draftHay = mb_strtolower($draft);

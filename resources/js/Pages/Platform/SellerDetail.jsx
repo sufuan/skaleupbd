@@ -3,8 +3,8 @@ import { Head, Link, router, useForm } from '@inertiajs/react';
 import AppLayout from '@/Layouts/AppLayout';
 import { confirmDialog } from '@/lib/confirm';
 import { t } from '@/lib/i18n';
+import { tk } from '@/lib/money';
 
-const tk = (n) => `৳${Number(n || 0).toLocaleString('en-IN')}`;
 const num = (n) => Number(n || 0).toLocaleString('en-IN');
 
 function ClaimActions({ c }) {
@@ -112,7 +112,7 @@ export default function SellerDetail({ seller, purchaseHistory = [], payments, p
             <div className="plat-kpis" style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12, margin: '14px 0' }}>
                 <div className="card"><div style={{ fontSize: 11, letterSpacing: '.06em', color: 'var(--muted)' }}>{t('POINTS BALANCE')}</div><div style={{ fontSize: 22, fontWeight: 700, marginTop: 4 }}>{num(wallet?.balance ?? 0)}</div><div style={{ fontSize: 12, color: 'var(--muted)' }}>{wallet?.pack ? `${wallet.pack} · ${wallet.cycle_end ? `${t('resets')} ${wallet.cycle_end}` : wallet.wallet_expires_at ? `${t('until')} ${wallet.wallet_expires_at}` : ''}` : t('No pack yet')}</div></div>
                 <div className="card"><div style={{ fontSize: 11, letterSpacing: '.06em', color: 'var(--muted)' }}>{t('PAID TO US')}</div><div style={{ fontSize: 22, fontWeight: 700, marginTop: 4 }}>{tk(seller.paid_total)}</div><div style={{ fontSize: 12, color: 'var(--muted)' }}>{t('All time')}</div></div>
-                <div className="card"><div style={{ fontSize: 11, letterSpacing: '.06em', color: 'var(--muted)' }}>{t('SHOP SALES')}</div><div style={{ fontSize: 22, fontWeight: 700, marginTop: 4 }}>{tk(seller.revenue)}</div><div style={{ fontSize: 12, color: 'var(--muted)' }}>{seller.orders} {t('orders')}</div></div>
+                <div className="card"><div style={{ fontSize: 11, letterSpacing: '.06em', color: 'var(--muted)' }}>{t('SHOP BOOKED ORDER VALUE')}</div><div style={{ fontSize: 22, fontWeight: 700, marginTop: 4 }}>{tk(seller.revenue)}</div><div style={{ fontSize: 12, color: 'var(--muted)' }}>{seller.orders} {t('orders')}</div></div>
                 <div className="card"><div style={{ fontSize: 11, letterSpacing: '.06em', color: 'var(--muted)' }}>{t('SHOP CUSTOMERS')}</div><div style={{ fontSize: 22, fontWeight: 700, marginTop: 4 }}>{seller.customers}</div><div style={{ fontSize: 12, color: 'var(--muted)' }}>{t('People who buy from this shop')}</div></div>
             </div>
 

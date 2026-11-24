@@ -67,7 +67,7 @@ class PlatformController extends Controller
             'status_note' => null,
         ]);
 
-        return back()->with('success', 'Seller approved. Their full dashboard is now open.');
+        return back()->with('success', __('Seller approved. Their full dashboard is now open.'));
     }
 
     /** Reject a seller shop; the note is shown to the seller. */
@@ -83,7 +83,7 @@ class PlatformController extends Controller
             'approved_at' => null,
         ]);
 
-        return back()->with('success', 'Seller rejected. They will see your note on their status page.');
+        return back()->with('success', __('Seller rejected. They will see your note on their status page.'));
     }
 
     public function sellerShow(Business $business): Response
@@ -102,7 +102,9 @@ class PlatformController extends Controller
                 return [
                     'id' => $c->id, 'name' => $c->name, 'phone' => $c->phone, 'address' => $c->address,
                     'orders' => $total, 'delivered' => $delivered,
-                    'spent' => (float) (clone $orders)->whereNotIn('status', ['Cancelled'])->sum('grand_total'),
+                    // Delivered-only, matching the sort above and the
+                    // seller-side "spent" definition (Customer::lifetimeValue).
+                    'spent' => (float) (clone $orders)->where('status', 'Delivered')->sum('grand_total'),
                     'last_order' => DhakaTime::fmt((clone $orders)->latest('id')->first()?->created_at, 'd M Y'),
                 ];
             })->all();
@@ -122,10 +124,10 @@ class PlatformController extends Controller
                     'label' => $this->purchaseLabel($p),
                     'amount' => (float) $p->amount,
                     'method' => $p->method,
-                    'when' => $p->paid_at?->format('d M Y, h:i A'),
+                    'when' => DhakaTime::fmt($p->paid_at, 'd M Y, h:i A'),
                 ])->all(),
             'payments' => SellerPayment::where('business_id', $business->id)->latest('paid_at')->get()
-                ->map(fn ($p) => ['id' => $p->id, 'amount' => (float) $p->amount, 'method' => $p->method, 'note' => $p->note, 'when' => $p->paid_at?->format('d M Y, h:i A')])->all(),
+                ->map(fn ($p) => ['id' => $p->id, 'amount' => (float) $p->amount, 'method' => $p->method, 'note' => $p->note, 'when' => DhakaTime::fmt($p->paid_at, 'd M Y, h:i A')])->all(),
             'packages' => \App\Models\PointPack::where('is_active', true)->orderBy('sort')->get()
                 ->map(fn ($p) => ['id' => $p->id, 'name' => $p->name, 'price' => (float) $p->price_bdt, 'credits' => (int) $p->credits, 'validity_type' => $p->validity_type])->all(),
             'wallet' => (function () use ($business) {
@@ -144,7 +146,7 @@ class PlatformController extends Controller
             })(),
             'tokenLedger' => \App\Models\TokenLedger::where('business_id', $business->id)->latest('id')->limit(15)->get()
                 ->map(fn ($r) => ['id' => $r->id, 'kind' => $r->kind, 'amount' => (int) $r->amount, 'balance_after' => (int) $r->balance_after,
-                    'note' => $r->note, 'when' => $r->created_at?->format('d M Y, h:i A')])->all(),
+                    'note' => $r->note, 'when' => DhakaTime::fmt($r->created_at, 'd M Y, h:i A')])->all(),
             'claims' => \App\Models\SellerPaymentClaim::where('business_id', $business->id)->latest('id')->limit(10)->get()
                 ->map(fn ($c) => $this->claimRow($c))->all(),
             'customers' => $customers,
@@ -180,7 +182,7 @@ class PlatformController extends Controller
             return back()->with('error', $e->getMessage());
         }
 
-        return back()->with('success', 'Purchase recorded - points credited');
+        return back()->with('success', __('Purchase recorded - points credited'));
     }
 
     /** The 7-day refund of a seller's first purchase (M19, once only). */
@@ -192,7 +194,7 @@ class PlatformController extends Controller
             return back()->with('error', $e->getMessage());
         }
 
-        return back()->with('success', 'Refund done - points removed');
+        return back()->with('success', __('Refund done - points removed'));
     }
 
     // ---------- M19 purchase flow: seller payment claims ----------
@@ -383,8 +385,8 @@ class PlatformController extends Controller
         }
 
         return back()->with('success', $activatesSeller
-            ? 'Payment approved - points credited and the seller is now active'
-            : 'Payment approved - points credited');
+            ? __('Payment approved - points credited and the seller is now active')
+            : __('Payment approved - points credited'));
     }
 
     /** Reject a claim with a note the seller will see. */
@@ -399,7 +401,7 @@ class PlatformController extends Controller
             return back()->with('error', $e->getMessage());
         }
 
-        return back()->with('success', 'Payment claim rejected');
+        return back()->with('success', __('Payment claim rejected'));
     }
 
     public function storePayment(Request $request, Business $business): RedirectResponse
@@ -411,7 +413,7 @@ class PlatformController extends Controller
         ]);
         SellerPayment::create($data + ['business_id' => $business->id, 'paid_at' => now()]);
 
-        return back()->with('success', 'Payment recorded');
+        return back()->with('success', __('Payment recorded'));
     }
 
     /**
@@ -436,7 +438,7 @@ class PlatformController extends Controller
             return back()->with('error', $e->getMessage());
         }
 
-        return back()->with('success', 'Points added');
+        return back()->with('success', __('Points added'));
     }
 
     public function updateSeller(Request $request, Business $business): RedirectResponse
@@ -445,11 +447,11 @@ class PlatformController extends Controller
             'name' => ['required', 'string', 'max:120'],
             'owner_name' => ['nullable', 'string', 'max:120'],
             'phone' => ['nullable', 'string', 'max:30'],
-            'email' => ['nullable', 'string', 'max:120'],
+            'email' => ['nullable', 'string', 'email', 'max:120'],
             'address' => ['nullable', 'string', 'max:400'],
         ]);
         $business->update($data);
 
-        return back()->with('success', 'Seller details saved');
+        return back()->with('success', __('Seller details saved'));
     }
 }

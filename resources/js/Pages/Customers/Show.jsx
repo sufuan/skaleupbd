@@ -2,8 +2,8 @@ import { Head, Link, router, useForm } from '@inertiajs/react';
 import AppLayout from '@/Layouts/AppLayout';
 import { confirmDialog } from '@/lib/confirm';
 import { t } from '@/lib/i18n';
+import { tk } from '@/lib/money';
 
-const tk = (n) => `৳${Number(n || 0).toLocaleString('en-IN')}`;
 
 export default function CustomerShow({ customer, orders }) {
     const form = useForm({ name: customer.name || '', address: customer.address || '', district: customer.district || '', area: customer.area || '', email: customer.email || '' });

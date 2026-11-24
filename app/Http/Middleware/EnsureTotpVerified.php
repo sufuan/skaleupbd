@@ -27,6 +27,13 @@ class EnsureTotpVerified
         if ($request->routeIs(...self::EXEMPT) || $request->session()->has('totp_passed_at')) {
             return $next($request);
         }
+        // Escape hatch: the platform admin is the only user who can flip
+        // the master switch, so an unenrolled platform admin must still
+        // reach Settings (and the switch endpoint itself) to turn TOTP
+        // OFF — otherwise switching it on locks the rescuer out too.
+        if ($user->is_platform_admin && $request->routeIs('settings', 'settings.totp')) {
+            return $next($request);
+        }
 
         return redirect()->route($user->hasTotpEnabled() ? 'totp.challenge' : 'totp.setup');
     }

@@ -208,7 +208,7 @@ class StorefrontPublicController extends Controller
         return [
             $in > 0 ? 'ঢাকার ভিতরে ডেলিভারি চার্জ ৳'.number_format($in) : 'ঢাকার ভিতরে ফ্রি ডেলিভারি',
             $out > 0 ? 'ঢাকার বাইরে ডেলিভারি চার্জ ৳'.number_format($out) : 'ঢাকার বাইরে ফ্রি ডেলিভারি',
-            'ক্যাশ অন ডেলিভারি আছে — পণ্য হাতে পেয়ে টাকা দিন',
+            'ক্যাশ অন ডেলিভারি আছে - পণ্য হাতে পেয়ে টাকা দিন',
         ];
     }
 
@@ -249,6 +249,12 @@ class StorefrontPublicController extends Controller
         $sf = $this->sf($request);
         $order = Order::where('business_id', $sf->business_id)->where('invoice_no', $invoice)->first();
         abort_unless($order, 404);
+        // The invoice number alone is not a credential (Hunt U3): the
+        // numbers are sequential per shop, so the page opens only for
+        // the unguessable success token handed out at checkout - a
+        // missing or wrong token reads as if the page did not exist.
+        $token = (string) $request->query('t', '');
+        abort_unless(! empty($order->success_token) && $token !== '' && hash_equals((string) $order->success_token, $token), 404);
 
         return view('storefront.success', [
             'sf' => $sf,
@@ -400,7 +406,7 @@ class StorefrontPublicController extends Controller
         if ($idem !== '') {
             $existing = Order::where('business_id', $sf->business_id)->where('idempotency_key', $idem)->first();
             if ($existing) {
-                return redirect('/order-success/'.$existing->invoice_no.'?pe='.urlencode((string) ($data['purchase_event_id'] ?? '')));
+                return redirect($this->successUrl($existing, (string) ($data['purchase_event_id'] ?? '')));
             }
         }
         $delivery = $data['district'] === 'Dhaka' ? $sf->deliveryInside() : $sf->deliveryOutside();
@@ -485,10 +491,23 @@ class StorefrontPublicController extends Controller
             ], $pageUrl, $request->ip(), $request->userAgent());
         }
 
-        return redirect('/order-success/'.$order->invoice_no.'?pe='.urlencode((string) ($data['purchase_event_id'] ?? '')));
+        return redirect($this->successUrl($order, (string) ($data['purchase_event_id'] ?? '')));
     }
 
     // ------------------------------------------------------------------ helpers
+
+    /** The success-page URL for an order, token included (Hunt U3). */
+    private function successUrl(Order $order, string $pe = ''): string
+    {
+        if (empty($order->success_token)) {
+            // An order minted before tokens existed still needs its one
+            // good link when a checkout replay lands on it.
+            $order->success_token = \Illuminate\Support\Str::random(48);
+            $order->save();
+        }
+
+        return '/order-success/'.$order->invoice_no.'?t='.urlencode((string) $order->success_token).'&pe='.urlencode($pe);
+    }
 
     /**
      * Checkout errors ride a one-shot cookie: the shop pages are render-
@@ -558,10 +577,18 @@ class StorefrontPublicController extends Controller
 
     public function productVm(Product $p): array
     {
-        // The one availability definition (combo = components can make,
-        // else own stock minus reservations) - the same figure the
-        // checkout check enforces.
-        $availableQty = $p->available();
+        $variants = $p->variants()->orderBy('id')->get();
+        // The one availability definition, per pool: a variant line is
+        // judged on the variant's own pool (stock minus reservations,
+        // ProductVariant::available()), a plain or combo line on the
+        // product's own available(). A product WITH variants sells from
+        // its variant pools alone - sellers keep all stock there and
+        // the parent row commonly sits at zero - so the public figure
+        // is the sum of the variant pools; without variants it is the
+        // product's own available(), exactly as checkout enforces.
+        $availableQty = $variants->isNotEmpty()
+            ? (int) $variants->sum(fn ($v) => $v->available())
+            : $p->available();
         $images = [];
         if (! empty($p->image)) {
             $images[] = str_starts_with($p->image, 'http') ? $p->image : '/storage/'.$p->image;
@@ -583,7 +610,7 @@ class StorefrontPublicController extends Controller
             'gallery' => $images,
             'short' => (string) ($p->short_description ?? ''),
             'long' => (string) ($p->long_description ?? ''),
-            'variants' => $p->variants()->orderBy('id')->get()->map(fn ($v) => [
+            'variants' => $variants->map(fn ($v) => [
                 'id' => $v->id,
                 'name' => (string) $v->name,
                 'price' => $v->effectivePrice(),

@@ -11,6 +11,7 @@ use App\Services\PhoneNormalizer;
 use App\Services\SettingsService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 use App\Support\DhakaTime;
@@ -61,7 +62,7 @@ class OrderToolsController extends Controller
         }
         $order = $q->first();
         if (! $order) {
-            return back()->with('success', 'That queue is empty');
+            return back()->with('success', __('That queue is empty'));
         }
 
         return redirect()->route('orders.show', $order);
@@ -120,7 +121,7 @@ class OrderToolsController extends Controller
         $balance = (float) $this->settings->bizGet($biz, "autocall.{$biz}.balance", 'autocall.balance', 1250);
         $this->settings->set("autocall.{$biz}.balance", max(0, $balance - (float) ($data['minutes'] ?? 1) * 1.0), $request->user()->id);
 
-        return back()->with('success', 'Call outcome logged');
+        return back()->with('success', __('Call outcome logged'));
     }
 
     // ---------- Block List ----------
@@ -150,7 +151,7 @@ class OrderToolsController extends Controller
                 'expires_at' => ! empty($data['expires_days']) ? now()->addDays($data['expires_days']) : null]
         );
 
-        return back()->with('success', 'Blocked');
+        return back()->with('success', __('Blocked'));
     }
 
     public function blockDestroy(Request $request, IpPhoneBlock $block): RedirectResponse
@@ -162,7 +163,7 @@ class OrderToolsController extends Controller
         }
         $block->delete();
 
-        return back()->with('success', 'Unblocked');
+        return back()->with('success', __('Unblocked'));
     }
 
     public function blockCleanup(Request $request): RedirectResponse
@@ -170,7 +171,7 @@ class OrderToolsController extends Controller
         $n = IpPhoneBlock::where('business_id', $this->biz($request))
             ->whereNotNull('expires_at')->where('expires_at', '<', now())->delete();
 
-        return back()->with('success', "{$n} expired entries removed");
+        return back()->with('success', __(':count expired entries removed', ['count' => $n]));
     }
 
     // ---------- Preorders ----------
@@ -243,7 +244,7 @@ class OrderToolsController extends Controller
             };
             $order->logActivity('sms', "Preorder notification not sent - {$reason}", $request->user());
 
-            return back()->with('error', "Notification SMS could not be sent - {$reason}");
+            return back()->with('error', __('Notification SMS could not be sent - :reason', ['reason' => $reason]));
         }
 
         $order->preorder_notified = true;
@@ -251,7 +252,7 @@ class OrderToolsController extends Controller
         $order->save();
         $order->logActivity('sms', "Preorder notification sent to customer by {$request->user()->name}", $request->user());
 
-        return back()->with('success', 'Customer notified');
+        return back()->with('success', __('Customer notified'));
     }
 
     // ---------- Orders Dashboard (report) ----------
@@ -268,7 +269,11 @@ class OrderToolsController extends Controller
             $orders = $q->get();
             $result = [
                 'total' => $orders->count(),
-                'revenue' => (float) $orders->whereNotIn('status', ['Cancelled'])->sum('grand_total'),
+                // Revenue is Delivered-only everywhere (Dashboard money(),
+                // Finance) — one definition for the word. The booked value
+                // of the same selection rides along under its own name.
+                'revenue' => (float) $orders->where('status', 'Delivered')->sum('grand_total'),
+                'booked' => (float) $orders->whereNotIn('status', ['Cancelled'])->sum('grand_total'),
                 'breakdown' => $orders->groupBy('status')->map(fn ($g) => $g->count()),
             ];
         }
@@ -363,12 +368,14 @@ class OrderToolsController extends Controller
     {
         $this->superEditGate($request);
         abort_unless($request->user()->isPlatformAdmin() || $order->business_id === $this->biz($request), 404);
-        $to = $request->validate(['status' => ['required', 'string']])['status'];
+        // R9: only a real status may be written (OrderService::changeStatus
+        // enforces the same list at the choke point for every caller).
+        $to = $request->validate(['status' => ['required', 'string', Rule::in(array_merge(Order::STATUSES, Order::EXTRA_STATUSES))]])['status'];
         $from = $order->status;
         $this->orders->changeStatus($order, $to, $request->user(), 'Super Edit override');
         $order->logActivity('super_edit', "Super Edit by {$request->user()->name}: status {$from} → {$to} on {$order->invoice_no}", $request->user(),
             ['before' => $from, 'after' => $to]);
 
-        return redirect()->route('orders.superedit', ['invoice' => $order->invoice_no])->with('success', 'Override saved');
+        return redirect()->route('orders.superedit', ['invoice' => $order->invoice_no])->with('success', __('Override saved'));
     }
 }

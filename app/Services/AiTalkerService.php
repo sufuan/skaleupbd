@@ -412,7 +412,7 @@ class AiTalkerService
             : $this->callClaude($key, $model, 'Reply with exactly: OK');
 
         return $text !== null && trim($text) !== ''
-            ? ['ok' => true, 'detail' => 'Connected — ' . $model . ' answered']
-            : ['ok' => false, 'detail' => 'Could not reach ' . $model . ' — check the API key and model name'];
+            ? ['ok' => true, 'detail' => 'Connected - ' . $model . ' answered']
+            : ['ok' => false, 'detail' => 'Could not reach ' . $model . ' - check the API key and model name'];
     }
 }

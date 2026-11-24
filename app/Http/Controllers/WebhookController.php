@@ -15,21 +15,25 @@ class WebhookController extends Controller
      * Steadfast webhook receiver — the URL saved on each connection
      * (/api/webhooks/steadfast/dm/{id}). Steadfast POSTs JSON when a parcel
      * moves or a payout happens; we answer 2xx within their 5-second window.
-     * Auth: the connection's optional webhook token rides as
+     * Auth: the connection's webhook token rides as
      * Authorization: Bearer <token> and signs the raw body into X-Signature
-     * (HMAC-SHA256, hex). Retries of the same event carry the same
+     * (HMAC-SHA256, hex). The receiver fails closed: with no token saved on
+     * the connection every event is rejected, so an order can never be
+     * flipped by an unauthenticated caller who guesses a method id and an
+     * invoice number. Retries of the same event carry the same
      * Idempotency-Key and are answered without re-processing.
      */
     public function steadfast(Request $request, CourierMethod $method, BookingService $booking)
     {
         $token = (string) (($method->credentials ?? [])['webhook_token'] ?? '');
-        if ($token !== '') {
-            $bearer = (string) $request->bearerToken();
-            $expected = hash_hmac('sha256', $request->getContent(), $token);
-            $given = (string) $request->header('X-Signature', '');
-            if (! hash_equals($token, $bearer) || ! hash_equals($expected, $given)) {
-                return response()->json(['status' => 'unauthorized'], 401);
-            }
+        if ($token === '') {
+            return response()->json(['status' => 'unauthorized'], 401);
+        }
+        $bearer = (string) $request->bearerToken();
+        $expected = hash_hmac('sha256', $request->getContent(), $token);
+        $given = (string) $request->header('X-Signature', '');
+        if (! hash_equals($token, $bearer) || ! hash_equals($expected, $given)) {
+            return response()->json(['status' => 'unauthorized'], 401);
         }
 
         $idem = (string) $request->header('Idempotency-Key', '');
@@ -93,7 +97,10 @@ class WebhookController extends Controller
 
             return $response;
         }
-        if ($secret !== '' && ! hash_equals($secret, (string) $request->header('X-PATHAO-Signature', ''))) {
+        // Fail closed: with no secret saved, real events are rejected
+        // outright — an unauthenticated caller who guesses a method id and
+        // an invoice number must never be able to flip an order.
+        if ($secret === '' || ! hash_equals($secret, (string) $request->header('X-PATHAO-Signature', ''))) {
             return response()->json(['status' => 'unauthorized'], 401);
         }
 
@@ -159,7 +166,8 @@ class WebhookController extends Controller
 
             return $response;
         }
-        if ($secret !== '' && ! hash_equals($secret, (string) $request->header('X-CB-Webhook-Integration-Header', ''))) {
+        // Fail closed when no secret is saved (see pathao()).
+        if ($secret === '' || ! hash_equals($secret, (string) $request->header('X-CB-Webhook-Integration-Header', ''))) {
             return response()->json(['error' => 'bad signature'], 401);
         }
 
@@ -195,11 +203,13 @@ class WebhookController extends Controller
     {
         abort_unless($method->courier_type === 'PAPERFLY' && $method->is_active, 404);
         $secret = (string) (($method->credentials ?? [])['webhook_secret'] ?? '');
-        if ($secret !== '') {
-            $expected = hash_hmac('sha256', $request->getContent(), $secret);
-            if (! hash_equals($expected, (string) $request->header('X-Webhook-Signature', ''))) {
-                return response()->json(['error' => 'bad signature'], 401);
-            }
+        // Fail closed when no secret is saved (see pathao()).
+        if ($secret === '') {
+            return response()->json(['error' => 'bad signature'], 401);
+        }
+        $expected = hash_hmac('sha256', $request->getContent(), $secret);
+        if (! hash_equals($expected, (string) $request->header('X-Webhook-Signature', ''))) {
+            return response()->json(['error' => 'bad signature'], 401);
         }
 
         $tracking = (string) $request->input('tracking_id', '');
@@ -234,7 +244,8 @@ class WebhookController extends Controller
     {
         abort_unless($method->courier_type === 'REDX' && $method->is_active, 404);
         $token = (string) (($method->credentials ?? [])['webhook_token'] ?? '');
-        if ($token !== '' && ! hash_equals($token, (string) $request->query('token', ''))) {
+        // Fail closed when no token is saved (see pathao()).
+        if ($token === '' || ! hash_equals($token, (string) $request->query('token', ''))) {
             return response()->json(['error' => 'bad token'], 401);
         }
 
@@ -260,10 +271,11 @@ class WebhookController extends Controller
      * eCourier: POST /api/webhooks/ecourier/dm/{method}
      * eCourier parcels were previously pull-only (the driver's /track
      * endpoint); this receiver gives the connection a push endpoint with
-     * the same shape as Paperfly: when the seller saves a webhook secret
-     * in Settings, events must carry X-Webhook-Signature =
-     * HMAC-SHA256(raw body, secret); with no secret saved, events are
-     * accepted unverified (the conditional rule every courier follows).
+     * the same shape as Paperfly: the seller saves a webhook secret
+     * in Settings and events must carry X-Webhook-Signature =
+     * HMAC-SHA256(raw body, secret). The receiver fails closed: with no
+     * secret saved, every event is rejected (the rule every courier
+     * receiver here follows).
      *
      * Payload fields are read defensively from the names eCourier uses
      * across its API (the booking call sends product_id = our invoice,
@@ -279,11 +291,13 @@ class WebhookController extends Controller
     {
         abort_unless($method->courier_type === 'ECOURIER' && $method->is_active, 404);
         $secret = (string) (($method->credentials ?? [])['webhook_secret'] ?? '');
-        if ($secret !== '') {
-            $expected = hash_hmac('sha256', $request->getContent(), $secret);
-            if (! hash_equals($expected, (string) $request->header('X-Webhook-Signature', ''))) {
-                return response()->json(['error' => 'bad signature'], 401);
-            }
+        // Fail closed when no secret is saved (see pathao()).
+        if ($secret === '') {
+            return response()->json(['error' => 'bad signature'], 401);
+        }
+        $expected = hash_hmac('sha256', $request->getContent(), $secret);
+        if (! hash_equals($expected, (string) $request->header('X-Webhook-Signature', ''))) {
+            return response()->json(['error' => 'bad signature'], 401);
         }
 
         $tracking = (string) ($request->input('tracking') ?? $request->input('tracking_id') ?? $request->input('ecr') ?? '');

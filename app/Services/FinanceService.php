@@ -279,11 +279,17 @@ class FinanceService
     }
 
     /**
-     * Refund a cancelled order's collected advance: exactly one expense
-     * entry out of the account that holds the advance, keyed
+     * Refund a cancelled order's collected advance: exactly one entry out
+     * of the account that holds the advance, keyed
      * advance-refund:order:{id} so it can never post twice (a repeat call
      * returns the existing row). The money stays untouched until the seller
      * runs this; the order's points stay deducted (owner rule).
+     *
+     * The entry posts as type 'advance_refund', NOT 'expense': the advance
+     * itself posts as type 'advance' and is never counted as income, so
+     * handing it back settles a liability and must not reduce profit
+     * either. Cash balances are unaffected by the label — balances sum
+     * every row; only the P&L classification changes.
      */
     public function refundOrderAdvance(Order $order, ?User $actor = null): FinanceTransaction
     {
@@ -311,7 +317,7 @@ class FinanceService
         }
 
         return $this->post($order->business_id, [
-            'account_id' => $account->id, 'direction' => 'out', 'type' => 'expense',
+            'account_id' => $account->id, 'direction' => 'out', 'type' => 'advance_refund',
             'amount' => $amount, 'source' => 'order', 'ref_type' => 'order', 'ref_id' => $order->id,
             'note' => __('Advance refund - order :invoice', ['invoice' => $order->invoice_no]),
             'idempotency_key' => $key, 'txn_date' => now('Asia/Dhaka')->toDateString(),

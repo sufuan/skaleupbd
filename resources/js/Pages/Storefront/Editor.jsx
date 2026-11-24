@@ -110,6 +110,13 @@ export default function Editor({ sf, page, previewUrl, products, branding, prese
 
     const checks = useMemo(() => computeChecks(blocks, products), [blocks, products]);
     const errorCount = checks.filter((c) => c.level === 'error').length;
+    const warnCount = checks.length - errorCount;
+    // Footer wording must be honest: publish-blocking errors are
+    // "problems", never lumped in as "warnings".
+    const checksText = checks.length === 0 ? t('No problems') : [
+        errorCount ? `${errorCount} ${t('problems')}` : null,
+        warnCount ? `${warnCount} ${t('warnings')}` : null,
+    ].filter(Boolean).join(' · ');
 
     const pubBlocks = useMemo(
         () => (page.published && Array.isArray(page.published.blocks) ? page.published.blocks : null),
@@ -208,7 +215,12 @@ export default function Editor({ sf, page, previewUrl, products, branding, prese
     const applyCommit = (next, key) => {
         const now = Date.now();
         if (!(key && key === coalRef.current.key && now - coalRef.current.time < 900)) {
-            setPast((p) => [...p.slice(-49), JSON.stringify(blocksRef.current)]);
+            // Snapshot NOW, synchronously — the same deferred-updater
+            // trap as undo/redo: stringify inside the setPast updater
+            // can run after blocksRef.current has been overwritten
+            // with `next`, pushing the post-edit state as the "past".
+            const snapshot = JSON.stringify(blocksRef.current);
+            setPast((p) => [...p.slice(-49), snapshot]);
             setFuture([]);
         }
         coalRef.current = { key: key || '', time: now };
@@ -227,8 +239,12 @@ export default function Editor({ sf, page, previewUrl, products, branding, prese
     const undo = () => {
         if (!past.length) return;
         const prev = past[past.length - 1];
+        // Snapshot NOW, synchronously: blocksRef.current is overwritten
+        // below, so reading it inside a deferred setState updater would
+        // capture the state being undone TO, not the one being left.
+        const current = JSON.stringify(blocksRef.current);
         setPast(past.slice(0, -1));
-        setFuture((f) => [...f, JSON.stringify(blocksRef.current)]);
+        setFuture((f) => [...f, current]);
         const next = JSON.parse(prev);
         blocksRef.current = next;
         setBlocks(next);
@@ -240,8 +256,10 @@ export default function Editor({ sf, page, previewUrl, products, branding, prese
     const redo = () => {
         if (!future.length) return;
         const nxt = future[future.length - 1];
+        // Same synchronous snapshot as undo() — see the note there.
+        const current = JSON.stringify(blocksRef.current);
         setFuture(future.slice(0, -1));
-        setPast((p) => [...p, JSON.stringify(blocksRef.current)]);
+        setPast((p) => [...p, current]);
         const next = JSON.parse(nxt);
         blocksRef.current = next;
         setBlocks(next);
@@ -720,7 +738,7 @@ export default function Editor({ sf, page, previewUrl, products, branding, prese
 
                 {/* ------------------------------------------------ status bar */}
                 <div className="ed-status">
-                    <span>{blocks.length} {t('Sections')} · {checks.length ? `${checks.length} ${t('warnings')}` : t('No problems')} · {t('Prices and stock come live from Inventory')}</span>
+                    <span>{blocks.length} {t('Sections')} · {checksText} · {t('Prices and stock come live from Inventory')}</span>
                 </div>
 
                 {/* ------------------------------------------------ mobile tab bar */}

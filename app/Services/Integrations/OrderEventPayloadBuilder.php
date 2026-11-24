@@ -40,26 +40,35 @@ class OrderEventPayloadBuilder
     /** Live stock truth for one product, or null when the product is not matched to the seller's site. */
     public function stockData(int $businessId, int $connectionId, int $productId): ?array
     {
-        $product = DB::table('products')                                      // ADAPT: products.sku, stock_qty, reserved_qty
-            ->where('business_id', $businessId)
-            ->where('id', $productId)
-            ->first(['sku', 'stock_qty', 'reserved_qty']);
+        $product = \App\Models\Product::where('business_id', $businessId)->find($productId);
 
         $ext = DB::table('external_products')
             ->where('connection_id', $connectionId)
             ->where('product_id', $productId)
             ->where('state', 'matched')
-            ->first(['external_id', 'external_variation_id']);
+            ->orderBy('external_variation_id')
+            ->first(['external_id', 'external_variation_id', 'variant_id']);
 
         if (! $product || ! $ext) {
             return null;
+        }
+
+        // The shop's own availability definition: a matched variant row
+        // reports that variant's pool; otherwise Product::available()
+        // (for a combo, how many full combos its components can make).
+        $available = max(0, $product->available());
+        if ($ext->variant_id) {
+            $variant = \App\Models\ProductVariant::find($ext->variant_id);
+            if ($variant) {
+                $available = $variant->available();
+            }
         }
 
         return [
             'externalId' => $ext->external_id,
             'externalVariationId' => $ext->external_variation_id !== '' ? $ext->external_variation_id : null,
             'sku' => $product->sku,
-            'available' => max(0, (int) $product->stock_qty - (int) $product->reserved_qty),
+            'available' => $available,
         ];
     }
 

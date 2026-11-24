@@ -56,13 +56,13 @@ class ChannelConnectionsController extends Controller
         $existing = ChannelConnection::where('channel', $channel)->where('external_id', $externalId)->first();
         if ($existing && (int) $existing->business_id !== $biz) {
             return back()->with('error', $channel === 'facebook'
-                ? 'This Facebook Page is already connected to another shop.'
-                : 'This WhatsApp number is already connected to another shop.');
+                ? __('This Facebook Page is already connected to another shop.')
+                : __('This WhatsApp number is already connected to another shop.'));
         }
         $conn = $existing;
         if (! $conn) {
             if (empty($data['token'])) {
-                return back()->with('error', 'Paste the access token to connect.');
+                return back()->with('error', __('Paste the access token to connect.'));
             }
             $conn = new ChannelConnection([
                 'business_id' => $biz,
@@ -74,7 +74,7 @@ class ChannelConnectionsController extends Controller
         if (empty($conn->token_enc) && empty($data['token'])) {
             // A reconnect after disconnect (the token was cleared) or a
             // first save without a token: there is nothing to check.
-            return back()->with('error', 'Paste the access token to connect.');
+            return back()->with('error', __('Paste the access token to connect.'));
         }
         $conn->parent_external_id = $channel === 'whatsapp'
             ? (trim((string) ($data['parent_external_id'] ?? '')) ?: $conn->parent_external_id)
@@ -112,14 +112,14 @@ class ChannelConnectionsController extends Controller
                     'last_checked_at' => now(),
                 ])->save();
 
-                return back()->with('error', 'Saved, but the app could not subscribe to this Page: ' . $sub['detail']);
+                return back()->with('error', __('Saved, but the app could not subscribe to this Page: :detail', ['detail' => $sub['detail']]));
             }
         }
         if (! $result['ok']) {
-            return back()->with('error', 'Saved, but Meta check failed: ' . $result['detail']);
+            return back()->with('error', __('Saved, but Meta check failed: :detail', ['detail' => $result['detail']]));
         }
 
-        return back()->with('success', $channel === 'facebook' ? 'Facebook Page connected' : 'WhatsApp connected');
+        return back()->with('success', $channel === 'facebook' ? __('Facebook Page connected') : __('WhatsApp connected'));
     }
 
     /** "Check now" on the caller's own connection (JSON, like the platform check). */
@@ -146,10 +146,10 @@ class ChannelConnectionsController extends Controller
         ]);
         $conn = ChannelConnection::forBusiness($biz, (string) $data['channel']);
         if (! $conn) {
-            return back()->with('error', 'Nothing to disconnect');
+            return back()->with('error', __('Nothing to disconnect'));
         }
         $this->connections->disconnect($conn);
 
-        return back()->with('success', 'Disconnected');
+        return back()->with('success', __('Disconnected'));
     }
 }

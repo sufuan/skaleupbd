@@ -50,7 +50,7 @@ class ViewAsController extends Controller
         ]);
 
         return redirect('/dashboard')
-            ->with('success', 'You are now viewing this shop read-only.');
+            ->with('success', __('You are now viewing this shop read-only.'));
     }
 
     public function exit(Request $request): RedirectResponse
@@ -67,6 +67,6 @@ class ViewAsController extends Controller
         ShopContext::clear($request);
 
         return redirect('/admin/sellers')
-            ->with('success', 'Read-only view closed.');
+            ->with('success', __('Read-only view closed.'));
     }
 }

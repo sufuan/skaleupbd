@@ -75,10 +75,10 @@ class PathaoDriver implements CourierDriver
         $c = $method->credentials ?? [];
         $storeId = $opts['store_id'] ?? ($order->pickupStore?->store_id ?? ($c['store_id'] ?? null));
         if (! $storeId) {
-            return ['ok' => false, 'error' => 'Pathao needs a pickup store - sync stores in Settings and pick one'];
+            return ['ok' => false, 'error' => __('Pathao needs a pickup store - sync stores in Settings and pick one')];
         }
         if (! $this->token($method)) {
-            return ['ok' => false, 'error' => 'Pathao login failed - check the credentials in Settings'];
+            return ['ok' => false, 'error' => __('Pathao login failed - check the credentials in Settings')];
         }
         try {
             // City/zone/area are OPTIONAL in Pathao's API — when not configured, Pathao
@@ -128,7 +128,7 @@ class PathaoDriver implements CourierDriver
 
             return ['ok' => false, 'error' => $message, 'raw' => $body];
         } catch (\Throwable $e) {
-            return ['ok' => false, 'error' => 'Could not reach Pathao: ' . $e->getMessage()];
+            return ['ok' => false, 'error' => __('Could not reach :courier: :detail', ['courier' => 'Pathao', 'detail' => $e->getMessage()])];
         }
     }
 
@@ -142,9 +142,9 @@ class PathaoDriver implements CourierDriver
                 return ['ok' => true, 'courier_status' => (string) $status, 'raw' => $body];
             }
 
-            return ['ok' => false, 'error' => 'Status check failed (HTTP ' . $res->status() . ')'];
+            return ['ok' => false, 'error' => __('Status check failed (HTTP :status)', ['status' => $res->status()])];
         } catch (\Throwable $e) {
-            return ['ok' => false, 'error' => 'Could not reach Pathao: ' . $e->getMessage()];
+            return ['ok' => false, 'error' => __('Could not reach :courier: :detail', ['courier' => 'Pathao', 'detail' => $e->getMessage()])];
         }
     }
 
@@ -182,8 +182,8 @@ class PathaoDriver implements CourierDriver
     public function testConnection(CourierMethod $method): array
     {
         return $this->token($method)
-            ? ['ok' => true, 'message' => 'Connected - Pathao accepted the login']
-            : ['ok' => false, 'message' => 'Pathao login failed - check Client Id, Secret, Email and Password'];
+            ? ['ok' => true, 'message' => __('Connected - Pathao accepted the login')]
+            : ['ok' => false, 'message' => __('Pathao login failed - check Client Id, Secret, Email and Password')];
     }
 
     public function syncStores(CourierMethod $method): array
@@ -239,7 +239,7 @@ class PathaoDriver implements CourierDriver
 
             return ['ok' => false, 'error' => (string) ($body['message'] ?? 'Store creation failed (HTTP ' . $res->status() . ')'), 'raw' => $body];
         } catch (\Throwable $e) {
-            return ['ok' => false, 'error' => 'Could not reach Pathao: ' . $e->getMessage()];
+            return ['ok' => false, 'error' => __('Could not reach :courier: :detail', ['courier' => 'Pathao', 'detail' => $e->getMessage()])];
         }
     }
 
@@ -293,7 +293,7 @@ class PathaoDriver implements CourierDriver
         } catch (\Throwable $e) {
             return collect($orders)->map(fn (Order $o) => [
                 'invoice' => $o->invoice, 'ok' => false, 'tracking_id' => null, 'consignment_id' => null,
-                'error' => 'Could not reach Pathao: ' . $e->getMessage(),
+                'error' => __('Could not reach :courier: :detail', ['courier' => 'Pathao', 'detail' => $e->getMessage()]),
             ])->values()->all();
         }
     }

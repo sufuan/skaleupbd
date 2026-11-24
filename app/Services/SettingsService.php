@@ -95,4 +95,33 @@ class SettingsService
 
         Cache::forget(self::CACHE_PREFIX.$key);
     }
+
+    /**
+     * set() + a Settings Change History row (settings_changes), in the
+     * exact shape SettingsController::logChange writes: booleans read
+     * On/Off, arrays are JSON, and the row carries the actor's business
+     * and name. Only an actual change is logged. Secret values stay
+     * safe the same way the controller's saves keep them safe: callers
+     * pass the encrypted form, and the history view masks *_enc /
+     * secret / token / password / api_key values at display time.
+     * Every Settings save path (controller or service) routes through
+     * this one logged setter so the history covers them all (Hunt W W3).
+     */
+    public function setLogged(string $key, mixed $value, ?\App\Models\User $actor): void
+    {
+        $old = $this->get($key);
+        $this->set($key, $value, $actor?->id);
+        if (json_encode($old) === json_encode($value)) {
+            return;
+        }
+        $fmt = fn (mixed $v) => is_bool($v) ? ($v ? 'On' : 'Off') : (is_array($v) ? json_encode($v) : (string) ($v ?? ''));
+        \Illuminate\Support\Facades\DB::table('settings_changes')->insert([
+            'key' => $key,
+            'business_id' => $actor?->business_id,
+            'old_value' => $fmt($old),
+            'new_value' => $fmt($value),
+            'changed_by' => $actor?->name,
+            'created_at' => now(),
+        ]);
+    }
 }

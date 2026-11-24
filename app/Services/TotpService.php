@@ -13,9 +13,11 @@ use PragmaRX\Google2FA\Google2FA;
  * TOTP two-factor authentication (same pattern as TPDA e-Sheba).
  * Active only while the master switch in Settings → Security & Records
  * (key security.totp_enabled, default OFF) is on. When the switch is off
- * nobody is forced to enroll or pass a challenge. SkaleUp has no role
- * system yet, so while the switch is on it applies to every signed-in
- * user; role scoping arrives with the HRM module.
+ * nobody is forced to enroll or pass a challenge. While it is on, the
+ * owner's settled scope (2026-10-26) applies: mandatory enrollment +
+ * per-login challenge for super-admin / branch-manager / accountant —
+ * in this app's roles, the platform admin plus the admin, manager and
+ * accountant presets. Plain staff are never forced.
  */
 class TotpService
 {
@@ -32,7 +34,12 @@ class TotpService
 
     public function requiredFor(User $user): bool
     {
-        return $this->enabled();
+        if (! $this->enabled()) {
+            return false;
+        }
+
+        return (bool) $user->is_platform_admin
+            || in_array((string) $user->role, ['admin', 'manager', 'accountant'], true);
     }
 
     public function generateSecret(): string

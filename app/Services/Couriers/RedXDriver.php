@@ -47,7 +47,7 @@ class RedXDriver implements CourierDriver
         try {
             $area = $this->resolveArea($order, $method);
             if ($area === null) {
-                return ['ok' => false, 'error' => 'RedX needs a delivery area ID for ' . ($order->district ?: 'this order') . ' - set the Default Area ID in Settings → Courier → RedX'];
+                return ['ok' => false, 'error' => __('RedX needs a delivery area ID for :district - set the Default Area ID in Settings → Courier → RedX', ['district' => $order->district ?: __('this order')])];
             }
             $weightGrams = max(1, (int) round(((float) ($c['default_weight'] ?? 0.5)) * 1000));
             $payload = [
@@ -80,7 +80,7 @@ class RedXDriver implements CourierDriver
 
             return ['ok' => false, 'error' => (string) ($body['message'] ?? 'RedX rejected the booking (HTTP ' . $res->status() . ')'), 'raw' => $body];
         } catch (\Throwable $e) {
-            return ['ok' => false, 'error' => 'Could not reach RedX: ' . $e->getMessage()];
+            return ['ok' => false, 'error' => __('Could not reach :courier: :detail', ['courier' => 'RedX', 'detail' => $e->getMessage()])];
         }
     }
 
@@ -143,7 +143,7 @@ class RedXDriver implements CourierDriver
             return ['ok' => true, 'courier_status' => (string) $parcel['status'], 'raw' => $parcel];
         }
 
-        return ['ok' => false, 'error' => 'Status check failed'];
+        return ['ok' => false, 'error' => __('Status check failed')];
     }
 
     /** Tracking history: [{message_en, message_bn, time}] from /parcel/track/{id}. */
@@ -189,10 +189,10 @@ class RedXDriver implements CourierDriver
         try {
             $res = $this->http($method)->get($this->base($method) . '/areas');
             return $res->successful()
-                ? ['ok' => true, 'message' => 'Connected - RedX accepted the access token']
-                : ['ok' => false, 'message' => 'RedX did not accept the access token (HTTP ' . $res->status() . ')'];
+                ? ['ok' => true, 'message' => __('Connected - RedX accepted the access token')]
+                : ['ok' => false, 'message' => __('RedX did not accept the access token (HTTP :status)', ['status' => $res->status()])];
         } catch (\Throwable $e) {
-            return ['ok' => false, 'message' => 'Could not reach RedX: ' . $e->getMessage()];
+            return ['ok' => false, 'message' => __('Could not reach :courier: :detail', ['courier' => 'RedX', 'detail' => $e->getMessage()])];
         }
     }
 
@@ -230,7 +230,7 @@ class RedXDriver implements CourierDriver
 
             return ['ok' => false, 'error' => (string) ($body['message'] ?? 'Store creation failed (HTTP ' . $res->status() . ')'), 'raw' => $body];
         } catch (\Throwable $e) {
-            return ['ok' => false, 'error' => 'Could not reach RedX: ' . $e->getMessage()];
+            return ['ok' => false, 'error' => __('Could not reach :courier: :detail', ['courier' => 'RedX', 'detail' => $e->getMessage()])];
         }
     }
 

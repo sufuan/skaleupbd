@@ -92,7 +92,8 @@ x-api-key: <your key>
 businessId: ${businessPublicId}
 { "customerName": "Karim", "customerNumber": "017...",
   "customerAddress": "...", "district": "Dhaka",
-  "products": [{ "productId": 1, "quantity": 1, "price": 1250 }] }`}</pre>
+  "products": [{ "productId": 1, "quantity": 1, "price": 1250 },
+               { "productId": 2, "variantId": 5, "quantity": 1, "price": 1350 }] }`}</pre>
                             </div>
                         </div>
 

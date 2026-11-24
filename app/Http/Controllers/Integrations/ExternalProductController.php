@@ -215,12 +215,19 @@ class ExternalProductController extends Controller
         $externalIds = array_map(fn ($i) => $i['externalId'], $validated['items']);
 
         $rows = DB::table('external_products as ep')
-            ->join('products as p', 'p.id', '=', 'ep.product_id')
             ->where('ep.connection_id', $conn->id)
             ->where('ep.state', 'matched')
             ->whereIn('ep.external_id', $externalIds)
-            ->get(['ep.external_id', 'ep.external_variation_id', 'p.stock_qty', 'p.reserved_qty'])
+            ->get(['ep.external_id', 'ep.external_variation_id', 'ep.product_id', 'ep.variant_id'])
             ->keyBy(fn ($r) => $r->external_id . '|' . $r->external_variation_id);
+
+        // Availability is the shop's own definition, never a raw
+        // stock-minus-reserved on the parent row: a matched variant
+        // reports its own pool (ProductVariant::available()), anything
+        // else the product's available() — which for a combo is how many
+        // full combos its components can still make.
+        $products = \App\Models\Product::whereIn('id', $rows->pluck('product_id')->unique()->all())->get()->keyBy('id');
+        $variants = \App\Models\ProductVariant::whereIn('id', $rows->pluck('variant_id')->filter()->unique()->all())->get()->keyBy('id');
 
         $result = [];
         foreach ($validated['items'] as $item) {
@@ -228,10 +235,19 @@ class ExternalProductController extends Controller
             $vid = (string) ($item['variationId'] ?? '');
             $row = $rows->get($eid . '|' . $vid);
 
+            $available = null;
+            if ($row) {
+                if ($row->variant_id && $variants->has($row->variant_id)) {
+                    $available = $variants->get($row->variant_id)->available();
+                } elseif ($products->has($row->product_id)) {
+                    $available = max(0, $products->get($row->product_id)->available());
+                }
+            }
+
             $result[] = [
                 'externalId'  => $eid,
                 'variationId' => $vid,
-                'available'   => $row ? max(0, (int) $row->stock_qty - (int) $row->reserved_qty) : null,
+                'available'   => $available,
                 'matched'     => (bool) $row,
             ];
         }

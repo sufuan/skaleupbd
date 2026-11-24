@@ -12,7 +12,7 @@ class BahokDriver extends ManualDriver
     {
         $cn = trim((string) ($opts['cn'] ?? ''));
         if ($cn === '') {
-            return ['ok' => false, 'error' => 'Bahok booking API is not verified yet — book with Bahok and record the CN number here', 'manual_fallback' => true];
+            return ['ok' => false, 'error' => __('Bahok booking API is not verified yet - book with Bahok and record the CN number here'), 'manual_fallback' => true];
         }
 
         return ['ok' => true, 'tracking_id' => $cn, 'consignment_id' => $cn, 'raw' => ['manual_cn' => $cn]];

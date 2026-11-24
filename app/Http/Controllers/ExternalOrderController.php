@@ -79,6 +79,8 @@ class ExternalOrderController extends Controller
             'externalRef' => ['nullable', 'string', 'max:80'],
             'products' => ['required', 'array', 'min:1'],
             'products.*.productId' => ['nullable', 'integer'],
+            'products.*.variantId' => ['nullable', 'integer'],
+            'products.*.variantName' => ['nullable', 'string', 'max:120'],
             'products.*.name' => ['nullable', 'string', 'max:160'],
             'products.*.quantity' => ['required', 'integer', 'min:1'],
             'products.*.price' => ['required', 'numeric', 'min:0'],
@@ -123,6 +125,13 @@ class ExternalOrderController extends Controller
             'ip' => $request->ip(),
             'items' => collect($data['products'])->map(fn ($p) => [
                 'product_id' => $p['productId'] ?? null,
+                // R3: a line may address a variant of the product, by id
+                // or by name - OrderService resolves either onto the
+                // order line, so approval and stock moves use the
+                // variant's own pool. Without this the API could not
+                // sell variant stock at all.
+                'variant_id' => $p['variantId'] ?? null,
+                'variant_name' => $p['variantName'] ?? null,
                 'name' => $p['name'] ?? 'Item',
                 'qty' => $p['quantity'],
                 'price' => $p['price'],

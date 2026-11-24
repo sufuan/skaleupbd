@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Support\DhakaTime;
 use App\Models\Business;
 use App\Models\ChannelConnection;
 use App\Models\Comment;
@@ -202,7 +203,7 @@ class ChannelConnectionService
             'token_last4' => $redactLast4 ? null : $conn->tokenLast4(),
             'status' => (string) $conn->status,
             'last_error' => (string) ($conn->last_error ?? ''),
-            'last_checked_at' => $conn->last_checked_at?->format('d M Y, h:i A'),
+            'last_checked_at' => DhakaTime::fmt($conn->last_checked_at, 'd M Y, h:i A'),
             'connect_method' => (string) $conn->connect_method,
         ];
     }

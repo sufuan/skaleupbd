@@ -67,7 +67,7 @@ class SteadfastDriver implements CourierDriver
 
             return ['ok' => false, 'error' => (string) ($body['message'] ?? 'Steadfast rejected the booking (HTTP ' . $res->status() . ')'), 'raw' => $body];
         } catch (\Throwable $e) {
-            return ['ok' => false, 'error' => 'Could not reach Steadfast: ' . $e->getMessage()];
+            return ['ok' => false, 'error' => __('Could not reach :courier: :detail', ['courier' => 'Steadfast', 'detail' => $e->getMessage()])];
         }
     }
 
@@ -86,9 +86,9 @@ class SteadfastDriver implements CourierDriver
                 return ['ok' => true, 'courier_status' => (string) $body['delivery_status'], 'raw' => $body];
             }
 
-            return ['ok' => false, 'error' => 'Status check failed (HTTP ' . $res->status() . ')'];
+            return ['ok' => false, 'error' => __('Status check failed (HTTP :status)', ['status' => $res->status()])];
         } catch (\Throwable $e) {
-            return ['ok' => false, 'error' => 'Could not reach Steadfast: ' . $e->getMessage()];
+            return ['ok' => false, 'error' => __('Could not reach :courier: :detail', ['courier' => 'Steadfast', 'detail' => $e->getMessage()])];
         }
     }
 
@@ -109,7 +109,7 @@ class SteadfastDriver implements CourierDriver
 
             return ['ok' => false, 'error' => (string) ($body['message'] ?? 'Steadfast refused the return request (HTTP ' . $res->status() . ')'), 'raw' => $body];
         } catch (\Throwable $e) {
-            return ['ok' => false, 'error' => 'Could not reach Steadfast: ' . $e->getMessage()];
+            return ['ok' => false, 'error' => __('Could not reach :courier: :detail', ['courier' => 'Steadfast', 'detail' => $e->getMessage()])];
         }
     }
 
@@ -145,18 +145,18 @@ class SteadfastDriver implements CourierDriver
         // not the credentials — the two failures must not read the same.
         $ping = $this->ping();
         if (! $ping['ok']) {
-            return ['ok' => false, 'message' => 'Could not reach Steadfast at all — check the server connection'];
+            return ['ok' => false, 'message' => __('Could not reach Steadfast at all - check the server connection')];
         }
         try {
             $res = $this->http($method)->get($this->base . '/get_balance');
             $body = $res->json() ?? [];
             if ($res->successful() && array_key_exists('current_balance', $body)) {
-                return ['ok' => true, 'message' => 'Connected. Current balance ৳' . $body['current_balance']];
+                return ['ok' => true, 'message' => __('Connected. Current balance :balance', ['balance' => '৳' . $body['current_balance']])];
             }
 
-            return ['ok' => false, 'message' => 'Steadfast did not accept these credentials (HTTP ' . $res->status() . ')'];
+            return ['ok' => false, 'message' => __('Steadfast did not accept these credentials (HTTP :status)', ['status' => $res->status()])];
         } catch (\Throwable $e) {
-            return ['ok' => false, 'message' => 'Could not reach Steadfast: ' . $e->getMessage()];
+            return ['ok' => false, 'message' => __('Could not reach :courier: :detail', ['courier' => 'Steadfast', 'detail' => $e->getMessage()])];
         }
     }
 
@@ -273,7 +273,7 @@ class SteadfastDriver implements CourierDriver
         } catch (\Throwable $e) {
             return collect($orders)->map(fn (Order $o) => [
                 'invoice' => $o->invoice, 'ok' => false, 'tracking_id' => null, 'consignment_id' => null,
-                'error' => 'Could not reach Steadfast: ' . $e->getMessage(),
+                'error' => __('Could not reach :courier: :detail', ['courier' => 'Steadfast', 'detail' => $e->getMessage()]),
             ])->values()->all();
         }
     }
@@ -378,7 +378,7 @@ class SteadfastDriver implements CourierDriver
 
             return ['ok' => false, 'error' => (string) ($body['message'] ?? 'Pickup request failed (HTTP ' . $res->status() . ')'), 'raw' => $body];
         } catch (\Throwable $e) {
-            return ['ok' => false, 'error' => 'Could not reach Steadfast: ' . $e->getMessage()];
+            return ['ok' => false, 'error' => __('Could not reach :courier: :detail', ['courier' => 'Steadfast', 'detail' => $e->getMessage()])];
         }
     }
 

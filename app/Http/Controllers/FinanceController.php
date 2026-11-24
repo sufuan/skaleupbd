@@ -53,7 +53,7 @@ class FinanceController extends Controller
         return match ($t->type) {
             'income' => __('Income'), 'expense' => __('Expense'), 'transfer' => __('Transfer'),
             'owner_in' => __('Owner deposit'), 'owner_out' => __('Owner withdrawal'),
-            'advance' => __('Order advance'), 'courier_payout' => __('Courier payout'),
+            'advance' => __('Order advance'), 'advance_refund' => __('Advance refund'), 'courier_payout' => __('Courier payout'),
             'deposit' => __('Deposit'), 'withdrawal' => __('Withdrawal'), default => $t->type,
         };
     }
@@ -316,7 +316,7 @@ class FinanceController extends Controller
             ->whereNull('voided_at')->whereNull('reversal_of')
             ->whereDate('txn_date', '>=', $from)->whereDate('txn_date', '<=', $to);
         $byCategory = (clone $base)->with('category')->get()
-            ->groupBy(fn ($t) => $t->category?->name ?? '—')
+            ->groupBy(fn ($t) => $t->category?->name ?? __('Uncategorised'))
             ->map(fn ($rows, $name) => [
                 'name' => $name,
                 'income' => round($rows->where('type', 'income')->sum('amount'), 2),
@@ -404,19 +404,32 @@ class FinanceController extends Controller
             ->when($source, fn ($q) => $q->where('source', $source))
             ->orderByDesc('txn_date')->orderByDesc('id')->limit(300)->get();
 
-        $running = null;
+        // A running balance is a property of the account's FULL history:
+        // walk every row of the account backwards from its current balance
+        // and remember each row's balance-after, then attach those values
+        // to whichever rows the current filters display. (Anchoring the
+        // walk at the full balance but stepping only over the FILTERED
+        // rows corrupts every figure as soon as any filter is on.)
+        $runningById = [];
         if ($accountId) {
             $account = FinanceAccount::where('business_id', $biz)->find($accountId);
-            $running = $account ? $this->fin->accountBalance($account) : 0.0;
+            if ($account) {
+                $running = $this->fin->accountBalance($account);
+                $history = FinanceTransaction::where('business_id', $biz)->where('account_id', $account->id)
+                    ->orderByDesc('txn_date')->orderByDesc('id')->get(['id', 'direction', 'amount', 'voided_at']);
+                foreach ($history as $h) {
+                    $runningById[$h->id] = $running;
+                    if (! $h->voided_at) {
+                        $running = round($running + ($h->direction === 'in' ? -(float) $h->amount : (float) $h->amount), 2);
+                    }
+                }
+            }
         }
         $list = [];
         foreach ($rows as $t) {
             $row = $this->txnRow($t);
-            if ($running !== null) {
-                $row['running'] = $running;
-                if (! $t->voided_at) {
-                    $running = round($running + ($t->direction === 'in' ? -(float) $t->amount : (float) $t->amount), 2);
-                }
+            if (isset($runningById[$t->id])) {
+                $row['running'] = $runningById[$t->id];
             }
             $list[] = $row;
         }
@@ -469,7 +482,16 @@ class FinanceController extends Controller
     public function exportCsv(Request $request)
     {
         $biz = $this->biz($request);
+        // The export belongs to the Income & Expense page, so it covers the
+        // same window the page shows: this month (Asia/Dhaka). Exporting
+        // all time made the file disagree with the page totals whenever a
+        // prior-month row existed. whereDate for the same storage reason
+        // as the page (txn_date can carry a time part).
+        $today = now('Asia/Dhaka');
+        $from = $today->copy()->startOfMonth()->toDateString();
+        $to = $today->toDateString();
         $rows = FinanceTransaction::where('business_id', $biz)->whereIn('type', ['income', 'expense'])
+            ->whereDate('txn_date', '>=', $from)->whereDate('txn_date', '<=', $to)
             ->with(['account', 'category'])->orderByDesc('txn_date')->orderByDesc('id')->limit(1000)->get();
         $csv = "Date,Description,Category,Account,Type,Amount,Status\n";
         foreach ($rows as $t) {

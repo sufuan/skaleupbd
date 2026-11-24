@@ -177,9 +177,13 @@ class DashboardStatsService
         $total = $orders->count();
         $cancelled = $byStatus('Cancelled');
 
-        [$dayStart] = DhakaTime::dayBoundsUtc($endStr);
-        $dayEnd = DhakaTime::dayBoundsUtc($endStr)[1];
-        $courierCost = (float) app(FinanceService::class)->figures($biz, $dayStart, $dayEnd)['courierCharges'];
+        // Courier Cost sits among this tab's 30-day figures, so it is the
+        // same 30-day created cohort: the rate-card charges of the orders
+        // delivered inside the window. (It used to read Finance figures
+        // for the single end day, so the card silently showed one day's
+        // cost next to 30-day revenue and profit.)
+        $courierCost = round((float) $orders->where('status', 'Delivered')
+            ->sum(fn (Order $o) => app(SettlementService::class)->committedCharge($o)), 2);
         $pendingCod = (float) app(SettlementService::class)->ledger($biz)['total']['still'];
 
         return [
@@ -355,7 +359,9 @@ class DashboardStatsService
                 'name' => $names[$uid] ?? '-',
                 'processed' => $processed,
                 'processing_pct' => $processed > 0 ? (int) round($still / $processed * 100) : 0,
-                'revenue' => (float) $orders->where('status', '!=', 'Cancelled')->sum('grand_total'),
+                // Revenue is Delivered-only — the one definition used by
+                // money(), Finance and every other "revenue" figure.
+                'revenue' => (float) $orders->where('status', 'Delivered')->sum('grand_total'),
             ];
         })->sortByDesc('processed')->values()
             ->map(fn ($a, $i) => ['rank' => $i + 1] + $a)->all();

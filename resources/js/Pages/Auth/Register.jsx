@@ -1,5 +1,6 @@
 import GuestLayout from '@/Layouts/GuestLayout';
 import { t } from '@/lib/i18n';
+import { tk } from '@/lib/money';
 import { Head, Link, useForm } from '@inertiajs/react';
 
 export default function Register({ pack, packs = [], onboardingFee, verifyEnabled = false, verifyChannel = 'email' }) {
@@ -13,8 +14,7 @@ export default function Register({ pack, packs = [], onboardingFee, verifyEnable
         password_confirmation: '',
         pack_id: pack?.id || '',
     });
-    const tk = (n) => `৳${Number(n || 0).toLocaleString('en-IN')}`;
-    const num = (n) => Number(n || 0).toLocaleString('en-IN');
+        const num = (n) => Number(n || 0).toLocaleString('en-IN');
     const fee = pack ? Number(onboardingFee || 0) : 0;
     const pickerFee = Number(onboardingFee || 0);
     const noPacks = !pack && packs.length === 0;

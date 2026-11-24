@@ -37,10 +37,11 @@ class CustomersController extends Controller
             // One definition everywhere (same as SuccessRateService and the
             // Customer Report): success is decided outcomes only — a customer
             // whose parcels are still in transit has NO rate yet, not 0%.
-            // Spent is the booked value of non-cancelled orders, matching
-            // the Customer Report's "spent".
+            // Spent is Delivered-only — the settled definition, identical to
+            // Customer::lifetimeValue(), the inbox customer pane and the
+            // Customer Report's "spent".
             'success_rate' => $outcomes > 0 ? (int) round($delivered / $outcomes * 100) : null,
-            'spent' => (float) (clone $orders)->whereNotIn('status', ['Cancelled'])->sum('grand_total'),
+            'spent' => (float) (clone $orders)->where('status', 'Delivered')->sum('grand_total'),
             'last_order' => DhakaTime::fmt((clone $orders)->latest('id')->first()?->created_at, 'd M Y'),
         ];
     }
@@ -52,31 +53,37 @@ class CustomersController extends Controller
         $customers = Customer::where('business_id', $bizId)
             ->when($q !== '', fn ($x) => $x->where(fn ($w) => $w->where('name', 'like', "%{$q}%")->orWhere('phone', 'like', "%{$q}%")))
             // Sort by the figure the list actually displays: TOTAL SPENT,
-            // the booked value of non-cancelled orders (the same sum
-            // aggregates() returns per row, and the same definition as
-            // the profile page and the Customer Report). Sorting by the
-            // delivered-only lifetime value while displaying the
-            // non-cancelled sum made the visible order look unsorted.
-            ->withSum(['orders as spent_live' => fn ($x) => $x->whereNotIn('status', ['Cancelled'])], 'grand_total')
+            // Delivered-only (the same sum aggregates() returns per row,
+            // and the same definition as the profile page, the inbox pane
+            // and the Customer Report).
+            ->withSum(['orders as spent_live' => fn ($x) => $x->where('status', 'Delivered')], 'grand_total')
             ->orderByDesc('spent_live')->orderBy('phone')->get();
         $rows = $customers->map(fn ($c) => array_merge([
             'id' => $c->id, 'name' => $c->name, 'phone' => $c->phone, 'address' => $c->address,
             'district' => $c->district, 'blacklisted' => (bool) $c->is_blacklisted,
         ], $this->aggregates($bizId, $c)))->all();
 
-        $orders = Order::where('business_id', $bizId);
-        // Header figures use the same definition as the rows and the
-        // Customer Report: booked value of non-cancelled orders.
-        $liveCount = (clone $orders)->whereNotIn('status', ['Cancelled'])->count();
-        $liveSum = (float) (clone $orders)->whereNotIn('status', ['Cancelled'])->sum('grand_total');
+        // S-F10 + X2.3: all three stat cards describe ONE scope - the
+        // customers the list is showing (the filtered set; unfiltered
+        // that is the whole shop) - and the order figures use the one
+        // settled definition, Delivered orders only, identical to the
+        // rows, Customer::lifetimeValue(), the inbox pane and the
+        // Customer Report. The old cards mixed scopes under a search
+        // (CLV divided the shop's whole revenue by the filtered count)
+        // and counted booked value the rows did not show.
+        $filteredOrders = Order::where('business_id', $bizId)
+            ->whereIn('customer_id', $customers->pluck('id'))
+            ->where('status', 'Delivered');
+        $filteredCount = (clone $filteredOrders)->count();
+        $filteredSum = (float) (clone $filteredOrders)->sum('grand_total');
 
         return Inertia::render('Customers/Index', [
             'customers' => $rows,
             'q' => $q,
             'stats' => [
                 'total' => $customers->count(),
-                'aov' => $liveCount > 0 ? (int) round($liveSum / $liveCount) : 0,
-                'clv' => $customers->count() > 0 ? (int) round($liveSum / $customers->count()) : 0,
+                'aov' => $filteredCount > 0 ? (int) round($filteredSum / $filteredCount) : 0,
+                'clv' => $customers->count() > 0 ? (int) round($filteredSum / $customers->count()) : 0,
             ],
         ]);
     }
@@ -111,15 +118,21 @@ class CustomersController extends Controller
             'district' => ['nullable', 'string', 'max:80'],
         ]);
         if (! \App\Services\PhoneNormalizer::isValid($data['phone'])) {
-            return back()->with('error', 'Enter a valid mobile number (01XXXXXXXXX)');
+            return back()->with('error', __('Enter a valid mobile number (01XXXXXXXXX)'));
         }
+        // S-F5: store the number in the ONE canonical form every other
+        // path keys on (order intake, block list): 01XXXXXXXXX. Saving
+        // the raw input ("+880 1799-998888") made the duplicate check
+        // miss the same person typed nationally, and order intake then
+        // linked orders to a second row while this one sat orphaned.
+        $data['phone'] = \App\Services\PhoneNormalizer::normalize($data['phone']);
         $exists = Customer::where('business_id', $this->bizId($request))->where('phone', $data['phone'])->exists();
         if ($exists) {
-            return back()->with('error', 'A customer with this phone number already exists');
+            return back()->with('error', __('A customer with this phone number already exists'));
         }
         Customer::create($data + ['business_id' => $this->bizId($request)]);
 
-        return back()->with('success', 'Customer added');
+        return back()->with('success', __('Customer added'));
     }
 
     public function update(Request $request, Customer $customer): RedirectResponse
@@ -134,18 +147,18 @@ class CustomersController extends Controller
         ]);
         $customer->update($data);
 
-        return back()->with('success', 'Customer saved');
+        return back()->with('success', __('Customer saved'));
     }
 
     public function destroy(Request $request, Customer $customer): RedirectResponse
     {
         abort_unless($customer->business_id === $this->bizId($request), 404);
         if (Order::where('customer_id', $customer->id)->exists()) {
-            return back()->with('error', 'This customer has orders - they cannot be deleted');
+            return back()->with('error', __('This customer has orders - they cannot be deleted'));
         }
         $customer->delete();
 
-        return redirect()->route('customers.index')->with('success', 'Customer deleted');
+        return redirect()->route('customers.index')->with('success', __('Customer deleted'));
     }
 
     public function toggleBlacklist(Request $request, Customer $customer): RedirectResponse
@@ -153,7 +166,7 @@ class CustomersController extends Controller
         abort_unless($customer->business_id === $this->bizId($request), 404);
         $customer->update(['is_blacklisted' => ! $customer->is_blacklisted]);
 
-        return back()->with('success', $customer->is_blacklisted ? 'Customer blocked' : 'Customer unblocked');
+        return back()->with('success', $customer->is_blacklisted ? __('Customer blocked') : __('Customer unblocked'));
     }
 
     public function upload(Request $request): Response
@@ -182,7 +195,10 @@ class CustomersController extends Controller
                 }
             }
             $name = $row[0] ?? '';
-            $phone = preg_replace('/\s+/', '', $row[1] ?? '');
+            // S-F5: the same canonical normalization as manual entry
+            // and order intake - the old code only stripped spaces, so
+            // an imported "+880..." number never matched the person.
+            $phone = \App\Services\PhoneNormalizer::normalize($row[1] ?? '');
             $address = $row[2] ?? null;
             if ($phone === '' || $name === '') {
                 $skipped++;
@@ -209,7 +225,7 @@ class CustomersController extends Controller
             'imported' => $imported, 'skipped' => $skipped, 'status' => 'Done',
         ]);
 
-        return back()->with('success', "Imported {$imported} customers, skipped {$skipped}");
+        return back()->with('success', __('Imported :imported customers, skipped :skipped', ['imported' => $imported, 'skipped' => $skipped]));
     }
 
     public function sampleCsv(): HttpResponse

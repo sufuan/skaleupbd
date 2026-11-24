@@ -40,6 +40,12 @@ class SmsService
         $this->settings->set("marketing.{$biz}.{$name}", $value);
     }
 
+    /** Settings → Marketing SMS saves go through the logged setter so the Change History covers them (Hunt W W3). */
+    public function setSettingLogged(int $biz, string $name, mixed $value, ?\App\Models\User $actor): void
+    {
+        $this->settings->setLogged("marketing.{$biz}.{$name}", $value, $actor);
+    }
+
     public function rate(int $biz): float
     {
         return (float) $this->setting($biz, 'sms_rate', 1.50);

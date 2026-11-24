@@ -69,7 +69,7 @@ class PlatformStorefrontController extends Controller
         $storefront->save();
         $this->svc->forgetHostCache($storefront);
 
-        return back()->with('success', 'Storefront taken down.');
+        return back()->with('success', __('Storefront taken down.'));
     }
 
     public function restore(Request $request, Storefront $storefront)
@@ -80,7 +80,7 @@ class PlatformStorefrontController extends Controller
         $storefront->save();
         $this->svc->forgetHostCache($storefront);
 
-        return back()->with('success', 'Storefront restored as a draft. The seller can publish it again.');
+        return back()->with('success', __('Storefront restored as a draft. The seller can publish it again.'));
     }
 
     /** The cPanel alias exists now → the domain goes live (cap enforced). */
@@ -88,10 +88,10 @@ class PlatformStorefrontController extends Controller
     {
         $this->guard($request);
         if ($storefront->domain_status !== 'verified') {
-            return back()->with('error', 'Only a verified domain can be activated.');
+            return back()->with('error', __('Only a verified domain can be activated.'));
         }
         if (! $this->svc->activationAllowed()) {
-            return back()->with('error', 'The custom-domain cap ('.$this->svc->domainCap().') is reached. This seller goes on the waitlist.');
+            return back()->with('error', __('The custom-domain cap (:cap) is reached. This seller goes on the waitlist.', ['cap' => $this->svc->domainCap()]));
         }
         $storefront->domain_status = 'active';
         $storefront->domain_added_at = now();
@@ -105,7 +105,7 @@ class PlatformStorefrontController extends Controller
         }
         $this->svc->forgetHostCache($storefront);
 
-        return back()->with('success', 'Custom domain is now active.');
+        return back()->with('success', __('Custom domain is now active.'));
     }
 
     public function resolveReport(Request $request, StorefrontReport $report)
@@ -119,6 +119,6 @@ class PlatformStorefrontController extends Controller
         $report->admin_note = $data['note'] ?? null;
         $report->save();
 
-        return back()->with('success', 'Report '.$data['status'].'.');
+        return back()->with('success', __('Report :status.', ['status' => $data['status']]));
     }
 }

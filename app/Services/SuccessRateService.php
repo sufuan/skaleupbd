@@ -129,18 +129,29 @@ class SuccessRateService
             if ($deferNetwork) {
                 // Cache-only: a miss means the network figure is still
                 // outstanding — flag it so the caller queues the refresh job
-                // instead of waiting on the courier's API here.
-                $result = Cache::get($cacheKey);
-                if ($result === null) {
+                // instead of waiting on the courier's API here. A completed
+                // check is stored as a wrapper array (never a bare null),
+                // so a stored null RESULT — the courier has no data for
+                // this phone, the common case — reads back as "done, no
+                // data" and does NOT keep the caller waiting.
+                $cached = Cache::get($cacheKey);
+                if ($cached === null) {
                     $pending = true;
                     continue;
                 }
+                $result = $this->unwrapFraudResult($cached);
             } else {
-                $result = Cache::remember(
-                    $cacheKey,
-                    now()->addMinutes(10),
-                    fn () => DriverFactory::for($method)->fraudCheck($phone, $method)
-                );
+                $cached = Cache::get($cacheKey);
+                if ($cached !== null) {
+                    $result = $this->unwrapFraudResult($cached);
+                } else {
+                    $result = DriverFactory::for($method)->fraudCheck($phone, $method);
+                    // Store the wrapper, never the bare result: a bare
+                    // null is indistinguishable from a cache miss on
+                    // read-back, which deadlocked auto-approve for every
+                    // phone the courier network has no data for (Hunt L H1).
+                    Cache::put($cacheKey, ['done' => true, 'result' => $result], now()->addMinutes(10));
+                }
             }
             if ($result !== null) {
                 $out[] = ['courier' => $method->label()] + $result;
@@ -148,5 +159,23 @@ class SuccessRateService
         }
 
         return $out;
+    }
+
+    /**
+     * Unwrap a cached fraud-check entry. New entries are stored as
+     * ['done' => true, 'result' => ?array]; entries written before the
+     * wrapper existed are the bare result array (or a bare null, which
+     * Cache::get already reports as a miss — the refresh job then re-runs
+     * the check and rewrites it in the wrapped form).
+     */
+    private function unwrapFraudResult(mixed $cached): ?array
+    {
+        if (is_array($cached) && array_key_exists('done', $cached)) {
+            $result = $cached['result'] ?? null;
+
+            return is_array($result) ? $result : null;
+        }
+
+        return is_array($cached) ? $cached : null;
     }
 }

@@ -120,7 +120,7 @@ export default function Comments({ comments, counts, posts, shop_name }) {
                 </div>
                 <p style={{ fontSize: 12.5, color: '#64748B', margin: '0 0 14px' }}>{t('All Facebook and Instagram post comments in one place. No bargaining in public comments - a price question gets the fixed answer and is brought to the Inbox by Private Reply, bargaining happens there.')}</p>
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 10, flexWrap: 'wrap' }}>
-                    {[['all', 'All'], ['facebook', 'Facebook'], ['instagram', 'Instagram']].map(([v, l]) => (
+                    {[['all', t('All')], ['facebook', 'Facebook'], ['instagram', 'Instagram']].map(([v, l]) => (
                         <span key={v} style={chip(channel === v)} onClick={() => setChannel(v)}>{l}</span>
                     ))}
                     <select value={post} onChange={(e) => setPost(e.target.value)} style={{ marginLeft: 'auto', width: 240, maxWidth: '100%', padding: '8px 10px', border: '1px solid #d1d5db', borderRadius: 9, fontSize: 13 }}>

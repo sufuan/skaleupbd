@@ -203,7 +203,7 @@ class OrderController extends Controller
         $next = Order::where('business_id', $this->businessId($request))
             ->where('status', 'Pending')->oldest()->first();
         if (! $next) {
-            return redirect()->route('orders.index')->with('success', 'No pending orders left');
+            return redirect()->route('orders.index')->with('success', __('No pending orders left'));
         }
 
         return redirect()->route('orders.show', $next);
@@ -290,6 +290,23 @@ class OrderController extends Controller
             return back()->withErrors(['customer_phone' => 'Enter a valid mobile number (01XXXXXXXXX)'])->withInput();
         }
 
+        // S-F3/S-F4: the discount and the advance are capped by the bill
+        // itself. A discount past subtotal + delivery made grand_total
+        // negative (a ৳5,000 discount on a ৳710 bill booked -৳4,290),
+        // and an advance past the total posted phantom collected income
+        // into Finance (৳99,999 on a ৳710 order). The service computes
+        // the same subtotal from these very items, so the caps judged
+        // here are the caps the stored row will carry.
+        $subtotal = collect($data['items'])->sum(fn ($i) => (float) $i['price'] * (int) $i['qty']);
+        $discount = (float) ($data['discount'] ?? 0);
+        $deliveryCharge = (float) ($data['delivery_charge'] ?? 0);
+        if ($discount > $subtotal + $deliveryCharge) {
+            return back()->withErrors(['discount' => __('The discount cannot be more than the subtotal plus the delivery charge.')])->withInput();
+        }
+        if ((float) ($data['advance'] ?? 0) > $subtotal - $discount + $deliveryCharge) {
+            return back()->withErrors(['advance' => __('The advance cannot be more than the order total.')])->withInput();
+        }
+
         $attachments = [];
         if ($request->hasFile('attachment')) {
             $path = $request->file('attachment')->store('order-attachments', 'public');
@@ -300,7 +317,7 @@ class OrderController extends Controller
             // Owner rule: creating straight into Approved must respect stock too.
             $short = $this->orders->shortagesForItems($this->businessId($request), $data['items']);
             if ($short) {
-                return back()->with('error', 'Not enough stock - '.implode('; ', $short))->withInput();
+                return back()->with('error', __('Not enough stock - :detail', ['detail' => implode('; ', $short)]))->withInput();
             }
         }
 
@@ -332,7 +349,7 @@ class OrderController extends Controller
         AppNotification::create(['business_id' => $order->business_id, 'kind' => 'order', 'title' => "New order {$order->invoice_no}",
             'body' => "{$order->customer_name} · ৳".number_format((float) $order->grand_total), 'link' => "/orders/{$order->id}"]);
 
-        return redirect()->route('orders.show', $order)->with('success', "Order {$order->invoice_no} created");
+        return redirect()->route('orders.show', $order)->with('success', __('Order :invoice created', ['invoice' => $order->invoice_no]));
     }
 
     public function show(Request $request, Order $order): Response
@@ -462,7 +479,7 @@ class OrderController extends Controller
                 return back()->with('error', collect($e->errors())->flatten()->first());
             }
 
-            return back()->with('success', "Order {$order->invoice_no} cancelled");
+            return back()->with('success', __('Order :invoice cancelled', ['invoice' => $order->invoice_no]));
         }
 
         $oldSource = $order->source;
@@ -476,6 +493,12 @@ class OrderController extends Controller
         ], fn ($v) => $v !== null));
 
         if (! empty($data['advance_payment'])) {
+            // S-F4: the running advance may never pass the order total -
+            // the excess would sit in Finance as collected income the
+            // customer never owed (and become refundable on cancel).
+            if ((float) $order->advance + (float) $data['advance_payment'] > (float) $order->grand_total) {
+                return back()->with('error', __('The advance cannot be more than the order total.'));
+            }
             $order->advance = (float) $order->advance + (float) $data['advance_payment'];
             $order->logActivity('action', 'Advance payment recorded: ৳'.number_format((float) $data['advance_payment'])." by {$request->user()->name}", $request->user());
         }
@@ -494,7 +517,7 @@ class OrderController extends Controller
             $order->logActivity('note', $data['note'], $request->user());
         }
 
-        return back()->with('success', 'Changes saved');
+        return back()->with('success', __('Changes saved'));
     }
 
     public function addItem(Request $request, Order $order): RedirectResponse
@@ -511,10 +534,26 @@ class OrderController extends Controller
         if (! $product) {
             return back()->withErrors(['items' => 'Product not found']);
         }
+        // R5: on a Processing order the new line reserves immediately
+        // (ensureReserved below), so it must pass the same shortage
+        // discipline as an approval - judged net of what this order
+        // already holds, so its own existing lines never count against
+        // it. Without this, Add Item topped the reservation up in full
+        // and the later ship drove the row negative.
+        if ($order->status === 'Processing') {
+            $short = $this->orders->shortagesForAdditionalItems($order, [
+                ['product_id' => $product->id, 'qty' => (int) $data['qty']],
+            ]);
+            if ($short) {
+                return back()->withErrors(['items' => 'Not enough stock - '.implode('; ', $short)]);
+            }
+        }
 
         $order->items()->create([
             'product_id' => $product->id, 'name' => $product->name, 'sku' => $product->sku,
-            'qty' => $data['qty'], 'price' => $product->price, 'cost' => $product->cost,
+            // The one cost definition (Round 6, P7/P8): a combo added here
+            // books its component sum, not its own (usually 0) cost field.
+            'qty' => $data['qty'], 'price' => $product->price, 'cost' => $this->orders->lineUnitCost($product, null),
         ]);
         if ($order->status === 'Processing') {
             // Through the shared exactly-once routine (Round 3, H1): it
@@ -526,14 +565,14 @@ class OrderController extends Controller
         $order->save();
         $order->logActivity('action', "Product added: {$product->name} ×{$data['qty']} by {$request->user()->name}", $request->user());
 
-        return back()->with('success', 'Product added to the order');
+        return back()->with('success', __('Product added to the order'));
     }
 
     public function approve(Request $request, Order $order): RedirectResponse
     {
         $this->own($request, $order);
         if (! in_array($order->status, ['Pending', 'Incomplete'], true)) {
-            return back()->with('success', 'This order is already processed');
+            return back()->with('success', __('This order is already processed'));
         }
         try {
             $this->orders->approve($order, $request->user());
@@ -544,13 +583,13 @@ class OrderController extends Controller
         if ($request->boolean('next')) {
             $next = Order::where('business_id', $order->business_id)->where('status', 'Pending')->oldest()->first();
             if ($next) {
-                return redirect()->route('orders.show', $next)->with('success', "Order {$order->invoice_no} approved - next order loaded");
+                return redirect()->route('orders.show', $next)->with('success', __('Order :invoice approved - next order loaded', ['invoice' => $order->invoice_no]));
             }
 
-            return redirect()->route('orders.index')->with('success', "Order {$order->invoice_no} approved - no pending orders left");
+            return redirect()->route('orders.index')->with('success', __('Order :invoice approved - no pending orders left', ['invoice' => $order->invoice_no]));
         }
 
-        return back()->with('success', "Order {$order->invoice_no} approved");
+        return back()->with('success', __('Order :invoice approved', ['invoice' => $order->invoice_no]));
     }
 
     public function sendSms(Request $request, Order $order): RedirectResponse
@@ -588,7 +627,7 @@ class OrderController extends Controller
         if ($log->status === 'sent') {
             $order->logActivity('sms', "{$label} sent to customer - \"{$rendered}\"", $request->user());
 
-            return back()->with('success', "{$label} sent");
+            return back()->with('success', __(':label sent', ['label' => $label]));
         }
 
         $reason = match ($log->status) {
@@ -598,7 +637,7 @@ class OrderController extends Controller
         };
         $order->logActivity('sms', "{$label} not sent - {$reason}", $request->user());
 
-        return back()->with('error', "{$label} not sent - {$reason}");
+        return back()->with('error', __(':label not sent - :reason', ['label' => $label, 'reason' => $reason]));
     }
 
     public function block(Request $request, Order $order): RedirectResponse
@@ -616,7 +655,7 @@ class OrderController extends Controller
         }
         $order->logActivity('action', ucfirst($type)." blocked by {$request->user()->name}", $request->user());
 
-        return back()->with('success', ucfirst($type).' blocked');
+        return back()->with('success', __(':type blocked', ['type' => ucfirst($type)]));
     }
 
     /**
@@ -645,17 +684,24 @@ class OrderController extends Controller
     public function destroy(Request $request, Order $order): RedirectResponse
     {
         $this->own($request, $order);
-        $reason = (string) $request->input('reason', 'Deleted by staff');
-        if ($order->status === 'Processing') {
-            // Release exactly what the order holds (Round 3, H1).
-            $this->orders->releaseHeldReservations($order, 'Released on delete', $request->user());
+        // S-F9: an order that has entered fulfilment or settled money
+        // must not vanish - Finance revenue/cost/profit are computed
+        // from the orders table, so deleting a Delivered order silently
+        // rewrote reported history, and deleting a Shipped order erased
+        // a parcel that is physically with the courier. Only orders
+        // with no stock or money effects (Pending, Cancelled) may be
+        // deleted; a Cancelled order already released its reservation
+        // and a Pending one never held any.
+        if (! in_array($order->status, ['Pending', 'Cancelled'], true)) {
+            return back()->with('error', __('Only a Pending or Cancelled order can be deleted.'));
         }
+        $reason = (string) $request->input('reason', 'Deleted by staff');
         DeletionLog::create(['business_id' => $order->business_id, 'order_ref' => $order->invoice_no,
             'deleted_by' => $request->user()->name, 'reason' => $reason]);
         $invoice = $order->invoice_no;
         $order->delete();
 
-        return redirect()->route('orders.index')->with('success', "Order {$invoice} deleted");
+        return redirect()->route('orders.index')->with('success', __('Order :invoice deleted', ['invoice' => $invoice]));
     }
 
     public function invoice(Request $request, Order $order): Response

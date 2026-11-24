@@ -226,7 +226,9 @@ export default function Show({ order, customer, couriers, courierMethods = [], s
                             <div style={{ display: 'flex', gap: 14, marginTop: 12 }}>
                                 <button type="button" style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12.5, color: '#64748B', padding: 0, fontFamily: 'inherit' }} onClick={() => block('phone')}>{t('Block Phone')}</button>
                                 <button type="button" style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12.5, color: '#64748B', padding: 0, fontFamily: 'inherit' }} onClick={() => block('ip')}>{t('Block IP')}</button>
-                                <button type="button" style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12.5, color: '#DC2626', padding: 0, fontFamily: 'inherit' }} onClick={() => setDeleteOpen(true)}>{t('Delete Order')}</button>
+                                {['Pending', 'Cancelled'].includes(order.status) && (
+                                    <button type="button" style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12.5, color: '#DC2626', padding: 0, fontFamily: 'inherit' }} onClick={() => setDeleteOpen(true)}>{t('Delete Order')}</button>
+                                )}
                             </div>
                         </form>
 

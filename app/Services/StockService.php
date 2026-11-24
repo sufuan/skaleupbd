@@ -89,6 +89,21 @@ class StockService
     public function adjust(Product $product, int $delta, string $reason, ?string $note, ?User $actor, string $reference = 'ADJUST', ?float $unitCost = null): StockLedger
     {
         return DB::transaction(function () use ($product, $delta, $reason, $note, $actor, $reference, $unitCost) {
+            // Floor (Hunt W W7): a manual movement may never take the
+            // stock below zero, nor eat into units already reserved for
+            // live orders - the order paths refuse overselling, and the
+            // seller-facing Adjust/opening-stock path must refuse too.
+            // Throws before anything is written, so no ledger row and
+            // no branch sync happen for a refused adjustment.
+            if ($delta < 0) {
+                $newQty = (int) $product->stock_qty + $delta;
+                if ($newQty < 0) {
+                    throw new \RuntimeException(__('This adjustment would take the stock below zero.'));
+                }
+                if ($newQty < (int) $product->reserved_qty) {
+                    throw new \RuntimeException(__('This adjustment would use stock that is reserved for orders.'));
+                }
+            }
             $prev = $product->stock_qty;
             $product->increment('stock_qty', $delta);
             $this->syncDefaultBranchStock($product, $delta);

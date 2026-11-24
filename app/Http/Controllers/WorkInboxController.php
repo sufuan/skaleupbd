@@ -50,8 +50,11 @@ class WorkInboxController extends Controller
 
     private function createdLabel(WorkTask $t): string
     {
-        $c = $t->created_at;
-        if (DhakaTime::fmt($c, 'Y-m-d') === DhakaTime::today()) {
+        // Read the instant as Dhaka wall-clock throughout: the "today"
+        // check, the Yesterday branch and the formatted time must all
+        // agree (the raw Carbon formats in UTC, six hours early).
+        $c = $t->created_at->copy()->setTimezone(DhakaTime::TZ);
+        if ($c->toDateString() === DhakaTime::today()) {
             $mins = (int) $c->diffInMinutes(now());
             if ($mins < 60) {
                 return __(':count minutes ago', ['count' => $mins]);
@@ -138,9 +141,9 @@ class WorkInboxController extends Controller
             'escalated' => (bool) $t->escalated,
             'done_note' => $t->done_note,
             'done_by_label' => $t->doneBy?->name,
-            'done_label' => $t->done_at ? $t->done_at->format('d M H:i') : null,
+            'done_label' => DhakaTime::fmt($t->done_at, 'd M H:i'),
             'auto_close_reason' => $t->auto_close_reason,
-            'closed_label' => $t->closed_at ? $t->closed_at->format('d M H:i') : null,
+            'closed_label' => DhakaTime::fmt($t->closed_at, 'd M H:i'),
         ];
     }
 
@@ -321,7 +324,7 @@ class WorkInboxController extends Controller
             }
         }
 
-        return back()->with('success', 'Work Inbox settings saved');
+        return back()->with('success', __('Work Inbox settings saved'));
     }
 
     public function store(Request $request): RedirectResponse
@@ -336,7 +339,7 @@ class WorkInboxController extends Controller
         ]);
         $this->wi->createManual($biz, $request->user(), $data);
 
-        return back()->with('success', 'Task created');
+        return back()->with('success', __('Task created'));
     }
 
     public function start(Request $request, WorkTask $task): RedirectResponse
@@ -353,7 +356,7 @@ class WorkInboxController extends Controller
         $data = $request->validate(['note' => ['nullable', 'string', 'max:1000']]);
         $this->wi->markDone($task, $request->user(), $data['note'] ?? null);
 
-        return back()->with('success', 'Task done');
+        return back()->with('success', __('Task done'));
     }
 
     public function reassign(Request $request, WorkTask $task): RedirectResponse

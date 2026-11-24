@@ -1,8 +1,8 @@
 import { Head, Link } from '@inertiajs/react';
 import AppLayout from '@/Layouts/AppLayout';
 import { t } from '@/lib/i18n';
+import { tk } from '@/lib/money';
 
-const tk = (n) => `৳${Number(n || 0).toLocaleString('en-IN')}`;
 
 function Kpi({ label, value, sub }) {
     return (
@@ -40,7 +40,7 @@ export default function SellerDashboard({ stats, recentPayments, topSellers, exp
                 <Kpi label={t('PENDING APPROVALS')} value={stats.pending_approvals} sub={t('Shops waiting for approval')} />
                 <Kpi label={t('NEW SELLERS TODAY')} value={stats.new_today} sub={t('Joined today')} />
                 <Kpi label={t('TOTAL ORDERS')} value={stats.orders_total} sub={t('Across all shops')} />
-                <Kpi label={t('TOTAL SALES')} value={tk(stats.sales_total)} sub={t('Across all shops')} />
+                <Kpi label={t('TOTAL BOOKED ORDER VALUE')} value={tk(stats.sales_total)} sub={t('Across all shops')} />
                 <Kpi label={t('POINTS SOLD')} value={Number(stats.points_sold || 0).toLocaleString('en-IN')} sub={t('Points bought by sellers')} />
             </div>
 
@@ -49,7 +49,7 @@ export default function SellerDashboard({ stats, recentPayments, topSellers, exp
                     <h4 style={{ fontSize: 15, padding: '14px 14px 6px' }}>{t('Top sellers by sales')}</h4>
                     <div className="tbl-wrap">
                         <table className="tbl">
-                            <thead><tr><th>{t('Seller')}</th><th>{t('Package')}</th><th>{t('Orders')}</th><th>{t('Sales')}</th></tr></thead>
+                            <thead><tr><th>{t('Seller')}</th><th>{t('Package')}</th><th>{t('Orders')}</th><th>{t('Booked order value')}</th></tr></thead>
                             <tbody>
                                 {topSellers.map((s) => (
                                     <tr key={s.id}><td><Link href={`/admin/sellers/${s.id}`} style={{ fontWeight: 600 }}>{s.name}</Link></td><td>{s.package || '-'}</td><td>{s.orders}</td><td style={{ fontWeight: 600 }}>{tk(s.revenue)}</td></tr>

@@ -15,6 +15,16 @@ use Illuminate\Validation\ValidationException;
 /** The order book's core operations: intake, approve, lifecycle moves, stock. */
 class OrderService
 {
+    /**
+     * Statuses that mean the order has entered the fulfilment pipeline -
+     * every path landing an order in one of these stamps approved_at
+     * exactly once (Round 6, P9). The dashboard's default "Approved date"
+     * cohort reads approved_at, so an intake that skips the stamp (the
+     * WooCommerce importer, the external API, a direct service create)
+     * would silently vanish from the headline numbers.
+     */
+    private const APPROVED_STATUSES = ['Processing', 'Shipped', 'Delivered', 'Returned'];
+
     public function __construct(
         private readonly SettingsService $settings,
         private readonly SuccessRateService $fraud,
@@ -97,9 +107,27 @@ class OrderService
                     'variant_name' => $i['variant_name'] ?? $variant?->name,
                     'qty' => (int) ($i['qty'] ?? 1),
                     'price' => (float) ($i['price'] ?? $variant?->effectivePrice() ?? $product?->price ?? 0),
-                    'cost' => $product ? (float) $product->cost : (float) ($i['cost'] ?? 0),
+                    'cost' => $product ? $this->lineUnitCost($product, $variant) : (float) ($i['cost'] ?? 0),
                 ];
             });
+            // R5: an order created straight into Processing reserves in
+            // full below, so it must pass the same shortage discipline
+            // approve() applies - otherwise the reservation (and the
+            // later ship) drives stock negative for intakes that never
+            // pass an approve step (Woo/API imports, Approved-mode
+            // entry, service creates). Pending intake stays unchecked:
+            // nothing is reserved until approval, and intake must never
+            // fail before that point. Throwing here rolls the whole
+            // create back - no order, no point spent, no stock moved.
+            if (($data['status'] ?? 'Pending') === 'Processing') {
+                $short = $this->shortagesForItems($businessId, $items->map(fn ($i) => [
+                    'product_id' => $i['product_id'], 'qty' => $i['qty'],
+                    'variant_id' => $i['variant_id'] ?? null, 'variant_name' => $i['variant_name'] ?? null,
+                ])->all());
+                if ($short) {
+                    throw ValidationException::withMessages(['stock' => 'Not enough stock - '.implode('; ', $short)]);
+                }
+            }
             $subtotal = $items->sum(fn ($i) => $i['price'] * $i['qty']);
             $discount = (float) ($data['discount'] ?? 0);
             $delivery = (float) ($data['delivery_charge'] ?? 0);
@@ -115,6 +143,12 @@ class OrderService
             $order = Order::create([
                 'business_id' => $businessId,
                 'invoice_no' => $data['invoice_no'] ?? $this->nextInvoice($businessId, $data['invoice_prefix'] ?? null),
+                // Unguessable key for the public order-success page
+                // (Hunt U3): invoice numbers are sequential, so the
+                // success URL carries this token and the page 404s
+                // without it. Minted here so EVERY creation path
+                // (storefront, chat, API, Woo, manual) issues one.
+                'success_token' => \Illuminate\Support\Str::random(48),
                 'customer_id' => $customer->id,
                 'customer_name' => $data['customer_name'] ?? $customer->name ?? '',
                 'customer_phone' => $phone,
@@ -125,6 +159,10 @@ class OrderService
                 'source' => $data['source'] ?? 'DIRECT',
                 'site' => $data['site'] ?? null,
                 'status' => $data['status'] ?? 'Pending',
+                // Created already inside the pipeline (Woo importer,
+                // external API, Approved-mode form): the approval moment
+                // is the creation moment (Round 6, P9).
+                'approved_at' => in_array($data['status'] ?? 'Pending', self::APPROVED_STATUSES, true) ? now() : null,
                 'delivery_method' => $data['delivery_method'] ?? null,
                 'delivery_note' => $data['delivery_note'] ?? null,
                 'shipping_note' => $data['shipping_note'] ?? null,
@@ -265,6 +303,35 @@ class OrderService
     }
 
     /**
+     * The per-unit cost an order line snapshots at creation (Round 6,
+     * P7/P8). Finance P&L reads order_items.cost, so this snapshot IS
+     * the booked product cost:
+     * - a variant line books the VARIANT's cost (its own row carries it;
+     *   an unset variant cost falls back to the product's, mirroring
+     *   ProductVariant::effectivePrice());
+     * - a combo line books the sum of its components' costs (component
+     *   cost x recipe qty), expanded exactly the way stock moves - the
+     *   combo's own cost field is not what the shop spends;
+     * - anything else books the product's own cost.
+     */
+    public function lineUnitCost(Product $product, ?ProductVariant $variant): float
+    {
+        if ($variant) {
+            return $variant->cost !== null ? (float) $variant->cost : (float) $product->cost;
+        }
+        if ($product->type === 'combo') {
+            $sum = 0.0;
+            foreach ($this->expandLine($product, null, 1) as $t) {
+                $sum += (float) ($t['variant']->cost ?? $t['product']->cost) * $t['qty'];
+            }
+
+            return $sum;
+        }
+
+        return (float) $product->cost;
+    }
+
+    /**
      * Expand one order line into the stock targets it actually moves
      * (Round 5, K-H1/K-H2): a variant line moves the VARIANT's pool; a
      * combo line moves each COMPONENT (recipe qty x line qty, combos
@@ -392,6 +459,86 @@ class OrderService
                 'variant_id' => $i->variant_id, 'variant_name' => $i->variant_name])->all());
     }
 
+    /**
+     * Shortages for adding extra lines to an existing order (Add Item):
+     * the order's current items plus the new lines, judged net of what
+     * the order already holds - the same netting approve() applies, so
+     * adding an unrelated product is never refused over stock this order
+     * already reserved for itself (R5).
+     */
+    public function shortagesForAdditionalItems(Order $order, array $extraItems): array
+    {
+        if ($this->stockOff($order->business_id)) {
+            return [];
+        }
+        $held = $this->heldQuantities($order);
+        $needTargets = [];
+        $lines = $order->items->map(fn ($i) => ['product_id' => $i->product_id, 'qty' => $i->qty,
+            'variant_id' => $i->variant_id, 'variant_name' => $i->variant_name])->all();
+        foreach (array_merge($lines, $extraItems) as $i) {
+            $pid = (int) ($i['product_id'] ?? 0);
+            if ($pid <= 0) {
+                continue;
+            }
+            $product = Product::where('business_id', $order->business_id)->find($pid);
+            if (! $product) {
+                continue;
+            }
+            $variant = $this->variantForItem($product, $i);
+            foreach ($this->expandLine($product, $variant, (int) ($i['qty'] ?? 1)) as $t) {
+                $already = $held[$t['key']] ?? 0;
+                $use = min($already, $t['qty']);
+                $held[$t['key']] = $already - $use;
+                if ($t['qty'] - $use > 0) {
+                    $needTargets[] = [...$t, 'qty' => $t['qty'] - $use];
+                }
+            }
+        }
+
+        return $this->shortagesForTargets($order->business_id, $needTargets);
+    }
+
+    /**
+     * Shortages for a status move INTO Processing (S-F1): the same
+     * discipline approve() applies, judged on exactly the coverage
+     * ensureReserved() will use - per expanded target, the units this
+     * order already holds and the units it already shipped (and has not
+     * taken back) count as covered; only the uncovered shortfall can be
+     * short. Mirrors ensureReserved()'s per-target math line for line,
+     * so the check and the reservation can never disagree.
+     */
+    private function shortagesForReserveMove(Order $order): array
+    {
+        if ($this->stockOff($order->business_id)) {
+            return [];
+        }
+        $held = $this->heldQuantities($order);
+        $shipped = $this->shippedQuantities($order);
+        $needTargets = [];
+        foreach ($order->items as $item) {
+            if (! $item->product_id) {
+                continue;
+            }
+            $product = Product::where('business_id', $order->business_id)->find($item->product_id);
+            if (! $product) {
+                continue;
+            }
+            $variant = $this->variantForItem($product, $item);
+            foreach ($this->expandLine($product, $variant, (int) $item->qty) as $t) {
+                $already = $held[$t['key']] ?? 0;
+                $held[$t['key']] = max(0, $already - $t['qty']);
+                $gone = min(max(0, $t['qty'] - $already), $shipped[$t['key']] ?? 0);
+                $shipped[$t['key']] = ($shipped[$t['key']] ?? 0) - $gone;
+                $shortfall = $t['qty'] - $already - $gone;
+                if ($shortfall > 0) {
+                    $needTargets[] = [...$t, 'qty' => $shortfall];
+                }
+            }
+        }
+
+        return $this->shortagesForTargets($order->business_id, $needTargets);
+    }
+
     /** Approve: fraud re-check -> stock reserve -> Processing -> Processed By. */
     public function approve(Order $order, User $actor): Order
     {
@@ -458,6 +605,14 @@ class OrderService
         return DB::transaction(function () use ($order, $to, $actor, $reason) {
             $from = $order->status;
 
+            // R9: the target must be a real order status. Every write
+            // path (Super Edit included) funnels through here, so this
+            // is the choke point: an unknown string would strand the
+            // order outside every tab, filter and count.
+            if (! in_array($to, array_merge(Order::STATUSES, Order::EXTRA_STATUSES), true)) {
+                throw ValidationException::withMessages(['status' => __('That is not a valid order status.')]);
+            }
+
             // M4: a delivered order's goods have left and its accounts are
             // settled - cancelling it would make the unit vanish from stock
             // accounting entirely. Goods that come back go through Return.
@@ -465,9 +620,6 @@ class OrderService
                 throw ValidationException::withMessages(['status' => __('A delivered order cannot be cancelled. If the goods came back, use Return instead.')]);
             }
 
-            if ($to === 'Cancelled' && $from === 'Processing') {
-                $this->releaseReservations($order, 'release_reserve', 'Released on cancel');
-            }
             // M3: a status move INTO Processing (Super Edit, or any other
             // caller) must hold the same reservation the normal approve
             // flow holds - exactly once, via the shared routine. Moves
@@ -475,48 +627,66 @@ class OrderService
             // already left or came back and must not be reserved again.
             if ($to === 'Processing' && $from !== 'Processing'
                 && in_array($from, ['Pending', 'Incomplete', 'Cancelled', 'Partial', 'Pending Cancel', 'Pending Return'], true)) {
+                // S-F1: the move must pass the SAME shortage discipline
+                // approve() applies before it reserves anything - the old
+                // code reserved in full with no check, so an oversize
+                // order (stock 2, qty 10) reserved 10 and the later ship
+                // drove stock_qty to -8. Only the units this order does
+                // not already hold and has not already shipped can be
+                // short (the exact coverage ensureReserved() uses), and
+                // refusing here rolls the whole move back: status,
+                // reservation and ledger stay untouched.
+                $short = $this->shortagesForReserveMove($order);
+                if ($short) {
+                    throw ValidationException::withMessages(['status' => __('Not enough stock - ').implode('; ', $short)]);
+                }
                 $this->ensureReserved($order, $actor, "Reserved on approve of {$order->invoice_no}");
             }
-            // M3: leaving Processing back to Pending, or a Return before
-            // anything shipped, releases the hold - the goods never left.
-            if ($from === 'Processing' && in_array($to, ['Pending', 'Returned'], true)) {
+            // M3: leaving a reserved state back to Pending releases the
+            // hold - the goods never left. S-F2: the same release applies
+            // to Incomplete, and to orders leaving Partial: a reservation
+            // may only live in Processing/Partial (and the Pending
+            // Cancel/Pending Return on-ramps, which keep it on purpose).
+            if (in_array($from, ['Processing', 'Partial'], true) && in_array($to, ['Pending', 'Incomplete'], true)) {
                 $this->releaseReservations($order, 'release_reserve', 'Released on status change');
             }
-            if ($to === 'Returned' && in_array($from, ['Shipped', 'Delivered'], true) && ! $this->stockOff($order->business_id)) {
-                foreach ($order->items as $item) {
-                    if (! $item->product_id) {
-                        continue;
-                    }
-                    $product = Product::where('business_id', $order->business_id)->find($item->product_id);
-                    if (! $product) {
-                        continue;
-                    }
-                    // The goods come back onto the same rows they left:
-                    // the variant's stock for a variant line, the
-                    // components for a combo line, the product otherwise.
-                    $variant = $this->variantForItem($product, $item);
-                    foreach ($this->expandLine($product, $variant, (int) $item->qty) as $t) {
-                        $row = $t['variant'] ?? $t['product'];
-                        $cost = (float) ($t['variant']->cost ?? $t['product']->cost);
-                        $prevStock = $row->stock_qty;
-                        $row->increment('stock_qty', $t['qty']);
-                        if (! $t['variant']) {
-                            $this->stock->syncDefaultBranchStock($t['product'], (int) $t['qty']);
-                        }
-                        StockLedger::create(['business_id' => $order->business_id, 'product_id' => $t['product']->id,
-                            'variant_id' => $t['variant']?->id,
-                            'order_id' => $order->id, 'type' => 'return_in', 'qty' => $t['qty'],
-                            'prev_stock' => $prevStock, 'new_stock' => $prevStock + $t['qty'],
-                            'unit_cost' => $cost, 'value_impact' => $t['qty'] * $cost,
-                            'reference' => $order->invoice_no, 'user_id' => $actor->id,
-                            'note' => "Returned on {$order->invoice_no}"]);
-                    }
-                }
+            // Cancelled (R1a): goods that already shipped come back onto
+            // the shelf - the same restock a Return performs; without it
+            // the shipped units vanished from stock accounting entirely
+            // (the M4 failure, one status earlier). Whatever reservation
+            // is still held (Processing, Pending Cancel, ...) is released.
+            if ($to === 'Cancelled' && $from !== 'Cancelled') {
+                $this->restockShippedUnits($order, $actor, 'Restocked on cancel of');
+                $this->releaseReservations($order, 'release_reserve', 'Released on cancel');
+            }
+            // Returned: goods that shipped come back onto the same rows
+            // they left (the variant's stock for a variant line, the
+            // components for a combo line, the product otherwise). An
+            // order that never shipped (Processing -> Pending Return ->
+            // Returned) simply lets go of its reservation - no return_in
+            // rows for stock that never left (R1a).
+            if ($to === 'Returned' && $from !== 'Returned') {
+                // Restock what actually shipped, then release whatever
+                // reservation is still held (the mixed Partial case: part
+                // shipped, part still held - the old either/or left the
+                // held remainder behind forever). Both halves are
+                // ledger-exact, so a pure case runs only its own half.
+                $this->restockShippedUnits($order, $actor, 'Returned on');
+                $this->releaseReservations($order, 'release_reserve', 'Released on status change');
             }
             // M3: Processing -> Delivered consumes exactly like Processing
             // -> Shipped (a direct delivery never passed a Shipped state).
-            if (in_array($to, ['Shipped', 'Delivered'], true) && $from === 'Processing' && ! $this->stockOff($order->business_id)) {
+            // S-F2: the consume runs for a landing in Shipped/Delivered
+            // from ANY origin state, not just Processing - a jump that
+            // skips Processing (Pending -> Shipped, Partial -> Shipped)
+            // used to leave the goods on the books forever (and leak the
+            // reservation). The body below already nets the units that
+            // are already out per the ledger, so a repeat landing
+            // (Shipped -> Delivered, or a round trip back) consumes
+            // nothing twice.
+            if (in_array($to, ['Shipped', 'Delivered'], true) && $from !== $to && ! $this->stockOff($order->business_id)) {
                 $held = $this->heldQuantities($order);
+                $shipped = $this->shippedQuantities($order);
                 foreach ($order->items as $item) {
                     if (! $item->product_id) {
                         continue;
@@ -527,34 +697,55 @@ class OrderService
                     }
                     // Consume per expanded target (variant pool for a
                     // variant line, components for a combo line): only
-                    // the reservation this order actually holds on that
+                    // the units that have not already left (R1b - a
+                    // status round trip back through Processing must
+                    // never consume the same goods twice), and only the
+                    // reservation this order actually holds on that
                     // target, so reserved_qty can never be driven
-                    // negative; the physical stock always leaves in full.
+                    // negative; the physical stock leaves in full.
                     $variant = $this->variantForItem($product, $item);
                     foreach ($this->expandLine($product, $variant, (int) $item->qty) as $t) {
+                        $alreadyOut = min($t['qty'], $shipped[$t['key']] ?? 0);
+                        $shipped[$t['key']] = ($shipped[$t['key']] ?? 0) - $alreadyOut;
+                        $qty = $t['qty'] - $alreadyOut;
+                        if ($qty <= 0) {
+                            continue;
+                        }
                         $row = $t['variant'] ?? $t['product'];
                         $cost = (float) ($t['variant']->cost ?? $t['product']->cost);
                         $prevStock = $row->stock_qty;
-                        $consume = min($t['qty'], $held[$t['key']] ?? 0);
+                        $consume = min($qty, $held[$t['key']] ?? 0);
                         $held[$t['key']] = ($held[$t['key']] ?? 0) - $consume;
                         if ($consume > 0) {
                             $row->decrement('reserved_qty', $consume);
                         }
-                        $row->decrement('stock_qty', $t['qty']);
+                        $row->decrement('stock_qty', $qty);
                         if (! $t['variant']) {
-                            $this->stock->syncDefaultBranchStock($t['product'], -(int) $t['qty']);
+                            $this->stock->syncDefaultBranchStock($t['product'], -(int) $qty);
                         }
                         StockLedger::create(['business_id' => $order->business_id, 'product_id' => $t['product']->id,
                             'variant_id' => $t['variant']?->id,
-                            'order_id' => $order->id, 'type' => 'ship_out', 'qty' => $t['qty'],
-                            'prev_stock' => $prevStock, 'new_stock' => $prevStock - $t['qty'],
-                            'unit_cost' => $cost, 'value_impact' => -($t['qty'] * $cost),
+                            'order_id' => $order->id, 'type' => 'ship_out', 'qty' => $qty,
+                            'prev_stock' => $prevStock, 'new_stock' => $prevStock - $qty,
+                            'unit_cost' => $cost, 'value_impact' => -($qty * $cost),
                             'reference' => $order->invoice_no, 'user_id' => $actor->id,
                             'note' => ($to === 'Shipped' ? 'Shipped on ' : 'Delivered on ') . $order->invoice_no]);
                     }
                 }
+                // S-F2: once every unit is out, the order holds nothing -
+                // release any reservation the ledger still shows for it
+                // (a stale excess from a partial ship or a legacy double
+                // reserve). Ledger-exact and a no-op in the normal case,
+                // where the consume above already zeroed the hold.
+                $this->releaseHeldReservations($order, 'Released on ship', $actor);
             }
 
+            // Landing in the pipeline by a status move (Super Edit and
+            // every other caller) stamps approved_at too - exactly once,
+            // only when no earlier path stamped it (Round 6, P9).
+            if ($order->approved_at === null && in_array($to, self::APPROVED_STATUSES, true)) {
+                $order->approved_at = now();
+            }
             $order->status = $to;
             if ($to === 'Cancelled') {
                 $order->cancellation_reason = $reason;
@@ -676,6 +867,82 @@ class OrderService
         return array_map(fn ($q) => max(0, $q), $held);
     }
 
+    /**
+     * Quantities this order has physically OUT per stock target, per the
+     * ledger: ship_outs minus return_ins, with the same target keys as
+     * heldQuantities(). This is what makes status round trips safe
+     * (R1b): units that already left - and have not come back - are
+     * never reserved, shipped or restocked a second time.
+     *
+     * @return array<string, int> target key => net shipped qty
+     */
+    private function shippedQuantities(Order $order): array
+    {
+        $shipped = [];
+        $rows = StockLedger::where('order_id', $order->id)
+            ->whereIn('type', ['ship_out', 'return_in'])
+            ->selectRaw('product_id, variant_id, type, SUM(qty) as total')
+            ->groupBy('product_id', 'variant_id', 'type')
+            ->get();
+        foreach ($rows as $row) {
+            $key = $row->variant_id ? 'v'.(int) $row->variant_id : 'p'.(int) $row->product_id;
+            $shipped[$key] = ($shipped[$key] ?? 0) + ($row->type === 'ship_out' ? (int) $row->total : -(int) $row->total);
+        }
+
+        return array_map(fn ($q) => max(0, $q), $shipped);
+    }
+
+    /**
+     * Put back the units this order actually shipped and has not yet
+     * returned (per shippedQuantities(), per expanded target), writing
+     * return_in rows on the same rows the goods left. Returns true when
+     * anything was restocked. Shared by Return and Cancel-after-ship
+     * (R1a): for both, the goods are physically back with the seller, so
+     * a plain reservation release would leave them unaccounted.
+     */
+    private function restockShippedUnits(Order $order, User $actor, string $notePrefix): bool
+    {
+        if ($this->stockOff($order->business_id)) {
+            return false;
+        }
+        $shipped = $this->shippedQuantities($order);
+        $restocked = false;
+        foreach ($order->items as $item) {
+            if (! $item->product_id) {
+                continue;
+            }
+            $product = Product::where('business_id', $order->business_id)->find($item->product_id);
+            if (! $product) {
+                continue;
+            }
+            $variant = $this->variantForItem($product, $item);
+            foreach ($this->expandLine($product, $variant, (int) $item->qty) as $t) {
+                $qty = min($t['qty'], $shipped[$t['key']] ?? 0);
+                $shipped[$t['key']] = ($shipped[$t['key']] ?? 0) - $qty;
+                if ($qty <= 0) {
+                    continue;
+                }
+                $row = $t['variant'] ?? $t['product'];
+                $cost = (float) ($t['variant']->cost ?? $t['product']->cost);
+                $prevStock = $row->stock_qty;
+                $row->increment('stock_qty', $qty);
+                if (! $t['variant']) {
+                    $this->stock->syncDefaultBranchStock($t['product'], (int) $qty);
+                }
+                StockLedger::create(['business_id' => $order->business_id, 'product_id' => $t['product']->id,
+                    'variant_id' => $t['variant']?->id,
+                    'order_id' => $order->id, 'type' => 'return_in', 'qty' => $qty,
+                    'prev_stock' => $prevStock, 'new_stock' => $prevStock + $qty,
+                    'unit_cost' => $cost, 'value_impact' => $qty * $cost,
+                    'reference' => $order->invoice_no, 'user_id' => $actor->id,
+                    'note' => "{$notePrefix} {$order->invoice_no}"]);
+                $restocked = true;
+            }
+        }
+
+        return $restocked;
+    }
+
     /** Write one reserve/release ledger row for a target and move its reserved_qty. */
     private function moveReservation(Order $order, array $target, int $qty, string $type, ?User $actor, string $note): void
     {
@@ -723,6 +990,7 @@ class OrderService
     public function ensureReserved(Order $order, ?User $actor, string $note): void
     {
         $held = $this->heldQuantities($order);
+        $shipped = $this->shippedQuantities($order);
         $off = $this->stockOff($order->business_id);
         foreach ($order->items as $item) {
             if (! $item->product_id) {
@@ -732,8 +1000,14 @@ class OrderService
             if (! $product) {
                 continue;
             }
-            // snapshot the current average cost for the profit engine
-            $item->cost = $product->cost;
+            $variant = $this->variantForItem($product, $item);
+            // Snapshot the line's true unit cost for the profit engine -
+            // the SAME definition create() uses (Round 6, P7/P8): the
+            // variant's cost for a variant line, the component sum for a
+            // combo line, never blindly the parent product's cost (that
+            // stomp booked every combo at 0 and every variant at the
+            // parent's cost).
+            $item->cost = $this->lineUnitCost($product, $variant);
             $item->save();
             if ($off) {
                 continue;
@@ -742,11 +1016,18 @@ class OrderService
             // variant line, the components for a combo line, the
             // product itself otherwise - each topped up only by what
             // this order does not already hold on that target.
-            $variant = $this->variantForItem($product, $item);
             foreach ($this->expandLine($product, $variant, (int) $item->qty) as $t) {
+                // Units this order already shipped (and has not taken
+                // back) count as covered: they are gone for good, so a
+                // status round trip back into Processing must not
+                // reserve the same goods a second time (R1b) - the old
+                // held-only math read them as "holds nothing" and
+                // reserved in full, then shipped in full again.
                 $already = $held[$t['key']] ?? 0;
                 $held[$t['key']] = max(0, $already - $t['qty']);
-                $shortfall = $t['qty'] - $already;
+                $gone = min(max(0, $t['qty'] - $already), $shipped[$t['key']] ?? 0);
+                $shipped[$t['key']] = ($shipped[$t['key']] ?? 0) - $gone;
+                $shortfall = $t['qty'] - $already - $gone;
                 if ($shortfall <= 0) {
                     continue;
                 }

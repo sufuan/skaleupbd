@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\DhakaTime;
 use App\Models\DeletionLog;
 use App\Models\MessageTemplate;
 use App\Models\OrderSource;
@@ -85,7 +86,7 @@ class SettingsController extends Controller
             'hasShop' => $biz > 0,
             'integration' => [
                 'endpoint' => url('/api/external/v1/orders'),
-                'api_key' => $apiKey ? ['last4' => (string) $apiKey->last4, 'label' => (string) $apiKey->label, 'last_used_at' => $apiKey->last_used_at?->format('d M Y, h:i A')] : null,
+                'api_key' => $apiKey ? ['last4' => (string) $apiKey->last4, 'label' => (string) $apiKey->label, 'last_used_at' => DhakaTime::fmt($apiKey->last_used_at, 'd M Y, h:i A')] : null,
             ],
             'group' => $request->query('group', 'home'),
             'couriers' => [
@@ -238,7 +239,7 @@ class SettingsController extends Controller
                 ],
                 'deletionLogs' => DeletionLog::where('business_id', $biz)->latest('created_at')->limit(50)->get()
                     ->map(fn ($l) => ['ref' => $l->order_ref, 'by' => $l->deleted_by, 'reason' => $l->reason,
-                        'when' => $l->created_at?->format('d M Y, h:i A')]),
+                        'when' => DhakaTime::fmt($l->created_at, 'd M Y, h:i A')]),
                 // Change History is attributed by the business_id recorded
                 // on each row: platform admins see everything, a seller
                 // sees only their own shop's changes. Rows written before
@@ -247,7 +248,7 @@ class SettingsController extends Controller
                     ->when(! $isPlatform || $viewing, fn ($q) => $q->where('business_id', $biz))
                     ->latest('created_at')->limit(30)->get()
                     ->map(fn ($c) => ['key' => $c->key, 'old' => $this->maskHistoryValue((string) $c->key, $c->old_value), 'new' => $this->maskHistoryValue((string) $c->key, $c->new_value),
-                        'by' => $c->changed_by, 'when' => \Illuminate\Support\Carbon::parse($c->created_at)->format('d M Y, h:i A')]),
+                        'by' => $c->changed_by, 'when' => DhakaTime::fmt($c->created_at, 'd M Y, h:i A')]),
             ],
         ]);
     }
@@ -349,7 +350,7 @@ class SettingsController extends Controller
         abort_unless((bool) ($request->user()?->is_platform_admin), 403);
         $request->validate(['enabled' => ['required', 'boolean']]);
 
-        $this->settings->set('security.totp_enabled', $request->boolean('enabled'), $request->user()?->id);
+        $this->setLogged($request, 'security.totp_enabled', $request->boolean('enabled'));
 
         return back();
     }
@@ -372,7 +373,7 @@ class SettingsController extends Controller
         $this->setLoggedBiz($request, $biz, "business.{$biz}.invoice_slug", 'business.invoice_slug', strtoupper($data['invoice_slug']));
         $this->setLoggedBiz($request, $biz, "business.{$biz}.default_delivery_cost", 'business.default_delivery_cost', (float) $data['default_delivery_cost']);
 
-        return back()->with('success', 'Business settings saved');
+        return back()->with('success', __('Business settings saved'));
     }
 
     /** Merchant Profile tab: the shop's own licence / TIN / bank details. */
@@ -395,7 +396,7 @@ class SettingsController extends Controller
         $this->setLogged($request, "business.{$biz}.merchant_bank_branch", $data['bank_branch'] ?? '');
         $this->setLogged($request, "business.{$biz}.merchant_account_number", $data['account_number'] ?? '');
 
-        return back()->with('success', 'Merchant settings saved');
+        return back()->with('success', __('Merchant settings saved'));
     }
 
     public function updateSources(Request $request): RedirectResponse
@@ -418,7 +419,7 @@ class SettingsController extends Controller
             $source->update(['label' => $row['label'], 'is_visible' => $row['is_visible']]);
         }
 
-        return back()->with('success', 'Order sources saved');
+        return back()->with('success', __('Order sources saved'));
     }
 
     public function resetSources(Request $request): RedirectResponse
@@ -435,7 +436,7 @@ class SettingsController extends Controller
                 ->update(['label' => $label, 'is_visible' => true]);
         }
 
-        return back()->with('success', 'Order sources reset to default');
+        return back()->with('success', __('Order sources reset to default'));
     }
 
     public function updateTemplates(Request $request): RedirectResponse
@@ -450,7 +451,7 @@ class SettingsController extends Controller
         MessageTemplate::updateOrCreate(['business_id' => $biz, 'key' => 'advance'], ['name' => 'Advance Payment SMS', 'body' => $data['advance']]);
         $this->setLoggedBiz($request, $biz, "invoice.{$biz}.template", 'invoice.template', $data['invoice_template']);
 
-        return back()->with('success', 'Templates saved');
+        return back()->with('success', __('Templates saved'));
     }
 
     public function updateInventory(Request $request): RedirectResponse
@@ -474,7 +475,7 @@ class SettingsController extends Controller
         $this->setLoggedBiz($request, $biz, "inventory.{$biz}.stock_management_disabled", 'inventory.stock_management_disabled', (bool) $data['stock_management_disabled']);
         $this->setLoggedBiz($request, $biz, "inventory.{$biz}.valuation", 'inventory.valuation', $data['valuation']);
 
-        return back()->with('success', 'Inventory settings saved');
+        return back()->with('success', __('Inventory settings saved'));
     }
 
     public function updateFinance(Request $request): RedirectResponse
@@ -487,7 +488,7 @@ class SettingsController extends Controller
         $this->setLogged($request, 'finance.' . $biz . '.daily_closing', (bool) $data['daily_closing']);
         $this->setLogged($request, 'finance.' . $biz . '.advance_account_id', (int) ($data['advance_account_id'] ?? 0));
 
-        return back()->with('success', 'Finance settings saved');
+        return back()->with('success', __('Finance settings saved'));
     }
 
     public function updateMarketingSms(Request $request): RedirectResponse
@@ -505,28 +506,29 @@ class SettingsController extends Controller
             'webhook_secret' => ['nullable', 'string', 'max:255'],
         ]);
         $sms = app(\App\Services\SmsService::class);
-        $sms->setSetting($biz, 'sms_rate', (float) $data['rate']);
-        $sms->setSetting($biz, 'cap_day', (int) $data['cap_day']);
-        $sms->setSetting($biz, 'cap_week', (int) $data['cap_week']);
+        $actor = $request->user();
+        $sms->setSettingLogged($biz, 'sms_rate', (float) $data['rate'], $actor);
+        $sms->setSettingLogged($biz, 'cap_day', (int) $data['cap_day'], $actor);
+        $sms->setSettingLogged($biz, 'cap_week', (int) $data['cap_week'], $actor);
         if (! empty($data['add_balance'])) {
-            $sms->setSetting($biz, 'sms_balance', round($sms->balance($biz) + (float) $data['add_balance'], 2));
+            $sms->setSettingLogged($biz, 'sms_balance', round($sms->balance($biz) + (float) $data['add_balance'], 2), $actor);
         }
         // The provider account is the seller's own: every field is saved
         // per business (marketing.{biz}.sms_*), never platform-global.
-        $sms->setSetting($biz, 'sms_provider', $data['provider']);
-        $sms->setSetting($biz, 'sms_mode', $data['mode']);
-        $sms->setSetting($biz, 'sms_sender_id', $data['sender_id'] ?? '');
+        $sms->setSettingLogged($biz, 'sms_provider', $data['provider'], $actor);
+        $sms->setSettingLogged($biz, 'sms_mode', $data['mode'], $actor);
+        $sms->setSettingLogged($biz, 'sms_sender_id', $data['sender_id'] ?? '', $actor);
         if (! empty($data['api_key'])) {
-            $sms->setSetting($biz, 'sms_api_key_enc', \Illuminate\Support\Facades\Crypt::encryptString($data['api_key']));
+            $sms->setSettingLogged($biz, 'sms_api_key_enc', \Illuminate\Support\Facades\Crypt::encryptString($data['api_key']), $actor);
             // Plain marker so views can tell a key exists without decrypting it.
-            $sms->setSetting($biz, 'sms_api_key', 'set');
+            $sms->setSettingLogged($biz, 'sms_api_key', 'set', $actor);
         }
         if (! empty($data['webhook_secret'])) {
-            $sms->setSetting($biz, 'sms_webhook_secret_enc', \Illuminate\Support\Facades\Crypt::encryptString($data['webhook_secret']));
-            $sms->setSetting($biz, 'sms_webhook_secret', 'set');
+            $sms->setSettingLogged($biz, 'sms_webhook_secret_enc', \Illuminate\Support\Facades\Crypt::encryptString($data['webhook_secret']), $actor);
+            $sms->setSettingLogged($biz, 'sms_webhook_secret', 'set', $actor);
         }
 
-        return back()->with('success', 'SMS settings saved');
+        return back()->with('success', __('SMS settings saved'));
     }
 
     /** Settings → Marketing SMS "Check connection": provider balance as JSON. */
@@ -551,10 +553,10 @@ class SettingsController extends Controller
         $body = trim((string) ($data['message'] ?? '')) ?: 'SkaleUp test SMS';
         $log = app(\App\Services\SmsService::class)->sendTest($biz, $data['phone'], $body);
         if ($log->status === 'sent') {
-            return back()->with('success', 'Test SMS sent');
+            return back()->with('success', __('Test SMS sent'));
         }
 
-        return back()->with('error', 'Test SMS not sent - ' . ($log->error ?: 'unknown error'));
+        return back()->with('error', __('Test SMS not sent - :error', ['error' => $log->error ?: __('unknown error')]));
     }
 
     public function updateOrderToggles(Request $request): RedirectResponse
@@ -572,7 +574,7 @@ class SettingsController extends Controller
             $this->setLoggedBiz($request, $biz, "orders.{$biz}.{$key}", "orders.{$key}", (bool) $value);
         }
 
-        return back()->with('success', 'Order settings saved');
+        return back()->with('success', __('Order settings saved'));
     }
 
     public function updateAutoApprove(Request $request): RedirectResponse
@@ -585,7 +587,7 @@ class SettingsController extends Controller
         $this->setLoggedBiz($request, $biz, "orders.{$biz}.auto_approve_enabled", 'orders.auto_approve_enabled', (bool) $data['auto_approve_enabled']);
         $this->setLoggedBiz($request, $biz, "orders.{$biz}.auto_approve_threshold", 'orders.auto_approve_threshold', (int) $data['auto_approve_threshold']);
 
-        return back()->with('success', 'Auto-approve settings saved');
+        return back()->with('success', __('Auto-approve settings saved'));
     }
 
     public function addCourierMethod(Request $request): RedirectResponse
@@ -601,7 +603,7 @@ class SettingsController extends Controller
             $this->setLogged($request, $list->key($biz), array_values($methods));
         }
 
-        return back()->with('success', 'Delivery method added');
+        return back()->with('success', __('Delivery method added'));
     }
 
     // ---------- AI & Auto Reply (M6) ----------
@@ -618,7 +620,7 @@ class SettingsController extends Controller
         ]);
         \App\Models\AiRule::create($data + ['business_id' => $biz, 'active' => true]);
 
-        return back()->with('success', 'Rule added');
+        return back()->with('success', __('Rule added'));
     }
 
     public function updateAiRule(Request $request, \App\Models\AiRule $rule): RedirectResponse
@@ -634,7 +636,7 @@ class SettingsController extends Controller
         ]);
         $rule->update($data);
 
-        return back()->with('success', 'Rule saved');
+        return back()->with('success', __('Rule saved'));
     }
 
     public function deleteAiRule(Request $request, \App\Models\AiRule $rule): RedirectResponse
@@ -642,7 +644,7 @@ class SettingsController extends Controller
         abort_unless((int) $rule->business_id === (int) ($request->user()?->business_id ?? 0), 403);
         $rule->delete();
 
-        return back()->with('success', 'Rule deleted');
+        return back()->with('success', __('Rule deleted'));
     }
 
     public function testAiRule(Request $request): \Illuminate\Http\JsonResponse
@@ -652,7 +654,7 @@ class SettingsController extends Controller
         $brain = app(\App\Services\RuleBrainService::class);
         $rule = $brain->matchRule($biz, $data['text']);
         if (! $rule) {
-            return response()->json(['matched' => false, 'note' => 'কোনো নিয়ম মেলেনি — AI product-এর বিবরণ পড়ে draft বানাবে, মানুষ দেখে পাঠাবে।']);
+            return response()->json(['matched' => false, 'note' => 'কোনো নিয়ম মেলেনি - AI product-এর বিবরণ পড়ে draft বানাবে, মানুষ দেখে পাঠাবে।']);
         }
         $product = $brain->productFor($biz, $data['text']);
         $reply = $rule->action === 'hide' ? '(comment hide হবে)' : ($rule->action === 'handover' ? '(মানুষের হাতে যাবে)' : $brain->buildReply($rule, $product, $biz));
@@ -696,7 +698,7 @@ class SettingsController extends Controller
             $this->setLoggedBiz($request, $biz, "ai.{$biz}.working_hours", 'ai.working_hours', (string) ($data['working_hours'] ?? ''));
         }
 
-        return back()->with('success', 'AI Reply settings saved');
+        return back()->with('success', __('AI Reply settings saved'));
     }
 
     public function updateAiTalker(Request $request): RedirectResponse
@@ -734,7 +736,7 @@ class SettingsController extends Controller
         }
         $this->setLogged($request, 'ai.talker', $cfg);
 
-        return back()->with('success', 'AI Model settings saved');
+        return back()->with('success', __('AI Model settings saved'));
     }
 
     public function testAiTalker(Request $request): \Illuminate\Http\JsonResponse
@@ -772,7 +774,7 @@ class SettingsController extends Controller
             $this->setLoggedBiz($request, $biz, "ai.{$biz}.negotiation", 'ai.negotiation', $data);
         }
 
-        return back()->with('success', 'Negotiation settings saved');
+        return back()->with('success', __('Negotiation settings saved'));
     }
 
     public function updateAiBehavior(Request $request): RedirectResponse
@@ -793,7 +795,7 @@ class SettingsController extends Controller
             $this->setLoggedBiz($request, $biz, "ai.{$biz}.behavior", 'ai.behavior', $data);
         }
 
-        return back()->with('success', 'AI behaviour settings saved');
+        return back()->with('success', __('AI behaviour settings saved'));
     }
 
     public function storeKnowledge(Request $request): RedirectResponse
@@ -802,7 +804,7 @@ class SettingsController extends Controller
         $data = $request->validate(['title' => ['required', 'string', 'max:160'], 'body' => ['required', 'string', 'max:4000']]);
         \App\Models\KnowledgeEntry::create($data + ['business_id' => $biz]);
 
-        return back()->with('success', 'Knowledge added');
+        return back()->with('success', __('Knowledge added'));
     }
 
     public function updateKnowledge(Request $request, \App\Models\KnowledgeEntry $entry): RedirectResponse
@@ -811,7 +813,7 @@ class SettingsController extends Controller
         $data = $request->validate(['title' => ['required', 'string', 'max:160'], 'body' => ['required', 'string', 'max:4000']]);
         $entry->update($data);
 
-        return back()->with('success', 'Knowledge saved');
+        return back()->with('success', __('Knowledge saved'));
     }
 
     public function deleteKnowledge(Request $request, \App\Models\KnowledgeEntry $entry): RedirectResponse
@@ -819,7 +821,7 @@ class SettingsController extends Controller
         abort_unless((int) $entry->business_id === (int) ($request->user()?->business_id ?? 0), 403);
         $entry->delete();
 
-        return back()->with('success', 'Knowledge deleted');
+        return back()->with('success', __('Knowledge deleted'));
     }
 
     public function approveProposal(Request $request, \App\Models\AiRuleProposal $proposal): RedirectResponse
@@ -840,7 +842,7 @@ class SettingsController extends Controller
         $proposal->status = 'approved';
         $proposal->save();
 
-        return back()->with('success', 'Proposal approved');
+        return back()->with('success', __('Proposal approved'));
     }
 
     public function rejectProposal(Request $request, \App\Models\AiRuleProposal $proposal): RedirectResponse
@@ -849,7 +851,7 @@ class SettingsController extends Controller
         $proposal->status = 'rejected';
         $proposal->save();
 
-        return back()->with('success', 'Proposal rejected');
+        return back()->with('success', __('Proposal rejected'));
     }
 
     // ---------- Messaging Channels (Meta connection) ----------
@@ -900,15 +902,17 @@ class SettingsController extends Controller
             'instagram_username' => ['nullable', 'string', 'max:120'],
             'instagram_token' => ['nullable', 'string', 'max:2000'],
         ]);
-        $uid = $request->user()?->id;
-        $this->settings->set('meta.app_id', trim((string) ($data['app_id'] ?? '')), $uid);
+        // All saves go through setLogged so the Change History shows
+        // them like every other settings save (secret values are
+        // masked at display time by maskHistoryValue).
+        $this->setLogged($request, 'meta.app_id', trim((string) ($data['app_id'] ?? '')));
         if (! empty($data['app_secret'])) {
-            $this->settings->set('meta.app_secret_enc', \App\Services\MetaGraphService::encrypt($data['app_secret']), $uid);
+            $this->setLogged($request, 'meta.app_secret_enc', \App\Services\MetaGraphService::encrypt($data['app_secret']));
         }
         if ((string) $this->settings->get('meta.verify_token', '') === '') {
-            $this->settings->set('meta.verify_token', 'skaleup_' . \Illuminate\Support\Str::random(24), $uid);
+            $this->setLogged($request, 'meta.verify_token', 'skaleup_' . \Illuminate\Support\Str::random(24));
         }
-        $this->settings->set('channels.business_id', (int) ($request->user()?->business_id ?? 0) ?: (int) $this->settings->get('channels.business_id', 1), $uid);
+        $this->setLogged($request, 'channels.business_id', (int) ($request->user()?->business_id ?? 0) ?: (int) $this->settings->get('channels.business_id', 1));
         $map = [
             'facebook' => ['account_id' => 'facebook_account_id', 'page_name' => 'facebook_page_name', 'token' => 'facebook_token'],
             'whatsapp' => ['account_id' => 'whatsapp_account_id', 'waba_id' => 'whatsapp_waba_id', 'phone_number' => 'whatsapp_phone_number', 'token' => 'whatsapp_token'],
@@ -925,7 +929,7 @@ class SettingsController extends Controller
                     $cfg[$key] = trim((string) ($data[$input] ?? ''));
                 }
             }
-            $this->settings->set("channels.{$channel}", $cfg, $uid);
+            $this->setLogged($request, "channels.{$channel}", $cfg);
         }
 
         // ধাপ ৫: keep the platform shop's connection ROW in sync with
@@ -934,7 +938,7 @@ class SettingsController extends Controller
         // form never disagree about the platform's own connection.
         app(\App\Services\ChannelConnectionService::class)->migrateLegacyGlobal();
 
-        return back()->with('success', 'Messaging channels saved');
+        return back()->with('success', __('Messaging channels saved'));
     }
 
     public function checkChannel(Request $request): \Illuminate\Http\JsonResponse
@@ -970,7 +974,7 @@ class SettingsController extends Controller
             'is_active' => true, 'sort' => (int) (\App\Models\PointPack::max('sort') ?? 0) + 1,
         ]);
 
-        return back()->with('success', 'Pack created');
+        return back()->with('success', __('Pack created'));
     }
 
     public function updatePackage(Request $request, \App\Models\PointPack $package): RedirectResponse
@@ -982,18 +986,18 @@ class SettingsController extends Controller
             'is_active' => (bool) ($data['active'] ?? $package->is_active),
         ]);
 
-        return back()->with('success', 'Pack saved');
+        return back()->with('success', __('Pack saved'));
     }
 
     public function deletePackage(Request $request, \App\Models\PointPack $package): RedirectResponse
     {
         abort_unless((bool) ($request->user()?->is_platform_admin), 403);
         if (\App\Models\BusinessWallet::where('pack_id', $package->id)->exists()) {
-            return back()->with('error', 'A seller is on this pack - deactivate it instead of deleting');
+            return back()->with('error', __('A seller is on this pack - deactivate it instead of deleting'));
         }
         $package->delete();
 
-        return back()->with('success', 'Pack deleted');
+        return back()->with('success', __('Pack deleted'));
     }
 
     /** M19 pricing switches — everything about points is set here. */
@@ -1007,13 +1011,13 @@ class SettingsController extends Controller
             'payment_instructions' => ['nullable', 'string', 'max:1000'],
             'enforcement_enabled' => ['required', 'boolean'],
         ]);
-        $this->settings->set('pricing.points_per_order', (int) $data['points_per_order']);
-        $this->settings->set('pricing.onboarding_fee_bdt', (float) $data['onboarding_fee_bdt']);
-        $this->settings->set('pricing.low_balance_threshold', (int) $data['low_balance_threshold']);
-        $this->settings->set('pricing.payment_instructions', (string) ($data['payment_instructions'] ?? ''));
-        $this->settings->set('pricing.enforcement_enabled', (bool) $data['enforcement_enabled']);
+        $this->setLogged($request, 'pricing.points_per_order', (int) $data['points_per_order']);
+        $this->setLogged($request, 'pricing.onboarding_fee_bdt', (float) $data['onboarding_fee_bdt']);
+        $this->setLogged($request, 'pricing.low_balance_threshold', (int) $data['low_balance_threshold']);
+        $this->setLogged($request, 'pricing.payment_instructions', (string) ($data['payment_instructions'] ?? ''));
+        $this->setLogged($request, 'pricing.enforcement_enabled', (bool) $data['enforcement_enabled']);
 
-        return back()->with('success', 'Pricing settings saved');
+        return back()->with('success', __('Pricing settings saved'));
     }
 
     /** Registration verification switches — platform admin only. */
@@ -1025,9 +1029,9 @@ class SettingsController extends Controller
             // Stored as a plain string — never let it become a number.
             'verify_channel' => ['required', 'string', \Illuminate\Validation\Rule::in(['sms', 'email', 'both'])],
         ]);
-        $this->settings->set('registration.verify_enabled', (bool) $data['verify_enabled']);
-        $this->settings->set('registration.verify_channel', (string) $data['verify_channel']);
+        $this->setLogged($request, 'registration.verify_enabled', (bool) $data['verify_enabled']);
+        $this->setLogged($request, 'registration.verify_channel', (string) $data['verify_channel']);
 
-        return back()->with('success', 'Registration verification settings saved');
+        return back()->with('success', __('Registration verification settings saved'));
     }
 }

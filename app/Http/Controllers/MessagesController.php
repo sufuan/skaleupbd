@@ -35,18 +35,37 @@ class MessagesController extends Controller
     public function inbox(Request $request): Response
     {
         $biz = $this->biz($request);
+        // The list is capped at the 100 most recent conversations: a shop's
+        // full history made every inbox open ship (and probe) every
+        // conversation it ever had. Report counts below stay global.
         $conversations = Conversation::where('business_id', $biz)
-            ->orderByDesc('last_message_at')->orderByDesc('id')->get();
+            ->orderByDesc('last_message_at')->orderByDesc('id')->limit(100)->get();
 
         $selected = null;
         $selId = (int) $request->query('c', 0);
-        $sel = $conversations->firstWhere('id', $selId) ?? $conversations->first();
+        $sel = $selId
+            ? ($conversations->firstWhere('id', $selId) ?? Conversation::where('business_id', $biz)->find($selId))
+            : null;
+        $sel ??= $conversations->first();
         if ($sel) {
             if ((int) $sel->unread_count > 0) {
                 $sel->unread_count = 0;
                 $sel->save();
             }
-            $msgs = ChatMessage::where('conversation_id', $sel->id)->orderBy('id')->get();
+            // Latest 300 messages of the thread, oldest first — a
+            // long-lived thread no longer ships its whole history per open.
+            $msgs = ChatMessage::where('conversation_id', $sel->id)->orderByDesc('id')->limit(300)->get()->sortBy('id')->values();
+            // Meta's 24h reply window, computed from the customer's last
+            // inbound message (StageService keeps window_expires_at =
+            // last inbound + 24h; fall back to deriving it when the
+            // stored expiry is missing) - the header pill must never
+            // claim Open for a window that has closed (Hunt V4).
+            $expiresAt = $sel->window_expires_at;
+            if (! $expiresAt) {
+                $lastInAt = $sel->last_inbound_at ?? $msgs->where('direction', 'in')->last()?->created_at;
+                $expiresAt = $lastInAt?->copy()->addHours(24);
+            }
+            $windowOpen = $expiresAt !== null && now()->lt($expiresAt);
             $sent = $msgs->whereIn('status', ['sent']);
             $drafts = $msgs->whereIn('status', ['draft', 'flagged']);
             $product = $sel->product_id ? Product::where('business_id', $biz)->find($sel->product_id) : null;
@@ -78,6 +97,7 @@ class MessagesController extends Controller
                 'customer_address' => $sel->customer_address,
                 'ai_paused' => (bool) $sel->ai_paused,
                 'needs_human' => (bool) $sel->needs_human,
+                'window_open' => $windowOpen,
                 'product' => $product ? ['id' => $product->id, 'name' => $product->name, 'price' => (float) $product->price] : null,
                 'ladder' => $product ? $this->negotiation->ladder($product) : [],
                 'neg_offer' => $sel->neg_offer !== null ? (float) $sel->neg_offer : null,
@@ -102,13 +122,27 @@ class MessagesController extends Controller
             ];
         }
 
-        $list = $conversations->map(function ($c) {
-            $last = ChatMessage::where('conversation_id', $c->id)->where('status', 'sent')->latest('id')->first();
-            $hasDraft = ChatMessage::where('conversation_id', $c->id)->whereIn('status', ['draft', 'flagged'])->exists();
-            $aiReplied = ChatMessage::where('conversation_id', $c->id)->where('sender', 'ai')->where('status', 'sent')->exists();
+        // List aggregates in bulk — one query each for the whole page of
+        // conversations, never one probe per conversation (the old map ran
+        // three extra queries per row, so cost grew with shop history).
+        $listIds = $conversations->pluck('id')->all();
+        $lastByConv = $listIds === [] ? collect() : ChatMessage::whereIn('id', function ($q) use ($listIds) {
+            $q->selectRaw('MAX(id)')->from('chat_messages')
+                ->whereIn('conversation_id', $listIds)->where('status', 'sent')->groupBy('conversation_id');
+        })->get()->keyBy('conversation_id');
+        $draftConvs = $listIds === [] ? [] : ChatMessage::whereIn('conversation_id', $listIds)
+            ->whereIn('status', ['draft', 'flagged'])->distinct()->pluck('conversation_id')->flip()->all();
+        $aiConvs = $listIds === [] ? [] : ChatMessage::whereIn('conversation_id', $listIds)
+            ->where('sender', 'ai')->where('status', 'sent')->distinct()->pluck('conversation_id')->flip()->all();
+
+        $list = $conversations->map(function ($c) use ($lastByConv, $draftConvs, $aiConvs) {
+            $last = $lastByConv->get($c->id);
+            $hasDraft = isset($draftConvs[$c->id]);
+            $aiReplied = isset($aiConvs[$c->id]);
 
             return [
                 'id' => $c->id, 'customer_name' => $c->customer_name, 'channel' => $c->channel,
+                'phone' => $c->customer_phone,
                 'snippet' => $last ? mb_strimwidth($last->body, 0, 60, '…') : '',
                 'time' => $c->last_message_at?->diffForHumans(null, true) ?? '',
                 'unread' => (int) $c->unread_count, 'has_draft' => $hasDraft, 'ai_replied' => $aiReplied && !$hasDraft,
@@ -117,16 +151,18 @@ class MessagesController extends Controller
         })->all();
 
         $report = [
-            'conversations' => $conversations->count(),
+            'conversations' => Conversation::where('business_id', $biz)->count(),
             'ai_replies' => ChatMessage::where('business_id', $biz)->where('sender', 'ai')->where('status', 'sent')->count(),
             'ai_approved' => AiActivity::where('business_id', $biz)->whereIn('action', ['draft_created', 'edited_sent'])->count(),
             'drafts_waiting' => ChatMessage::where('business_id', $biz)->whereIn('status', ['draft', 'flagged'])->count(),
             'orders_from_chat' => Order::where('business_id', $biz)->whereIn('source', ['FB', 'WA', 'IG'])->count(),
-            'orders_revenue' => (float) Order::where('business_id', $biz)->whereIn('source', ['FB', 'WA', 'IG'])->sum('grand_total'),
+            // Revenue is Delivered-only, the same definition as the
+            // customer pane's LTV above and every other revenue surface.
+            'orders_revenue' => (float) Order::where('business_id', $biz)->whereIn('source', ['FB', 'WA', 'IG'])->where('status', 'Delivered')->sum('grand_total'),
             'rule_stats' => \App\Models\AiRule::where('business_id', $biz)->get()->map(function ($r) use ($biz) {
                 $acts = AiActivity::where('business_id', $biz)->where('ai_rule_id', $r->id);
 
-                return ['name' => $r->name, 'count' => $acts->count(), 'last' => $acts->latest('id')->first()?->created_at?->diffForHumans(null, true) ?? '—'];
+                return ['name' => $r->name, 'count' => $acts->count(), 'last' => $acts->latest('id')->first()?->created_at?->diffForHumans(null, true) ?? __('Never')];
             })->all(),
         ];
 
@@ -157,7 +193,7 @@ class MessagesController extends Controller
         $conversation->needs_human = false;
         $conversation->save();
 
-        return $sentOk ? back()->with('success', 'Message sent') : back()->with('error', 'Saved, but Meta did not accept it: ' . $sendErr);
+        return $sentOk ? back()->with('success', __('Message sent')) : back()->with('error', __('Saved, but Meta did not accept it: :error', ['error' => $sendErr]));
     }
 
     public function approveDraft(Request $request, ChatMessage $message, OrderService $orders): RedirectResponse
@@ -167,6 +203,12 @@ class MessagesController extends Controller
         $kind = $message->meta['kind'] ?? null;
         $this->brain->approveDraft($message, $edited, $request->user()?->id);
         $message->refresh();
+        if ($message->status !== 'sent') {
+            // Held at approval (Round 6, P5): the figures no longer match
+            // live data, so nothing is dispatched and no chat order is
+            // created - the approver sees why and edits first.
+            return back()->with('error', $message->meta['hold_reason'] ?? __('This reply was held because its figures no longer match the live price or stock. Edit the reply, then approve again.'));
+        }
         if ($message->status === 'sent') {
             app(\App\Services\MetaGraphService::class)->dispatch($message);
         }
@@ -187,18 +229,22 @@ class MessagesController extends Controller
                         'customer_address' => $c->customer_address,
                         'source' => $source,
                         'status' => 'Pending',
-                        'delivery_charge' => 60,
+                        // The delivery charge the approved summary quoted:
+                        // the shop's configured cost, read the same way
+                        // RuleBrainService::buildSummary reads it - never a
+                        // hardcoded 60 the shop may not charge (Hunt V1).
+                        'delivery_charge' => (float) $this->settings->bizGet((int) $message->business_id, "business.{$message->business_id}.default_delivery_cost", 'business.default_delivery_cost', 60),
                         'items' => [['product_id' => $product->id, 'qty' => 1, 'price' => isset($message->meta['unit_price']) ? (float) $message->meta['unit_price'] : null, 'variant_name' => $message->meta['variant_name'] ?? null]],
                     ], $request->user(), 'Chat order intake');
                 } catch (\App\Exceptions\InsufficientTokensException $e) {
                     return back()->with('error', $e->getMessage());
                 }
 
-                return back()->with('success', 'Order created from chat');
+                return back()->with('success', __('Order created from chat'));
             }
         }
 
-        return back()->with('success', 'Reply sent');
+        return back()->with('success', __('Reply sent'));
     }
 
     public function rejectDraft(Request $request, ChatMessage $message): RedirectResponse
@@ -206,7 +252,7 @@ class MessagesController extends Controller
         abort_unless((int) $message->business_id === $this->biz($request), 403);
         $this->brain->rejectDraft($message);
 
-        return back()->with('success', 'Draft rejected');
+        return back()->with('success', __('Draft rejected'));
     }
 
     public function toggleAi(Request $request, Conversation $conversation): RedirectResponse
@@ -230,7 +276,7 @@ class MessagesController extends Controller
         $auto['panic'] = !($auto['panic'] ?? false);
         $this->settings->set('ai.autonomy', $auto, $request->user()?->id);
 
-        return back()->with('success', $auto['panic'] ? 'All AI paused' : 'AI resumed');
+        return back()->with('success', $auto['panic'] ? __('All AI paused') : __('AI resumed'));
     }
 
     public function activity(Request $request): Response
@@ -260,7 +306,7 @@ class MessagesController extends Controller
                 $last = AiActivity::where('business_id', $biz)->where('conversation_id', $c->id)
                     ->whereIn('action', ['handed_human', 'human_takeover', 'image_rejected', 'image_no_match', 'voice_to_human'])
                     ->latest('id')->first();
-                $reason = 'Customer-এর উত্তরে মানুষ দরকার';
+                $reason = __('Customer needs a human reply');
                 if ($last && $last->detail) {
                     $reason = trim((string) preg_replace('/^.*?—\s*/u', '', (string) $last->detail)) ?: $reason;
                 }
@@ -310,7 +356,7 @@ class MessagesController extends Controller
                 // today too (they were all-time, contradicting the cards).
                 $acts = AiActivity::where('business_id', $biz)->where('ai_rule_id', $r->id)->whereDate('created_at', today());
 
-                return ['name' => $r->name, 'count' => $acts->count(), 'last' => $acts->latest('id')->first()?->created_at?->diffForHumans(null, true) ?? '—'];
+                return ['name' => $r->name, 'count' => $acts->count(), 'last' => $acts->latest('id')->first()?->created_at?->diffForHumans(null, true) ?? __('Never')];
             })->all(),
             'feed' => AiActivity::where('business_id', $biz)->latest('id')->limit(30)->get()
                 ->map(fn ($a) => ['action' => $a->action, 'detail' => $a->detail, 'when' => $a->created_at?->diffForHumans(null, true)])->all(),

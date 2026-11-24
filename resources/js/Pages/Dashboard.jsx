@@ -345,7 +345,7 @@ function Overview({ ov, dayLabel }) {
                 <OvKpi label="Revenue" value={fmt(ov.revenue)} sub={<Delta k={{ pct: ov.revenue_pct, prev: ov.revenue_prev }} money />} />
                 <OvKpi label="Profit" value={fmt(ov.profit)} sub={t('Estimated')} />
                 <OvKpi label="Ad Spend" value={fmt(ov.ad_spend)} sub={t('No ad accounts connected')} />
-                <OvKpi label="Courier Cost" value={fmt(ov.courier_cost)} sub={dayLabel} />
+                <OvKpi label="Courier Cost" value={fmt(ov.courier_cost)} sub={t('Last 30 days')} />
                 <OvKpi label="Pending COD" value={fmt(ov.pending_cod)} sub={t('COD receivable')} />
             </div>
             <div className="dash-2col">
