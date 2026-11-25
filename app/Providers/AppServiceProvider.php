@@ -43,5 +43,11 @@ class AppServiceProvider extends ServiceProvider
         // Eloquent, so the observers see every transition.
         \App\Models\Order::observe(\App\Observers\OrderWebhookObserver::class);
         \App\Models\Order::observe(\App\Observers\WooOrderObserver::class);
+
+        // A new shop must never be rule-less: the observer installs the
+        // Rule Brain's default intent rules on Business creation, which
+        // is the single funnel for registration, admin creation and
+        // every other creation path.
+        \App\Models\Business::observe(\App\Observers\BusinessObserver::class);
     }
 }

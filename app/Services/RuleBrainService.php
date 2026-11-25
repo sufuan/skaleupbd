@@ -320,6 +320,16 @@ class RuleBrainService
     public function matchRule(int $businessId, string $text, ?string $channel = null, ?Conversation $conversation = null): ?AiRule
     {
         $rules = AiRule::where('business_id', $businessId)->where('active', true)->orderBy('id')->get();
+        if (! $rules->contains(fn (AiRule $r) => $r->trigger_type === 'intent')) {
+            // Safety net: a shop with zero active intent rules can only
+            // ever get the generic fallback — it never bargains and never
+            // takes an order. Install the defaults once and reload.
+            // ensureDefaults is firstOrCreate-keyed, so a shop whose
+            // seller deliberately deactivated every rule keeps them off:
+            // the rows exist, they are just not reactivated.
+            AiRule::ensureDefaults($businessId);
+            $rules = AiRule::where('business_id', $businessId)->where('active', true)->orderBy('id')->get();
+        }
         $matchesChannel = fn (AiRule $r) => !$channel || !$r->channel || $r->channel === $channel;
 
         $intent = $this->detectIntent($text, $conversation);
