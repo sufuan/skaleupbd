@@ -36,7 +36,32 @@ class RuleBrainService
         'bargain' => ['কমান', 'কমাতে', 'discount', 'কম হবে', 'কম রাখেন', 'dam kom', 'less hobe', 'শেষ দাম', 'কম দাম', 'কমে দেন', 'দিলে নিব', 'টাকায় দিলে'],
         'spam' => ['follower', 'ফলোয়ার', 'সস্তায় follower', 'cheap follower', 'like কিনুন', 'free money', 'click here', 'click link', 'scam', 'earn money', 'make money', 'casino', 'ক্যাসিনো', 'betting', 'বাজি', 'ফ্রি টাকা', 'টাকা ইনকাম', 'লিংকে ক্লিক', 'crypto', 'double investment', 'lottery', 'লটারি'],
         'angry' => ['পাইনি', 'পাই নাই', 'রেগে', 'complain', 'অভিযোগ', 'দুই দিন হলো', 'এখনো আসেনি', 'প্রতারক', 'প্রতারণা', 'টাকা মেরে', 'ভুয়া', 'মামলা', 'পুলিশ', 'কোর্ট', 'ভোক্তা অধিকার', 'ঠকিয়ে'],
-        'order_intent' => ['order confirm', 'অর্ডার কনফার্ম', 'confirm korlam', 'নিতে চাই', 'order korte chai', 'অর্ডার করতে চাই', 'কনফার্ম করেন', 'কনফার্ম করুন', 'কনফার্ম করে দেন', 'অর্ডার করলাম', 'অর্ডার দিলাম'],
+        'order_intent' => ['order confirm', 'অর্ডার কনফার্ম', 'কনফার্ম', 'confirm korlam', 'confirm korun', 'confirm koren', 'confirm korchi', 'নিতে চাই', 'order korte chai', 'অর্ডার করতে চাই', 'কনফার্ম করেন', 'কনফার্ম করুন', 'কনফার্ম করে দেন', 'অর্ডার করলাম', 'অর্ডার দিলাম'],
+        // Fine-grained intents (Master Library): each exists because the
+        // coarse intents above would otherwise swallow the case — a
+        // delivery-charge negotiation contains the delivery AND bargain
+        // words, a COD question contains the delivery word, "এখনো পাইনি"
+        // contains the angry word. detectIntent checks these BEFORE the
+        // coarse intent they shadow. The keyword lists are the library's
+        // own, kept beside the coarse ones so there is one place to mine.
+        'legal_threat' => ['মামলা', 'আইনি ব্যবস্থা', 'আইনগত', 'ভোক্তা অধিকার', 'কনজিউমার', 'থানায়', 'পুলিশ', 'সাইবার', 'কোর্ট', 'রিপোর্ট করব', 'mamla', 'legal action', 'aini babostha', 'consumer', 'thanay', 'police', 'cyber', 'report korbo', 'i will report', 'sue'],
+        'payment_proof' => ['টাকা পাঠিয়েছি', 'টাকা পাঠালাম', 'পেমেন্ট করেছি', 'পেমেন্ট করলাম', 'ট্রানজেকশন', 'ট্রান্সফার করেছি', 'স্ক্রিনশট', 'TrxID', 'taka pathiyechi', 'taka pathalam', 'payment korechi', 'payment done', 'paid', 'sent money', 'transaction id', 'trx id', 'screenshot'],
+        'payment_problem' => ['ভুল নম্বরে পাঠিয়েছি', 'ভুল নাম্বারে', 'টাকা কেটে নিয়েছে', 'টাকা কেটেছে কিন্তু', 'পেমেন্ট হয়নি', 'পেমেন্ট ফেইল', 'vul number e pathiyechi', 'taka kete niyeche', 'payment hoyni', 'payment failed', 'money deducted', 'wrong number'],
+        'cancel_order' => ['অর্ডার ক্যান্সেল', 'অর্ডার বাতিল', 'অর্ডারটা বাতিল', 'ক্যান্সেল করে দিন', 'বাতিল করে দিন', 'order cancel', 'cancel my order', 'cancel korun', 'cancel koren', 'cancel the order'],
+        'late_delivery' => ['এখনো পাইনি', 'এখনও পাইনি', 'এখনো আসেনি', 'পাচ্ছি না', 'অনেক দেরি', 'কতদিন আর', 'দেরি হচ্ছে', 'কুরিয়ার দিচ্ছে না', 'ekhono paini', 'ekhono ashe nai', 'pacchi na', 'onek deri', 'deri hocche', 'not received yet', 'still not received', 'delayed', 'courier not delivering'],
+        'wholesale' => ['পাইকারি', 'পাইকারী', 'হোলসেল', 'রিসেল', 'রিসেলার', 'ডিলার', 'ডিস্ট্রিবিউটর', 'বাল্ক', 'অনেক পিস', 'কার্টন', 'ডজন', 'বেশি পরিমাণে', 'paikari', 'wholesale', 'whole sale', 'reseller', 'resell', 'dealer', 'distributor', 'bulk', 'bulk order', 'dozen', 'carton'],
+        'wants_human' => ['অ্যাডমিন কই', 'এডমিন কই', 'এডমিন কে দেন', 'কেউ আছেন', 'মানুষ কেউ', 'রিয়েল মানুষ', 'কথা বলতে চাই', 'কল দিন', 'কল করুন', 'ফোন করুন', 'ফোন নম্বর দিন', 'কল করব', 'হোয়াটসঅ্যাপ নম্বর', 'admin kothay', 'admin ke den', 'keu achen', 'manush keu', 'kotha bolte chai', 'call din', 'call korun', 'phone number din', 'call me', 'speak to someone', 'real person', 'talk to human'],
+        'are_you_bot' => ['আপনি কি রোবট', 'আপনি কি বট', 'এআই নাকি মানুষ', 'মেশিন নাকি', 'রোবট নাকি', 'robot naki', 'bot naki', 'ai naki manush', 'are you a bot', 'are you ai', 'are you human', 'is this a bot'],
+        'change_order' => ['অর্ডার চেঞ্জ', 'অর্ডার বদলাতে', 'অর্ডারে পরিবর্তন', 'ঠিকানা বদলাতে', 'ঠিকানা পরিবর্তন', 'ঠিকানা ভুল দিয়েছি', 'নাম্বার বদলাতে', 'আরেকটা যোগ', 'পরিমাণ বদলাতে', 'order change', 'order e poriborton', 'address change', 'thikana bodlate', 'thikana vul', 'change address', 'change quantity', 'add one more'],
+        'open_box' => ['খুলে দেখে', 'খুলে দেখতে পারব', 'দেখে নিতে পারব', 'চেক করে নিব', 'ওপেন ডেলিভারি', 'khule dekhte parbo', 'dekhe nite parbo', 'open delivery', 'open box', 'check before payment', 'can i check before paying'],
+        'competitor_price' => ['অন্য পেজে', 'অন্য জায়গায় কম', 'অন্য দোকানে কম', 'ওরা কম দিচ্ছে', 'বাজারে কম', 'onno page e', 'onno dokane kom', 'ora kom dicche', 'cheaper elsewhere', 'found cheaper', 'competitor'],
+        'price_mismatch' => ['পোস্টে কম ছিল', 'বিজ্ঞাপনে কম দেখেছিলাম', 'এডে কম ছিল', 'আগে কম ছিল', 'দাম বাড়িয়েছেন', 'দাম বেড়ে গেছে', 'post e kom chilo', 'ad e kom chilo', 'age kom chilo', 'dam barayechen', 'price increased', 'was cheaper'],
+        'delivery_negotiation' => ['ডেলিভারি চার্জ কমান', 'ডেলিভারি চার্জ কম', 'চার্জ কমানো যায়', 'ডেলিভারি ফ্রি', 'ফ্রি ডেলিভারি', 'চার্জ ফ্রি', 'delivery charge komano', 'charge kom', 'delivery free', 'free delivery', 'reduce delivery charge'],
+        'restock' => ['আবার কবে আসবে', 'স্টকে কবে আসবে', 'আবার স্টক', 'রিস্টক', 'আসলে জানাবেন', 'abar kobe asbe', 'stock e kobe asbe', 'restock', 'back in stock', 'when will it come back', 'available again'],
+        'advance_payment' => ['অ্যাডভান্স', 'এডভান্স', 'অগ্রিম', 'আগে টাকা', 'কিছু টাকা আগে', 'অর্ধেক টাকা', 'আংশিক', 'advance', 'advanced', 'partial payment', 'half payment', 'agey taka', 'advance dite hobe'],
+        'cod' => ['ক্যাশ অন ডেলিভারি', 'ক্যাশ অন', 'ক্যাশঅন', 'হাতে পেয়ে টাকা', 'ডেলিভারির সময় টাকা', 'cod ache', 'cod', 'cash on delivery', 'cash on', 'pay on delivery', 'hate peye taka'],
+        'delivery_time' => ['কতদিনে পাব', 'কত দিন লাগবে', 'কয়দিন লাগবে', 'ডেলিভারি টাইম', 'কতক্ষণ লাগবে', 'কবে নাগাদ', 'kobe pabo', 'koto dine pabo', 'koydin lagbe', 'delivery time', 'how long', 'how many days', 'when will i get'],
+        'delivery_coverage' => ['আমার এলাকায় ডেলিভারি', 'সব জায়গায় ডেলিভারি', 'সারা দেশে', 'গ্রামে ডেলিভারি', 'উপজেলায় ডেলিভারি', 'কোন কুরিয়ারে', 'কুরিয়ারে পাঠান', 'সুন্দরবন', 'home delivery hoy', 'amar elakay delivery', 'shara deshe', 'courier e pathan', 'sundarban courier', 'which courier', 'do you deliver to'],
     ];
 
     public function __construct(
@@ -258,20 +283,49 @@ class RuleBrainService
         return $rest === '';
     }
 
+    /**
+     * Does this message ACCEPT an offer that is already on the table?
+     * Only consulted mid-negotiation (an offer exists), where "confirm",
+     * "রাজি", "ঠিক আছে" can only mean one thing: the deal is agreed.
+     * Conditional bargain language ("দিলে নিব") is deliberately NOT here —
+     * that is a counter-offer, and NegotiationService::quote judges it
+     * against the floor.
+     */
+    private function isAcceptance(string $hay): bool
+    {
+        foreach (['confirm', 'কনফার্ম', 'রাজি', 'ঠিক আছে', 'হ্যাঁ', 'হ্যা', 'ওকে', 'ok', 'okay', 'নিচ্ছি', 'নিয়ে নিন', 'পাঠিয়ে দিন', 'অর্ডার করুন', 'order korun'] as $w) {
+            if (str_contains($hay, $w)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public function detectIntent(string $text, ?Conversation $conversation = null): ?string
     {
         if ($this->isReaction($text)) {
             return 'reaction';
         }
         $hay = mb_strtolower($text);
-        if ($this->intentMatches('spam', $hay)) {
-            return 'spam';
-        }
-        if ($this->intentMatches('angry', $hay)) {
-            return 'angry';
+        // Fine-grained intents first, in the library's priority order:
+        // each of these contains words a coarser intent would claim
+        // (legal words sit inside the angry list, "এখনো পাইনি" is an
+        // angry word, a COD question is full of delivery words), so the
+        // specific case must be judged before the coarse one.
+        foreach (['legal_threat', 'spam', 'payment_proof', 'payment_problem', 'cancel_order', 'late_delivery', 'angry', 'wholesale', 'wants_human', 'are_you_bot', 'change_order', 'open_box', 'competitor_price', 'price_mismatch', 'delivery_negotiation', 'restock', 'advance_payment'] as $fine) {
+            if ($this->intentMatches($fine, $hay)) {
+                return $fine;
+            }
         }
         if ($conversation && (int) $conversation->neg_step >= 1) {
-            // Mid-bargaining: an amount or another push continues the ladder.
+            // Mid-bargaining. A confirmation or an order signal ENDS the
+            // bargaining here — it is never another ladder round, even
+            // when the message carries digits (a phone number does).
+            // Only a fresh push for less continues the ladder.
+            if ($this->intentMatches('order_intent', $hay) || $this->isAcceptance($hay)) {
+                return 'order_intent';
+            }
             if (preg_match('/[0-9\x{09E6}-\x{09EF}]/u', $text) || $this->intentMatches('bargain', $hay)
                 || str_contains($hay, 'দাম') || str_contains($hay, 'কম')) {
                 return 'bargain';
@@ -286,6 +340,14 @@ class RuleBrainService
         foreach (['অর্ডার কোথায়', 'অর্ডারটা কোথায়', 'কোথায় আছে', 'পৌঁছেছে', 'ট্র্যাকিং', 'tracking', 'স্ট্যাটাস', 'কবে পাব', 'কবে পৌঁছাবে'] as $w) {
             if (str_contains($hay, $w)) {
                 return 'order_status';
+            }
+        }
+        // Delivery sub-questions (COD? how long? do you deliver here?)
+        // before the coarse delivery intent swallows them — they are
+        // different questions with different answers.
+        foreach (['cod', 'delivery_time', 'delivery_coverage'] as $fine) {
+            if ($this->intentMatches($fine, $hay)) {
+                return $fine;
             }
         }
         // A delivery-charge question is a delivery question even though it
@@ -342,10 +404,17 @@ class RuleBrainService
         }
 
         // Fallback: seller keyword rules, then any intent rule whose words
-        // appear at all (priority intents first, as before).
+        // appear at all (priority intents first, as before). Keyword
+        // rules compete on SPECIFICITY — the longest matched keyword
+        // wins, ties keep install order — because a rule learned from
+        // staff edits keys on the customer's exact phrasing (long and
+        // specific) and must beat a generic one-word catalog keyword,
+        // or the learning loop could never fire.
         $hay = mb_strtolower($text);
         $priority = ['spam', 'angry', 'bargain', 'order_intent'];
         $sorted = $rules->sortBy(fn ($r) => in_array($r->match_text, $priority, true) ? 0 : 1)->values();
+        $bestKeyword = null;
+        $bestLen = -1;
         foreach ($sorted as $rule) {
             if (!$matchesChannel($rule)) {
                 continue;
@@ -353,15 +422,19 @@ class RuleBrainService
             if ($rule->trigger_type === 'keyword') {
                 foreach (array_map('trim', explode(',', (string) $rule->match_text)) as $kw) {
                     if ($kw !== '' && str_contains($hay, mb_strtolower($kw))) {
-                        return $rule;
+                        $len = mb_strlen($kw);
+                        if ($len > $bestLen) {
+                            $bestLen = $len;
+                            $bestKeyword = $rule;
+                        }
                     }
                 }
             } elseif ($this->intentMatches($rule->match_text, $hay)) {
-                return $rule;
+                return $bestKeyword ?? $rule;
             }
         }
 
-        return null;
+        return $bestKeyword;
     }
 
     public function productFor(int $businessId, string $text, ?Conversation $conversation = null): ?Product
@@ -668,12 +741,61 @@ class RuleBrainService
     }
 
     /**
+     * The context package: what the AI layers (stage-2 classifier and
+     * the talker) are allowed to SEE so they judge and phrase the
+     * message IN CONTEXT instead of blind. The last ~10 messages in
+     * order (both sides), plus the conversation state code has already
+     * decided: the focus product, the bargaining step and the standing
+     * offer, what contact details are already collected, and whether an
+     * order summary was already shown. Context informs understanding
+     * and wording only — figures and state transitions stay in code.
+     */
+    public function conversationContext(Conversation $conversation, ?int $beforeMessageId = null): array
+    {
+        $msgs = ChatMessage::where('conversation_id', $conversation->id)
+            ->when($beforeMessageId, fn ($q) => $q->where('id', '<', $beforeMessageId))
+            ->orderByDesc('id')->limit(10)->get()->reverse()->values();
+        $history = [];
+        $previousReply = null;
+        foreach ($msgs as $m) {
+            $history[] = [
+                'who' => $m->direction === 'in' ? 'customer' : 'shop',
+                'text' => mb_substr((string) $m->body, 0, 300),
+            ];
+            if ($m->direction === 'out') {
+                $previousReply = (string) $m->body;
+            }
+        }
+        $summaryShown = ChatMessage::where('conversation_id', $conversation->id)
+            ->where('direction', 'out')->get()
+            ->contains(fn ($m) => ($m->meta['kind'] ?? null) === 'order_summary');
+        $product = $conversation->product_id
+            ? Product::where('business_id', (int) $conversation->business_id)->find($conversation->product_id)
+            : null;
+
+        return [
+            'history' => $history,
+            'previous_reply' => $previousReply,
+            'state' => [
+                'product' => $product?->name,
+                'neg_step' => (int) $conversation->neg_step,
+                'offer' => $conversation->neg_offer !== null ? (float) $conversation->neg_offer : null,
+                'customer_name' => $conversation->customer_name,
+                'phone_collected' => ! empty($conversation->customer_phone),
+                'address_collected' => ! empty($conversation->customer_address),
+                'summary_shown' => $summaryShown,
+            ],
+        ];
+    }
+
+    /**
      * Stage-2 fallback: ask the classifier, then resolve its suggestion to
      * this shop's own rule and product. Every call is logged — the log is
      * where new keywords are mined from, so misses stop repeating.
      */
-    private function classifyFallback(int $businessId, Conversation $conversation, string $text): ?array
+    private function classifyFallback(int $businessId, Conversation $conversation, string $text, array $context = []): ?array
     {
+        $this->classifier->setContext($context);
         $result = $this->classifier->classify($businessId, $text);
         if ($result === null) {
             return null;
@@ -736,8 +858,16 @@ class RuleBrainService
         // The quantity sits in parentheses, never "×1 - price": the
         // money guard reads "1 - 3,400 টাকা" as a price RANGE and the
         // summary would flag itself (Hunt Y2-11 fix regression).
-        $body = $conversation->customer_name . ' · ' . ($conversation->customer_address ?: 'ঠিকানা বাকি') . "\n"
-            . $itemName . ' (×1) ' . number_format($unit) . ' টাকা + delivery ' . number_format($delivery) . ' টাকা = মোট ' . number_format($total) . ' টাকা (Cash on Delivery)';
+        // Layout (owner spec): who and where on their own lines, the
+        // product price on its line, the delivery charge on ITS OWN
+        // line — it is never folded into the (possibly bargained)
+        // product price — and the total last.
+        $body = $conversation->customer_name . "\n"
+            . 'ফোন: ' . ($conversation->customer_phone ?: 'ফোন বাকি') . "\n"
+            . 'ঠিকানা: ' . ($conversation->customer_address ?: 'ঠিকানা বাকি') . "\n"
+            . $itemName . ' (×1) ' . number_format($unit) . ' টাকা' . "\n"
+            . 'ডেলিভারি চার্জ: ' . number_format($delivery) . ' টাকা' . "\n"
+            . 'মোট: ' . number_format($total) . ' টাকা (Cash on Delivery)';
         // Cart snapshot: what this conversation is currently buying.
         $state = (array) ($conversation->state_data ?? []);
         $state['cart'] = [['product_id' => $product->id, 'variant_id' => $variant?->id, 'variant_name' => $variant?->name, 'qty' => 1, 'agreed_price' => $unit]];
@@ -754,6 +884,108 @@ class RuleBrainService
         return $step === 'phone'
             ? $prefix . 'অর্ডারের জন্য আপনার মোবাইল নম্বরটা দিন - যে নম্বরে কুরিয়ার কল করবে।'
             : $prefix . 'ডেলিভারির ঠিকানাটা দিন - বাসা/হোল্ডিং, রোড, এলাকা, জেলা।';
+    }
+
+    /**
+     * Order taking, shared by the order_intent branch and by a bargain
+     * that just ended in agreement: ask only for what is still missing
+     * (guided collection), or show the summary when name, phone and
+     * address are all on the record. $agreed carries the price a
+     * negotiation just settled at, when this call follows an acceptance:
+     * the collect question is then prefixed with a one-line
+     * acknowledgement of the agreed figure (never a fresh offer, never
+     * "অর্ডার করবেন?") and the acceptance is recorded in the meta.
+     *
+     * @return array{slottedBody: ?string, kind: ?string, meta: array, body: ?string}
+     */
+    private function orderTaking(Conversation $conversation, Product $product, ?\App\Models\ProductVariant $variant, int $biz, ?float $agreed = null): array
+    {
+        $missing = [];
+        if (empty($conversation->customer_phone)) {
+            $missing[] = 'phone';
+        }
+        if (empty($conversation->customer_address)) {
+            $missing[] = 'address';
+        }
+        if ($missing !== []) {
+            $state = (array) ($conversation->state_data ?? []);
+            $state['collect'] = ['step' => $missing[0], 'retries' => 0, 'product_id' => $product->id, 'variant_id' => $variant?->id];
+            $conversation->state = 'collecting';
+            $conversation->state_data = $state;
+            $conversation->save();
+            $body = $this->collectQuestion($biz, $missing[0], $conversation->customer_name);
+            $meta = ['collect' => $missing[0]];
+            if ($agreed !== null) {
+                $body = 'ঠিক আছে, ⟦offer⟧ টাকায় ফাইনাল। ' . $body;
+                $meta = array_merge($meta, ['quote' => 'accept', 'offer' => $agreed]);
+            }
+
+            return ['slottedBody' => $body, 'kind' => 'collect_question', 'meta' => $meta, 'body' => null];
+        }
+        $summary = $this->buildSummary($conversation, $product, $variant);
+        $meta = $summary['meta'];
+        if ($agreed !== null) {
+            $meta = array_merge($meta, ['quote' => 'accept', 'offer' => $agreed]);
+        }
+
+        return ['slottedBody' => null, 'kind' => 'order_summary', 'meta' => $meta, 'body' => $summary['body']];
+    }
+
+    /** Item nouns a customer names when asking for a kind of product. */
+    private const ITEM_NOUNS = ['জামা', 'শাড়ি', 'শাড়ী', 'প্যান্ট', 'শার্ট', 'টি-শার্ট', 'টিশার্ট', 'কুর্তি', 'বোরকা', 'হিজাব', 'জুতা', 'স্যান্ডেল', 'ঘড়ি', 'ব্যাগ', 'পাঞ্জাবি', 'পাঞ্জাবী', 'থ্রি-পিস', 'থ্রিপিস', 'ওড়না', 'কামিজ', 'গেঞ্জি', 'জ্যাকেট', 'সোয়েটার', 'শাল', 'টুপি', 'বেল্ট', 'সানগ্লাস', 'মোবাইল', 'হেডফোন', 'চার্জার', 'লিপস্টিক', 'পারফিউম', 'jama', 'sharee', 'saree', 'pant', 'shirt', 'shoe', 'watch', 'bag', 'kurti', 'hijab', 'burqa', 'borka', 'panjabi'];
+
+    /**
+     * Is this message a request for an item the shop does not sell?
+     * Conservative on purpose — ALL of these must hold: the text names
+     * no catalogue product at all (productFor without the conversation
+     * finds nothing), it names an item noun that appears in NO product
+     * name or alias of this shop, it carries a request marker, and it
+     * does not point back at the conversation's own product ("এটা",
+     * "আরেকটা", ...). Only then may the brain say "not available"
+     * instead of quoting the context product's price at the customer.
+     */
+    private function unmatchedItemRequest(int $businessId, string $text, Conversation $conversation): bool
+    {
+        if (! $conversation->product_id) {
+            return false; // nothing in focus — nothing to wrongly quote
+        }
+        if ($this->productFor($businessId, $text, null) !== null) {
+            return false; // the text itself names a catalogue product
+        }
+        $hay = mb_strtolower($text);
+        foreach (['এটা', 'ওটা', 'সেটা', 'এইটা', 'আগেরটা', 'আরেকটা', 'আরেকটি', 'eta', 'ota'] as $ref) {
+            if (str_contains($hay, $ref)) {
+                return false; // pointing at the product in focus
+            }
+        }
+        $marker = false;
+        foreach (['লাগবে', 'lagbe', 'চাই', 'chai', 'আছে', 'ache', 'খুঁজছি', 'khujchi', 'need', 'want'] as $w) {
+            if (str_contains($hay, $w)) {
+                $marker = true;
+                break;
+            }
+        }
+        if (! $marker) {
+            return false;
+        }
+        $catalogueWords = Product::where('business_id', $businessId)->get(['name', 'aliases'])
+            ->map(fn ($p) => mb_strtolower($p->name . ' ' . (string) $p->aliases))->implode(' ');
+        foreach (self::ITEM_NOUNS as $noun) {
+            $hit = preg_match('/^[a-z]+$/', $noun)
+                ? (bool) preg_match('/\b' . preg_quote($noun, '/') . '\b/u', $hay)
+                : str_contains($hay, $noun);
+            if ($hit && ! str_contains($catalogueWords, $noun)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /** The honest answer to a request for an item the shop does not sell. */
+    private function notAvailableBody(int $businessId, ?string $customerName): string
+    {
+        return $this->honorificPrefix($businessId, $customerName) . 'দুঃখিত, আপনি যে পণ্যটা চাইছেন সেটা আমাদের কাছে নেই। আমাদের অন্য কোনো পণ্য দেখতে চাইলে বলুন।';
     }
 
     /** A valid Bangladeshi mobile number from free text, normalised to 01XXXXXXXXX. */
@@ -1147,8 +1379,11 @@ class RuleBrainService
         // ai:process-pending sweep can overlap (both run every minute),
         // and each used to see the same unprocessed burst — the customer
         // got the same reply twice. Whoever holds the lock answers; the
-        // other run finds nothing to do.
-        $lock = Cache::store('file')->lock('ai-pending-' . $conversation->id, 60);
+        // other run finds nothing to do. The TTL covers a slow model
+        // call end to end, and processPendingLocked additionally CLAIMS
+        // the burst before doing the slow work, so even a lock that
+        // expires mid-flight cannot produce a second reply.
+        $lock = Cache::store('file')->lock('ai-pending-' . $conversation->id, 120);
         if (! $lock->acquire()) {
             return null;
         }
@@ -1177,7 +1412,19 @@ class RuleBrainService
             return null; // still inside the quiet window — a later run takes it
         }
         $text = $pending->pluck('body')->filter(fn ($b) => trim((string) $b) !== '')->implode("\n");
-        $reply = trim($text) === '' ? null : $this->handleIncoming($conversation, $text, ['prestored_ids' => $pending->pluck('id')->all()]);
+        if (trim($text) === '') {
+            // Media-only burst: the media/voice jobs own those messages;
+            // claiming them here would starve that pipeline.
+            return null;
+        }
+        // Claim BEFORE the slow work (claim-first idempotency, the same
+        // pattern the courier webhooks use): the processed flag used to
+        // be written only after handleIncoming returned, so a second
+        // runner — the delayed job and the per-minute sweep — whose
+        // lock had expired during a slow model call re-read the same
+        // burst as unprocessed and answered it a second time. Claimed
+        // first, any twin run finds nothing pending: one customer
+        // message, exactly one reply.
         foreach ($pending as $m) {
             $meta = (array) ($m->meta ?? []);
             $meta['processed'] = true;
@@ -1185,7 +1432,7 @@ class RuleBrainService
             $m->save();
         }
 
-        return $reply;
+        return $this->handleIncoming($conversation, $text, ['prestored_ids' => $pending->pluck('id')->all()]);
     }
 
     public function handleIncoming(Conversation $conversation, string $text, array $opts = []): ?ChatMessage
@@ -1241,11 +1488,16 @@ class RuleBrainService
             $conversation->save();
         }
 
+        // The context package for the AI layers (stage-2 classifier and
+        // the talker): recent history + the state code has decided, so
+        // neither of them has to judge or phrase this message blind.
+        $context = $this->conversationContext($conversation, (int) $incoming->id);
+
         $stage2 = null;
         if (!$rule) {
             // Stage 2: only when the rule system found nothing, a cheap
             // classifier may suggest the intent/product. Code still decides.
-            $stage2 = $this->classifyFallback($biz, $conversation, $text);
+            $stage2 = $this->classifyFallback($biz, $conversation, $text, $context);
             if ($stage2) {
                 if ($stage2['rule']) {
                     $rule = $stage2['rule'];
@@ -1345,7 +1597,23 @@ class RuleBrainService
         $needsVariant = $product && $variant === null && $product->hasVariants()
             && $rule && in_array($rule->match_text, ['stock', 'order_intent'], true);
 
-        if ($rule && $rule->match_text === 'spam') {
+        // A confirmation that names a figure at/above the floor settles
+        // the negotiation at THAT figure before order taking reads
+        // neg_offer (the accept-at-counter semantics of
+        // NegotiationService::quote). A standing offer confirmed as-is
+        // is likewise an agreement, recorded for the reply's meta.
+        $agreedNow = null;
+        if ($product && $rule && $rule->match_text === 'order_intent' && $conversation->neg_offer !== null) {
+            $named = $this->namedAmount($text);
+            if ($named !== null && $named >= $this->negotiation->floor($product) && $named < (float) $conversation->neg_offer) {
+                $conversation->neg_offer = round($named, 2);
+                $conversation->save();
+            }
+            $agreedNow = (float) $conversation->neg_offer;
+        }
+        $unmatchedItem = $this->unmatchedItemRequest($biz, $text, $conversation);
+
+        if ($rule && ($rule->match_text === 'spam' || $rule->action === 'hide')) {
             // Ignored, but never silently lost: the message is marked and
             // the ignore is on the record, so staff can review and undo it.
             $incoming->meta = array_merge((array) ($incoming->meta ?? []), ['spam' => true]);
@@ -1355,6 +1623,7 @@ class RuleBrainService
             return null;
         }
 
+        $handoverAck = false;
         if ($rule && $rule->action === 'handover') {
             $conversation->needs_human = true;
             $conversation->save();
@@ -1362,8 +1631,16 @@ class RuleBrainService
             if ($rule->match_text === 'angry') {
                 return $this->holdingLine($conversation, $auto);
             }
-
-            return null;
+            // A handover rule carrying a real acknowledgement template
+            // (payment proof received, a cancel request) still sends
+            // that one line through the normal guarded path below —
+            // silence after a customer sends money proof reads as
+            // broken — and the conversation stays flagged for the
+            // human either way. A template-less handover stays silent.
+            if (mb_strlen(trim((string) $rule->reply_template)) < 10) {
+                return null;
+            }
+            $handoverAck = true;
         }
 
         $mode = $this->applyWorkingHours($biz, $auto[$conversation->channel] ?? 'draft');
@@ -1407,45 +1684,54 @@ class RuleBrainService
 
                 return null;
             }
-            $offer = $quote['offer'];
-            $total = $offer + (float) $this->settings->bizGet($biz, "business.{$biz}.default_delivery_cost", 'business.default_delivery_cost', 60);
-            $h = $this->honorific($biz, $conversation->customer_name);
-            $first = match ($quote['kind']) {
-                'accept' => 'ঠিক আছে' . ($h !== '' ? ' ' . $h : '') . ', আপনার কথামতোই ⟦offer⟧ টাকায় দিচ্ছি।',
-                'floor_repeat' => ($h !== '' ? $h . ', ' : '') . '⟦offer⟧ টাকাই শেষ দাম - এর কমে আর হচ্ছে না।',
-                default => 'বুঝতে পারছি' . ($h !== '' ? ' ' . $h : '') . '। আপনার জন্য ⟦offer⟧ টাকায় দিতে পারব।',
-            };
-            $slottedBody = $first . ' ডেলিভারি চার্জসহ মোট ⟦total⟧ টাকা (ঢাকার ভিতরে)। অর্ডার করবেন?';
-            $slotValues = ['offer' => $offer, 'total' => $total];
-            $meta = ['ladder_step' => (int) $conversation->neg_step, 'offer' => $offer, 'quote' => $quote['kind']];
+            if ($quote['kind'] === 'accept') {
+                // AGREED — the negotiation is over. The offer is never
+                // repeated and "অর্ডার করবেন?" is never asked again:
+                // the flow moves straight to order taking at the
+                // agreed figure (already settled in neg_offer).
+                $o = $this->orderTaking($conversation, $product, $variant, $biz, (float) $quote['offer']);
+                $slottedBody = $o['slottedBody'];
+                $kind = $o['kind'];
+                $meta = $o['meta'];
+                $body = $o['body'];
+                if (isset($o['meta']['offer'])) {
+                    $slotValues = ['offer' => $o['meta']['offer']];
+                }
+            } else {
+                $offer = $quote['offer'];
+                $h = $this->honorific($biz, $conversation->customer_name);
+                $first = match ($quote['kind']) {
+                    'floor_repeat' => ($h !== '' ? $h . ', ' : '') . '⟦offer⟧ টাকাই শেষ দাম - এর কমে আর হচ্ছে না।',
+                    default => 'বুঝতে পারছি' . ($h !== '' ? ' ' . $h : '') . '। আপনার জন্য ⟦offer⟧ টাকায় দিতে পারব।',
+                };
+                // The bargained figure is the PRODUCT price, only. The
+                // delivery charge is never folded into it, never cut by
+                // the ladder, and appears exactly once in the whole
+                // flow: as its own line in the order summary.
+                $slottedBody = $first . ' অর্ডার করবেন?';
+                $slotValues = ['offer' => $offer];
+                $meta = ['ladder_step' => (int) $conversation->neg_step, 'offer' => $offer, 'quote' => $quote['kind']];
+            }
         } elseif ($rule && $rule->match_text === 'order_intent') {
             if (!$product) {
                 return null;
             }
-            $missing = [];
-            if (empty($conversation->customer_phone)) {
-                $missing[] = 'phone';
+            $o = $this->orderTaking($conversation, $product, $variant, $biz, $agreedNow);
+            $slottedBody = $o['slottedBody'];
+            $kind = $o['kind'];
+            $meta = $o['meta'];
+            $body = $o['body'];
+            if (isset($o['meta']['offer'])) {
+                $slotValues = ['offer' => $o['meta']['offer']];
             }
-            if (empty($conversation->customer_address)) {
-                $missing[] = 'address';
-            }
-            if ($missing !== []) {
-                // Guided collection: ask only for what is missing, one
-                // thing at a time, instead of a summary full of holes.
-                $state = (array) ($conversation->state_data ?? []);
-                $state['collect'] = ['step' => $missing[0], 'retries' => 0, 'product_id' => $product->id, 'variant_id' => $variant?->id];
-                $conversation->state = 'collecting';
-                $conversation->state_data = $state;
-                $conversation->save();
-                $slottedBody = $this->collectQuestion($biz, $missing[0], $conversation->customer_name);
-                $kind = 'collect_question';
-                $meta = ['collect' => $missing[0]];
-            } else {
-                $summary = $this->buildSummary($conversation, $product, $variant);
-                $body = $summary['body'];
-                $kind = 'order_summary';
-                $meta = $summary['meta'];
-            }
+        } elseif ($unmatchedItem && $intent !== 'order_status'
+            && ($rule === null || in_array($rule->match_text, ['price', 'stock'], true))) {
+            // A clear request for an item the shop does not sell: say
+            // exactly that. Never quote the context product's price at
+            // them, never invite an order or an address for it.
+            $slottedBody = $this->notAvailableBody($biz, $conversation->customer_name);
+            $kind = 'out_of_stock';
+            $meta = ['out_of_stock' => true, 'not_available' => true];
         } elseif ($rule) {
             // A price/stock answer needs a product. A one-product shop can
             // only mean that product; with several, ask which one instead
@@ -1540,6 +1826,9 @@ class RuleBrainService
                 'intent' => $rule?->match_text,
                 'neg_step' => (int) $conversation->neg_step,
                 'draft' => $slottedBody,
+                'previous_reply' => $context['previous_reply'],
+                'history' => $context['history'],
+                'state' => $context['state'],
             ]);
             if ($phrased) {
                 $body = $this->renderSlots($phrased['text'], $product, $biz, $slotValues);
@@ -1607,7 +1896,11 @@ class RuleBrainService
             // customer itself, so a needs-human flag left over from an
             // earlier message must not keep the thread flagged — the
             // inbox would show "AI replied" and "Needs a human" at once.
-            $conversation->needs_human = false;
+            // A handover acknowledgement is the exception: the human is
+            // still being asked for, so the flag stays.
+            if (! $handoverAck) {
+                $conversation->needs_human = false;
+            }
             $conversation->save();
         }
 
@@ -1701,20 +1994,78 @@ class RuleBrainService
         }
 
         if ($edited) {
-            // Learning loop: the edit becomes a proposal — a human still has
-            // to approve it in Settings before any rule changes. The
-            // proposal is a RECORD of the edit (note_only, Hunt Y2-7):
-            // it carries no rule change, and Settings presents it that
-            // way instead of claiming the AI learned from it.
-            AiRuleProposal::create([
+            // Learning loop (owner addendum, 2026-11-25): the proposal
+            // records the edit WITH its context — the customer message,
+            // the recent history and the conversation state (the same
+            // context package the classifier and the talker receive) —
+            // plus both texts, so what is learned is context-accurate,
+            // not a bare string swap. A real correction (more than
+            // whitespace or case) carries the learned-rule shape, so the
+            // seller can approve it as a rule in Settings; and the SAME
+            // correction made 3 times for the same case auto-creates
+            // that shop rule (below). A change that normalises to the
+            // same text is not a correction at all: it stays a note,
+            // never a rule (Hunt Y2-7).
+            $aiBody = (string) $msg->body;
+            $humanBody = trim($editedBody);
+            $normalize = fn (string $s) => mb_strtolower(trim((string) preg_replace('/\s+/u', ' ', $s)));
+            $realCorrection = $normalize($aiBody) !== $normalize($humanBody);
+            $incoming = $conv ? ChatMessage::where('conversation_id', $conv->id)->where('direction', 'in')->where('id', '<', $msg->id)->orderByDesc('id')->first() : null;
+            $context = $conv ? $this->conversationContext($conv, $incoming ? (int) $incoming->id : (int) $msg->id) : ['history' => [], 'previous_reply' => null, 'state' => []];
+            $matchText = $msg->rule?->match_text;
+            $learnedRule = null;
+            $patternKey = null;
+            if ($realCorrection) {
+                $keyword = mb_substr($normalize((string) ($incoming?->body ?? '')), 0, 120);
+                $patternKey = sha1(($matchText ?? '') . '|' . $keyword . '|' . $normalize($humanBody));
+                if ($keyword !== '') {
+                    $learnedRule = [
+                        'name' => 'Learned: ' . ($msg->rule?->name ?? 'Staff correction'),
+                        'trigger_type' => 'keyword',
+                        'match_text' => $keyword,
+                        'action' => in_array($msg->rule?->action, ['answer', 'draft'], true) ? $msg->rule->action : 'draft',
+                        'reply_template' => $humanBody,
+                        'channel' => null,
+                    ];
+                }
+            }
+            $proposal = AiRuleProposal::create([
                 'business_id' => $msg->business_id,
                 'title' => 'Staff edit থেকে শেখা - reply বদলানো হয়েছে',
-                'detail' => 'আগের draft: "' . $msg->body . '" → staff পাঠিয়েছে: "' . trim($editedBody) . '"',
-                'rule_data' => ['source_message_id' => $msg->id, 'edited_body' => trim($editedBody), 'note_only' => true],
+                'detail' => 'আগের draft: "' . $aiBody . '" → staff পাঠিয়েছে: "' . $humanBody . '"',
+                'rule_data' => [
+                    'source_message_id' => $msg->id,
+                    'ai_body' => $aiBody,
+                    'edited_body' => $humanBody,
+                    'intent' => $matchText,
+                    'customer_message' => $incoming?->body,
+                    'context' => $context,
+                    'pattern_key' => $patternKey,
+                    'note_only' => ! $realCorrection,
+                    ...($learnedRule ? ['new_rule' => $learnedRule] : []),
+                ],
                 'status' => 'pending',
             ]);
             $this->log((int) $msg->business_id, 'proposal_created', 'Staff edit থেকে নতুন প্রস্তাব এসেছে', $msg->rule, $msg->conversation);
-            $msg->body = trim($editedBody);
+
+            // Repetition is the signal: the same correction for the
+            // same case, made 3 times, becomes the shop's own rule —
+            // active at once, and visible and reversible in the
+            // seller's Rule Brain settings like any other rule.
+            if ($realCorrection && $learnedRule) {
+                $repeats = AiRuleProposal::where('business_id', $biz)->where('status', '!=', 'rejected')->get()
+                    ->filter(fn ($p) => ($p->rule_data['pattern_key'] ?? null) === $patternKey)->count();
+                $exists = AiRule::where('business_id', $biz)->where('trigger_type', 'keyword')->where('match_text', $learnedRule['match_text'])->exists();
+                if ($repeats >= 3 && ! $exists) {
+                    $rule = AiRule::create($learnedRule + ['business_id' => $biz, 'active' => true]);
+                    $data = (array) $proposal->rule_data;
+                    $data['learned_rule_id'] = $rule->id;
+                    $proposal->rule_data = $data;
+                    $proposal->save();
+                    $this->log($biz, 'rule_learned', 'একই staff correction বারবার হওয়ায় নতুন rule তৈরি হয়েছে: ' . $rule->name, $rule, $conv);
+                }
+            }
+            $msg->body = $humanBody;
         }
         $msg->status = 'sent';
         $msg->sender = 'ai';
@@ -1791,6 +2142,9 @@ class RuleBrainService
             'intent' => $rule->match_text,
             'neg_step' => 0,
             'draft' => $slottedBody,
+            'previous_reply' => null,
+            'history' => [],
+            'state' => [],
         ]);
         $body = $phrased ? $this->renderSlots($phrased['text'], $product, $biz) : $draftRendered;
         $mode = $this->cautious($this->applyWorkingHours($biz, $auto['comment'] ?? 'draft'));

@@ -37,7 +37,7 @@ class AiRuleProvisioningTest extends TestCase
         ]);
     }
 
-    public function test_registration_creates_the_nine_default_rules(): void
+    public function test_registration_creates_the_full_default_library(): void
     {
         $pack = PointPack::where('is_active', true)->orderBy('price_bdt')->firstOrFail();
 
@@ -55,16 +55,17 @@ class AiRuleProvisioningTest extends TestCase
         $biz = Business::where('public_id', 'fresh-rules-shop')->firstOrFail();
         $rules = AiRule::where('business_id', $biz->id)->get();
 
-        $this->assertCount(9, $rules);
+        $this->assertCount(count(AiRule::defaults()), $rules);
         $this->assertEqualsCanonicalizing(
-            collect(AiRule::defaults())->pluck('match_text')->all(),
-            $rules->pluck('match_text')->all(),
+            collect(AiRule::defaults())->map(fn ($d) => ($d['trigger_type'] ?? 'intent') . '|' . $d['match_text'])->all(),
+            $rules->map(fn (AiRule $r) => $r->trigger_type . '|' . $r->match_text)->all(),
         );
-        $this->assertTrue($rules->every(fn (AiRule $r) => $r->active && $r->trigger_type === 'intent'));
-        $byIntent = $rules->keyBy('match_text');
-        $this->assertSame('draft', $byIntent['bargain']->action);
+        $this->assertTrue($rules->every(fn (AiRule $r) => (bool) $r->active));
+        $this->assertTrue($rules->contains('trigger_type', 'keyword'), 'the expanded library includes keyword rules');
+        $byIntent = $rules->where('trigger_type', 'intent')->keyBy('match_text');
+        $this->assertSame('answer', $byIntent['bargain']->action);
         $this->assertNull($byIntent['bargain']->reply_template);
-        $this->assertSame('draft', $byIntent['order_intent']->action);
+        $this->assertSame('answer', $byIntent['order_intent']->action);
         $this->assertSame('hide', $byIntent['spam']->action);
         $this->assertSame('handover', $byIntent['angry']->action);
         $this->assertSame(
@@ -76,7 +77,7 @@ class AiRuleProvisioningTest extends TestCase
     public function test_ensure_defaults_is_idempotent_and_respects_seller_edits(): void
     {
         $biz = Business::create(['name' => 'Edit Shop', 'public_id' => 'edit-shop', 'status' => 'approved']);
-        $this->assertSame(9, AiRule::where('business_id', $biz->id)->count());
+        $this->assertSame(count(AiRule::defaults()), AiRule::where('business_id', $biz->id)->count());
 
         // The seller edits a template and deliberately switches a rule off.
         AiRule::where('business_id', $biz->id)->where('match_text', 'price')
@@ -88,7 +89,7 @@ class AiRuleProvisioningTest extends TestCase
         AiRule::ensureDefaults($biz->id);
 
         $rules = AiRule::where('business_id', $biz->id)->get();
-        $this->assertCount(9, $rules);
+        $this->assertCount(count(AiRule::defaults()), $rules);
         $this->assertSame('SELLER CUSTOM TEMPLATE', $rules->firstWhere('match_text', 'price')->reply_template);
         $this->assertFalse((bool) $rules->firstWhere('match_text', 'bargain')->active);
     }
@@ -102,7 +103,7 @@ class AiRuleProvisioningTest extends TestCase
         $migration->up();
 
         $rules = AiRule::where('business_id', $bizId)->get();
-        $this->assertCount(9, $rules);
+        $this->assertCount(count(AiRule::defaults()), $rules);
         $this->assertTrue($rules->every(fn (AiRule $r) => (bool) $r->active));
     }
 
@@ -113,7 +114,7 @@ class AiRuleProvisioningTest extends TestCase
 
         $rule = app(RuleBrainService::class)->matchRule($bizId, 'আসসালামু আলাইকুম');
 
-        $this->assertSame(9, AiRule::where('business_id', $bizId)->count());
+        $this->assertSame(count(AiRule::defaults()), AiRule::where('business_id', $bizId)->count());
         $this->assertNotNull($rule);
         $this->assertSame('greeting', $rule->match_text);
     }
@@ -184,7 +185,7 @@ class AiRuleProvisioningTest extends TestCase
         $this->assertGreaterThanOrEqual(1063.0, $offer, 'offer fell below the 15% floor');
         $this->assertLessThan(1250.0, $offer, 'offer is not below the list price');
         // The safety net fired inside the first match: the shop has rules now.
-        $this->assertSame(9, AiRule::where('business_id', $bizId)->count());
+        $this->assertSame(count(AiRule::defaults()), AiRule::where('business_id', $bizId)->count());
 
         // --- Price: the price rule answers with the real figure ---
         $priceMsg = $brain->handleIncoming($conv->fresh(), 'Test Panjabi er dam koto?');
