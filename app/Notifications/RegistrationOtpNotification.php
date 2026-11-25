@@ -23,7 +23,7 @@ class RegistrationOtpNotification extends Notification
     public function toMail($notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject(__('Your SkaleUp BD verification code'))
+            ->subject(__('Your Scalenow Bd verification code'))
             ->markdown('emails.registration-otp', [
                 'code' => $this->code,
                 'name' => $notifiable->name,

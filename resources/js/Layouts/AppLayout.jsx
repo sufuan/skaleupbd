@@ -54,7 +54,7 @@ const mod = (slug) => `/module/${slug}`;
 // so a page the user cannot open is never offered here either.
 function buildSearchIndex(sections) {
     return (sections || []).flatMap((g) => g.items.flatMap((item) => [
-        { label: item.label, href: item.href, group: g.sec || 'SkaleUp BD' },
+        { label: item.label, href: item.href, group: g.sec || 'Scalenow Bd' },
         ...(item.children || []).map((c) => item.settings
             ? { label: c.label, href: c.href || `/settings?group=${c.g}`, group: 'Settings' }
             : typeof c === 'object'

@@ -108,7 +108,7 @@ class User extends Authenticatable
         return $this->belongsTo(Role::class, 'role_id');
     }
 
-    /** Send the branded SkaleUp BD password reset notification. */
+    /** Send the branded Scalenow Bd password reset notification. */
     public function sendPasswordResetNotification($token): void
     {
         $this->notify(new \App\Notifications\ResetPasswordNotification($token));

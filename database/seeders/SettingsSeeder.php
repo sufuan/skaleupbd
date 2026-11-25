@@ -16,7 +16,7 @@ class SettingsSeeder extends Seeder
         $rows = [
             ['key' => 'security.totp_enabled', 'value' => '0', 'type' => 'boolean', 'group' => 'security'],
             ['key' => 'app.locale_default', 'value' => 'en', 'type' => 'string', 'group' => 'app'],
-            ['key' => 'organization.name', 'value' => 'SkaleUp BD', 'type' => 'string', 'group' => 'organization'],
+            ['key' => 'organization.name', 'value' => 'Scalenow Bd', 'type' => 'string', 'group' => 'organization'],
         ];
 
         foreach ($rows as $row) {

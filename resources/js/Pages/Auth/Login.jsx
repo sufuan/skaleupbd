@@ -61,7 +61,7 @@ export default function Login({ status, canResetPassword }) {
                 </button>
             </form>
             <p className="sm mut" style={{ textAlign: 'center', marginTop: 18 }}>
-                {t('New to SkaleUp BD?')} <Link href={route('register')} className="auth-link">{t('Create an account')}</Link>
+                {t('New to Scalenow Bd?')} <Link href={route('register')} className="auth-link">{t('Create an account')}</Link>
             </p>
         </GuestLayout>
     );

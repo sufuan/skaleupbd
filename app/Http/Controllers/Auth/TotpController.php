@@ -37,7 +37,7 @@ class TotpController extends Controller
             $request->session()->put('totp_setup_secret', $secret);
         }
 
-        $issuer = (string) rescue(fn () => app(\App\Services\SettingsService::class)->get('organization.name', 'SkaleUp BD'), 'SkaleUp BD', false);
+        $issuer = (string) rescue(fn () => app(\App\Services\SettingsService::class)->get('organization.name', 'Scalenow Bd'), 'Scalenow Bd', false);
 
         return Inertia::render('Auth/TotpSetup', [
             'secret' => $secret,

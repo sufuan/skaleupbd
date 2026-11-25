@@ -29,7 +29,7 @@ export default function Status({ status, note, shopName }) {
                         <>
                             <h3 style={{ fontSize: 20, margin: '12px 0 8px' }}>{t('Your account is under review')}</h3>
                             <p style={{ color: 'var(--muted)', fontSize: 14, lineHeight: 1.6 }}>
-                                {t('Thanks for joining SkaleUp BD. Our team is checking')} <b>{shopName}</b> {t('now. This usually takes a short time.')}
+                                {t('Thanks for joining Scalenow Bd. Our team is checking')} <b>{shopName}</b> {t('now. This usually takes a short time.')}
                             </p>
                             <div style={{ textAlign: 'left', margin: '16px auto 4px', maxWidth: 460, fontSize: 14, lineHeight: 1.9 }}>
                                 <div><b>1.</b> {t('We check your shop details.')}</div>

@@ -222,7 +222,7 @@ class RegistrationVerificationService
             return false;
         }
 
-        $body = "Your SkaleUp BD verification code is {$code}. It is valid for 10 minutes. Do not share it with anyone.";
+        $body = "Your Scalenow Bd verification code is {$code}. It is valid for 10 minutes. Do not share it with anyone.";
         $source = ['type' => 'transactional', 'key' => 'registration_otp', 'label' => 'Registration verification'];
 
         $via = $biz;

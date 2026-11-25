@@ -23,13 +23,13 @@ class ResetPasswordNotification extends ResetPassword
             : __('Hello,');
 
         return (new MailMessage)
-            ->subject(__('Reset your SkaleUp BD password'))
+            ->subject(__('Reset your Scalenow Bd password'))
             ->greeting($greeting)
-            ->line(__('We received a request to reset the password for your SkaleUp BD account.'))
+            ->line(__('We received a request to reset the password for your Scalenow Bd account.'))
             ->line(__('Tap the button below to choose a new password.'))
             ->action(__('Reset password'), $this->resetUrl($notifiable))
             ->line(__('This link will expire in :count minutes, so please use it soon.', ['count' => $expire]))
             ->line(__('If you did not ask for this, you can safely ignore this email - your password will not change.'))
-            ->salutation(__('- The SkaleUp BD team'));
+            ->salutation(__('- The Scalenow Bd team'));
     }
 }

@@ -14,7 +14,7 @@ export default function GuestLayout({ children, wide = false }) {
                 <div className="brand-row">
                     <div className="brand-mark">S</div>
                     <div>
-                        <div className="brand-name">SkaleUp BD</div>
+                        <div className="brand-name">Scalenow Bd</div>
                         <div className="brand-tag">{t('F-commerce seller platform')}</div>
                     </div>
                 </div>
@@ -25,7 +25,7 @@ export default function GuestLayout({ children, wide = false }) {
                     <div className="brand-point"><Tick />{t('Courier booking and delivery tracking built in')}</div>
                     <div className="brand-point"><Tick />{t('AI replies and price bargaining inside your rules')}</div>
                 </div>
-                <div className="brand-foot">SkaleUp BD · {t('Made for sellers in Bangladesh')}</div>
+                <div className="brand-foot">Scalenow Bd · {t('Made for sellers in Bangladesh')}</div>
             </div>
             <div className="auth-side">
                 <div className="auth-top"><LanguageSwitcher /></div>
