@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Business;
+use App\Models\CourierMethod;
 use App\Models\FinanceAccount;
 use App\Models\MessageTemplate;
 use App\Models\OrderSource;
@@ -95,6 +96,8 @@ class BusinessProvisioner
             ['type' => 'cash', 'opening_balance' => 0, 'sort' => 0]
         );
 
+        $this->ensureDefaultCourierMethod($biz);
+
         // M10 Work Inbox: install the 36-rule defaults for the new shop.
         app(WorkInboxService::class)->seedDefaults($biz->id);
 
@@ -107,6 +110,47 @@ class BusinessProvisioner
         if (Schema::hasTable('business_wallets')) {
             app(TokenService::class)->ensureWallet($biz->id);
         }
+    }
+
+    /**
+     * A shop with no courier connection cannot deliver anything: the
+     * New Order form's Delivery Method list is derived from the shop's
+     * own CourierMethod rows, so a brand-new shop's dropdown was empty
+     * and its first order was impossible until the seller found
+     * Settings -> API Connection on their own (fresh-seller blocker,
+     * clean-slate Round 1 Phase 1, 2026-11-26). Every shop therefore
+     * starts with one manual method — the same "Manual (Other)" a
+     * seller would add by hand, carrying the shop's Business Profile
+     * delivery charges — active and default. A shop that already has
+     * ANY courier method is left exactly as it is.
+     */
+    public function ensureDefaultCourierMethod(Business $biz): void
+    {
+        // Guarded like the wallet seed below: ensureSeeds is also called
+        // by backfill migrations, and a missing table must never break
+        // a migration run.
+        if (! Schema::hasTable('courier_methods')) {
+            return;
+        }
+        if (CourierMethod::where('business_id', $biz->id)->exists()) {
+            return;
+        }
+
+        $settings = app(SettingsService::class);
+        CourierMethod::create([
+            'business_id' => $biz->id,
+            'name' => CourierMethod::LABELS['OTHERS'],
+            'courier_type' => 'OTHERS',
+            'credentials' => [],
+            'charge_inside_dhaka' => (float) $settings->bizGet($biz->id, "business.{$biz->id}.default_delivery_cost", 'business.default_delivery_cost', 60),
+            'charge_outside_dhaka' => (float) $settings->bizGet($biz->id, "business.{$biz->id}.default_delivery_cost_outside", 'business.default_delivery_cost_outside', 120),
+            'is_active' => true,
+            'is_default' => true,
+        ]);
+
+        // Keep the shop's form-facing delivery-method list in step,
+        // exactly as CourierSettingsController does after a save.
+        app(DeliveryMethodList::class)->syncFromConnections($biz->id);
     }
 
     /** The standard template library (same texts MarketingSeeder installs). */

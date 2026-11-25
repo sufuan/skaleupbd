@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\ApiKey;
 use App\Models\AppNotification;
 use App\Models\Business;
+use App\Models\CourierMethod;
 use App\Models\Order;
 use App\Services\OrderService;
 use App\Services\PhoneNormalizer;
@@ -32,6 +33,33 @@ class ExternalOrderController extends Controller
             'timestamp' => now()->toIso8601String(),
             'data' => $data,
         ], $code);
+    }
+
+    /**
+     * The shop's usual delivery charge when the caller omits
+     * deliveryCharge: the zone split every other intake applies.
+     * The district is the one the payload names, else the one its
+     * address names (OrderService::deriveDistrict — the same
+     * extraction that will be stored on the order); the zone test
+     * is CourierMethod::isInsideDhaka, the platform's one
+     * definition. An address naming no district is not inside
+     * Dhaka by that test, so it takes the outside figure, exactly
+     * as the chat-order summary does.
+     */
+    private function defaultDeliveryCharge(int $businessId, array $data): float
+    {
+        $district = isset($data['district']) && trim((string) $data['district']) !== ''
+            ? (string) $data['district']
+            : OrderService::deriveDistrict($data['customerAddress'] ?? null);
+
+        $inside = CourierMethod::isInsideDhaka($district);
+
+        return (float) $this->settings->bizGet(
+            $businessId,
+            $inside ? "business.{$businessId}.default_delivery_cost" : "business.{$businessId}.default_delivery_cost_outside",
+            $inside ? 'business.default_delivery_cost' : 'business.default_delivery_cost_outside',
+            $inside ? 60 : 120,
+        );
     }
 
     public function store(Request $request): JsonResponse
@@ -147,11 +175,16 @@ class ExternalOrderController extends Controller
             'delivery_note' => $data['note'] ?? null,
             'discount' => $data['discount'] ?? 0,
             // Y1-F4: an omitted deliveryCharge means "the shop's
-            // usual charge", not free delivery - fall back to the
-            // shop's configured default delivery cost, the same
-            // bizGet chain the chat-order and New Order paths use.
-            // An explicitly sent value (including 0) is respected.
-            'delivery_charge' => $data['deliveryCharge'] ?? (float) $this->settings->bizGet($business->id, "business.{$business->id}.default_delivery_cost", 'business.default_delivery_cost', 60),
+            // usual charge", not free delivery. The usual charge is
+            // zone-split, exactly as the chat-order and storefront
+            // paths quote it: the district the order names (or the
+            // one its address names) picks the shop's inside-Dhaka
+            // or outside-Dhaka Business Profile figure. (This used
+            // to fall back to the inside figure unconditionally, so
+            // an outside-Dhaka API order that omitted the charge was
+            // undercharged.) An explicitly sent value (including 0)
+            // is respected.
+            'delivery_charge' => $data['deliveryCharge'] ?? $this->defaultDeliveryCharge($business->id, $data),
             'advance' => $data['advance'] ?? 0,
             'is_preorder' => (bool) ($data['isPreorder'] ?? false),
             'external_ref' => $data['externalRef'] ?? null,
@@ -166,7 +199,14 @@ class ExternalOrderController extends Controller
                 // sell variant stock at all.
                 'variant_id' => $p['variantId'] ?? null,
                 'variant_name' => $p['variantName'] ?? null,
-                'name' => $p['name'] ?? 'Item',
+                // A line that omits its name (or sends it blank) must
+                // reach OrderService as null so its own fallback can
+                // fill the linked product's name (name ?? product
+                // name ?? 'Item'). Hard-coding 'Item' here hid the
+                // product name on every API order whose caller did
+                // not repeat it — the order read "Item 2x 250" for a
+                // linked Plain Cap.
+                'name' => isset($p['name']) && trim((string) $p['name']) !== '' ? $p['name'] : null,
                 'qty' => $p['quantity'],
                 'price' => $p['price'],
             ])->all(),

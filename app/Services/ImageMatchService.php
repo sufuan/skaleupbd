@@ -110,18 +110,39 @@ class ImageMatchService
         $hashCandidates = collect();
         if ($hash !== null) {
             $scored = ProductImageHash::where('business_id', $businessId)->get()
-                ->map(fn ($h) => ['product_id' => (int) $h->product_id, 'dist' => $this->distance($hash, $h->hash)])
+                ->map(fn ($h) => ['product_id' => (int) $h->product_id, 'dist' => $this->distance($hash, $h->hash), 'trusted' => in_array((string) $h->source, ['gallery', 'confirmed'], true)])
                 ->sortBy('dist')
                 ->values();
             if ($scored->isNotEmpty()) {
                 $best = $scored[0];
-                $second = isset($scored[1]) ? (int) $scored[1]['dist'] : 999;
-                if ($best['dist'] <= 8 && ($second - $best['dist']) >= 6) {
-                    return ['level' => 'high', 'product' => Product::find($best['product_id']), 'method' => 'hash', 'image_type' => 'product'];
-                }
                 if ($best['dist'] <= 14) {
-                    $hashBest = (int) $best['product_id'];
+                    // Any close row — trusted or not — may put its
+                    // product on the vision shortlist.
                     $hashCandidates = $scored->take(4)->pluck('product_id');
+                }
+                // Only a TRUSTED reference can carry a hash verdict
+                // (batch 17): the shop's own gallery photos, and
+                // photos a customer CONFIRMED through the
+                // image-confirm question. A row the pipeline learned
+                // automatically from an earlier identification
+                // (source 'customer') never decides on its own: the
+                // pre-batch-16 focus bug learned a photo of a red
+                // bag as the focus Panjabi, and every re-send of
+                // that photo then "matched" its own poisoned row at
+                // distance 0 — high confidence, forever. An
+                // untrusted row's product can still be confirmed by
+                // the vision check below, or by the customer through
+                // the medium path, whose "yes" re-learns it as
+                // 'confirmed' — the trust ladder.
+                if (! empty($best['trusted'])) {
+                    $second = isset($scored[1]) ? (int) $scored[1]['dist'] : 999;
+                    if ($best['dist'] <= 8 && ($second - $best['dist']) >= 6) {
+                        return ['level' => 'high', 'product' => Product::find($best['product_id']), 'method' => 'hash', 'image_type' => 'product'];
+                    }
+                }
+                $trustedBest = $scored->first(fn ($r) => ! empty($r['trusted']));
+                if ($trustedBest !== null && $trustedBest['dist'] <= 14) {
+                    $hashBest = (int) $trustedBest['product_id'];
                 }
             }
         }

@@ -647,6 +647,17 @@ class RuleBrainService
             if ($asksPrice && ! $this->intentMatches('bargain', $hay)) {
                 return 'price';
             }
+            // An ATTRIBUTE question is not a ladder push either
+            // (batch 17, live C1 in bargain state): "CRUD-101 er
+            // ojon koto?" mid-bargain carries the SKU's digits, so
+            // the digit branch below read it as a counter-offer and
+            // quoted the next rung. isAttributeQuestion already
+            // excludes any message naming the price, so this
+            // carve-out can only route genuine attribute questions
+            // to the attribute path (null -> the keyword rules).
+            if ($this->isAttributeQuestion($hay)) {
+                return null;
+            }
             if (preg_match('/[0-9\x{09E6}-\x{09EF}]/u', $text) || $this->intentMatches('bargain', $hay)
                 || str_contains($hay, 'দাম') || str_contains($hay, 'কম')) {
                 return 'bargain';
@@ -821,32 +832,75 @@ class RuleBrainService
         $sorted = $rules->sortBy(fn ($r) => in_array($r->match_text, $priority, true) ? 0 : 1)->values();
         $bestKeyword = null;
         $bestLen = -1;
+        $scanKeyword = function (AiRule $rule) use ($hay, &$bestKeyword, &$bestLen): void {
+            foreach (array_map('trim', explode(',', (string) $rule->match_text)) as $kw) {
+                if ($kw !== '' && str_contains($hay, mb_strtolower($kw))) {
+                    $len = mb_strlen($kw);
+                    if ($len > $bestLen) {
+                        $bestLen = $len;
+                        $bestKeyword = $rule;
+                    }
+                }
+            }
+        };
+        $intentWordMatch = function (AiRule $rule) use ($hay, $intent): bool {
+            if (! $this->intentMatches($rule->match_text, $hay)) {
+                return false;
+            }
+            // A missing-confirmation message (batch 15) carries
+            // two misleading words — the angry word 'পাইনি' and
+            // 'কনফার্ম' inside 'কনফার্মেশন' — but IS an
+            // order-status question: detectIntent above has
+            // already said so. The word fallback must not
+            // resurrect the angry handover or an order intent
+            // for it.
+            return ! (in_array($rule->match_text, ['angry', 'order_intent'], true) && $intent === 'order_status' && $this->confirmationMissing($hay));
+        };
+        // Priority intents first, exactly as before: a spam / angry /
+        // bargain / order-intent word match settles the message here
+        // (a keyword rule whose whole match_text is a priority name
+        // rides this group and competes here, as it did when one
+        // loop interleaved the two).
         foreach ($sorted as $rule) {
-            if (!$matchesChannel($rule)) {
+            if (! in_array($rule->match_text, $priority, true)) {
+                break;
+            }
+            if (! $matchesChannel($rule)) {
                 continue;
             }
             if ($rule->trigger_type === 'keyword') {
-                foreach (array_map('trim', explode(',', (string) $rule->match_text)) as $kw) {
-                    if ($kw !== '' && str_contains($hay, mb_strtolower($kw))) {
-                        $len = mb_strlen($kw);
-                        if ($len > $bestLen) {
-                            $bestLen = $len;
-                            $bestKeyword = $rule;
-                        }
-                    }
-                }
-            } elseif ($this->intentMatches($rule->match_text, $hay)) {
-                // A missing-confirmation message (batch 15) carries
-                // two misleading words — the angry word 'পাইনি' and
-                // 'কনফার্ম' inside 'কনফার্মেশন' — but IS an
-                // order-status question: detectIntent above has
-                // already said so. The word fallback must not
-                // resurrect the angry handover or an order intent
-                // for it.
-                if (in_array($rule->match_text, ['angry', 'order_intent'], true) && $intent === 'order_status' && $this->confirmationMissing($hay)) {
-                    continue;
-                }
-
+                $scanKeyword($rule);
+            } elseif ($intentWordMatch($rule)) {
+                return $bestKeyword ?? $rule;
+            }
+        }
+        // Then the keyword competition runs over EVERY rule before
+        // any remaining intent rule may claim the message on its
+        // words (batch 17, live C1): the old single loop returned
+        // the first matching intent rule with only the keyword
+        // rules BEFORE it in id order having competed — and a shop
+        // backfilled by migrations (core intents installed by
+        // 000061, the library by 000062 and later) carries the
+        // Price rule at a lower id than the Product-details
+        // keyword rule, so the price word 'koto' ended the contest
+        // before the attribute rule was ever seen. Fresh installs
+        // mask it (the catalog lists the keyword defs before the
+        // core intents). Install order must not decide routing:
+        // every keyword competes, the longest wins, and only a
+        // message no keyword claims falls to the intent-word match.
+        foreach ($sorted as $rule) {
+            if (! $matchesChannel($rule)) {
+                continue;
+            }
+            if ($rule->trigger_type === 'keyword') {
+                $scanKeyword($rule);
+            }
+        }
+        foreach ($sorted as $rule) {
+            if (in_array($rule->match_text, $priority, true) || ! $matchesChannel($rule)) {
+                continue;
+            }
+            if ($rule->trigger_type !== 'keyword' && $intentWordMatch($rule)) {
                 return $bestKeyword ?? $rule;
             }
         }
@@ -4434,15 +4488,40 @@ class RuleBrainService
             $conversation->save();
             if ($picked !== null) {
                 $pendingPick = $picked;
-                if (! $rule && ! empty($pendingClarify['intent'])) {
+                $clarifiedIntent = ! empty($pendingClarify['intent']) ? (string) $pendingClarify['intent'] : null;
+                // The pick resumes the question that was actually
+                // asked (batch 8). Batch 17: the resume must also
+                // override a BARGAIN verdict the bare pick inherited
+                // from conversation state — detectIntent's
+                // mid-bargain digit branch calls any digit a ladder
+                // push, so with a negotiation standing, "2" matched
+                // the bargain rule, this restore (which used to fire
+                // only when NO rule matched) never ran, and the
+                // ladder advanced on a customer who had only
+                // answered "which one?" (live 2026-11-26 02:45: the
+                // pick got an unprompted step-2 offer of 765
+                // instead of the plain 850 price). The ladder may
+                // move only on the message's OWN fresh signal — a
+                // bargain word, a named figure, a price-too-high
+                // push — and a details-bearing pick keeps the
+                // batch-9 order-taking route, so neither disarms
+                // the resume.
+                $pickHay = mb_strtolower($text);
+                $ownPush = $this->intentMatches('bargain', $pickHay)
+                    || $this->namedAmount($text) !== null
+                    || $this->isPriceTooHigh($pickHay);
+                $resume = $clarifiedIntent !== null
+                    && (! $rule
+                        || ($rule->match_text === 'bargain' && $clarifiedIntent !== 'bargain' && ! $ownPush && ! $this->carriesDetails($text)));
+                if ($resume) {
                     // The pick itself carries no intent ("2", "ওটা") —
                     // resume the question that was actually asked.
                     $rule = AiRule::where('business_id', $biz)->where('active', true)
                         ->where('trigger_type', 'intent')
-                        ->where('match_text', (string) $pendingClarify['intent'])
+                        ->where('match_text', $clarifiedIntent)
                         ->where(fn ($q) => $q->whereNull('channel')->orWhere('channel', $conversation->channel))
                         ->first() ?? $rule;
-                    $intent = $intent ?? (string) $pendingClarify['intent'];
+                    $intent = $clarifiedIntent;
                 }
             }
         }
@@ -4575,7 +4654,13 @@ class RuleBrainService
                 if ($confirmed) {
                     $photoMsg = !empty($pendingImg['message_id']) ? ChatMessage::find($pendingImg['message_id']) : null;
                     if ($photoMsg && $photoMsg->attachment_path) {
-                        app(ImageMatchService::class)->learn($biz, $confirmed->id, $photoMsg->attachment_path, 'customer');
+                        // A HUMAN confirmed this match (the customer
+                        // answered the image-confirm question "হ্যাঁ"):
+                        // the learn is recorded as 'confirmed', the
+                        // tier the matcher trusts for a high-confidence
+                        // hash verdict (batch 17) — an automatic learn
+                        // stays 'customer' and can never carry one.
+                        app(ImageMatchService::class)->learn($biz, $confirmed->id, $photoMsg->attachment_path, 'confirmed');
                     }
                     $product = $confirmed;
                     $conversation->product_id = $confirmed->id;
@@ -5361,7 +5446,22 @@ class RuleBrainService
         ]);
 
         $action = $status === 'sent' ? 'auto_sent' : ($status === 'flagged' ? 'flagged' : 'draft_created');
-        $this->log($biz, $action, $conversation->customer_name . ' — ' . ($rule?->name ?? 'No rule matched'), $rule, $conversation, null, [
+        // The record names what answered (batch 17): the deliberate
+        // no-rule branches — batch 12's invoice-status lookup,
+        // batch 15's acknowledgement and presence lines — are not
+        // unmatched messages, and logging a correct status answer
+        // as "No rule matched" sent the Phase 2 verification
+        // hunting a failure that never happened (live 2026-11-26
+        // 02:49). Only the genuine fallback — a product description
+        // or price line composed for a message nothing matched —
+        // keeps the old label.
+        $answerLabel = $rule?->name ?? match ($kind ?? null) {
+            'order_status' => 'Order status answer',
+            'acknowledgement' => 'Acknowledgement',
+            'presence' => 'Presence answer',
+            default => 'No rule matched',
+        };
+        $this->log($biz, $action, $conversation->customer_name . ' — ' . $answerLabel, $rule, $conversation, null, [
             'source' => $talkerMeta !== [] ? 'talker' : 'template',
             'latency_ms' => (int) round((microtime(true) - $startedAt) * 1000),
         ]);

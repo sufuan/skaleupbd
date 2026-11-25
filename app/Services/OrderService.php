@@ -82,7 +82,7 @@ class OrderService
             // The New Order form has no district field (prototype layout): when
             // the caller did not supply one, read it out of the address text.
             if (empty($data['district'])) {
-                $data['district'] = $this->deriveDistrict($data['customer_address'] ?? null);
+                $data['district'] = self::deriveDistrict($data['customer_address'] ?? null);
             }
             $phone = PhoneNormalizer::normalize($data['customer_phone'] ?? '');
             $customer = $this->customerFor($businessId, $phone, [
@@ -869,7 +869,8 @@ class OrderService
     ];
 
     /** Best-effort district from a free-text address (a name appearing in it). */
-    private function deriveDistrict(?string $address): ?string
+    /** The district an address text names, if any (shared: the external API's zone charge reads it too). */
+    public static function deriveDistrict(?string $address): ?string
     {
         $address = trim((string) $address);
         if ($address === '') {

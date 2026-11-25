@@ -36,23 +36,35 @@ final class ConnectionHealthController extends Controller
         $pointsBalance = $host->pointsAvailable($businessId);
         $hasPoints = $pointsBalance > 0;
 
-        // Pending events (inbound WooCommerce events not yet processed).
+        // Pending events (inbound events not yet processed). Waiting
+        // events sit in received/failed — there is no 'pending'
+        // status (the same definition WooConnectController uses).
         $pendingInbound = DB::table('integration_events')
             ->where('connection_id', $conn->id)
-            ->where('status', 'pending')
+            ->where('direction', 'in')
+            ->whereIn('status', ['received', 'failed'])
             ->count();
 
-        // Pending outbound webhook deliveries (custom-site).
-        $pendingOutbound = DB::table('webhook_deliveries')
+        // Outbound status updates still queued to send: outbound
+        // events waiting for their first attempt or for a retry —
+        // the same "waiting" definition OutboundWebhookService
+        // itself applies before creating a new event.
+        $pendingOutbound = DB::table('integration_events')
             ->where('connection_id', $conn->id)
-            ->whereIn('status', ['pending', 'retrying'])
+            ->where('direction', 'out')
+            ->whereIn('status', ['received', 'failed'])
             ->count();
 
-        // Failed outbound deliveries in last 24 h.
+        // Failed outbound deliveries in last 24 h. webhook_deliveries
+        // is an attempt log with no status or updated_at column: the
+        // attempt's outcome and its created_at are the record. (The
+        // old query filtered on both missing columns, so this whole
+        // endpoint threw and the Connect page could never load the
+        // connection's health.)
         $recentFailures = DB::table('webhook_deliveries')
             ->where('connection_id', $conn->id)
-            ->where('status', 'failed')
-            ->where('updated_at', '>=', now()->subDay())
+            ->where('outcome', 'failed')
+            ->where('created_at', '>=', now()->subDay())
             ->count();
 
         // Product mapping summary.

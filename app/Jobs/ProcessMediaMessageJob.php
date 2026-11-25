@@ -21,8 +21,9 @@ use Illuminate\Support\Facades\Storage;
  * hash, then vision over a shortlist — and act on the confidence code
  * decides: high = answer, medium = ask with the product name, low = a
  * human. (The conversation's focus product is never an identification:
- * batch 16.) If the caption flow already produced an AI reply, this
- * job stays out.
+ * batch 16 — and a caption identifies only by the words it carries,
+ * never through the focus standing behind it: batch 17.) If the
+ * caption flow already produced an AI reply, this job stays out.
  */
 class ProcessMediaMessageJob implements ShouldQueue
 {
@@ -69,7 +70,21 @@ class ProcessMediaMessageJob implements ShouldQueue
         $product = null;
         $level = 'low';
         if ($caption !== '') {
-            $product = $brain->productFor($biz, $caption, $conv);
+            // The caption identifies a product only by what IT
+            // names (batch 17): productFor() with the conversation
+            // returns the FOCUS product before it reads a word of
+            // the text, so any caption at all used to "identify"
+            // whatever stood in focus at high confidence — and the
+            // high branch below then learn()ed the photo as that
+            // product, writing the misidentification into the hash
+            // store. Judged on its own words instead: an explicit
+            // name (SKU / alias / full name), or one unambiguous
+            // scored match; a caption tying two products identifies
+            // neither and the photo is judged by the matcher.
+            $product = $brain->explicitProductFor($biz, $caption)
+                ?? ($brain->ambiguousProductsFor($biz, $caption) === null
+                    ? $brain->productFor($biz, $caption, null)
+                    : null);
             if ($product) {
                 $level = 'high';
             }
