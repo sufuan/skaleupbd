@@ -102,6 +102,23 @@ class ProcessMediaMessageJob implements ShouldQueue
             $conv->save();
             AiActivity::create(['business_id' => $biz, 'conversation_id' => $conv->id, 'action' => 'image_no_match', 'detail' => $conv->customer_name . ' — photo could not be matched', 'source' => 'image']);
 
+            // The customer hears something, not silence: a polite line
+            // asking what they are looking for, while the conversation
+            // stays flagged for a human. Once per burst — when a
+            // fallback already went out moments ago, another photo in
+            // the same burst adds no new one.
+            $recentFallback = ChatMessage::where('conversation_id', $conv->id)
+                ->where('direction', 'out')->where('sender', 'ai')
+                ->where('created_at', '>=', now()->subMinutes(10))
+                ->get()
+                ->contains(fn ($m) => ($m->meta['kind'] ?? null) === 'image_no_match');
+            if (!$recentFallback) {
+                $reply = $brain->simpleReply($conv, 'দুঃখিত, ছবিটা ঠিক চিনতে পারিনি। আপনি কোন product-টা খুঁজছেন? নামটা বললে দামসহ জানিয়ে দিচ্ছি।', 'image_no_match');
+                if ($reply) {
+                    $graph->dispatch($reply);
+                }
+            }
+
             return;
         }
 
