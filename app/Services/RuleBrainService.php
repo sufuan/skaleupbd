@@ -326,6 +326,19 @@ class RuleBrainService
             if ($this->intentMatches('order_intent', $hay) || $this->isAcceptance($hay)) {
                 return 'order_intent';
             }
+            // A message carrying the customer's own details is order
+            // input, never another ladder round (brain fix batch 9):
+            // the bot asked "অর্ডার করবেন?" and the customer answered
+            // with his name, phone and address — but the digit branch
+            // below read the phone's digits as a counter-offer, and
+            // the ladder stepped down with no summary (live
+            // 2026-11-25 18:56: 1,235 -> 1,170). Batch 1 covered
+            // confirmations carrying digits and batch 5 covered
+            // collect mode; bargain mode outside collect was the
+            // state left uncovered.
+            if ($this->carriesDetails($text)) {
+                return 'order_intent';
+            }
             // A price QUESTION is not a ladder push (brain fix batch 2):
             // "dam koto?" mid-bargaining asks what the price IS — it
             // must be answered as a price question, never routed into
@@ -1998,6 +2011,27 @@ class RuleBrainService
         // contact details is a NEW flow starting, not a repeat: the
         // chain handles those.
         $last = (array) ($state['last_order'] ?? []);
+        if ($last !== []) {
+            // The guard must not outlive the order itself (batch 9):
+            // the snapshot is only as good as the order it names. If
+            // that order was cancelled by the seller — or came back
+            // as a return — it no longer stands, so the memory is
+            // cleared (with any summary snapshot of that flow) and
+            // the chain starts a fresh flow below. Live 2026-11-25
+            // 18:53: OB300 was cancelled in the app, yet "order korte
+            // chai" still got OB300's already-confirmed reply and no
+            // new flow could start. A row that is gone entirely
+            // (deleted) is dead the same way. An order still alive
+            // (Pending/Processing/Shipped/Delivered) keeps the
+            // batch-3 behaviour exactly.
+            $lastOrder = ! empty($last['id']) ? \App\Models\Order::find((int) $last['id']) : null;
+            if ($lastOrder === null || in_array($lastOrder->status, ['Cancelled', 'Returned'], true)) {
+                unset($state['last_order'], $state['pending_summary']);
+                $conversation->state_data = $state;
+                $conversation->save();
+                $last = [];
+            }
+        }
         if ($last !== []
             && $this->namedAmount($text) === null
             && $this->extractPhone($text) === null
@@ -2067,6 +2101,24 @@ class RuleBrainService
         $this->log((int) $conversation->business_id, $msg->status === 'sent' ? 'auto_sent' : 'draft_created', $conversation->customer_name . ' — ' . $kind, null, $conversation);
 
         return $msg;
+    }
+
+    /**
+     * Does this message carry the customer's own contact details — a
+     * parseable phone number, a labelled address, or a labelled
+     * name? The same read flowCancellation and handleCollect have
+     * always made (batch 5/7), named once for batch 9: a message
+     * carrying details is order input wherever it lands — never a
+     * cancellation, never a side question, and never a counter-offer.
+     */
+    private function carriesDetails(string $text): bool
+    {
+        $norm = $this->guard->normalizeDigits($text);
+        $phoneInMsg = $this->extractPhone($text);
+
+        return $phoneInMsg !== null
+            || $this->extractLabelledAddress($norm, $phoneInMsg) !== null
+            || $this->extractName($norm) !== null;
     }
 
     /**
@@ -2187,11 +2239,31 @@ class RuleBrainService
         // all, so "dam koto?" mid-collection got the identical collect
         // prompt back and the question vanished. Only price/bargain
         // route sideways — everything else keeps the routing it had.
+        //
+        // One shape must never route sideways (batch 9): the awaited
+        // address itself. House and road numbers are digits, so with a
+        // bargained offer standing (neg_step >= 1) detectIntent's
+        // mid-bargain digit branch reads an address answer as another
+        // ladder push — the bargain-mode defect, one state over — and
+        // the capture below never sees it. An address-shaped message
+        // (a label, a comma, an address word — the same signals the
+        // capture accepts) carrying NO money marker and NO bargain
+        // word is the answer to the question on the table; a genuine
+        // push always carries one of those two, so it still routes
+        // sideways exactly as batch 5 built it.
         $sideIntent = null;
         if (! $carriesDetails) {
-            $intent = $this->detectIntent($text, $conversation);
-            if ($intent === 'price' || $intent === 'bargain') {
-                $sideIntent = $intent;
+            $candidate = $this->cleanAddressCandidate(trim(str_replace($phoneInMsg ?? '~~~', '', $norm)), $this->extractName($norm));
+            $addressShaped = ! preg_match('/টাকা|taka|\btk\b|৳/iu', $text)
+                && ! $this->intentMatches('bargain', mb_strtolower($text))
+                && ($this->extractLabelledAddress($norm, $phoneInMsg) !== null
+                    || ($candidate !== null && (str_contains($candidate, ',')
+                        || (bool) preg_match('/বাসা|রোড|হোল্ডিং|থানা|জেলা|সেক্টর|ব্লক|গ্রাম/u', $candidate))));
+            if (! $addressShaped) {
+                $intent = $this->detectIntent($text, $conversation);
+                if ($intent === 'price' || $intent === 'bargain') {
+                    $sideIntent = $intent;
+                }
             }
         }
 
@@ -2878,7 +2950,11 @@ class RuleBrainService
         // is likewise an agreement, recorded for the reply's meta.
         $agreedNow = null;
         if ($product && $rule && $rule->match_text === 'order_intent' && $conversation->neg_offer !== null) {
-            $named = $this->namedAmount($text);
+            // A figure named inside a message that carries the
+            // customer's details is never a settlement figure (batch
+            // 9): the details are the message's business, so the
+            // standing offer stands exactly as it was.
+            $named = $this->carriesDetails($text) ? null : $this->namedAmount($text);
             if ($named !== null && $named >= $this->negotiation->floor($product) && $named < (float) $conversation->neg_offer) {
                 $conversation->neg_offer = round($named, 2);
                 $conversation->save();
@@ -3010,20 +3086,16 @@ class RuleBrainService
 
                 return null;
             }
-            $quote = $this->negotiation->quote($conversation, $product, $this->namedAmount($text));
-            if ($quote === null) {
-                $conversation->needs_human = true;
-                $conversation->save();
-                $this->log($biz, 'handed_human', $conversation->customer_name . ' — দাম floor-এ পৌঁছেছে', $rule, $conversation);
-
-                return null;
-            }
-            if ($quote['kind'] === 'accept') {
-                // AGREED — the negotiation is over. The offer is never
-                // repeated and "অর্ডার করবেন?" is never asked again:
-                // the flow moves straight to order taking at the
-                // agreed figure (already settled in neg_offer).
-                $o = $this->orderTaking($conversation, $product, $variant, $biz, (float) $quote['offer']);
+            if ($this->carriesDetails($text)) {
+                // A message carrying the customer's details is never
+                // a counter-offer, whatever matched the bargain rule
+                // (batch 9 — the chain-level net behind detectIntent's
+                // own guard): the details are already captured on the
+                // record, so take the order at the standing offer —
+                // the summary when they are complete, the
+                // missing-pieces question when they are not. The
+                // ladder does not move and no rung is consumed.
+                $o = $this->orderTaking($conversation, $product, $variant, $biz, $conversation->neg_offer !== null ? (float) $conversation->neg_offer : null);
                 $slottedBody = $o['slottedBody'];
                 $kind = $o['kind'];
                 $meta = $o['meta'];
@@ -3032,19 +3104,42 @@ class RuleBrainService
                     $slotValues = ['offer' => $o['meta']['offer']];
                 }
             } else {
-                $offer = $quote['offer'];
-                $h = $this->honorific($biz, $conversation->customer_name);
-                $first = match ($quote['kind']) {
-                    'floor_repeat' => ($h !== '' ? $h . ', ' : '') . '⟦product⟧ ⟦offer⟧ টাকাই শেষ দাম - এর কমে আর হচ্ছে না।',
-                    default => 'বুঝতে পারছি' . ($h !== '' ? ' ' . $h : '') . '। ⟦product⟧ আপনার জন্য ⟦offer⟧ টাকায় দিতে পারব।',
-                };
-                // The bargained figure is the PRODUCT price, only. The
-                // delivery charge is never folded into it, never cut by
-                // the ladder, and appears exactly once in the whole
-                // flow: as its own line in the order summary.
-                $slottedBody = $first . ' অর্ডার করবেন?';
-                $slotValues = ['offer' => $offer];
-                $meta = ['ladder_step' => (int) $conversation->neg_step, 'offer' => $offer, 'quote' => $quote['kind']];
+                $quote = $this->negotiation->quote($conversation, $product, $this->namedAmount($text));
+                if ($quote === null) {
+                    $conversation->needs_human = true;
+                    $conversation->save();
+                    $this->log($biz, 'handed_human', $conversation->customer_name . ' — দাম floor-এ পৌঁছেছে', $rule, $conversation);
+
+                    return null;
+                }
+                if ($quote['kind'] === 'accept') {
+                    // AGREED — the negotiation is over. The offer is never
+                    // repeated and "অর্ডার করবেন?" is never asked again:
+                    // the flow moves straight to order taking at the
+                    // agreed figure (already settled in neg_offer).
+                    $o = $this->orderTaking($conversation, $product, $variant, $biz, (float) $quote['offer']);
+                    $slottedBody = $o['slottedBody'];
+                    $kind = $o['kind'];
+                    $meta = $o['meta'];
+                    $body = $o['body'];
+                    if (isset($o['meta']['offer'])) {
+                        $slotValues = ['offer' => $o['meta']['offer']];
+                    }
+                } else {
+                    $offer = $quote['offer'];
+                    $h = $this->honorific($biz, $conversation->customer_name);
+                    $first = match ($quote['kind']) {
+                        'floor_repeat' => ($h !== '' ? $h . ', ' : '') . '⟦product⟧ ⟦offer⟧ টাকাই শেষ দাম - এর কমে আর হচ্ছে না।',
+                        default => 'বুঝতে পারছি' . ($h !== '' ? ' ' . $h : '') . '। ⟦product⟧ আপনার জন্য ⟦offer⟧ টাকায় দিতে পারব।',
+                    };
+                    // The bargained figure is the PRODUCT price, only. The
+                    // delivery charge is never folded into it, never cut by
+                    // the ladder, and appears exactly once in the whole
+                    // flow: as its own line in the order summary.
+                    $slottedBody = $first . ' অর্ডার করবেন?';
+                    $slotValues = ['offer' => $offer];
+                    $meta = ['ladder_step' => (int) $conversation->neg_step, 'offer' => $offer, 'quote' => $quote['kind']];
+                }
             }
         } elseif ($rule && $rule->match_text === 'order_intent') {
             if (!$product) {
