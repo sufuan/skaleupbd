@@ -564,7 +564,10 @@ class RuleBrainService
         // order korte chai, phone 01..., address ...") belongs to the
         // NEW flow, so it is marked fresh as it is consumed.
         $state['details_consumed'] = true;
-        $fresh = ['phone' => false, 'address' => false];
+        $fresh = ['name' => false, 'phone' => false, 'address' => false];
+        if ($this->extractName($this->guard->normalizeDigits($text)) !== null) {
+            $fresh['name'] = true;
+        }
         $switchPhone = $this->extractPhone($text);
         if ($switchPhone !== null) {
             $fresh['phone'] = true;
@@ -1023,13 +1026,75 @@ class RuleBrainService
         return ['body' => $body, 'meta' => ['product_id' => $product->id, 'total' => $total, 'unit_price' => $unit, 'variant_name' => $variant?->name]];
     }
 
-    private function collectQuestion(int $businessId, string $step, ?string $customerName = null): string
+    /**
+     * The collect question, word-for-word by design (never phrased).
+     * It asks for exactly the pieces this order flow still needs, in
+     * ONE message: name, mobile number and delivery address together
+     * when all three are outstanding (owner spec, 2026-11-25 — the
+     * stepwise phone-first ask was the batch-3 live deviation), and
+     * only the still-missing pieces after a partial answer. A single
+     * outstanding piece keeps its long-standing one-piece wording.
+     *
+     * @param array<int, string> $pieces any of 'name', 'phone', 'address'
+     */
+    private function collectQuestion(int $businessId, array $pieces, ?string $customerName = null): string
     {
         $prefix = $this->honorificPrefix($businessId, $customerName);
+        if ($pieces === ['phone']) {
+            return $prefix . 'অর্ডারের জন্য আপনার মোবাইল নম্বরটা দিন - যে নম্বরে কুরিয়ার কল করবে।';
+        }
+        if ($pieces === ['address']) {
+            return $prefix . 'ডেলিভারির ঠিকানাটা দিন - বাসা/হোল্ডিং, রোড, এলাকা, জেলা।';
+        }
+        $labels = ['name' => 'নাম', 'phone' => 'মোবাইল নম্বর', 'address' => 'ডেলিভারির ঠিকানা'];
+        $parts = [];
+        foreach (['name', 'phone', 'address'] as $piece) {
+            if (in_array($piece, $pieces, true)) {
+                $parts[] = $labels[$piece];
+            }
+        }
+        $last = (string) array_pop($parts);
+        $list = ($parts !== [] ? implode(', ', $parts) . ' আর ' : '') . $last;
+        $body = $prefix . 'অর্ডারের জন্য আপনার ' . $list . 'টা দিন';
+        if (in_array('address', $pieces, true)) {
+            $body .= ' - বাসা/হোল্ডিং, রোড, এলাকা, জেলা';
+        }
 
-        return $step === 'phone'
-            ? $prefix . 'অর্ডারের জন্য আপনার মোবাইল নম্বরটা দিন - যে নম্বরে কুরিয়ার কল করবে।'
-            : $prefix . 'ডেলিভারির ঠিকানাটা দিন - বাসা/হোল্ডিং, রোড, এলাকা, জেলা।';
+        return $body . '।';
+    }
+
+    /**
+     * The contact pieces the collect question must still ask for: the
+     * name, when the customer has not stated one in this flow, plus
+     * whichever of phone/address does not yet count as collected.
+     * (The summary GATE stays phone+address — the profile name on the
+     * record serves until the customer states their own — but the
+     * ASK names every piece the flow does not yet hold.)
+     *
+     * @return array<int, string>
+     */
+    private function collectMissing(Conversation $conversation): array
+    {
+        $missing = [];
+        if (! $this->nameStatedInFlow($conversation)) {
+            $missing[] = 'name';
+        }
+        if (! $this->detailCollected($conversation, 'phone')) {
+            $missing[] = 'phone';
+        }
+        if (! $this->detailCollected($conversation, 'address')) {
+            $missing[] = 'address';
+        }
+
+        return $missing;
+    }
+
+    /** Has the customer stated a name in the CURRENT order flow? */
+    private function nameStatedInFlow(Conversation $conversation): bool
+    {
+        $state = (array) ($conversation->state_data ?? []);
+
+        return ! empty(($state['details_fresh'] ?? [])['name']);
     }
 
     /**
@@ -1066,7 +1131,7 @@ class RuleBrainService
             $conversation->state = 'collecting';
             $conversation->state_data = $state;
             $conversation->save();
-            $body = $this->collectQuestion($biz, $missing[0], $conversation->customer_name);
+            $body = $this->collectQuestion($biz, $this->collectMissing($conversation), $conversation->customer_name);
             $meta = ['collect' => $missing[0]];
             if ($agreed !== null) {
                 $body = 'ঠিক আছে, ⟦offer⟧ টাকায় ফাইনাল। ' . $body;
@@ -1346,9 +1411,24 @@ class RuleBrainService
         $changed = false;
 
         $name = $this->extractName($norm);
-        if ($name !== null && $name !== (string) $conversation->customer_name) {
-            $conversation->customer_name = $name;
-            $changed = true;
+        if ($name !== null) {
+            if ($name !== (string) $conversation->customer_name) {
+                $conversation->customer_name = $name;
+                $changed = true;
+            }
+            // A name stated in THIS flow: the collect question stops
+            // asking for it (brain fix batch 4). The flag lives in the
+            // same per-flow freshness map as phone/address and is
+            // reset by the same closers (order created, product
+            // switch), so a later flow asks again.
+            $st = (array) ($conversation->state_data ?? []);
+            if (empty(($st['details_fresh'] ?? [])['name'])) {
+                $fresh = (array) ($st['details_fresh'] ?? []);
+                $fresh['name'] = true;
+                $st['details_fresh'] = $fresh;
+                $conversation->state_data = $st;
+                $changed = true;
+            }
         }
 
         $phone = $this->extractPhone($text);
@@ -1432,7 +1512,7 @@ class RuleBrainService
     {
         $state = (array) ($conversation->state_data ?? []);
         $state['details_consumed'] = true;
-        $state['details_fresh'] = ['phone' => false, 'address' => false];
+        $state['details_fresh'] = ['name' => false, 'phone' => false, 'address' => false];
         if ($orderId !== null) {
             $state['last_order_id'] = $orderId;
             // The placed order's public facts, snapshotted for the
@@ -1897,7 +1977,7 @@ class RuleBrainService
         $conversation->state_data = $state;
         $conversation->save();
 
-        return $this->simpleOutgoing($conversation, $this->collectQuestion($biz, $next, $conversation->customer_name), 'collect_question', $mode, ['collect' => $next]);
+        return $this->simpleOutgoing($conversation, $this->collectQuestion($biz, $this->collectMissing($conversation), $conversation->customer_name), 'collect_question', $mode, ['collect' => $next]);
     }
 
     /**
@@ -2413,8 +2493,8 @@ class RuleBrainService
                 $offer = $quote['offer'];
                 $h = $this->honorific($biz, $conversation->customer_name);
                 $first = match ($quote['kind']) {
-                    'floor_repeat' => ($h !== '' ? $h . ', ' : '') . '⟦offer⟧ টাকাই শেষ দাম - এর কমে আর হচ্ছে না।',
-                    default => 'বুঝতে পারছি' . ($h !== '' ? ' ' . $h : '') . '। আপনার জন্য ⟦offer⟧ টাকায় দিতে পারব।',
+                    'floor_repeat' => ($h !== '' ? $h . ', ' : '') . '⟦product⟧ ⟦offer⟧ টাকাই শেষ দাম - এর কমে আর হচ্ছে না।',
+                    default => 'বুঝতে পারছি' . ($h !== '' ? ' ' . $h : '') . '। ⟦product⟧ আপনার জন্য ⟦offer⟧ টাকায় দিতে পারব।',
                 };
                 // The bargained figure is the PRODUCT price, only. The
                 // delivery charge is never folded into it, never cut by
