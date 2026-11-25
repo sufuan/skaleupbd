@@ -594,12 +594,37 @@ class RuleBrainService
         $this->log((int) $conversation->business_id, 'product_switched', $conversation->customer_name . ' — customer named a different product: ' . $named->name, null, $conversation);
     }
 
+    /**
+     * The product in focus, when the focus is still FRESH (batch 11,
+     * finding #1). focus_at was written on every focus change and
+     * read nowhere, so a product named days ago answered today's
+     * bare questions as if it had just been mentioned. A focus older
+     * than six hours counts as no focus at all. A missing timestamp
+     * (rows from before it was tracked, or a focus a test/seller set
+     * directly) cannot be proven stale, so it stays in force.
+     * Every reader of the stored focus goes through here — the
+     * resolution step, productFor(), the talker's context package
+     * and the unstocked-item guard — so staleness means the same
+     * thing everywhere the focus is consulted.
+     */
+    private function freshFocusProduct(Conversation $conversation): ?Product
+    {
+        if (! $conversation->product_id) {
+            return null;
+        }
+        if ($conversation->focus_at !== null && $conversation->focus_at->lt(now()->subHours(6))) {
+            return null;
+        }
+
+        return Product::where('business_id', (int) $conversation->business_id)->find($conversation->product_id);
+    }
+
     public function productFor(int $businessId, string $text, ?Conversation $conversation = null): ?Product
     {
-        if ($conversation?->product_id) {
-            $p = Product::where('business_id', $businessId)->find($conversation->product_id);
-            if ($p) {
-                return $p;
+        if ($conversation !== null) {
+            $focused = $this->freshFocusProduct($conversation);
+            if ($focused) {
+                return $focused;
             }
         }
         $hay = mb_strtolower($text);
@@ -658,6 +683,21 @@ class RuleBrainService
     private function wordMatchRows(int $businessId, string $text): array
     {
         $hay = mb_strtolower($text);
+        // Category words count across scripts (batch 11, finding
+        // #10): the customer writes "পাঞ্জাবি", the shop's products
+        // are named "Panjabi" — without help the word scoring saw no
+        // shared word at all and the category matched nothing. When
+        // any form of a noun-equivalence group (batch 3) appears in
+        // the message, every form of that group counts as said, so
+        // product-name words match against the expanded text. The
+        // full-name bonus below still reads the raw text — saying
+        // the whole name is a stronger signal than a category word.
+        $matchHay = $hay;
+        foreach (self::ITEM_NOUN_GROUPS as $group) {
+            if ($this->nounGroupInText($group, $hay)) {
+                $matchHay .= ' ' . implode(' ', $group);
+            }
+        }
         $products = Product::where('business_id', $businessId)->orderBy('id')->get();
         $freq = [];
         $wordsOf = [];
@@ -677,7 +717,7 @@ class RuleBrainService
             if ($words === []) {
                 continue;
             }
-            $matched = array_values(array_filter($words, fn ($w) => str_contains($hay, $w)));
+            $matched = array_values(array_filter($words, fn ($w) => str_contains($matchHay, $w)));
             if ($matched === []) {
                 continue;
             }
@@ -704,8 +744,13 @@ class RuleBrainService
      * this returns the tied candidates instead so the caller can ask.
      * An explicit mention (SKU / alias / full name / every name word)
      * is never ambiguous, and neither is a clear scoring winner (the
-     * customer said more of one product's name than of any other) or
-     * a tie among products that all share one price.
+     * customer said more of one product's name than of any other).
+     * A tie is a tie even when the tied products share one price
+     * (batch 11, finding #11): the figure cannot be misquoted then,
+     * but the products still differ — colour, design, photo — so
+     * silently naming one is still a guess about WHICH product the
+     * customer means. Batch 8 exempted same-price ties; the external
+     * review reversed that and the owner accepted the reversal.
      *
      * @return Product[]|null the tied candidates (id order), or null
      */
@@ -732,19 +777,79 @@ class RuleBrainService
         if (count($tied) < 2) {
             return null;
         }
-        // A tie among products that all carry the SAME price cannot
-        // misquote: the figure is identical whichever one the customer
-        // meant, so the legacy scored answer stands (the golden suite
-        // pins this for the Demo Shop's colour pair, "Cotton Panjabi -
-        // White" / "- Blue", both 1,250). The guess the owner banned
-        // is a tie across DIFFERENT prices — quoting one product's
-        // 1,300 when the customer may mean the other's 850.
-        $prices = array_unique(array_map(fn ($r) => (float) $r['product']->price, $tied));
-        if (count($prices) === 1) {
-            return null;
-        }
 
         return array_map(fn ($r) => $r['product'], $tied);
+    }
+
+    /**
+     * THE product resolution step (brain fix batch 11 — Step 1 of
+     * the external review, findings #1, #2, #12): before the reply
+     * chain reads a product, the message is resolved to exactly one
+     * outcome.
+     *
+     *  - EXPLICIT: the message names a product outright (SKU, alias,
+     *    full name, every name word) — that product. (When it
+     *    differs from the focus, switchProductIfNamed() has already
+     *    moved the focus and reset the old product's negotiation.)
+     *  - CATEGORY_MULTI: a category/partial word ties two or more
+     *    products — the caller asks which one, listing ONLY the
+     *    matched products. A focus product no longer suppresses the
+     *    question: batch 8 asked only with no focus, so a stale
+     *    focus silently won over the category word (live
+     *    2026-11-25 19:20: with CRUD-101 in focus, "Panjabi tar dam
+     *    koto?" quoted its 1,300 while CRUD-102 matched the word
+     *    just as well). The bare-question listing (a message naming
+     *    no product at all, nothing fresh in focus) is returned
+     *    through this same outcome, as batch 8 built it.
+     *  - FOCUS_REF: the message names no product — a demonstrative
+     *    ("এটা", "ওটা", "এইটা", "eta", "or dam") or a bare
+     *    follow-up ("আরেকটু কমান") — and the focus is fresh: the
+     *    focus product. A stale focus (over six hours) is no focus.
+     *  - NONE: nothing matched and no fresh focus. A message naming
+     *    an item the shop does not sell lands here too, so the
+     *    existing not-available path answers it — never the listing.
+     *
+     * @return array{type: string, product: ?Product, candidates: ?array}
+     */
+    private function resolveProduct(Conversation $conversation, string $text, ?AiRule $rule): array
+    {
+        $biz = (int) $conversation->business_id;
+        $productDependent = $rule !== null && $rule->trigger_type === 'intent'
+            && in_array($rule->match_text, ['price', 'stock', 'bargain', 'order_intent'], true);
+
+        $explicit = $this->explicitProductFor($biz, $text);
+        if ($explicit !== null) {
+            return ['type' => 'explicit', 'product' => $explicit, 'candidates' => null];
+        }
+
+        if ($productDependent) {
+            $tied = $this->ambiguousProductsFor($biz, $text);
+            if ($tied !== null) {
+                return ['type' => 'category_multi', 'product' => null, 'candidates' => array_slice($tied, 0, 5)];
+            }
+        }
+
+        $focus = $this->freshFocusProduct($conversation);
+        if ($focus !== null) {
+            return ['type' => 'focus_ref', 'product' => $focus, 'candidates' => null];
+        }
+
+        if ($productDependent && $this->productFor($biz, $text, null) === null && ! $this->namesUnstockedItem($biz, $text)) {
+            // Bare question ("দাম কত?") with nothing fresh in
+            // focus: the message names nothing at all, so the reply
+            // lists what the shop sells and asks (batch 8).
+            $all = Product::where('business_id', $biz)->orderBy('id')->get();
+            if ($all->count() >= 2) {
+                return ['type' => 'category_multi', 'product' => null, 'candidates' => $all->take(5)->all()];
+            }
+        }
+
+        $scored = $this->productFor($biz, $text, null);
+        if ($scored !== null) {
+            return ['type' => 'scored', 'product' => $scored, 'candidates' => null];
+        }
+
+        return ['type' => 'none', 'product' => null, 'candidates' => null];
     }
 
     /**
@@ -1100,9 +1205,7 @@ class RuleBrainService
         $summaryShown = ChatMessage::where('conversation_id', $conversation->id)
             ->where('direction', 'out')->get()
             ->contains(fn ($m) => ($m->meta['kind'] ?? null) === 'order_summary');
-        $product = $conversation->product_id
-            ? Product::where('business_id', (int) $conversation->business_id)->find($conversation->product_id)
-            : null;
+        $product = $this->freshFocusProduct($conversation);
 
         return [
             'history' => $history,
@@ -1456,8 +1559,8 @@ class RuleBrainService
 
     private function unmatchedItemRequest(int $businessId, string $text, Conversation $conversation): bool
     {
-        if (! $conversation->product_id) {
-            return false; // nothing in focus — nothing to wrongly quote
+        if ($this->freshFocusProduct($conversation) === null) {
+            return false; // nothing (fresh) in focus — nothing to wrongly quote
         }
         if ($this->productFor($businessId, $text, null) !== null) {
             return false; // the text itself names a catalogue product
@@ -2836,36 +2939,26 @@ class RuleBrainService
             }
         }
 
-        // Product ambiguity (batch 8): with no product in focus and a
-        // product-dependent question (price / stock / bargain / order),
-        // never let the word scoring silently guess. When several
-        // products tie for the words the customer used — or the
-        // message points at no product at all in a multi-product shop —
-        // the reply lists the candidates and asks which one (the
-        // clarification branch in the reply chain below); no product
-        // is put in focus until the customer picks.
+        // Product resolution (batch 11, generalising batch 8): the
+        // message is resolved to ONE outcome before the chain reads
+        // a product — an explicit name, a category tie to clarify
+        // (focus or no focus), a fresh focus the message points
+        // back at, or nothing. On a clarification no product is put
+        // in focus until the customer picks; the candidates are
+        // listed by the clarification branch in the reply chain
+        // below. (A message naming an item the shop does not sell
+        // resolves to none and keeps its existing path: the generic
+        // clarify, or the not-available answer when a product is in
+        // focus.)
         $clarifyWith = null;
         if ($pendingPick !== null) {
             $product = $pendingPick;
         } else {
-            if (! $conversation->product_id && $rule && $rule->trigger_type === 'intent'
-                && in_array($rule->match_text, ['price', 'stock', 'bargain', 'order_intent'], true)) {
-                $tied = $this->ambiguousProductsFor($biz, $text);
-                if ($tied !== null) {
-                    $clarifyWith = array_slice($tied, 0, 5);
-                } elseif ($this->productFor($biz, $text, null) === null && ! $this->namesUnstockedItem($biz, $text)) {
-                    // Bare question ("দাম কত?") — the message names
-                    // nothing at all. (A message naming an item the
-                    // shop does not sell keeps the existing path: the
-                    // generic clarify, or the not-available answer
-                    // when a product is in focus.)
-                    $all = Product::where('business_id', $biz)->orderBy('id')->get();
-                    if ($all->count() >= 2) {
-                        $clarifyWith = $all->take(5)->all();
-                    }
-                }
+            $resolution = $this->resolveProduct($conversation, $text, $rule);
+            if ($resolution['type'] === 'category_multi') {
+                $clarifyWith = $resolution['candidates'];
             }
-            $product = $clarifyWith !== null ? null : $this->productFor($biz, $text, $conversation);
+            $product = $clarifyWith !== null ? null : $resolution['product'];
         }
         if ($product && (int) $conversation->product_id !== (int) $product->id) {
             // Remember the product for this conversation — follow-up

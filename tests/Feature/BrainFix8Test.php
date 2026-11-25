@@ -239,16 +239,21 @@ class BrainFix8Test extends TestCase
     }
 
     /**
-     * (h) A tie among products that all share ONE price is not a
-     * guess that can misquote — the figure is the same whichever the
-     * customer meant — so the legacy scored answer stands. This is
-     * the Demo Shop's colour pair ("Cotton Panjabi - White" /
-     * "- Blue", both 1,250) that the golden suite pins.
+     * (h) UPDATED by batch 11 (finding #11): batch 8 answered a
+     * same-price tie directly — the figure is identical whichever
+     * product the customer meant, so nothing could be misquoted.
+     * The external review reversed that, and the owner accepted:
+     * the products still differ (colour, design, photo), so naming
+     * one silently is still a guess about WHICH product is meant.
+     * A same-price tie now clarifies like any other tie, and the
+     * pick answers that product. This is the Demo Shop's colour
+     * pair ("Cotton Panjabi - White" / "- Blue", both 1,250); the
+     * golden suite's pinned case was updated the same way.
      */
-    public function test_tie_among_same_price_products_still_answers_directly(): void
+    public function test_tie_among_same_price_products_clarifies_and_pick_answers(): void
     {
         $biz = Business::create(['name' => 'Same Price Shop', 'public_id' => 'same-price-' . uniqid(), 'status' => 'approved']);
-        Product::create(['business_id' => $biz->id, 'name' => 'Cotton Panjabi - White', 'sku' => 'CP-101', 'price' => 1250, 'stock_qty' => 10]);
+        $white = Product::create(['business_id' => $biz->id, 'name' => 'Cotton Panjabi - White', 'sku' => 'CP-101', 'price' => 1250, 'stock_qty' => 10]);
         Product::create(['business_id' => $biz->id, 'name' => 'Cotton Panjabi - Blue', 'sku' => 'CP-102', 'price' => 1250, 'stock_qty' => 10]);
         $brain = app(RuleBrainService::class);
         $conv = $this->conv($biz);
@@ -256,8 +261,16 @@ class BrainFix8Test extends TestCase
         $r = $this->send($brain, $conv, 'Cotton Panjabi-র দাম কত?');
 
         $this->assertNotNull($r);
-        $this->assertNotSame('product_clarify', $r->meta['kind'] ?? null);
-        $this->assertStringContainsString('1,250', $r->body);
+        $this->assertSame('product_clarify', $r->meta['kind'] ?? null);
+        $this->assertStringContainsString('Cotton Panjabi - White', $r->body);
+        $this->assertStringContainsString('Cotton Panjabi - Blue', $r->body);
+        $this->assertNull($conv->fresh()->product_id, 'no product is put in focus before the pick');
+
+        $pick = $this->send($brain, $conv, '1');
+
+        $this->assertNotNull($pick);
+        $this->assertStringContainsString('1,250', $pick->body);
+        $this->assertSame($white->id, (int) $conv->fresh()->product_id, 'the pick becomes the focus');
     }
 
     /**
