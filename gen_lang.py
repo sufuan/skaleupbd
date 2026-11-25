@@ -4277,6 +4277,17 @@ BN.update({
     'Not needed for cash payments.': 'নগদ পেমেন্টের জন্য লাগবে না।',
 })
 
+BN.update({
+    'Enable notifications': 'নোটিফিকেশন চালু করুন',
+    'Notifications on': 'নোটিফিকেশন চালু আছে',
+    'Notifications blocked': 'নোটিফিকেশন বন্ধ আছে',
+    'Notifications are blocked in this browser': 'এই ব্রাউজারে নোটিফিকেশন বন্ধ করে দেওয়া আছে',
+    'Browser notifications are on - click to turn off': 'ব্রাউজার নোটিফিকেশন চালু আছে - বন্ধ করতে ক্লিক করুন',
+    'Get browser notifications for urgent work': 'জরুরি কাজের ব্রাউজার নোটিফিকেশন পান',
+    'Browser push': 'ব্রাউজার পুশ',
+    'Human reply needed': 'মানুষের রিপ্লাই দরকার',
+})
+
 EN = {k: k for k in BN}
 
 with open('lang/en.json', 'w', encoding='utf-8') as f:

@@ -287,7 +287,7 @@ class WorkInboxController extends Controller
                 $rules[] = [
                     'key' => $key, 'num' => $def['num'], 'name' => $def['name'], 'desc' => $def['desc'],
                     'enabled' => $c['enabled'], 'value' => $c['value'], 'unit' => $c['unit'],
-                    'priority' => $c['priority'], 'assign' => $c['assign'], 'assign_user' => $c['assign_user'],
+                    'priority' => $c['priority'], 'push' => $c['push'], 'assign' => $c['assign'], 'assign_user' => $c['assign_user'],
                     'immediate' => $def['unit'] === 'immediate',
                 ];
             }

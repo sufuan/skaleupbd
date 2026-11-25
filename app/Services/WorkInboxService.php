@@ -188,6 +188,11 @@ class WorkInboxService
                 'value' => isset($s['value']) && is_numeric($s['value']) ? (float) $s['value'] : (float) $def['value'],
                 'unit' => in_array($s['unit'] ?? '', ['minutes', 'hours', 'days', 'immediate'], true) ? $s['unit'] : $def['unit'],
                 'priority' => in_array($s['priority'] ?? '', array_keys(self::PRIORITIES), true) ? $s['priority'] : $def['priority'],
+                // Browser push for this rule's events (owner order
+                // 2026-11-25): the toggle decides, not the priority.
+                // Default follows the rule's DEFAULT priority: on for
+                // critical rules, off for the rest.
+                'push' => array_key_exists('push', $s) ? (bool) $s['push'] : $def['priority'] === 'critical',
                 'assign' => in_array($s['assign'] ?? '', array_keys(self::ASSIGNEES), true) ? $s['assign'] : $def['assign'],
                 'assign_user' => isset($s['assign_user']) && $s['assign_user'] ? (int) $s['assign_user'] : $def['assign_user'],
             ];
@@ -209,6 +214,7 @@ class WorkInboxService
                 'value' => isset($s['value']) && is_numeric($s['value']) ? max(0, (float) $s['value']) : (float) $def['value'],
                 'unit' => in_array($s['unit'] ?? '', ['minutes', 'hours', 'days', 'immediate'], true) ? $s['unit'] : $def['unit'],
                 'priority' => in_array($s['priority'] ?? '', array_keys(self::PRIORITIES), true) ? $s['priority'] : $def['priority'],
+                'push' => array_key_exists('push', $s) ? ! empty($s['push']) : $def['priority'] === 'critical',
                 'assign' => in_array($s['assign'] ?? '', array_keys(self::ASSIGNEES), true) ? $s['assign'] : $def['assign'],
                 'assign_user' => isset($s['assign_user']) && $s['assign_user'] ? (int) $s['assign_user'] : null,
             ];
@@ -241,7 +247,7 @@ class WorkInboxService
             foreach (self::catalog() as $key => $def) {
                 $defaults[$key] = [
                     'enabled' => $def['enabled'], 'value' => (float) $def['value'], 'unit' => $def['unit'],
-                    'priority' => $def['priority'], 'assign' => $def['assign'], 'assign_user' => null,
+                    'priority' => $def['priority'], 'push' => $def['priority'] === 'critical', 'assign' => $def['assign'], 'assign_user' => null,
                 ];
             }
             $this->settings->set("workinbox.{$biz}.rules", $defaults);
@@ -379,6 +385,15 @@ class WorkInboxService
                 $stats['created']++;
                 if ($notifyNew) {
                     $this->notify('New task - ' . $task->title, 'Rule ' . $def['num'] . ': ' . $def['name'] . ' · Assigned to: ' . $who['label'], '/work-inbox/control', $biz);
+                }
+                // Browser push follows the rule's own push toggle
+                // (owner order 2026-11-25): the assignee gets it, or
+                // the shop owner when the task sits in the pool.
+                if (! empty($c['push'])) {
+                    $pushTo = $task->assignee_user_id ? (int) $task->assignee_user_id : User::shopOwner($biz)?->id;
+                    if ($pushTo) {
+                        \App\Jobs\SendWebPushJob::dispatch($pushTo, $task->title, $def['name'], $task->link ?: '/work-inbox/control');
+                    }
                 }
             }
 

@@ -3948,5 +3948,13 @@
  "A combo product needs at least one component. Please add a component product.": "A combo product needs at least one component. Please add a component product.",
  "No components yet - a combo needs at least one component before it can be saved.": "No components yet - a combo needs at least one component before it can be saved.",
  "A supplier named :name with this phone number already exists.": "A supplier named :name with this phone number already exists.",
- "Not needed for cash payments.": "Not needed for cash payments."
+ "Not needed for cash payments.": "Not needed for cash payments.",
+ "Enable notifications": "Enable notifications",
+ "Notifications on": "Notifications on",
+ "Notifications blocked": "Notifications blocked",
+ "Notifications are blocked in this browser": "Notifications are blocked in this browser",
+ "Browser notifications are on - click to turn off": "Browser notifications are on - click to turn off",
+ "Get browser notifications for urgent work": "Get browser notifications for urgent work",
+ "Browser push": "Browser push",
+ "Human reply needed": "Human reply needed"
 }

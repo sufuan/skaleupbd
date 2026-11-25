@@ -10,7 +10,7 @@ export default function Settings({ groups, toggles, staff, priorities, assignees
     const [rules, setRules] = useState(() => {
         const out = {};
         groups.forEach((g) => g.rules.forEach((r) => {
-            out[r.key] = { enabled: r.enabled, value: r.value, unit: r.unit, priority: r.priority, assign: r.assign, assign_user: r.assign_user || '' };
+            out[r.key] = { enabled: r.enabled, value: r.value, unit: r.unit, priority: r.priority, push: r.push, assign: r.assign, assign_user: r.assign_user || '' };
         }));
         return out;
     });
@@ -74,6 +74,9 @@ export default function Settings({ groups, toggles, staff, priorities, assignees
                                         <select value={c.assign} onChange={(e) => setRule(r.key, { assign: e.target.value })}>
                                             {Object.entries(assignees).map(([k, v]) => <option key={k} value={k}>{t(v)}</option>)}
                                         </select>
+                                    </label>
+                                    <label className="rule-fld">{t('Browser push')}
+                                        <button type="button" className={`switch${c.push ? ' on' : ''}`} aria-label={t('Browser push')} onClick={() => setRule(r.key, { push: !c.push })}></button>
                                     </label>
                                     {c.assign === 'staff' && (
                                         <label className="rule-fld">{t('Staff')}

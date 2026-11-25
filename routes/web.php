@@ -487,6 +487,11 @@ Route::middleware(['auth', 'verified', 'totp'])->group(function () {
     Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead'])->name('notifications.readAll');
     Route::post('/notifications/{notification}/read', [NotificationController::class, 'markRead'])->name('notifications.read');
 
+    // Browser Web Push: the signed-in user's own browser subscriptions.
+    Route::get('/push/public-key', [\App\Http\Controllers\PushSubscriptionController::class, 'publicKey'])->name('push.publicKey');
+    Route::post('/push/subscribe', [\App\Http\Controllers\PushSubscriptionController::class, 'subscribe'])->name('push.subscribe');
+    Route::post('/push/unsubscribe', [\App\Http\Controllers\PushSubscriptionController::class, 'unsubscribe'])->name('push.unsubscribe');
+
     // Placeholder shells for the deferred modules. Only the slugs
     // the menu actually links to render a shell — an arbitrary slug
     // is a plain 404 (gap G-A).

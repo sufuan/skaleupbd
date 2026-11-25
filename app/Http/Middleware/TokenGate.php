@@ -31,6 +31,7 @@ class TokenGate
             $exempt = $name === 'logout' || $name === 'locale.switch' || $name === 'verification.send'
                 || $name === 'sidebar.counts.seen' // clearing a badge is view state, not a shop mutation
                 || $name === 'notifications.read' || $name === 'notifications.readAll' // same: marking read is view state
+                || $name === 'push.subscribe' || $name === 'push.unsubscribe' // the user's own browser notification preference, not a shop mutation
                 || $name === 'registration.verify.store' || $name === 'registration.verify.resend'
                 || $name === 'billing.claims.store' || $name === 'billing.claims.submit'
                 || $name === 'storefront.onboarding.save' // wizard draft steps: an unpaid seller must be able to walk onboarding; publish stays refused by the service (Rule 2)

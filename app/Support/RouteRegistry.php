@@ -106,6 +106,9 @@ class RouteRegistry
         'sidebar.counts.seen' => ['account', null, 'edit'],
         'notifications.readAll' => ['account', null, 'edit'],
         'notifications.read' => ['account', null, 'edit'],
+        'push.publicKey' => ['account', null, 'view'],
+        'push.subscribe' => ['account', null, 'edit'],
+        'push.unsubscribe' => ['account', null, 'edit'],
         'account.status' => ['account', null, 'view'],
         // Placeholder shells for the deferred modules (Task & Follow-up,
         // Call Center, Ads, Support). The route itself whitelists the

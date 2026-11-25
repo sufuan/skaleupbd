@@ -1,5 +1,6 @@
 import ConfirmHost from '@/Components/ConfirmHost';
 import LanguageSwitcher from '@/Components/LanguageSwitcher';
+import PushControl from '@/Components/PushControl';
 import { t } from '@/lib/i18n';
 import { Link, router, usePage } from '@inertiajs/react';
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
@@ -563,6 +564,7 @@ export default function AppLayout({ children }) {
                     {topbar.send_message && <Link href="/messages/inbox" className="tb-item tb-hide-sm"><I d={P.send} size={15} /> {t('Send Message')}</Link>}
                     <div className="tb-right">
                         <LanguageSwitcher />
+                        <PushControl />
                         <button className="ask-btn" onClick={() => setAskOpen(true)}>✦ {t('Ask SkaleUp')}</button>
                         <Link href={mod('support')} className="icon-btn" aria-label={t('Support')}><I d={P.bulb} size={17} /></Link>
                         <span style={{ position: 'relative' }}>
