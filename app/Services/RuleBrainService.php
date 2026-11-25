@@ -1846,7 +1846,11 @@ class RuleBrainService
     /**
      * Guided order-data collection. One question at a time; a message that
      * carries several fields at once fills them all; two failed tries at
-     * one field hand the conversation to a human.
+     * one field hand the conversation to a human. A message carrying no
+     * details can still be a SIDE QUESTION about the product being
+     * collected (its price, or a push for less) — that is answered with
+     * the collect reminder appended and the collection left exactly as
+     * it was (brain fix batch 5) — or a cancellation, which exits.
      */
     private function handleCollect(Conversation $conversation, string $text, string $mode): ?ChatMessage
     {
@@ -1855,15 +1859,52 @@ class RuleBrainService
         $collect = (array) ($state['collect'] ?? []);
         $step = (string) ($collect['step'] ?? 'phone');
 
-        $hay = mb_strtolower($text);
-        foreach (['বাদ দেন', 'বাদ দিন', 'থামুন', 'cancel', 'ক্যান্সেল'] as $w) {
-            if (str_contains($hay, $w)) {
-                $conversation->state = null;
-                $state['collect'] = null;
-                $conversation->state_data = $state;
-                $conversation->save();
+        // What does THIS message itself carry? (Pure reads of the text —
+        // the capture further down, and captureContactFromText before
+        // this call, persist whatever is here regardless of routing.)
+        // A message carrying details is collection input, full stop: it
+        // never triggers the cancel exit and never the side-question
+        // path (brain fix batch 5).
+        $norm = $this->guard->normalizeDigits($text);
+        $phoneInMsg = $this->extractPhone($text);
+        $carriesDetails = $phoneInMsg !== null
+            || $this->extractLabelledAddress($norm, $phoneInMsg) !== null
+            || $this->extractName($norm) !== null;
 
-                return $this->simpleOutgoing($conversation, $this->honorificPrefix($biz, $conversation->customer_name) . 'ঠিক আছে, অর্ডারটা রাখা হলো না।', 'collect_cancel', $mode);
+        // A side question about the product being collected (its price,
+        // or a push for less) is answered, not swallowed (batch 5):
+        // until this fix, handleCollect never classified the message at
+        // all, so "dam koto?" mid-collection got the identical collect
+        // prompt back and the question vanished. Only price/bargain
+        // route sideways — everything else keeps the routing it had.
+        $sideIntent = null;
+        if (! $carriesDetails) {
+            $intent = $this->detectIntent($text, $conversation);
+            if ($intent === 'price' || $intent === 'bargain') {
+                $sideIntent = $intent;
+            }
+        }
+
+        // Cancellation exits the flow — but only a message that is a
+        // cancellation and nothing else: one carrying contact details
+        // is an answer, not an exit (an address must never be misread
+        // as one), and one that pushes a price or names a figure is a
+        // negotiation, not an exit. "লাগবে না" / "নিব না" count as
+        // cancellations of the pending order in this state (batch 5);
+        // before, they fell through and were re-asked the question
+        // until the retries handed the thread to a human.
+        $hay = mb_strtolower($text);
+        if (! $carriesDetails && $sideIntent === null && $this->namedAmount($text) === null) {
+            foreach (['বাদ দেন', 'বাদ দিন', 'থামুন', 'cancel', 'ক্যান্সেল', 'লাগবে না', 'নিব না'] as $w) {
+                if (str_contains($hay, $w)) {
+                    $conversation->state = null;
+                    $state['collect'] = null;
+                    unset($state['pending_summary']);
+                    $conversation->state_data = $state;
+                    $conversation->save();
+
+                    return $this->simpleOutgoing($conversation, $this->honorificPrefix($biz, $conversation->customer_name) . 'ঠিক আছে, অর্ডারটা রাখা হলো না।', 'collect_cancel', $mode);
+                }
             }
         }
 
@@ -1881,7 +1922,7 @@ class RuleBrainService
         // in the raw text would leave the whole message standing as "rest"
         // and it would be misread as an address.
         $rest = trim(str_replace($phone ?? '~~~', '', $this->guard->normalizeDigits($text)));
-        if ($step === 'address' || ($phone !== null && ! $this->detailCollected($conversation, 'address'))) {
+        if ($sideIntent === null && ($step === 'address' || ($phone !== null && ! $this->detailCollected($conversation, 'address')))) {
             $addr = trim((string) preg_replace('/^(ঠিকানা|address)\s*[:：]?\s*/iu', '', $rest));
             // When the address step was asked, any real answer counts —
             // and it overrides a stale stored address for the same
@@ -1956,6 +1997,13 @@ class RuleBrainService
             return $msg;
         }
 
+        if ($sideIntent !== null) {
+            // The question is answered and the reminder appended; the
+            // collection itself is untouched — same step, same retries,
+            // still waiting for the same pieces.
+            return $this->collectSideAnswer($conversation, $collect, $sideIntent, $text, $mode);
+        }
+
         $next = $missing[0];
         if ($next === $step) {
             $collect['retries'] = (int) ($collect['retries'] ?? 0) + 1;
@@ -1978,6 +2026,81 @@ class RuleBrainService
         $conversation->save();
 
         return $this->simpleOutgoing($conversation, $this->collectQuestion($biz, $this->collectMissing($conversation), $conversation->customer_name), 'collect_question', $mode, ['collect' => $next]);
+    }
+
+    /**
+     * A side question asked mid-collection (brain fix batch 5): the
+     * customer is part-way through giving order details and asks about
+     * the very product being collected — its price, or a push for
+     * less. The question is answered through the same machinery the
+     * main chain uses (the shop's price template; NegotiationService
+     * for the ladder, so a rung agreed here is the rung the eventual
+     * summary charges — buildSummary reads neg_offer), the collect
+     * reminder for the still-missing pieces is appended, and the
+     * collection state is left untouched. Collect-mode replies are
+     * word-for-word by design, so the answer is code-rendered from
+     * the same slotted sentences, never phrased.
+     */
+    private function collectSideAnswer(Conversation $conversation, array $collect, string $sideIntent, string $text, string $mode): ?ChatMessage
+    {
+        $biz = (int) $conversation->business_id;
+        $product = Product::where('business_id', $biz)->find($collect['product_id'] ?? $conversation->product_id);
+        $reminder = $this->collectQuestion($biz, $this->collectMissing($conversation), $conversation->customer_name);
+        if (! $product) {
+            // Nothing to answer about — the plain reminder, never silence.
+            return $this->simpleOutgoing($conversation, $reminder, 'collect_question', $mode, ['collect' => ($collect['step'] ?? 'phone')]);
+        }
+        $variant = ! empty($collect['variant_id']) ? \App\Models\ProductVariant::find($collect['variant_id']) : null;
+
+        if ($sideIntent === 'bargain') {
+            // The main chain's stock guard, mirrored: no ladder is
+            // quoted for an item that sold out while collecting.
+            if (($this->focusAvailable($product, $variant) ?? 1) <= 0) {
+                return $this->simpleOutgoing($conversation, $this->outOfStockBody($biz, $conversation->customer_name, $product, $variant) . ' ' . $reminder, 'collect_side_answer', $mode, ['side' => 'bargain', 'out_of_stock' => true]);
+            }
+            $quote = $this->negotiation->quote($conversation, $product, $this->namedAmount($text));
+            if ($quote === null) {
+                // The floor already had its last word: the main chain
+                // hands over at exactly this point too — logged, and
+                // the thread stays flagged for the human.
+                $conversation->needs_human = true;
+                $conversation->save();
+                $this->log($biz, 'handed_human', $conversation->customer_name . ' — দাম floor-এ পৌঁছেছে', null, $conversation);
+
+                return null;
+            }
+            $h = $this->honorific($biz, $conversation->customer_name);
+            $sentence = match ($quote['kind']) {
+                // Already ordering: an acceptance is acknowledged at
+                // the settled figure — never a fresh offer, and never
+                // "অর্ডার করবেন?" (the main chain appends that question
+                // to a standing offer; here the order is under way).
+                'accept' => 'ঠিক আছে, ⟦offer⟧ টাকায় ফাইনাল।',
+                'floor_repeat' => ($h !== '' ? $h . ', ' : '') . '⟦product⟧ ⟦offer⟧ টাকাই শেষ দাম - এর কমে আর হচ্ছে না।',
+                default => 'বুঝতে পারছি' . ($h !== '' ? ' ' . $h : '') . '। ⟦product⟧ আপনার জন্য ⟦offer⟧ টাকায় দিতে পারব।',
+            };
+            $answer = $this->renderSlots($sentence, $product, $biz, ['offer' => $quote['offer']]);
+
+            return $this->simpleOutgoing($conversation, $answer . ' ' . $reminder, 'collect_side_answer', $mode, ['side' => 'bargain', 'offer' => $quote['offer'], 'quote' => $quote['kind']]);
+        }
+
+        // A price question: the shop's own price answer for the
+        // product being collected (its intent rule's template, the
+        // variant's price when a variant is being collected), with
+        // the reminder appended.
+        $rule = AiRule::where('business_id', $biz)->where('active', true)
+            ->where('trigger_type', 'intent')->where('match_text', 'price')
+            ->where(fn ($q) => $q->whereNull('channel')->orWhere('channel', $conversation->channel))
+            ->first();
+        $slotted = $rule
+            ? $this->buildReply($rule, $product, $biz, true, $this->honorific($biz, $conversation->customer_name))
+            : $this->honorificPrefix($biz, $conversation->customer_name) . '⟦product⟧-এর দাম ⟦price⟧ টাকা।';
+        $answer = $this->renderSlots($slotted, $product, $biz, $variant ? ['price' => $variant->effectivePrice()] : []);
+        if ($this->hasBrokenFigure($answer)) {
+            $answer = $this->honorificPrefix($biz, $conversation->customer_name) . $product->name . '-এর দাম ' . number_format($variant ? $variant->effectivePrice() : $product->effectivePrice()) . ' টাকা।';
+        }
+
+        return $this->simpleOutgoing($conversation, $answer . ' ' . $reminder, 'collect_side_answer', $mode, ['side' => 'price']);
     }
 
     /**
