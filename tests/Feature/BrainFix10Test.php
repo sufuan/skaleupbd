@@ -125,9 +125,13 @@ class BrainFix10Test extends TestCase
         $conv = $this->conversation($biz, $p);
         $brain = app(RuleBrainService::class);
 
-        // "ওকে" matches no rule, no intent, no knowledge entry — the
-        // chain falls to the no-rule fallback over the focus product.
-        $r = $this->send($brain, $conv, 'ওকে');
+        // "তাই নাকি" matches no rule, no intent, no knowledge entry —
+        // the chain falls to the no-rule fallback over the focus
+        // product. (Batch 15: the probe used to be "ওকে", but a bare
+        // acknowledgement is now a RECOGNISED case with its own
+        // polite close — the deliberate carve-out — so the no-rule
+        // probe must be a genuinely unmatched string.)
+        $r = $this->send($brain, $conv, 'তাই নাকি');
         $this->assertNotNull($r);
         $this->assertTrue((bool) ($r->meta['no_rule'] ?? false), 'the reply really is the no-rule fallback');
         $this->assertSame('draft', $r->status, 'a no-rule reply must never auto-send, whatever the mode');
@@ -237,7 +241,9 @@ class BrainFix10Test extends TestCase
         $conv = $this->conversation($biz);
         $brain = app(RuleBrainService::class);
 
-        $r = $this->send($brain, $conv, 'ওকে');
+        // A genuinely unmatched string (batch 15 moved this probe
+        // off "ওকে" — a bare acknowledgement is recognised now).
+        $r = $this->send($brain, $conv, 'তাই নাকি');
         $this->assertNull($r);
         $this->assertTrue(
             AiActivity::where('conversation_id', $conv->id)->where('action', 'unanswered')->exists()

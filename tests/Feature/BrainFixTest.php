@@ -296,7 +296,9 @@ class BrainFixTest extends TestCase
         $migration->up();
 
         $this->assertSame(count(AiRule::defaults()), AiRule::where('business_id', $bizId)->count());
-        $this->assertSame(47, count(AiRule::defaults()), 'the installed Master Library size');
+        // 47 in batch 1; batch 15 grew the library to 56 (migration
+        // 000064 backfills those for existing shops the same way).
+        $this->assertSame(56, count(AiRule::defaults()), 'the installed Master Library size');
     }
 
     public function test_staff_edits_learn_with_context_and_auto_create_a_rule_at_three_repeats(): void

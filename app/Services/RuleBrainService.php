@@ -45,10 +45,19 @@ class RuleBrainService
         // coarse intent they shadow. The keyword lists are the library's
         // own, kept beside the coarse ones so there is one place to mine.
         'legal_threat' => ['মামলা', 'আইনি ব্যবস্থা', 'আইনগত', 'ভোক্তা অধিকার', 'কনজিউমার', 'থানায়', 'পুলিশ', 'সাইবার', 'কোর্ট', 'রিপোর্ট করব', 'mamla', 'legal action', 'aini babostha', 'consumer', 'thanay', 'police', 'cyber', 'report korbo', 'i will report', 'sue'],
+        // Profanity only (batch 15): the one list that separates ABUSE
+        // from an angry complaint. A complaint ("এখনো পাইনি", "অভিযোগ")
+        // carries none of these and keeps the angry path; a message
+        // carrying one of these gets silence + the human flag.
+        'abuse' => ['হারামজাদা', 'হারামি', 'খানকি', 'বাইনচোদ', 'মাগির পোলা', 'কুত্তার বাচ্চা', 'fuck', 'motherfucker', 'asshole', 'bastard'],
         'payment_proof' => ['টাকা পাঠিয়েছি', 'টাকা পাঠালাম', 'পেমেন্ট করেছি', 'পেমেন্ট করলাম', 'ট্রানজেকশন', 'ট্রান্সফার করেছি', 'স্ক্রিনশট', 'TrxID', 'taka pathiyechi', 'taka pathalam', 'payment korechi', 'payment done', 'paid', 'sent money', 'transaction id', 'trx id', 'screenshot'],
         'payment_problem' => ['ভুল নম্বরে পাঠিয়েছি', 'ভুল নাম্বারে', 'টাকা কেটে নিয়েছে', 'টাকা কেটেছে কিন্তু', 'পেমেন্ট হয়নি', 'পেমেন্ট ফেইল', 'vul number e pathiyechi', 'taka kete niyeche', 'payment hoyni', 'payment failed', 'money deducted', 'wrong number'],
         'cancel_order' => ['অর্ডার ক্যান্সেল', 'অর্ডার বাতিল', 'অর্ডারটা বাতিল', 'ক্যান্সেল করে দিন', 'বাতিল করে দিন', 'order cancel', 'cancel my order', 'cancel korun', 'cancel koren', 'cancel the order'],
         'late_delivery' => ['এখনো পাইনি', 'এখনও পাইনি', 'এখনো আসেনি', 'পাচ্ছি না', 'অনেক দেরি', 'কতদিন আর', 'দেরি হচ্ছে', 'কুরিয়ার দিচ্ছে না', 'ekhono paini', 'ekhono ashe nai', 'pacchi na', 'onek deri', 'deri hocche', 'not received yet', 'still not received', 'delayed', 'courier not delivering'],
+        // A missed delivery the customer wants sent AGAIN (batch 15):
+        // distinct from a late-delivery complaint — the ask is a
+        // rebooking, which only a human can make with the courier.
+        'redelivery' => ['আবার ডেলিভারি', 'ডেলিভারি আবার', 'রিডেলিভারি', 'redelivery', 're-delivery', 'deliver again', 'missed delivery', 'missed the delivery', 'কুরিয়ার এসে ফিরে গেছে', 'ডেলিভারি মিস'],
         'wholesale' => ['পাইকারি', 'পাইকারী', 'হোলসেল', 'রিসেল', 'রিসেলার', 'ডিলার', 'ডিস্ট্রিবিউটর', 'বাল্ক', 'অনেক পিস', 'কার্টন', 'ডজন', 'বেশি পরিমাণে', 'paikari', 'wholesale', 'whole sale', 'reseller', 'resell', 'dealer', 'distributor', 'bulk', 'bulk order', 'dozen', 'carton'],
         'wants_human' => ['অ্যাডমিন কই', 'এডমিন কই', 'এডমিন কে দেন', 'কেউ আছেন', 'মানুষ কেউ', 'রিয়েল মানুষ', 'কথা বলতে চাই', 'কল দিন', 'কল করুন', 'ফোন করুন', 'ফোন নম্বর দিন', 'কল করব', 'হোয়াটসঅ্যাপ নম্বর', 'admin kothay', 'admin ke den', 'keu achen', 'manush keu', 'kotha bolte chai', 'call din', 'call korun', 'phone number din', 'call me', 'speak to someone', 'real person', 'talk to human'],
         'are_you_bot' => ['আপনি কি রোবট', 'আপনি কি বট', 'এআই নাকি মানুষ', 'মেশিন নাকি', 'রোবট নাকি', 'robot naki', 'bot naki', 'ai naki manush', 'are you a bot', 'are you ai', 'are you human', 'is this a bot'],
@@ -60,7 +69,7 @@ class RuleBrainService
         'restock' => ['আবার কবে আসবে', 'স্টকে কবে আসবে', 'আবার স্টক', 'রিস্টক', 'আসলে জানাবেন', 'abar kobe asbe', 'stock e kobe asbe', 'restock', 'back in stock', 'when will it come back', 'available again'],
         'advance_payment' => ['অ্যাডভান্স', 'এডভান্স', 'অগ্রিম', 'আগে টাকা', 'কিছু টাকা আগে', 'অর্ধেক টাকা', 'আংশিক', 'advance', 'advanced', 'partial payment', 'half payment', 'agey taka', 'advance dite hobe'],
         'cod' => ['ক্যাশ অন ডেলিভারি', 'ক্যাশ অন', 'ক্যাশঅন', 'হাতে পেয়ে টাকা', 'ডেলিভারির সময় টাকা', 'cod ache', 'cod', 'cash on delivery', 'cash on', 'pay on delivery', 'hate peye taka'],
-        'delivery_time' => ['কতদিনে পাব', 'কত দিন লাগবে', 'কয়দিন লাগবে', 'ডেলিভারি টাইম', 'কতক্ষণ লাগবে', 'কবে নাগাদ', 'kobe pabo', 'koto dine pabo', 'koydin lagbe', 'delivery time', 'how long', 'how many days', 'when will i get'],
+        'delivery_time' => ['কতদিনে পাব', 'কত দিন লাগবে', 'কতদিন লাগবে', 'কতদিনে লাগবে', 'কয়দিন লাগবে', 'ডেলিভারি টাইম', 'কতক্ষণ লাগবে', 'কবে নাগাদ', 'kobe pabo', 'koto dine pabo', 'koydin lagbe', 'delivery time', 'how long', 'how many days', 'when will i get'],
         'delivery_coverage' => ['আমার এলাকায় ডেলিভারি', 'সব জায়গায় ডেলিভারি', 'সারা দেশে', 'গ্রামে ডেলিভারি', 'উপজেলায় ডেলিভারি', 'কোন কুরিয়ারে', 'কুরিয়ারে পাঠান', 'সুন্দরবন', 'home delivery hoy', 'amar elakay delivery', 'shara deshe', 'courier e pathan', 'sundarban courier', 'which courier', 'do you deliver to'],
     ];
 
@@ -241,6 +250,72 @@ class RuleBrainService
         return $mode;
     }
 
+    /**
+     * The off-hours stretch a moment belongs to, identified by the
+     * Dhaka date on which the stretch BEGAN (batch 15, finding #23):
+     * for a daytime window (9 AM - 11 PM) the stretch starts at the
+     * window's end — this evening, or yesterday evening when the
+     * moment is before the window opens; for an overnight window
+     * (8 PM - 2 AM) it starts at the window's end that same morning.
+     * One identifier per continuous closed period, so "once per
+     * stretch" survives midnight.
+     */
+    private function offHoursStretchKey(int $businessId): ?string
+    {
+        $window = $this->workingHoursWindow($businessId);
+        if ($window === null || $window[0] === $window[1]) {
+            return null;
+        }
+        [$start, $end] = $window;
+        $now = \Carbon\Carbon::now(\App\Support\DhakaTime::TZ);
+        $mins = $now->hour * 60 + $now->minute;
+        $stretch = $now->copy()->setTime(intdiv($end, 60), $end % 60, 0);
+        if ($start < $end && $mins < $start) {
+            $stretch->subDay();
+        }
+
+        return $stretch->toDateString();
+    }
+
+    /**
+     * The one customer-facing off-hours line (batch 15, finding
+     * #23): when the hours step-down has just turned an auto mode
+     * into a draft, the customer is told the shop is closed and when
+     * it opens — SENT, once per conversation per off-hours stretch,
+     * never repeatedly. It fires only on a real step-down: a shop
+     * that chose Draft itself, or a channel that is off, gets no
+     * line (nothing was promised to that customer in the first
+     * place). The shop's own hours text from Settings is quoted when
+     * it is saved; a generic line stands in when it is not.
+     */
+    private function offHoursLineOnce(Conversation $conversation, string $rawMode): void
+    {
+        if ($rawMode !== 'auto' && $rawMode !== 'full_auto') {
+            return;
+        }
+        $biz = (int) $conversation->business_id;
+        if ($this->withinWorkingHours($biz)) {
+            return;
+        }
+        $stretch = $this->offHoursStretchKey($biz);
+        if ($stretch === null) {
+            return;
+        }
+        $state = (array) ($conversation->state_data ?? []);
+        if (($state['offhours_line'] ?? null) === $stretch) {
+            return;
+        }
+        $state['offhours_line'] = $stretch;
+        $conversation->state_data = $state;
+        $conversation->save();
+        $hours = trim((string) $this->settings->bizGet($biz, "ai.{$biz}.working_hours", 'ai.working_hours', ''));
+        $body = $this->honorificPrefix($biz, $conversation->customer_name)
+            . ($hours !== ''
+                ? 'এখন আমাদের দোকান বন্ধ আছে। আমাদের সময়: ' . $hours . '। আপনার মেসেজ পেয়েছি — দোকান খুললেই উত্তর পাবেন।'
+                : 'এখন আমাদের দোকান বন্ধ আছে। আপনার মেসেজ পেয়েছি — দোকান খুললেই উত্তর পাবেন।');
+        $this->simpleOutgoing($conversation, $body, 'off_hours', 'full_auto');
+    }
+
     /** Does the text carry this intent's keywords? Short Latin words need word boundaries — "hi" must not fire inside "this". */
     private function intentMatches(string $intent, string $hay): bool
     {
@@ -328,6 +403,14 @@ class RuleBrainService
         // "কত লাগবে" asks what something will COST ("পাঠাতে কত লাগবে?"
         // is the delivery-charge question), it does not place an order.
         'কত লাগবে', 'koto lagbe',
+        // "কতদিন লাগবে" asks how long DELIVERY takes (batch 15): the
+        // weak verb inside it is not an order either — guarded, the
+        // message reaches the delivery_time check below.
+        'কতদিন লাগবে', 'কত দিন লাগবে', 'কতদিনে', 'কয়দিন লাগবে',
+        // An invoice/memo request rides on the same weak verb ("মেমো
+        // লাগবে") but asks for a document, not a product (batch 15):
+        // guarded, it falls through to the Invoice or memo rule.
+        'মেমো লাগবে', 'ইনভয়েস লাগবে', 'ইনভয়েস দেন', 'মেমো দেন', 'রিসিপ্ট লাগবে',
     ];
 
     /**
@@ -380,6 +463,76 @@ class RuleBrainService
         return false;
     }
 
+    /**
+     * "I ordered but the confirmation never came" (batch 15): the
+     * message names a message/confirmation AND says it did not
+     * arrive. Both halves are required — a bare "মেসেজ দিয়েন" (send
+     * me a message) names no absence, and a bare "পাইনি" is the
+     * late-delivery complaint it has always been.
+     */
+    private function confirmationMissing(string $hay): bool
+    {
+        $namesMessage = false;
+        foreach (['মেসেজ', 'এসএমএস', 'sms', 'কনফার্মেশন', 'confirmation'] as $w) {
+            if (str_contains($hay, $w)) {
+                $namesMessage = true;
+                break;
+            }
+        }
+        if (! $namesMessage) {
+            return false;
+        }
+        foreach (['পাইনি', 'পাই নাই', 'পাইনাই', 'আসেনি', 'আসে নাই', 'পেলাম না', 'painai', 'ashe nai', 'ase nai', 'not received', 'did not get', "didn't get", 'no confirmation'] as $w) {
+            if (str_contains($hay, $w)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * "The price is too high" (batch 15): the excess words around a
+     * price word — অনেক দাম, দাম বেশি, too expensive. Judged on
+     * phrases, never on 'দাম' alone, so the plain price question
+     * ("দাম কত?") and the delivery-charge complaint ("ডেলিভারি
+     * চার্জ বেশি" — no price word) both stay what they are.
+     */
+    private function isPriceTooHigh(string $hay): bool
+    {
+        foreach (['অনেক দাম', 'দাম বেশি', 'দামটা বেশি', 'দাম অনেক বেশি', 'দাম অনেক', 'বেশি দাম', 'দাম বহুত', 'onek dam', 'dam beshi', 'dam onek', 'beshi dam', 'dam ta beshi', 'too expensive', 'very expensive', 'price is too high', 'dam beshi hoye gelo'] as $p) {
+            if (str_contains($hay, $p)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Is this message CORRECTING a detail rather than stating one
+     * (batch 15)? "নম্বরটা ভুল, সঠিকটা 017…" corrects the phone; the
+     * leftover text after the number is stripped is correction talk,
+     * not an address — yet both blob-address rules read it as one
+     * (it contains a comma) and a collection "completed" with ঠিকানা:
+     * "নম্বরটা ভুল, সঠিকটা". A correction marker anywhere in the
+     * message disarms the blob rules; LABELLED parts are unaffected
+     * (a labelled address in a correction message is an address
+     * correction and lands through the labelled path as before).
+     */
+    private function isCorrectionText(string $hay): bool
+    {
+        // 'বদল' alone is deliberately NOT a marker: বদলগাছী is a
+        // place name that can stand inside a real address.
+        foreach (['ভুল', 'সঠিক', 'বদলে', 'change', 'correct', 'wrong'] as $w) {
+            if (str_contains($hay, $w)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     /** Does this conversation's customer have an order with the shop? */
     private function conversationHasOrder(?Conversation $conversation): bool
     {
@@ -419,12 +572,21 @@ class RuleBrainService
             return 'reaction';
         }
         $hay = mb_strtolower($text);
+        // "Ordered but no confirmation message came" (batch 15): an
+        // order-status question wearing complaint words — 'পাইনি' is
+        // an angry word and 'মেসেজ পাইনি' used to hand the customer
+        // to a human as if they were complaining. It is judged before
+        // the fine loop for exactly that reason; the status branch
+        // answers it from the order record by phone.
+        if ($this->confirmationMissing($hay)) {
+            return 'order_status';
+        }
         // Fine-grained intents first, in the library's priority order:
         // each of these contains words a coarser intent would claim
         // (legal words sit inside the angry list, "এখনো পাইনি" is an
         // angry word, a COD question is full of delivery words), so the
         // specific case must be judged before the coarse one.
-        foreach (['legal_threat', 'spam', 'payment_proof', 'payment_problem', 'cancel_order', 'late_delivery', 'angry', 'wholesale', 'wants_human', 'are_you_bot', 'change_order', 'open_box', 'competitor_price', 'price_mismatch', 'delivery_negotiation', 'restock', 'advance_payment'] as $fine) {
+        foreach (['legal_threat', 'abuse', 'spam', 'payment_proof', 'payment_problem', 'cancel_order', 'late_delivery', 'redelivery', 'angry', 'wholesale', 'wants_human', 'are_you_bot', 'change_order', 'open_box', 'competitor_price', 'price_mismatch', 'delivery_negotiation', 'restock', 'advance_payment'] as $fine) {
             if ($this->intentMatches($fine, $hay)) {
                 return $fine;
             }
@@ -563,6 +725,15 @@ class RuleBrainService
         if ($deliveryCharge && !$asksPrice) {
             return 'delivery';
         }
+        // "The price is too high" (batch 15): a reaction to a price
+        // already seen — an opening push, not a question. It used to
+        // land on the price intent ('দাম' is a price word) and get
+        // the same figure quoted back, a dead end. As a bargain it
+        // enters the ladder like any other push. A plain price
+        // QUESTION ("দাম কত?") names no excess and never matches.
+        if ($this->isPriceTooHigh($hay)) {
+            return 'bargain';
+        }
         // Price, plus the two vocabulary additions that cannot live
         // in the word list (batch 12, finding #19): 'rate' only as a
         // whole English word (never inside 'separate' or 'generate'),
@@ -638,6 +809,17 @@ class RuleBrainService
                     }
                 }
             } elseif ($this->intentMatches($rule->match_text, $hay)) {
+                // A missing-confirmation message (batch 15) carries
+                // two misleading words — the angry word 'পাইনি' and
+                // 'কনফার্ম' inside 'কনফার্মেশন' — but IS an
+                // order-status question: detectIntent above has
+                // already said so. The word fallback must not
+                // resurrect the angry handover or an order intent
+                // for it.
+                if (in_array($rule->match_text, ['angry', 'order_intent'], true) && $intent === 'order_status' && $this->confirmationMissing($hay)) {
+                    continue;
+                }
+
                 return $bestKeyword ?? $rule;
             }
         }
@@ -1731,6 +1913,395 @@ class RuleBrainService
         return $prefix . $mention['display'] . ' এলাকায় ডেলিভারি চার্জ ' . $slot . ' টাকা।';
     }
 
+    /** The English twin of areaChargeBody (batch 15, finding #24). */
+    private function areaChargeBodyEn(int $businessId, string $text, ?string $customerName): ?string
+    {
+        $mention = $this->districtMention($text);
+        if ($mention === null) {
+            return null;
+        }
+        $prefix = $this->honorificPrefix($businessId, $customerName);
+        if ($mention['name'] === 'Outside Dhaka') {
+            return $prefix . 'Delivery charge outside Dhaka is ⟦delivery_outside⟧ taka.';
+        }
+        $slot = $mention['inside'] ? '⟦delivery_inside⟧' : '⟦delivery_outside⟧';
+
+        return $prefix . 'Delivery charge for ' . $mention['display'] . ' is ' . $slot . ' taka.';
+    }
+
+    /**
+     * English templates for the four core informational intents
+     * (batch 15, finding #24): the lightest honest version of
+     * language matching — an English-dominant message is answered
+     * from these, everything else keeps the Bangla catalog. The
+     * placeholders are the same slots the Bangla templates carry, so
+     * figures are rendered and verified identically.
+     */
+    private const ENGLISH_TEMPLATES = [
+        'price' => 'The price of {product} is {price} taka. To order, please send your name, address and phone number.',
+        'delivery' => 'Delivery charge is {delivery_inside} taka inside Dhaka and {delivery_outside} taka outside Dhaka.',
+        'stock' => '{product} is in stock: {stock} available. To order, please send your name, address and phone number.',
+        'greeting' => 'Hello! Welcome. Which product would you like to know about?',
+    ];
+
+    /**
+     * Is this message English-dominant (batch 15, finding #24)?
+     * Romanised Bangla is NOT English: it is written in Latin
+     * letters, so a bare script test would send "dam koto?" down the
+     * English path. The test therefore requires Latin letters to
+     * dominate AND no Bengali script AND no romanised-Bangla marker
+     * word — a single marker ("koto", "ache", "lagbe") keeps the
+     * message on the Bangla path it has always taken.
+     */
+    private function isEnglishDominant(string $text): bool
+    {
+        if (preg_match('/[\x{0980}-\x{09FF}]/u', $text)) {
+            return false;
+        }
+        $latin = preg_match_all('/[a-zA-Z]/', $text);
+        if ($latin < 3) {
+            return false;
+        }
+        foreach (['koto', 'kobe', 'ache', 'achen', 'lagbe', 'lagbena', 'chai', 'chaichen', 'kivabe', 'keno', 'kothay', 'bolen', 'bolun', 'den', 'diben', 'hobe', 'hobena', 'nibo', 'nebo', 'korbo', 'koren', 'korun', 'pathabo', 'pathan', 'jabe', 'kinbo', 'kinte', 'dam', 'ektu', 'onek', 'bhalo', 'valo', 'dhonnobad', 'apnar', 'amar', 'eta', 'oita', 'ekta', 'kintu', 'jodi', 'tahole', 'ekhon', 'pore', 'age', 'bhai', 'apu', 'vai'] as $w) {
+            if (preg_match('/\b' . $w . '\b/', mb_strtolower($text))) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Multi-intent joining (batch 15, Step 7 / finding #17): when
+     * ONE message clearly carries two or three INDEPENDENT
+     * informational questions, produce each part through its own
+     * existing path and join them into one slotted reply. The join
+     * is deliberately narrow:
+     *  - the whole message's own rule must be one of the
+     *    informational intents (price, delivery, stock, delivery
+     *    time, delivery coverage, greeting) with an 'answer'-style
+     *    outcome — a handover, draft or no-rule message never joins;
+     *  - no summary may be pending (a pending summary's messages
+     *    belong to that flow);
+     *  - every segment must classify as one of those intents — a
+     *    flow signal (bargain, order, cancel, acceptance) or an
+     *    unrecognised segment aborts the join, and flow intents keep
+     *    owning the message alone exactly as today;
+     *  - more than three distinct parts aborts;
+     *  - a price/stock part needs the resolved product, an
+     *    out-of-stock part aborts (the honest zero-stock answer owns
+     *    the message alone), and a price part with differing variant
+     *    prices and no variant chosen aborts (the variant question
+     *    owns it);
+     *  - an English-dominant message joins only when every part has
+     *    an English template (finding #24's scope).
+     * The caller runs the joined body through the same talker,
+     * money and claim verification as a single answer.
+     *
+     * @return array{body: string, intents: array<int, string>, slotValues: array<string, mixed>}|null
+     */
+    private function multiIntentParts(Conversation $conversation, string $text, AiRule $rule, ?Product $product, ?\App\Models\ProductVariant $variant, int $biz): ?array
+    {
+        // The whole message's own outcome must itself be one of the
+        // informational answers — a handover (COD, payment proof)
+        // or a keyword rule's case never joins.
+        if ($rule->trigger_type !== 'intent' || $rule->action === 'handover'
+            || ! in_array($rule->match_text, ['price', 'delivery', 'stock', 'delivery_time', 'delivery_coverage', 'greeting'], true)) {
+            return null;
+        }
+        $state = (array) ($conversation->state_data ?? []);
+        if (! empty($state['pending_summary'])) {
+            return null;
+        }
+        $segments = preg_split('/[?।!.\n,;]+|\s+(?:আর|এবং|and)\s+/u', $text) ?: [];
+        $intents = [];
+        foreach ($segments as $segment) {
+            $intent = $this->segmentIntent(trim((string) $segment));
+            if ($intent === null) {
+                continue;
+            }
+            if ($intent === 'flow' || $intent === 'other') {
+                return null;
+            }
+            if (! in_array($intent, $intents, true)) {
+                $intents[] = $intent;
+            }
+        }
+        if (count($intents) < 2 || count($intents) > 3) {
+            return null;
+        }
+        $english = $this->isEnglishDominant($text);
+        if ($english) {
+            foreach ($intents as $intent) {
+                if (! isset(self::ENGLISH_TEMPLATES[$intent])) {
+                    return null;
+                }
+            }
+        }
+        $honorific = $this->honorific($biz, $conversation->customer_name);
+        $parts = [];
+        $slotValues = [];
+        foreach ($intents as $i => $intent) {
+            $h = $i === 0 ? $honorific : null;
+            if ($intent === 'greeting') {
+                $rule = $this->intentRuleFor($biz, 'greeting', $conversation->channel);
+                if ($rule === null) {
+                    return null;
+                }
+                $parts[] = $english
+                    ? $this->buildReply($this->englishRule($rule), $product, $biz, true, $h)
+                    : $this->buildReply($rule, $product, $biz, true, $h);
+                continue;
+            }
+            if ($intent === 'price' || $intent === 'stock') {
+                if ($product === null) {
+                    return null;
+                }
+                if (($this->focusAvailable($product, $variant) ?? 1) <= 0) {
+                    return null;
+                }
+                if ($intent === 'price' && $variant === null && $product->hasVariants() && $this->variantPricesDiffer($product)) {
+                    return null;
+                }
+                $rule = $this->intentRuleFor($biz, $intent, $conversation->channel);
+                if ($rule === null) {
+                    return null;
+                }
+                $parts[] = $english
+                    ? $this->buildReply($this->englishRule($rule), $product, $biz, true, $h)
+                    : $this->buildReply($rule, $product, $biz, true, $h);
+                if ($variant !== null) {
+                    $slotValues['price'] = $variant->effectivePrice();
+                    $slotValues['stock'] = $variant->available();
+                } elseif ($intent === 'price' && $product->hasVariants()) {
+                    // Every variant shares one price (differing
+                    // prices aborted above): the shared figure is
+                    // the honest quote, as in the single path.
+                    $slotValues['price'] = $product->activeVariants()->first()->effectivePrice();
+                }
+                continue;
+            }
+            // delivery, delivery_time, delivery_coverage
+            $rule = $this->intentRuleFor($biz, $intent, $conversation->channel);
+            if ($rule === null || $rule->action === 'handover') {
+                return null;
+            }
+            if ($intent === 'delivery') {
+                $area = $english
+                    ? $this->areaChargeBodyEn($biz, $text, $i === 0 ? $conversation->customer_name : null)
+                    : $this->areaChargeBody($biz, $text, $i === 0 ? $conversation->customer_name : null);
+                if ($area !== null) {
+                    $parts[] = $area;
+                    continue;
+                }
+            }
+            $parts[] = $english && isset(self::ENGLISH_TEMPLATES[$intent])
+                ? $this->buildReply($this->englishRule($rule), $product, $biz, true, $h)
+                : $this->buildReply($rule, $product, $biz, true, $h);
+        }
+
+        return ['body' => implode("\n", $parts), 'intents' => $intents, 'slotValues' => $slotValues];
+    }
+
+    /** A rule clone carrying the English template for its intent (batch 15, #24). */
+    private function englishRule(AiRule $rule): AiRule
+    {
+        $clone = clone $rule;
+        $clone->reply_template = self::ENGLISH_TEMPLATES[$rule->match_text] ?? $rule->reply_template;
+
+        return $clone;
+    }
+
+    /** The shop's active intent rule for a match_text, channel-scoped like matchRule. */
+    private function intentRuleFor(int $biz, string $matchText, ?string $channel): ?AiRule
+    {
+        return AiRule::where('business_id', $biz)->where('active', true)
+            ->where('trigger_type', 'intent')->where('match_text', $matchText)
+            ->where(fn ($q) => $q->whereNull('channel')->orWhere('channel', $channel))
+            ->first();
+    }
+
+    /**
+     * One segment of a multi-question message, classified on its own
+     * (batch 15): an informational intent name, 'flow' for a
+     * state-changing signal (bargain push, order verb, cancellation,
+     * acceptance), 'other' for anything unrecognised, or null for an
+     * empty segment. Deliberately narrower than detectIntent: a
+     * segment earns a joined answer only when its question is
+     * unmistakable.
+     */
+    private function segmentIntent(string $segment): ?string
+    {
+        $hay = mb_strtolower(trim($segment));
+        if ($hay === '') {
+            return null;
+        }
+        if ($this->intentMatches('bargain', $hay) || $this->intentMatches('order_intent', $hay)
+            || $this->isAcceptance($hay)
+            || str_contains($hay, 'বাদ দিন') || str_contains($hay, 'বাদ দেন') || str_contains($hay, 'cancel')) {
+            return 'flow';
+        }
+        if ($this->intentMatches('delivery_time', $hay)
+            || str_contains($hay, 'কতদিন লাগবে') || str_contains($hay, 'কতদিনে') || str_contains($hay, 'কয়দিন')) {
+            return 'delivery_time';
+        }
+        if ($this->intentMatches('delivery_coverage', $hay)) {
+            return 'delivery_coverage';
+        }
+        foreach (['ডেলিভারি চার্জ', 'delivery charge', 'কুরিয়ার চার্জ', 'ডেলিভারি খরচ', 'shipping charge', 'চার্জ কত', 'ডেলিভারি কত', 'পাঠাতে কত'] as $p) {
+            if (str_contains($hay, $p)) {
+                return 'delivery';
+            }
+        }
+        if ($this->intentMatches('stock', $hay)) {
+            return 'stock';
+        }
+        if ($this->intentMatches('price', $hay) || preg_match('/\brate\b/', $hay)) {
+            return 'price';
+        }
+        if ($this->intentMatches('delivery', $hay)) {
+            return 'delivery';
+        }
+        if ($this->intentMatches('greeting', $hay)) {
+            return 'greeting';
+        }
+
+        return 'other';
+    }
+
+    /**
+     * Is this message asking for the LIST of a product's colours or
+     * sizes (batch 15)? Returns 'colour', 'size' or 'any' (a generic
+     * "কি কি আছে?" list ask), or null. Judged on phrases, not single
+     * words, so "সাইজ L এর দাম কত?" (a price question about one
+     * variant) never matches.
+     */
+    private function variantListAsk(string $text): ?string
+    {
+        $hay = mb_strtolower($text);
+        $colour = false;
+        foreach (['কি কি কালার', 'কী কী কালার', 'কি কি রঙ', 'কোন কোন কালার', 'কোন কোন রঙ', 'কালার কি কি', 'রঙ কি কি', 'ki ki color', 'ki ki colour', 'kon kon color', 'what colors', 'what colours', 'which colors', 'which colours', 'colors available', 'colours available'] as $p) {
+            if (str_contains($hay, $p)) {
+                $colour = true;
+                break;
+            }
+        }
+        $size = false;
+        foreach (['সাইজ কি কি', 'কি কি সাইজ', 'কোন কোন সাইজ', 'সাইজগুলো কি', 'ki ki size', 'kon kon size', 'what sizes', 'which sizes', 'sizes available'] as $p) {
+            if (str_contains($hay, $p)) {
+                $size = true;
+                break;
+            }
+        }
+        if ($colour && $size) {
+            return 'any';
+        }
+        if ($colour) {
+            return 'colour';
+        }
+        if ($size) {
+            return 'size';
+        }
+        foreach (['কি কি আছে', 'কী কী আছে', 'কি কি অপশন', 'অপশন কি কি', 'ki ki ache', 'ki ki option'] as $p) {
+            if (str_contains($hay, $p)) {
+                return 'any';
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * The variant-list reply (batch 15): the product's ACTUAL variant
+     * names from its data, filtered to the family asked about when
+     * the variants carry family markers (a colour ask lists the
+     * colour variants, not the sizes) — code-rendered, word-for-word.
+     */
+    private function variantListBody(int $businessId, ?string $customerName, Product $product, string $listKind): string
+    {
+        $names = $product->activeVariants()->pluck('name')->map(fn ($n) => (string) $n)->all();
+        if ($listKind === 'colour' || $listKind === 'size') {
+            $markers = $listKind === 'colour' ? ['color', 'colour', 'রঙ', 'কালার'] : ['size', 'সাইজ'];
+            $filtered = array_values(array_filter($names, function ($n) use ($markers) {
+                foreach ($markers as $m) {
+                    if (str_contains(mb_strtolower($n), $m)) {
+                        return true;
+                    }
+                }
+
+                return false;
+            }));
+            if ($filtered !== []) {
+                $names = $filtered;
+            }
+        }
+
+        return $this->honorificPrefix($businessId, $customerName) . $product->name . '-এর আছে: ' . implode(', ', $names) . '। কোনটা নেবেন, বলুন।';
+    }
+
+    /**
+     * The two bare short messages (batch 15): an acknowledgement
+     * ("ওকে", "আচ্ছা", "ঠিক আছে", "ok") and a presence ping
+     * ("আছেন?", "hello?"). Matched EXACTLY (the whole message, bar
+     * punctuation) — a longer message that merely contains these
+     * words is judged by the rest of the chain as always. Returns
+     * the word-for-word body + kind, or null.
+     *
+     * @return array{body: string, kind: string}|null
+     */
+    private function shortReply(Conversation $conversation, string $text): ?array
+    {
+        $t = trim(mb_strtolower($text));
+        $t = trim((string) preg_replace('/[?।!.,\s]+/u', ' ', $t));
+        $biz = (int) $conversation->business_id;
+        $prefix = $this->honorificPrefix($biz, $conversation->customer_name);
+        if (in_array($t, ['ওকে', 'ok', 'okay', 'ঠিক আছে', 'ঠিকাছে', 'আচ্ছা', 'আচ্ছা ঠিক আছে', 'ওকে ভাই', 'ওকে আপু', 'জি', 'হুম'], true)) {
+            return ['body' => $prefix . 'ঠিক আছে। আর কিছু জানার থাকলে নির্দ্বিধায় বলুন।', 'kind' => 'acknowledgement'];
+        }
+        if (in_array($t, ['আছেন', 'আছো', 'কেউ আছো', 'আছেন কি', 'আছো কি'], true)) {
+            return ['body' => $prefix . 'জি, আছি। বলুন, কী জানতে চান?', 'kind' => 'presence'];
+        }
+
+        return null;
+    }
+
+    /**
+     * The address a previous DELIVERED order left on this record
+     * (batch 15, finding #25), or null. The candidate exists only
+     * when the record's details were consumed by a completed order
+     * (the batch-3 doctrine) AND an order in this shop, for this
+     * phone, marked Delivered, carries exactly the record's current
+     * address — provenance from the order history itself, never a
+     * guess. The address is only ever OFFERED back as a question;
+     * nothing here marks it collected.
+     */
+    private function previousDeliveredAddress(Conversation $conversation): ?string
+    {
+        $state = (array) ($conversation->state_data ?? []);
+        if (empty($state['details_consumed'])) {
+            return null;
+        }
+        $address = trim((string) ($conversation->customer_address ?? ''));
+        $phone = trim((string) ($conversation->customer_phone ?? ''));
+        if ($address === '' || $phone === '') {
+            return null;
+        }
+        $exists = \App\Models\Order::where('business_id', (int) $conversation->business_id)
+            ->where('customer_phone', $phone)
+            ->where('status', 'Delivered')
+            ->where('customer_address', $address)
+            ->exists();
+
+        return $exists ? $address : null;
+    }
+
+    /** The returning-customer address question (batch 15, #25), word-for-word. */
+    private function addressConfirmQuestion(int $businessId, ?string $customerName, string $address): string
+    {
+        return $this->honorificPrefix($businessId, $customerName)
+            . 'আগের ঠিকানায় পাঠাব? ঠিকানা: ' . $address . '। হ্যাঁ হলে "হ্যাঁ" বলুন, নতুন ঠিকানা হলে লিখে দিন।';
+    }
+
     /** The order summary text + meta, shared by the direct and guided-collection paths. */
     private function buildSummary(Conversation $conversation, Product $product, ?\App\Models\ProductVariant $variant): array
     {
@@ -1871,7 +2442,18 @@ class RuleBrainService
         }
         if ($missing !== []) {
             $state = (array) ($conversation->state_data ?? []);
-            $state['collect'] = ['step' => $missing[0], 'retries' => 0, 'product_id' => $product->id, 'variant_id' => $variant?->id];
+            $collect = ['step' => $missing[0], 'retries' => 0, 'product_id' => $product->id, 'variant_id' => $variant?->id];
+            // A returning customer whose previous DELIVERED order's
+            // address is still on the record (batch 15, finding
+            // #25): when the address is the ONLY piece missing, the
+            // ask is not the plain question but the confirmation
+            // question — the previous address is OFFERED, never
+            // silently reused. handleCollect reads the answer.
+            $previousAddress = $missing === ['address'] ? $this->previousDeliveredAddress($conversation) : null;
+            if ($previousAddress !== null) {
+                $collect['address_confirm'] = 'pending';
+            }
+            $state['collect'] = $collect;
             // A new collection supersedes any summary an earlier flow
             // left pending: its data is no longer what this flow is
             // confirming, so it must not stay confirmable (batch 3).
@@ -1881,8 +2463,13 @@ class RuleBrainService
             $conversation->state = 'collecting';
             $conversation->state_data = $state;
             $conversation->save();
-            $body = $this->collectQuestion($biz, $this->collectMissing($conversation), $conversation->customer_name);
+            $body = $previousAddress !== null
+                ? $this->addressConfirmQuestion($biz, $conversation->customer_name, $previousAddress)
+                : $this->collectQuestion($biz, $this->collectMissing($conversation), $conversation->customer_name);
             $meta = ['collect' => $missing[0]];
+            if ($previousAddress !== null) {
+                $meta['address_confirm'] = true;
+            }
             if ($agreed !== null) {
                 $body = 'ঠিক আছে, ⟦offer⟧ টাকায় ফাইনাল। ' . $body;
                 $meta = array_merge($meta, ['quote' => 'accept', 'offer' => $agreed]);
@@ -2293,14 +2880,15 @@ class RuleBrainService
             if ($this->markDetailFresh($conversation, 'address')) {
                 $changed = true;
             }
-        } elseif (empty($conversation->customer_address) && $phone !== null) {
+        } elseif (empty($conversation->customer_address) && $phone !== null && ! $this->isCorrectionText(mb_strtolower($text))) {
             // Blob rule: the address rides in the same message as the
             // number, unlabelled — the leftover text after the number
             // is the address when it looks like one. The leftover is
             // cleaned of the other fields' segments first (batch 6):
             // a name+phone message with NO address in it must leave
             // the address empty, not store "Amar nam , phone ," as
-            // one.
+            // one. A CORRECTION message is disarmed (batch 15): its
+            // leftover is correction talk, never an address.
             $rest = trim(str_replace($phone, '', $norm));
             $addr = $this->cleanAddressCandidate($rest, $name);
             $looksAddress = $addr !== null && (str_contains($addr, ',')
@@ -2617,6 +3205,73 @@ class RuleBrainService
         return $msg;
     }
 
+    /**
+     * A details correction while a summary is on the table (batch
+     * 15, the second half of the correction case): captureContact-
+     * FromText has already put the corrected name/phone/address on
+     * the record (batch 2 precedence), so the pending summary's
+     * snapshot no longer matches it. Until this batch the flow only
+     * noticed at the NEXT confirmation — the confirmation hook fell
+     * through on the stale snapshot and the chain pointed at the old
+     * summary ("summary_reminder") or re-collected. The summary is
+     * now re-rendered at once from the corrected record, exactly
+     * like the quantity and variant rerenders: the old summary is
+     * retired, the fresh one takes its place as the pending one.
+     * Only a message that CARRIES details can be a correction — a
+     * plain chat message never re-renders anything.
+     */
+    private function detailsChangeRerender(Conversation $conversation, string $text, string $mode): ?ChatMessage
+    {
+        $state = (array) ($conversation->state_data ?? []);
+        $pending = (array) ($state['pending_summary'] ?? []);
+        if ($pending === [] || empty($pending['message_id'])) {
+            return null;
+        }
+        if (! $this->carriesDetails($text)) {
+            return null;
+        }
+        if (trim((string) ($conversation->customer_name ?? '')) === trim((string) ($pending['name'] ?? ''))
+            && trim((string) ($conversation->customer_phone ?? '')) === trim((string) ($pending['phone'] ?? ''))
+            && trim((string) ($conversation->customer_address ?? '')) === trim((string) ($pending['address'] ?? ''))) {
+            return null; // the details restated are the summarised ones — nothing corrected
+        }
+        if (! $this->detailCollected($conversation, 'phone') || ! $this->detailCollected($conversation, 'address')) {
+            // A partial correction (the phone changed, the address
+            // is still outstanding): the summary cannot be rebuilt
+            // yet — the confirmation hook's stale-snapshot fall-
+            // through routes the message into collection for the
+            // missing piece, as before.
+            return null;
+        }
+        $biz = (int) $conversation->business_id;
+        $product = Product::where('business_id', $biz)->find((int) ($pending['product_id'] ?? 0));
+        if ($product === null) {
+            return null;
+        }
+        $variant = ! empty($pending['variant_id']) ? \App\Models\ProductVariant::find((int) $pending['variant_id']) : null;
+        $oldMsg = ChatMessage::find((int) $pending['message_id']);
+        if ($oldMsg !== null) {
+            $this->rejectDraft($oldMsg);
+        }
+        unset($state['pending_summary']);
+        $conversation->state_data = $state;
+        $conversation->save();
+        $summary = $this->buildSummary($conversation, $product, $variant);
+        $msg = ChatMessage::create([
+            'business_id' => $biz,
+            'conversation_id' => $conversation->id,
+            'direction' => 'out',
+            'sender' => 'ai',
+            'body' => $summary['body'],
+            'status' => $mode === 'full_auto' ? 'sent' : 'draft',
+            'meta' => array_merge($summary['meta'], ['kind' => 'order_summary', 'details_changed' => true]),
+        ]);
+        $this->markSummaryPending($conversation, $msg, $variant);
+        $this->log($biz, $msg->status === 'sent' ? 'auto_sent' : 'draft_created', $conversation->customer_name . ' — Order summary (details corrected)', null, $conversation);
+
+        return $msg;
+    }
+
     private function summaryConfirmation(Conversation $conversation, ?Product $product, int $biz, string $mode, ?AiRule $rule, ?string $intent, string $text): ?array
     {
         if ($rule && $rule->action === 'handover') {
@@ -2791,7 +3446,13 @@ class RuleBrainService
             && $this->namedAmount($text) === null
             && $this->extractPhone($text) === null
             && $this->extractLabelledAddress($this->guard->normalizeDigits($text), null) === null
-            && $this->explicitProductFor($biz, $text) === null) {
+            && $this->explicitProductFor($biz, $text) === null
+            // A missing-confirmation QUESTION is not a repeat
+            // confirmation (batch 15): "কনফার্মেশন মেসেজ পাইনি"
+            // contains the acceptance word 'কনফার্ম' but asks where
+            // the confirmation went — the order-status branch
+            // answers it from the record instead.
+            && ! $this->confirmationMissing($hay)) {
             $body = $this->honorificPrefix($biz, $conversation->customer_name)
                 . 'আপনার অর্ডারটি ইতিমধ্যে কনফার্ম হয়েছে। অর্ডার নম্বর: ' . ($last['invoice'] ?? '')
                 . '। মোট: ' . number_format((float) ($last['total'] ?? 0)) . ' টাকা (Cash on Delivery)।';
@@ -2817,7 +3478,7 @@ class RuleBrainService
                 return false;
             }
         }
-        foreach (['হ্যাঁ', 'হ্যা', 'হুম', 'এটাই', 'ঠিক', 'yes', 'ha'] as $w) {
+        foreach (['হ্যাঁ', 'হ্যা', 'হুম', 'এটাই', 'ঠিক', 'ওকে', 'yes', 'ha'] as $w) {
             if (str_contains($t, $w)) {
                 return true;
             }
@@ -3033,6 +3694,44 @@ class RuleBrainService
             return $cancel;
         }
 
+        // The returning-customer address question (batch 15, finding
+        // #25): "আগের ঠিকানায় পাঠাব?" is on the table and this
+        // message is its answer. A yes marks the record's address as
+        // THIS flow's — the customer confirmed it; it was never
+        // silently reused — and the collection completes below. A no
+        // closes the question and asks for the new address plainly.
+        // A message carrying details IS the new answer and falls
+        // through to the capture below; a side question falls
+        // through to the side answer with the question still
+        // standing; anything else re-asks the question once rather
+        // than dropping it.
+        if (($collect['address_confirm'] ?? null) === 'pending') {
+            $answer = $carriesDetails ? null : $this->yesNo($text);
+            if (! $carriesDetails && $answer === true) {
+                $collect['address_confirm'] = 'done';
+                $state['collect'] = $collect;
+                $conversation->state_data = $state;
+                $this->markDetailFresh($conversation, 'address');
+                $conversation->save();
+            } elseif (! $carriesDetails && $answer === false) {
+                $collect['address_confirm'] = 'done';
+                $state['collect'] = $collect;
+                $conversation->state_data = $state;
+                $conversation->save();
+
+                return $this->simpleOutgoing($conversation, $this->collectQuestion($biz, $this->collectMissing($conversation), $conversation->customer_name), 'collect_question', $mode, ['collect' => 'address']);
+            } elseif (! $carriesDetails && $sideIntent === null) {
+                $previousAddress = $this->previousDeliveredAddress($conversation);
+                if ($previousAddress !== null) {
+                    return $this->simpleOutgoing($conversation, $this->addressConfirmQuestion($biz, $conversation->customer_name, $previousAddress), 'collect_question', $mode, ['collect' => 'address', 'address_confirm' => true]);
+                }
+                $collect['address_confirm'] = 'done';
+                $state['collect'] = $collect;
+                $conversation->state_data = $state;
+                $conversation->save();
+            }
+        }
+
         // A phone number anywhere in the message counts, whatever step
         // we are on — and it OVERRIDES the record: the number a customer
         // types while ordering is this order's number, even when an
@@ -3056,7 +3755,7 @@ class RuleBrainService
             // record (and into the summary, and the order) as the
             // whole message with the phone digits blanked.
             $addr = $this->extractLabelledAddress($norm, $phone);
-            if ($addr === null) {
+            if ($addr === null && ! $this->isCorrectionText(mb_strtolower($text))) {
                 $addr = $this->cleanAddressCandidate($rest, $this->extractName($norm));
                 // When the address step was asked, any real answer
                 // counts — and it overrides a stale stored address
@@ -3212,6 +3911,21 @@ class RuleBrainService
         $state['collect'] = $collect;
         $conversation->state_data = $state;
         $conversation->save();
+
+        // The address is the only piece left and a previous DELIVERED
+        // order's address is on the record (batch 15, finding #25):
+        // the ask is the confirmation question, not the plain one.
+        if ($missing === ['address'] && ! isset($collect['address_confirm'])) {
+            $previousAddress = $this->previousDeliveredAddress($conversation);
+            if ($previousAddress !== null) {
+                $collect['address_confirm'] = 'pending';
+                $state['collect'] = $collect;
+                $conversation->state_data = $state;
+                $conversation->save();
+
+                return $this->simpleOutgoing($conversation, $this->addressConfirmQuestion($biz, $conversation->customer_name, $previousAddress), 'collect_question', $mode, ['collect' => 'address', 'address_confirm' => true]);
+            }
+        }
 
         return $this->simpleOutgoing($conversation, $this->collectQuestion($biz, $this->collectMissing($conversation), $conversation->customer_name), 'collect_question', $mode, ['collect' => $next]);
     }
@@ -3868,6 +4582,15 @@ class RuleBrainService
             if ($rule->match_text === 'angry') {
                 return $this->holdingLine($conversation, $auto);
             }
+            if ($rule->match_text === 'abuse') {
+                // Profanity (batch 15): FULLY silent — no holding
+                // line, no acknowledgement, nothing drafted. The
+                // needs_human flag and the handover log above are
+                // the whole outcome; a human decides what happens
+                // next. Anger without profanity keeps its holding
+                // line exactly as before.
+                return null;
+            }
             // A handover rule carrying a real acknowledgement template
             // (payment proof received, a cancel request) still sends
             // that one line through the normal guarded path below —
@@ -3892,6 +4615,13 @@ class RuleBrainService
         if ($mode === 'off') {
             return null;
         }
+
+        // Outside working hours the reply below only drafts — and
+        // until batch 15 the customer heard NOTHING at all, which
+        // reads as a dead page. One line per off-hours stretch tells
+        // them the shop is closed and when it opens; the reply itself
+        // still waits for the morning as a draft.
+        $this->offHoursLineOnce($conversation, $auto[$conversation->channel] ?? 'draft');
 
         // A cancellation ends the pending order flow in EVERY
         // pre-order state (batch 7) — checked here, before the
@@ -4040,6 +4770,17 @@ class RuleBrainService
         $qtyChange = $this->qtyChangeRerender($conversation, $mode);
         if ($qtyChange !== null) {
             return $qtyChange;
+        }
+
+        // A details correction with a summary on the table (batch
+        // 15): capture has already put the corrected name/phone/
+        // address on the record, and the confirmation hook below
+        // would only fall through and point at the stale summary —
+        // the summary is re-rendered at once with the corrected
+        // details, the twin of the quantity/variant rerenders.
+        $detailsChange = $this->detailsChangeRerender($conversation, $text, $mode);
+        if ($detailsChange !== null) {
+            return $detailsChange;
         }
 
         // A confirmation of a summary already on the table is handled
@@ -4203,6 +4944,32 @@ class RuleBrainService
             $slottedBody = $this->notAvailableBody($biz, $conversation->customer_name);
             $kind = 'out_of_stock';
             $meta = ['out_of_stock' => true, 'not_available' => true];
+        } elseif ($rule && ($multi = $this->multiIntentParts($conversation, $text, $rule, $product, $variant, $biz)) !== null) {
+            // Two or three independent informational questions in
+            // ONE message (batch 15, Step 7): each part is produced
+            // by its own existing path and the parts are joined into
+            // a single reply, which then passes the SAME talker,
+            // money and claim verification below as any single
+            // answer. The helper returns null for anything else —
+            // more than three parts, a part that would hand over,
+            // draft or fall back, or any flow-state intent — and
+            // today's single-intent behaviour proceeds untouched.
+            $slottedBody = $multi['body'];
+            $kind = 'multi_intent';
+            $meta = ['multi_intent' => $multi['intents']];
+            if ($multi['slotValues'] !== []) {
+                $slotValues = $multi['slotValues'];
+            }
+        } elseif ($product && $product->hasVariants() && ($listKind = $this->variantListAsk($text)) !== null
+            && ! in_array($rule?->match_text ?? '', ['price', 'stock', 'bargain', 'order_intent'], true)) {
+            // "কি কি কালার আছে?" / "সাইজ কি কি?" (batch 15): the
+            // product's ACTUAL variant names, read from its data —
+            // never an invented list. A price/stock/bargain/order
+            // rule keeps its own branch: the list question is the
+            // message's business only when nothing stronger claims it.
+            $slottedBody = $this->variantListBody($biz, $conversation->customer_name, $product, $listKind);
+            $kind = 'variant_list';
+            $meta = ['variant_list' => true];
         } elseif ($rule) {
             // A price/stock answer needs a product. A one-product shop can
             // only mean that product; with several, ask which one instead
@@ -4213,7 +4980,20 @@ class RuleBrainService
                     $product = $all->first();
                 }
             }
-            $slottedBody = $this->buildReply($rule, $product, $biz, true, $this->honorific($biz, $conversation->customer_name));
+            // Language matching (batch 15, finding #24): an
+            // English-dominant message gets the English template for
+            // the four core informational intents — the lightest
+            // honest version; the rest of the catalog stays Bangla,
+            // and romanised Bangla is not English (see
+            // isEnglishDominant).
+            $english = $this->isEnglishDominant($text);
+            if ($english && isset(self::ENGLISH_TEMPLATES[$rule->match_text])) {
+                $enRule = clone $rule;
+                $enRule->reply_template = self::ENGLISH_TEMPLATES[$rule->match_text];
+                $slottedBody = $this->buildReply($enRule, $product, $biz, true, $this->honorific($biz, $conversation->customer_name));
+            } else {
+                $slottedBody = $this->buildReply($rule, $product, $biz, true, $this->honorific($biz, $conversation->customer_name));
+            }
             if ($product !== null
                 && in_array($resolutionType, ['scored', 'guessed'], true)
                 && ! in_array($rule->match_text, ['price', 'stock', 'bargain', 'order_intent'], true)
@@ -4241,7 +5021,9 @@ class RuleBrainService
                 // reviewer's catalog 'Area charge' case): the rule's
                 // both-charges template would not answer the question
                 // that was asked. No area named: the template stands.
-                $areaBody = $this->areaChargeBody($biz, $text, $conversation->customer_name);
+                $areaBody = $english
+                    ? $this->areaChargeBodyEn($biz, $text, $conversation->customer_name)
+                    : $this->areaChargeBody($biz, $text, $conversation->customer_name);
                 if ($areaBody !== null) {
                     $slottedBody = $areaBody;
                 }
@@ -4328,6 +5110,20 @@ class RuleBrainService
             if (isset($o['meta']['offer'])) {
                 $slotValues = ['offer' => $o['meta']['offer']];
             }
+        } elseif (! $rule && ($short = $this->shortReply($conversation, $text)) !== null) {
+            // A bare acknowledgement ("ওকে", "আচ্ছা") or a bare
+            // presence ping ("আছেন?") with nothing pending (batch
+            // 15): a brief polite line, word-for-word. This is the
+            // DELIBERATE carve-out from batch 10's no-rule safety —
+            // a RECOGNISED acknowledgement is not an unmatched
+            // message, so it sends normally and raises no human
+            // flag. It can only be reached with no rule matched and
+            // every pending question (summary confirmation, photo
+            // confirmation, quantity offer, collection) already
+            // handled above, so an acceptance still confirms first.
+            $slottedBody = $short['body'];
+            $kind = $short['kind'];
+            $meta = [$short['kind'] => true];
         } else {
             // No rule matched. First try the shop's own Knowledge — the AI
             // may answer policy questions only from what the shop wrote.
@@ -4377,9 +5173,12 @@ class RuleBrainService
         $slotValues = $slotValues ?? [];
         if ($kind === 'order_summary') {
             $draftRendered = $body;
-        } elseif ($kind === 'variant_question' || $kind === 'collect_question' || $kind === 'out_of_stock' || $kind === 'product_clarify' || $kind === 'insufficient_stock') {
+        } elseif ($kind === 'variant_question' || $kind === 'collect_question' || $kind === 'out_of_stock' || $kind === 'product_clarify' || $kind === 'insufficient_stock' || $kind === 'variant_list' || $kind === 'acknowledgement' || $kind === 'presence') {
             // Fixed questions and the out-of-stock answer must reach the
-            // customer word-for-word — no phrasing.
+            // customer word-for-word — no phrasing. The batch-15 fixed
+            // lines (a variant list read from data, a bare
+            // acknowledgement, a presence answer) join that list for
+            // the same reason: their wording IS the behaviour.
             $draftRendered = $this->renderSlots($slottedBody, $product, $biz, $slotValues);
             $body = $draftRendered;
         } else {
