@@ -80,6 +80,7 @@ class RuleBrainService
         private AiGuardService $guard,
         private AiClassifierService $classifier,
         private HonorificService $honorifics,
+        private MetaGraphService $graph,
     ) {
     }
 
@@ -313,7 +314,18 @@ class RuleBrainService
             . ($hours !== ''
                 ? 'এখন আমাদের দোকান বন্ধ আছে। আমাদের সময়: ' . $hours . '। আপনার মেসেজ পেয়েছি — দোকান খুললেই উত্তর পাবেন।'
                 : 'এখন আমাদের দোকান বন্ধ আছে। আপনার মেসেজ পেয়েছি — দোকান খুললেই উত্তর পাবেন।');
-        $this->simpleOutgoing($conversation, $body, 'off_hours', 'full_auto');
+        $line = $this->simpleOutgoing($conversation, $body, 'off_hours', 'full_auto');
+        // The line must actually be SENT (batch 16, live Part F):
+        // every entry point dispatches only the message
+        // handleIncoming RETURNS, and this line is a side message —
+        // it was created 'sent' but no Graph call ever happened for
+        // it, no send outcome was recorded, and the customer never
+        // received it. Dispatch it here, through the same path as
+        // every other send, so its meta carries send_status /
+        // send_error (with Meta's code fields) exactly like theirs.
+        // dispatch() itself no-ops on conversations with no live
+        // channel identity, so demo/test threads are untouched.
+        $this->graph->dispatch($line);
     }
 
     /** Does the text carry this intent's keywords? Short Latin words need word boundaries — "hi" must not fire inside "this". */
@@ -422,7 +434,9 @@ class RuleBrainService
      * the price signal itself: a message that names the price
      * ("সাইজ L এর দাম কত?") IS a price question about a variant and
      * stays one; an attribute word in question shape with no price
-     * signal is the attribute's own question.
+     * signal is the attribute's own question. The romanised forms
+     * (ojon, wajan, map — batch 16, live C1: "CRUD-101 er ojon
+     * koto?" got the price) count the same as their Bengali twins.
      */
     private function isAttributeQuestion(string $hay): bool
     {
@@ -430,11 +444,17 @@ class RuleBrainService
             return false;
         }
         $attribute = false;
-        foreach (['ওজন', 'weight', 'সাইজ', 'size', 'মাপ', 'ম্যাটেরিয়াল', 'material', 'ওয়ারেন্টি', 'warranty', 'গ্যারান্টি', 'guarantee', 'কালার', 'colour', 'color', 'কাপড়', 'fabric'] as $w) {
+        foreach (['ওজন', 'weight', 'সাইজ', 'size', 'মাপ', 'ম্যাটেরিয়াল', 'material', 'ওয়ারেন্টি', 'warranty', 'গ্যারান্টি', 'guarantee', 'কালার', 'colour', 'color', 'কাপড়', 'fabric', 'ojon', 'wajan'] as $w) {
             if (str_contains($hay, $w)) {
                 $attribute = true;
                 break;
             }
+        }
+        // The romanised word for মাপ is 'map' (batch 16) — also the
+        // English word for a map, so it counts only as a whole word,
+        // and the question shape required below does the rest.
+        if (! $attribute && preg_match('/\bmap\b/', $hay)) {
+            $attribute = true;
         }
         if (! $attribute) {
             return false;
@@ -442,7 +462,10 @@ class RuleBrainService
 
         return str_contains($hay, 'কত') || str_contains($hay, '?')
             || str_contains($hay, 'কী') || str_contains($hay, 'কি')
-            || str_contains($hay, 'কেমন') || str_contains($hay, 'আছে');
+            || str_contains($hay, 'কেমন') || str_contains($hay, 'আছে')
+            || (bool) preg_match('/\bkoto\b/', $hay)
+            || (bool) preg_match('/\bache\b/', $hay)
+            || (bool) preg_match('/\bki\b/', $hay);
     }
 
     /**
@@ -686,7 +709,7 @@ class RuleBrainService
         // there IS an order to track (batch 12, finding #21): asked
         // before ordering, they are the delivery_time question the
         // catalog already carries a rule for.
-        foreach (['অর্ডার কোথায়', 'অর্ডারটা কোথায়', 'কোথায় আছে', 'পৌঁছেছে', 'ট্র্যাকিং', 'tracking', 'স্ট্যাটাস'] as $w) {
+        foreach (['অর্ডার কোথায়', 'অর্ডারটা কোথায়', 'কোথায় আছে', 'পৌঁছেছে', 'ট্র্যাকিং', 'tracking', 'স্ট্যাটাস', 'kothay ache', 'kothay ase', 'order kothay', 'ki obostha'] as $w) {
             if (str_contains($hay, $w)) {
                 return 'order_status';
             }
@@ -700,8 +723,12 @@ class RuleBrainService
         // status question even when the number splits the usual
         // phrases ("OB299 কোথায়?") — the number is looked up in
         // handleIncoming's status branch (batch 12, finding #20).
+        // The where-words count in their romanised forms too
+        // (batch 16, live C3: "OB299 kothay ache?" never reached
+        // the lookup — the gate only knew Bengali script).
         if ($this->invoiceMention($text) !== null
-            && (str_contains($hay, 'কোথায়') || str_contains($hay, 'কই') || str_contains($hay, 'স্ট্যাটাস') || str_contains($hay, 'status'))) {
+            && (str_contains($hay, 'কোথায়') || str_contains($hay, 'কই') || str_contains($hay, 'স্ট্যাটাস') || str_contains($hay, 'status')
+                || str_contains($hay, 'kothay') || str_contains($hay, 'obostha') || (bool) preg_match('/\bkoi\b/', $hay))) {
             return 'order_status';
         }
         // Delivery sub-questions (COD? how long? do you deliver here?)
@@ -918,6 +945,16 @@ class RuleBrainService
         if ($named === null || (int) $conversation->product_id === (int) $named->id) {
             return;
         }
+        // Does this switch tear down a live flow? Read BEFORE the
+        // clearing below (batch 16): when it does, the close-out
+        // arms the next message for flowCancellation — the switch
+        // leaves no collect, ladder or summary behind for its
+        // flow-active test to find, but a "বাদ দিন" that follows is
+        // still the customer closing THIS conversation's business.
+        $hadFlow = $conversation->state === 'collecting'
+            || (int) $conversation->neg_step >= 1
+            || $conversation->neg_offer !== null
+            || ! empty(((array) ($conversation->state_data ?? []))['pending_summary']);
         $conversation->product_id = $named->id;
         $conversation->focus_at = now();
         $conversation->neg_step = 0;
@@ -954,6 +991,9 @@ class RuleBrainService
             $fresh['address'] = true;
         }
         $state['details_fresh'] = $fresh;
+        if ($hadFlow) {
+            $state['flow_just_closed'] = true;
+        }
         $conversation->state_data = $state;
         $conversation->save();
         $this->log((int) $conversation->business_id, 'product_switched', $conversation->customer_name . ' — customer named a different product: ' . $named->name, null, $conversation);
@@ -3575,6 +3615,25 @@ class RuleBrainService
             || ! empty($state['pending_summary'])
             || (int) $conversation->neg_step >= 1
             || $conversation->neg_offer !== null;
+        if (! $flowActive && ! empty($state['flow_just_closed'])) {
+            // A switch close-out (batch 16): the clarification pick
+            // (batch 11b) or an explicit product switch tore the
+            // flow down so completely that the test above finds
+            // nothing left — yet the flow DID just end, and the
+            // customer's very next message may be the cancel that
+            // closes the conversation about the new product (live
+            // 2026-11-25 23:5x: the switch to Panjabi 2 was answered
+            // with its price, then "বাদ দিন" got the no-rule price
+            // repeat + a handover). The close-out arms exactly this
+            // one message; the arm is consumed here whether or not
+            // the message turns out to be a cancel, so a cancel that
+            // arrives later is judged on its own (no flow = today's
+            // behaviour, unchanged).
+            unset($state['flow_just_closed']);
+            $conversation->state_data = $state;
+            $conversation->save();
+            $flowActive = true;
+        }
         if (! $flowActive) {
             return null;
         }
@@ -3606,7 +3665,7 @@ class RuleBrainService
                     $this->rejectDraft($summaryMsg);
                 }
             }
-            unset($state['collect'], $state['cart'], $state['floor_repeats'], $state['pending_summary'], $state['qty'], $state['qty_offer']);
+            unset($state['collect'], $state['cart'], $state['floor_repeats'], $state['pending_summary'], $state['qty'], $state['qty_offer'], $state['flow_just_closed']);
             $state['details_consumed'] = true;
             $state['details_fresh'] = ['name' => false, 'phone' => false, 'address' => false];
             $conversation->state_data = $state;
@@ -4686,6 +4745,13 @@ class RuleBrainService
                         $fresh['address'] = true;
                     }
                     $pickState['details_fresh'] = $fresh;
+                    // The collection this switch just closed was a
+                    // live flow (batch 16): arm the next message for
+                    // flowCancellation, whose flow-active test would
+                    // otherwise find nothing left to cancel and let
+                    // a following "বাদ দিন" fall to the no-rule
+                    // price repeat.
+                    $pickState['flow_just_closed'] = true;
                     $conversation->state_data = $pickState;
                     $conversation->state = null;
                     $conversation->neg_step = 0;

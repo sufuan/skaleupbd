@@ -4,7 +4,6 @@ namespace App\Jobs;
 
 use App\Models\AiActivity;
 use App\Models\ChatMessage;
-use App\Models\Product;
 use App\Services\ImageMatchService;
 use App\Services\MetaGraphService;
 use App\Services\RuleBrainService;
@@ -18,10 +17,12 @@ use Illuminate\Support\Facades\Storage;
 
 /**
  * A customer sent a photo. Download it (Meta CDN hosts only, size cap),
- * identify the product — caption, conversation focus, perceptual hash,
- * then vision over a shortlist — and act on the confidence code decides:
- * high = answer, medium = ask with the product name, low = a human.
- * If the caption flow already produced an AI reply, this job stays out.
+ * identify the product — the customer's own caption, then perceptual
+ * hash, then vision over a shortlist — and act on the confidence code
+ * decides: high = answer, medium = ask with the product name, low = a
+ * human. (The conversation's focus product is never an identification:
+ * batch 16.) If the caption flow already produced an AI reply, this
+ * job stays out.
  */
 class ProcessMediaMessageJob implements ShouldQueue
 {
@@ -73,12 +74,17 @@ class ProcessMediaMessageJob implements ShouldQueue
                 $level = 'high';
             }
         }
-        if (!$product && $conv->product_id) {
-            $product = Product::where('business_id', $biz)->find($conv->product_id);
-            if ($product) {
-                $level = 'high';
-            }
-        }
+        // The conversation's FOCUS product is deliberately NOT an
+        // identification (batch 16): until this fix, any photo sent
+        // while a product stood in focus was treated as a
+        // high-confidence match FOR THAT PRODUCT — the matcher never
+        // ran, the no-match fallback never fired, and a photo of
+        // something else entirely was answered with the focus
+        // product's price (live 2026-11-25, three attempts). A
+        // caption names the product in the customer's own words;
+        // focus is only where the conversation happens to stand.
+        // Every caption-less photo is judged by the matcher: hash,
+        // then vision over the shortlist.
         if (!$product) {
             $r = $matcher->identify($biz, $path, $caption);
             if (($r['image_type'] ?? 'product') !== 'product') {
@@ -151,9 +157,9 @@ class ProcessMediaMessageJob implements ShouldQueue
         $conv->save();
         $text = $caption !== '' ? $caption : 'এটার দাম কত? স্টকে আছে?';
         // media_match: the product was identified at high confidence
-        // by this pipeline (the customer's own caption, the focus, or
-        // the image hash), so a bare caption reaching the brain's
-        // no-rule product answer is this flow's designed reply — the
+        // by this pipeline (the customer's own caption or the image
+        // hash), so a bare caption reaching the brain's no-rule
+        // product answer is this flow's designed reply — the
         // batch-10 no-rule draft+flag safety for conversational text
         // must not hold it or flag a matched photo.
         $reply = $brain->handleIncoming($conv, $text, ['prestored_ids' => [$msg->id], 'media_match' => true]);
