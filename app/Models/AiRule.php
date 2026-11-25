@@ -75,7 +75,14 @@ class AiRule extends Model
                 ['name' => 'Urgent delivery', 'match_text' => 'আজকেই লাগবে, আজকের মধ্যে, কালকের মধ্যে, জরুরি, খুব দরকার, এক্সপ্রেস, সেম ডে, ajkei lagbe, kalker moddhe, jaruri, urgent, same day, express, asap', 'trigger_type' => 'keyword', 'action' => 'draft', 'reply_template' => '{honorific}, দ্রুত ডেলিভারির বিষয়টি আপনার ঠিকানা দেখে নিশ্চিত করে জানাচ্ছি। কোনো সময়ের নিশ্চয়তা এখনই দিতে পারছি না।'],
                 ['name' => 'Advance or partial payment', 'match_text' => 'advance_payment', 'trigger_type' => 'intent', 'action' => 'draft', 'reply_template' => '{honorific}, অগ্রিম বা আংশিক পেমেন্টের বিষয়টি দোকানের নিয়ম অনুযায়ী নিশ্চিত করে জানাচ্ছি।'],
                 ['name' => 'Payment number request', 'match_text' => 'বিকাশ নম্বর, বিকাশ নাম্বার, বিকাশে পাঠাব, নগদ নম্বর, রকেট নম্বর, কোথায় টাকা পাঠাব, পেমেন্ট নম্বর, bkash number, bikash number, nagad number, rocket number, send money number, payment number, kothay taka pathabo', 'trigger_type' => 'keyword', 'action' => 'draft', 'reply_template' => '{honorific}, পেমেন্টের সঠিক নম্বরটি দোকানের নিশ্চিত তথ্য থেকে পাঠানো হবে। অন্য কোনো নম্বরে টাকা পাঠাবেন না।'],
-                ['name' => 'Cash on delivery question', 'match_text' => 'cod', 'trigger_type' => 'intent', 'action' => 'draft', 'reply_template' => '{honorific}, পেমেন্ট পদ্ধতি নিয়ে আপনার প্রশ্নটি দোকানের নিয়ম দেখে নিশ্চিত করে জানাচ্ছি।'],
+                // Handover, not draft (brain fix batch 2): the line
+                // promises the shop will check its policy and confirm —
+                // as a plain draft/sent reply nobody was ever flagged to
+                // do that check, so the promise was empty. As a handover
+                // the acknowledgement still goes out AND needs_human
+                // stays up until a person actually answers. There is no
+                // shop-level COD-availability setting to answer from.
+                ['name' => 'Cash on delivery question', 'match_text' => 'cod', 'trigger_type' => 'intent', 'action' => 'handover', 'reply_template' => '{honorific}, পেমেন্ট পদ্ধতি নিয়ে আপনার প্রশ্নটি দোকানের নিয়ম দেখে নিশ্চিত করে জানাচ্ছি।'],
             ],
             // ---- Everyday questions: the small talk and product questions a
             // shop hears all day. ----

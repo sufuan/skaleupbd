@@ -33,7 +33,7 @@ class RuleBrainService
         'delivery' => ['delivery', 'ডেলিভারি', 'চার্জ', 'charge', 'shipping', 'পাঠাতে কত'],
         'stock' => ['স্টক', 'stock', 'আছে কি', 'available', 'ache ki', 'আছেনি'],
         'greeting' => ['আসসালামু', 'salam', 'hello', 'hi', 'হ্যালো', 'আদাব'],
-        'bargain' => ['কমান', 'কমাতে', 'discount', 'কম হবে', 'কম রাখেন', 'dam kom', 'less hobe', 'শেষ দাম', 'কম দাম', 'কমে দেন', 'দিলে নিব', 'টাকায় দিলে'],
+        'bargain' => ['কমান', 'কমাতে', 'discount', 'কম হবে', 'কম রাখেন', 'dam kom', 'less hobe', 'kom hobe', 'ektu kom', 'komano', 'শেষ দাম', 'কম দাম', 'কমে দেন', 'দিলে নিব', 'টাকায় দিলে'],
         'spam' => ['follower', 'ফলোয়ার', 'সস্তায় follower', 'cheap follower', 'like কিনুন', 'free money', 'click here', 'click link', 'scam', 'earn money', 'make money', 'casino', 'ক্যাসিনো', 'betting', 'বাজি', 'ফ্রি টাকা', 'টাকা ইনকাম', 'লিংকে ক্লিক', 'crypto', 'double investment', 'lottery', 'লটারি'],
         'angry' => ['পাইনি', 'পাই নাই', 'রেগে', 'complain', 'অভিযোগ', 'দুই দিন হলো', 'এখনো আসেনি', 'প্রতারক', 'প্রতারণা', 'টাকা মেরে', 'ভুয়া', 'মামলা', 'পুলিশ', 'কোর্ট', 'ভোক্তা অধিকার', 'ঠকিয়ে'],
         'order_intent' => ['order confirm', 'অর্ডার কনফার্ম', 'কনফার্ম', 'confirm korlam', 'confirm korun', 'confirm koren', 'confirm korchi', 'নিতে চাই', 'order korte chai', 'অর্ডার করতে চাই', 'কনফার্ম করেন', 'কনফার্ম করুন', 'কনফার্ম করে দেন', 'অর্ডার করলাম', 'অর্ডার দিলাম'],
@@ -326,6 +326,18 @@ class RuleBrainService
             if ($this->intentMatches('order_intent', $hay) || $this->isAcceptance($hay)) {
                 return 'order_intent';
             }
+            // A price QUESTION is not a ladder push (brain fix batch 2):
+            // "dam koto?" mid-bargaining asks what the price IS — it
+            // must be answered as a price question, never routed into
+            // the bargain branch where a floor-reached ladder would
+            // hand the customer to a human for asking (live 2026-11-25
+            // 15:00). A real push for less carries a bargain word
+            // ("কমান", "শেষ দাম", "দিলে নিব") and stays a bargain.
+            $asksPrice = (str_contains($hay, 'দাম') || str_contains($hay, 'price') || (bool) preg_match('/\bdam\b/', $hay))
+                && (str_contains($hay, 'কত') || str_contains($hay, 'koto') || str_contains($hay, '?'));
+            if ($asksPrice && ! $this->intentMatches('bargain', $hay)) {
+                return 'price';
+            }
             if (preg_match('/[0-9\x{09E6}-\x{09EF}]/u', $text) || $this->intentMatches('bargain', $hay)
                 || str_contains($hay, 'দাম') || str_contains($hay, 'কম')) {
                 return 'bargain';
@@ -435,6 +447,113 @@ class RuleBrainService
         }
 
         return $bestKeyword;
+    }
+
+    /**
+     * The product this message EXPLICITLY names, if any — judged on
+     * strong signals only: a SKU, a seller-taught alias, the product's
+     * full name, or every word of its name. Weaker evidence (a shared
+     * generic word, a partial name) must never yank the conversation
+     * off the product it is about, so it is not enough here — the
+     * scored matching in productFor() handles those messages. When two
+     * products qualify equally (names differing only by a digit the
+     * word split drops), the mention is ambiguous and null wins.
+     */
+    public function explicitProductFor(int $businessId, string $text): ?Product
+    {
+        $hay = mb_strtolower($text);
+        $products = Product::where('business_id', $businessId)->orderBy('id')->get();
+
+        // SKU, then alias, then full name — in each pass the LONGEST
+        // match wins, so "CRUD-102" beats a shorter nested code and
+        // "CRUD Test Panjabi 2" beats its own prefix "CRUD Test Panjabi".
+        foreach (['sku', 'aliases'] as $field) {
+            $best = null;
+            $bestLen = -1;
+            foreach ($products as $p) {
+                $needles = $field === 'sku'
+                    ? [(string) ($p->sku ?? '')]
+                    : array_map('trim', explode(',', (string) ($p->aliases ?? '')));
+                foreach ($needles as $needle) {
+                    $needle = mb_strtolower($needle);
+                    if ($needle !== '' && str_contains($hay, $needle) && mb_strlen($needle) > $bestLen) {
+                        $best = $p;
+                        $bestLen = mb_strlen($needle);
+                    }
+                }
+            }
+            if ($best) {
+                return $best;
+            }
+        }
+        $best = null;
+        $bestLen = -1;
+        foreach ($products as $p) {
+            $name = mb_strtolower($p->name);
+            if ($name !== '' && str_contains($hay, $name) && mb_strlen($name) > $bestLen) {
+                $best = $p;
+                $bestLen = mb_strlen($name);
+            }
+        }
+        if ($best) {
+            return $best;
+        }
+        $qualifiers = [];
+        foreach ($products as $p) {
+            $words = array_values(array_filter(
+                preg_split('/\s+/', mb_strtolower($p->name)) ?: [],
+                fn ($w) => mb_strlen($w) >= 4
+            ));
+            if ($words === []) {
+                continue;
+            }
+            $all = true;
+            foreach ($words as $w) {
+                if (! str_contains($hay, $w)) {
+                    $all = false;
+                    break;
+                }
+            }
+            if ($all) {
+                $qualifiers[] = $p;
+            }
+        }
+
+        return count($qualifiers) === 1 ? $qualifiers[0] : null;
+    }
+
+    /**
+     * Product switching (brain fix batch 2): when a message explicitly
+     * names a DIFFERENT product, the conversation changes product —
+     * and the old product's negotiation dies with the switch. Live
+     * 2026-11-25: a days-old thread that had bargained CRUD-101 to its
+     * floor answered "CRUD-102 er dam koto?" with CRUD-101's floor
+     * line, because productFor() trusted the stored focus and
+     * detectIntent read the stale neg_step. A new product means a
+     * fresh ladder (no step, no standing offer, no floor-repeat
+     * memory), no half-finished collection, no cart and no variant
+     * carried over from the old product.
+     */
+    private function switchProductIfNamed(Conversation $conversation, string $text): void
+    {
+        $named = $this->explicitProductFor((int) $conversation->business_id, $text);
+        if ($named === null || (int) $conversation->product_id === (int) $named->id) {
+            return;
+        }
+        $conversation->product_id = $named->id;
+        $conversation->focus_at = now();
+        $conversation->neg_step = 0;
+        $conversation->neg_offer = null;
+        if ($conversation->state === 'collecting') {
+            $conversation->state = null;
+        }
+        $state = (array) ($conversation->state_data ?? []);
+        foreach (['collect', 'cart', 'variant_pending', 'variant_id', 'floor_repeats'] as $key) {
+            unset($state[$key]);
+        }
+        $conversation->state_data = $state;
+        $conversation->save();
+        $this->log((int) $conversation->business_id, 'product_switched', $conversation->customer_name . ' — customer named a different product: ' . $named->name, null, $conversation);
     }
 
     public function productFor(int $businessId, string $text, ?Conversation $conversation = null): ?Product
@@ -900,11 +1019,14 @@ class RuleBrainService
      */
     private function orderTaking(Conversation $conversation, Product $product, ?\App\Models\ProductVariant $variant, int $biz, ?float $agreed = null): array
     {
+        // Details an earlier, completed order already consumed do NOT
+        // count (detailCollected): a new order flow asks again instead
+        // of silently reusing the previous order's phone and address.
         $missing = [];
-        if (empty($conversation->customer_phone)) {
+        if (! $this->detailCollected($conversation, 'phone')) {
             $missing[] = 'phone';
         }
-        if (empty($conversation->customer_address)) {
+        if (! $this->detailCollected($conversation, 'address')) {
             $missing[] = 'address';
         }
         if ($missing !== []) {
@@ -1000,44 +1122,177 @@ class RuleBrainService
     }
 
     /**
+     * The name the customer states in THIS message, if they label it —
+     * "আমার নাম X", "নাম: X", "Amar nam X", "my name is X". Only a
+     * labelled name is read: an unlabelled guess would rewrite the
+     * record with whatever words happen to follow "আমি".
+     */
+    private function extractName(string $text): ?string
+    {
+        $name = null;
+        if (preg_match('/আমার\s+নাম\s*[:ঃ]?\s*([^,।\n]+)/u', $text, $m)) {
+            $name = trim($m[1]);
+        } elseif (preg_match('/নাম\s*[:ঃ]\s*([^,।\n]+)/u', $text, $m)) {
+            $name = trim($m[1]);
+        } elseif (preg_match('/\b(?:amar\s+nam|amr\s+nam|amar\s+name|my\s+name(?:\s+is)?)\s*[:.]?\s+([a-z][a-z0-9\s.\'-]{1,58}?)(?=\s*(?:,|$|\bphone\b|\bmobile\b|\baddress\b|ঠিকানা|ফোন))/iu', $text, $m)) {
+            $name = trim($m[1]);
+        } elseif (preg_match('/\bname\s*[:]\s*([a-z][a-z0-9\s.\'-]{1,58}?)(?=\s*(?:,|$|\bphone\b|\bmobile\b|\baddress\b|ঠিকানা|ফোন))/iu', $text, $m)) {
+            $name = trim($m[1]);
+        }
+        if ($name === null) {
+            return null;
+        }
+        $name = trim((string) preg_replace('/\s+/', ' ', $name), " \t.");
+        // A name is letters, short, and never a number or an intent
+        // phrase. The fragment guards matter: "আমার নামটা বদলাতে চাই"
+        // (change my name) and "amar nam ta change korte chai" are
+        // requests ABOUT a name — their tails are not names.
+        if (mb_strlen($name) < 2 || mb_strlen($name) > 60 || ! preg_match('/[a-z\x{0980}-\x{09FF}]/iu', $name)) {
+            return null;
+        }
+        if (str_starts_with($name, 'টা') || preg_match('/^(ta|amar|ami|eta|oita|phone|mobile|address|confirm|order|the)\b/iu', $name)) {
+            return null;
+        }
+        foreach (['বদলাতে', 'ভুল', 'পরিবর্তন', 'korte chai', 'change', 'wrong'] as $w) {
+            if (str_contains(mb_strtolower($name), $w)) {
+                return null;
+            }
+        }
+
+        return $name;
+    }
+
+    /**
+     * The address the customer labels in THIS message — "ঠিকানা: ..."
+     * or "address ..." (the colon is theirs to skip; live customers do).
+     * The capture stops at the end of the sentence, and the candidate
+     * must still LOOK like an address (a comma, or an address word like
+     * বাসা/রোড/road/house) — "address change korte chai" is a request
+     * ABOUT an address, not one.
+     */
+    private function extractLabelledAddress(string $text, ?string $phone): ?string
+    {
+        $t = $phone !== null ? str_replace($phone, '', $text) : $text;
+        if (! preg_match('/(?:ঠিকানা|address)\s*[:：]?\s*(.+?)(?=\.\s|\n|$)/isu', $t, $m)) {
+            return null;
+        }
+        $addr = trim($m[1], " \t.");
+        $looksAddress = str_contains($addr, ',')
+            || (bool) preg_match('/বাসা|রোড|হোল্ডিং|থানা|জেলা|সেক্টর|ব্লক|গ্রাম|\broad\b|\bhouse\b|\bsector\b|\bblock\b|\bdistrict\b/iu', $addr);
+        if (! $looksAddress || mb_strlen($addr) < 8) {
+            return null;
+        }
+
+        return $addr;
+    }
+
+    /**
+     * Is this contact field usable for a NEW order flow? A field counts
+     * when it is on the record — UNLESS an order already consumed it
+     * (see consumeCollectedDetails): details a completed order used up
+     * are never silently reused for the next order; they count again
+     * only when the customer states them in a later message, which
+     * captureContactFromText marks fresh. The values themselves stay
+     * on the record (the order-status lookup and the WhatsApp channel
+     * identity both read the phone), they just stop being a silent
+     * answer to "do we have the details?".
+     */
+    private function detailCollected(Conversation $conversation, string $field): bool
+    {
+        $value = $field === 'phone' ? $conversation->customer_phone : $conversation->customer_address;
+        if (empty($value)) {
+            return false;
+        }
+        $state = (array) ($conversation->state_data ?? []);
+        if (! empty($state['details_consumed'])) {
+            return (bool) (($state['details_fresh'] ?? [])[$field] ?? false);
+        }
+
+        return true;
+    }
+
+    /** Mark a field the customer just (re)stated as fresh for the next order flow. */
+    private function markDetailFresh(Conversation $conversation, string $field): bool
+    {
+        $state = (array) ($conversation->state_data ?? []);
+        if (empty($state['details_consumed'])) {
+            return false;
+        }
+        $fresh = (array) ($state['details_fresh'] ?? []);
+        if (! empty($fresh[$field])) {
+            return false;
+        }
+        $fresh[$field] = true;
+        $state['details_fresh'] = $fresh;
+        $conversation->state_data = $state;
+
+        return true;
+    }
+
+    /**
      * Universal contact capture: scan EVERY inbound customer message
-     * for contact details and persist what the conversation is still
-     * missing. Until now this only happened inside the guided
-     * collection flow, so a customer who sent their phone (and
-     * address) inside the very message that expressed order intent
-     * was asked for the number again, the details were never saved,
-     * and a later order with that phone could not be linked back to
-     * the conversation. A number already on the record is never
-     * overwritten. The address is read from the same message that
-     * carries the number (the collection flow's blob rule): when the
-     * message labels it ("ঠিকানা: ..."), only that part is kept.
+     * for contact details and persist them. Until batch 1 this only
+     * happened inside the guided collection flow; batch 2 fixes the
+     * PRECEDENCE: a detail stated explicitly in the CURRENT message
+     * always wins over what the record already holds. Live 2026-11-25:
+     * a confirm message carrying a new name, phone and address was
+     * summarised with the phone and address a DIFFERENT order had left
+     * on the days-old thread, because capture only ever filled empty
+     * fields and never read a name at all. Labelled details (নাম /
+     * Amar nam, ঠিকানা / address) are read from the labels; the blob
+     * rule (the rest of a message that carries the phone) still fills
+     * an address gap when nothing is labelled.
      */
     public function captureContactFromText(Conversation $conversation, string $text): void
     {
-        $phone = $this->extractPhone($text);
-        if ($phone === null) {
-            return;
-        }
+        $norm = $this->guard->normalizeDigits($text);
         $changed = false;
-        if (empty($conversation->customer_phone)) {
-            $conversation->customer_phone = $phone;
+
+        $name = $this->extractName($norm);
+        if ($name !== null && $name !== (string) $conversation->customer_name) {
+            $conversation->customer_name = $name;
             $changed = true;
         }
-        if (empty($conversation->customer_address)) {
-            // Same digit-normalised strip as the collection flow: the
-            // customer may have typed the number in Bangla digits.
-            $rest = trim(str_replace($phone, '', $this->guard->normalizeDigits($text)));
-            if (preg_match('/(?:ঠিকানা|address)\s*[:：]\s*(.+)$/isu', $rest, $m)) {
-                $addr = trim($m[1]);
-            } else {
-                $addr = trim((string) preg_replace('/^(ঠিকানা|address)\s*[:：]?\s*/iu', '', $rest));
+
+        $phone = $this->extractPhone($text);
+        if ($phone !== null) {
+            if ($phone !== (string) $conversation->customer_phone) {
+                $conversation->customer_phone = $phone;
+                $changed = true;
             }
+            if ($this->markDetailFresh($conversation, 'phone')) {
+                $changed = true;
+            }
+        }
+
+        $labelled = $this->extractLabelledAddress($norm, $phone);
+        if ($labelled !== null) {
+            if ($labelled !== (string) $conversation->customer_address) {
+                $conversation->customer_address = $labelled;
+                $changed = true;
+            }
+            if ($this->markDetailFresh($conversation, 'address')) {
+                $changed = true;
+            }
+        } elseif (empty($conversation->customer_address) && $phone !== null) {
+            // Blob rule: the address rides in the same message as the
+            // number, unlabelled — the leftover text after the number
+            // (and after the name the customer labelled) is the address
+            // when it looks like one.
+            $rest = trim(str_replace($phone, '', $norm));
+            if ($name !== null) {
+                $rest = trim(str_replace($name, '', $rest));
+            }
+            $addr = trim((string) preg_replace('/^(ঠিকানা|address)\s*[:：]?\s*/iu', '', $rest));
             $looksAddress = str_contains($addr, ',')
                 || mb_strlen($addr) >= 15
                 || (bool) preg_match('/বাসা|রোড|হোল্ডিং|থানা|জেলা|সেক্টর|ব্লক|গ্রাম/u', $addr);
             if ($looksAddress && mb_strlen($addr) >= 8) {
                 $conversation->customer_address = $addr;
                 $changed = true;
+                if ($this->markDetailFresh($conversation, 'address')) {
+                    $changed = true;
+                }
             }
         }
         if (! $changed) {
@@ -1051,6 +1306,33 @@ class RuleBrainService
             app(StageService::class)->noteContactShared($conversation);
         } catch (\Throwable) {
         }
+    }
+
+    /**
+     * An order was just created from this conversation's summary
+     * (MessagesController::approveDraft is the one creation path):
+     * close the flow out. The negotiation is over (no standing offer),
+     * the cart and any half-finished collection are cleared, and the
+     * collected name/phone/address are marked CONSUMED — they stay on
+     * the record for the order-status lookup and the channel identity,
+     * but a later order flow in this thread must ask again (or the
+     * customer re-states them) instead of silently reusing the
+     * previous order's details.
+     */
+    public function consumeCollectedDetails(Conversation $conversation, ?int $orderId = null): void
+    {
+        $state = (array) ($conversation->state_data ?? []);
+        $state['details_consumed'] = true;
+        $state['details_fresh'] = ['phone' => false, 'address' => false];
+        if ($orderId !== null) {
+            $state['last_order_id'] = $orderId;
+        }
+        unset($state['collect'], $state['cart'], $state['floor_repeats']);
+        $conversation->state_data = $state;
+        $conversation->state = null;
+        $conversation->neg_step = 0;
+        $conversation->neg_offer = null;
+        $conversation->save();
     }
 
     /** A short yes/no answer, or null when the message is neither. */
@@ -1130,27 +1412,34 @@ class RuleBrainService
             }
         }
 
-        // A phone number anywhere in the message counts, whatever step we are on.
+        // A phone number anywhere in the message counts, whatever step
+        // we are on — and it OVERRIDES the record: the number a customer
+        // types while ordering is this order's number, even when an
+        // older one is still on the conversation (batch 2 precedence).
         $phone = $this->extractPhone($text);
-        if ($phone !== null && empty($conversation->customer_phone)) {
+        if ($phone !== null) {
             $conversation->customer_phone = $phone;
+            $this->markDetailFresh($conversation, 'phone');
         }
         // Strip the number from the DIGIT-NORMALISED text: the customer may
         // have typed it in Bangla digits while $phone is Latin — replacing
         // in the raw text would leave the whole message standing as "rest"
         // and it would be misread as an address.
         $rest = trim(str_replace($phone ?? '~~~', '', $this->guard->normalizeDigits($text)));
-        if (empty($conversation->customer_address) && ($step === 'address' || $phone !== null)) {
+        if ($step === 'address' || ($phone !== null && ! $this->detailCollected($conversation, 'address'))) {
             $addr = trim((string) preg_replace('/^(ঠিকানা|address)\s*[:：]?\s*/iu', '', $rest));
-            // When the address step was asked, any real answer counts. In a
-            // blob message, the leftover text must LOOK like an address —
-            // "আমার নম্বর" after the number is not one.
+            // When the address step was asked, any real answer counts —
+            // and it overrides a stale stored address for the same
+            // precedence reason. In a blob message, the leftover text
+            // must LOOK like an address — "আমার নম্বর" after the number
+            // is not one.
             $looksAddress = $step === 'address'
                 || str_contains($addr, ',')
                 || mb_strlen($addr) >= 15
                 || (bool) preg_match('/বাসা|রোড|হোল্ডিং|থানা|জেলা|সেক্টর|ব্লক|গ্রাম/u', $addr);
             if ($looksAddress && mb_strlen($addr) >= 8) {
                 $conversation->customer_address = $addr;
+                $this->markDetailFresh($conversation, 'address');
             }
         }
         $conversation->save();
@@ -1162,10 +1451,10 @@ class RuleBrainService
         }
 
         $missing = [];
-        if (empty($conversation->customer_phone)) {
+        if (! $this->detailCollected($conversation, 'phone')) {
             $missing[] = 'phone';
         }
-        if (empty($conversation->customer_address)) {
+        if (! $this->detailCollected($conversation, 'address')) {
             $missing[] = 'address';
         }
 
@@ -1176,6 +1465,13 @@ class RuleBrainService
             $conversation->state_data = $state;
             $conversation->save();
             if (!$product) {
+                // The product vanished mid-collection: never a silent
+                // drop (batch 2's no-silence invariant) — a human takes
+                // the thread and the handover is on the record.
+                $conversation->needs_human = true;
+                $conversation->save();
+                $this->log($biz, 'handed_human', $conversation->customer_name . ' — collection product no longer exists', null, $conversation);
+
                 return null;
             }
             $variant = !empty($collect['variant_id']) ? \App\Models\ProductVariant::find($collect['variant_id']) : null;
@@ -1432,7 +1728,27 @@ class RuleBrainService
             $m->save();
         }
 
-        return $this->handleIncoming($conversation, $text, ['prestored_ids' => $pending->pluck('id')->all()]);
+        // The no-silence net (brain fix batch 2): the burst is now
+        // CLAIMED, so if handling produces neither an outgoing message
+        // nor a single activity row, the customer's message would
+        // vanish without a trace — claimed, unanswered and unlogged
+        // (the live 15:04 bargain push). Whatever path stayed quiet,
+        // the miss lands on the record here so staff can see and mine
+        // it. Paths that deliberately stay silent (spam, handovers,
+        // media) all log their own row and never trip this net.
+        $activityBefore = (int) (AiActivity::where('conversation_id', $conversation->id)->max('id') ?? 0);
+        $result = $this->handleIncoming($conversation, $text, ['prestored_ids' => $pending->pluck('id')->all()]);
+        if ($result === null) {
+            $answered = ChatMessage::where('conversation_id', $conversation->id)
+                ->where('direction', 'out')->where('id', '>', $lastOutId)->exists();
+            $logged = AiActivity::where('conversation_id', $conversation->id)
+                ->where('id', '>', $activityBefore)->exists();
+            if (! $answered && ! $logged) {
+                $this->log((int) $conversation->business_id, 'unanswered', $conversation->customer_name . ' — message produced no reply, draft or logged handover', null, $conversation);
+            }
+        }
+
+        return $result;
     }
 
     public function handleIncoming(Conversation $conversation, string $text, array $opts = []): ?ChatMessage
@@ -1476,6 +1792,11 @@ class RuleBrainService
         if ($this->blocklistSilences($conversation)) {
             return null;
         }
+
+        // A message that explicitly names another product switches the
+        // conversation to it (with the negotiation reset) BEFORE any
+        // intent or rule reads the old product's state.
+        $this->switchProductIfNamed($conversation, $text);
 
         $rule = $this->matchRule($biz, $text, $conversation->channel, $conversation);
         $intent = $this->detectIntent($text, $conversation);
@@ -1674,6 +1995,10 @@ class RuleBrainService
             $meta = ['out_of_stock' => true];
         } elseif ($rule && $rule->match_text === 'bargain') {
             if (!$product) {
+                // Never silent (batch 2): the burst was already claimed,
+                // so an unlogged return would lose the message for good.
+                $this->log($biz, 'unanswered', $conversation->customer_name . ' — bargain message with no product in focus', $rule, $conversation);
+
                 return null;
             }
             $quote = $this->negotiation->quote($conversation, $product, $this->namedAmount($text));
@@ -1714,6 +2039,8 @@ class RuleBrainService
             }
         } elseif ($rule && $rule->match_text === 'order_intent') {
             if (!$product) {
+                $this->log($biz, 'unanswered', $conversation->customer_name . ' — order message with no product in focus', $rule, $conversation);
+
                 return null;
             }
             $o = $this->orderTaking($conversation, $product, $variant, $biz, $agreedNow);
@@ -1744,6 +2071,8 @@ class RuleBrainService
             }
             $slottedBody = $this->buildReply($rule, $product, $biz, true, $this->honorific($biz, $conversation->customer_name));
             if (trim($slottedBody) === '') {
+                $this->log($biz, 'unanswered', $conversation->customer_name . ' — matched rule has an empty reply template', $rule, $conversation);
+
                 return null;
             }
             if ($rule->match_text === 'stock' && $product && ($this->focusAvailable($product, $variant) ?? 1) <= 0) {
@@ -1785,6 +2114,8 @@ class RuleBrainService
                 $slottedBody = (string) $knowledge->body;
                 $meta = ['knowledge_id' => $knowledge->id];
             } elseif (!$product) {
+                $this->log($biz, 'unanswered', $conversation->customer_name . ' — no rule matched and no product in focus', null, $conversation);
+
                 return null;
             } else {
                 // Draft from the product description; a human always checks

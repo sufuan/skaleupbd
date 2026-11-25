@@ -267,7 +267,7 @@ class MessagesController extends Controller
                     $name = 'Karim Sheikh';
                 }
                 try {
-                    $orders->create((int) $message->business_id, [
+                    $order = $orders->create((int) $message->business_id, [
                         'customer_name' => $name,
                         'customer_phone' => $c->customer_phone ?: '01712345678',
                         'customer_address' => $c->customer_address,
@@ -283,6 +283,13 @@ class MessagesController extends Controller
                 } catch (\App\Exceptions\InsufficientTokensException $e) {
                     return back()->with('error', $e->getMessage());
                 }
+
+                // The order consumed the collected details (brain fix
+                // batch 2): the conversation's negotiation closes and
+                // its name/phone/address stop counting for the NEXT
+                // order flow, so a later purchase in this thread asks
+                // again instead of silently reusing this order's data.
+                $this->brain->consumeCollectedDetails($c, (int) $order->id);
 
                 if (! $sentOk) {
                     return back()->with('error', __('Order created, but the confirmation message could not be sent - Meta did not accept it: :error', ['error' => $sendErr]));
