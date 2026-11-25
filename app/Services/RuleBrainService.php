@@ -1339,6 +1339,16 @@ class RuleBrainService
             return null;
         }
         $addr = trim($m[1], " \t.");
+        // The address segment ends where the NEXT labelled field
+        // begins (batch 6): "address House 10, Dhaka, phone 01…,
+        // amar nam Karim" — the phone digits are already stripped
+        // above, but without this cut the trailing segments' words
+        // ("phone , amar nam Karim") stayed inside the address. The
+        // label must follow a separator, so a word that merely
+        // CONTAINS a label fragment (সুনামগঞ্জ) never cuts.
+        if (preg_match('/[,;\n]\s*(?:আমার\s+নাম|নাম|ফোন|মোবাইল|amar\s+nam|amr\s+nam|amar\s+name|my\s+name|\bname\b|\bphone\b|\bmobile\b)\s*[:ঃ]?/iu', $addr, $mm, PREG_OFFSET_CAPTURE)) {
+            $addr = trim(substr($addr, 0, $mm[0][1]), " \t.");
+        }
         $looksAddress = str_contains($addr, ',')
             || (bool) preg_match('/বাসা|রোড|হোল্ডিং|থানা|জেলা|সেক্টর|ব্লক|গ্রাম|\broad\b|\bhouse\b|\bsector\b|\bblock\b|\bdistrict\b/iu', $addr);
         if (! $looksAddress || mb_strlen($addr) < 8) {
@@ -1346,6 +1356,34 @@ class RuleBrainService
         }
 
         return $addr;
+    }
+
+    /**
+     * Clean a leftover-text address candidate (batch 6): the text
+     * that remains of a message once the phone digits are removed
+     * can still carry the OTHER fields' segments — the labelled
+     * name ("Amar nam Karim, …") and the bare label words ("phone ,")
+     * — and storing it whole was the batch-6 defect. Remove the
+     * stated name's value and every field label, tidy the separators
+     * the removals leave behind, and return null when nothing that
+     * could be an address remains. Label words are removed only in
+     * their label forms (a bare নাম is left alone — সুনামগঞ্জ is a
+     * district, not a label), so a genuine unlabelled address passes
+     * through untouched.
+     */
+    private function cleanAddressCandidate(string $candidate, ?string $name): ?string
+    {
+        $addr = $candidate;
+        if ($name !== null && $name !== '') {
+            $addr = str_replace($name, '', $addr);
+        }
+        $addr = (string) preg_replace('/আমার\s+নাম\s*[:ঃ]?\s*|নাম\s*[:ঃ]\s*|ঠিকানা\s*[:：]?\s*|ফোন\s*[:ঃ]?\s*|মোবাইল\s*[:ঃ]?\s*|নম্বর\s*[:ঃ]\s*/u', '', $addr);
+        $addr = (string) preg_replace('/\b(?:amar\s+nam|amr\s+nam|amar\s+name|my\s+name(?:\s+is)?|name|phone|mobile|address)\b\s*[:：]?\s*|\bnumber\s*[:：]\s*/iu', '', $addr);
+        $addr = trim((string) preg_replace('/\s+/', ' ', $addr));
+        $addr = trim((string) preg_replace('/,(\s*,)+/', ',', $addr), " \t.");
+        $addr = trim($addr, ',');
+
+        return $addr === '' ? null : trim($addr, " \t.");
     }
 
     /**
@@ -1454,17 +1492,17 @@ class RuleBrainService
         } elseif (empty($conversation->customer_address) && $phone !== null) {
             // Blob rule: the address rides in the same message as the
             // number, unlabelled — the leftover text after the number
-            // (and after the name the customer labelled) is the address
-            // when it looks like one.
+            // is the address when it looks like one. The leftover is
+            // cleaned of the other fields' segments first (batch 6):
+            // a name+phone message with NO address in it must leave
+            // the address empty, not store "Amar nam , phone ," as
+            // one.
             $rest = trim(str_replace($phone, '', $norm));
-            if ($name !== null) {
-                $rest = trim(str_replace($name, '', $rest));
-            }
-            $addr = trim((string) preg_replace('/^(ঠিকানা|address)\s*[:：]?\s*/iu', '', $rest));
-            $looksAddress = str_contains($addr, ',')
+            $addr = $this->cleanAddressCandidate($rest, $name);
+            $looksAddress = $addr !== null && (str_contains($addr, ',')
                 || mb_strlen($addr) >= 15
-                || (bool) preg_match('/বাসা|রোড|হোল্ডিং|থানা|জেলা|সেক্টর|ব্লক|গ্রাম/u', $addr);
-            if ($looksAddress && mb_strlen($addr) >= 8) {
+                || (bool) preg_match('/বাসা|রোড|হোল্ডিং|থানা|জেলা|সেক্টর|ব্লক|গ্রাম/u', $addr));
+            if ($addr !== null && $looksAddress && mb_strlen($addr) >= 8) {
                 $conversation->customer_address = $addr;
                 $changed = true;
                 if ($this->markDetailFresh($conversation, 'address')) {
@@ -1923,17 +1961,30 @@ class RuleBrainService
         // and it would be misread as an address.
         $rest = trim(str_replace($phone ?? '~~~', '', $this->guard->normalizeDigits($text)));
         if ($sideIntent === null && ($step === 'address' || ($phone !== null && ! $this->detailCollected($conversation, 'address')))) {
-            $addr = trim((string) preg_replace('/^(ঠিকানা|address)\s*[:：]?\s*/iu', '', $rest));
-            // When the address step was asked, any real answer counts —
-            // and it overrides a stale stored address for the same
-            // precedence reason. In a blob message, the leftover text
-            // must LOOK like an address — "আমার নম্বর" after the number
-            // is not one.
-            $looksAddress = $step === 'address'
-                || str_contains($addr, ',')
-                || mb_strlen($addr) >= 15
-                || (bool) preg_match('/বাসা|রোড|হোল্ডিং|থানা|জেলা|সেক্টর|ব্লক|গ্রাম/u', $addr);
-            if ($looksAddress && mb_strlen($addr) >= 8) {
+            // A LABELLED address in this message is the address —
+            // exactly its own segment (batch 6). This capture used to
+            // store the raw leftover text instead, overwriting the
+            // clean value captureContactFromText had just stored: a
+            // one-message name+phone+address answer went onto the
+            // record (and into the summary, and the order) as the
+            // whole message with the phone digits blanked.
+            $addr = $this->extractLabelledAddress($norm, $phone);
+            if ($addr === null) {
+                $addr = $this->cleanAddressCandidate($rest, $this->extractName($norm));
+                // When the address step was asked, any real answer
+                // counts — and it overrides a stale stored address
+                // for the same precedence reason. In a blob message,
+                // the leftover text must LOOK like an address —
+                // "আমার নম্বর" after the number is not one.
+                $looksAddress = $addr !== null && ($step === 'address'
+                    || str_contains($addr, ',')
+                    || mb_strlen($addr) >= 15
+                    || (bool) preg_match('/বাসা|রোড|হোল্ডিং|থানা|জেলা|সেক্টর|ব্লক|গ্রাম/u', $addr));
+                if (! $looksAddress) {
+                    $addr = null;
+                }
+            }
+            if ($addr !== null && mb_strlen($addr) >= 8) {
                 $conversation->customer_address = $addr;
                 $this->markDetailFresh($conversation, 'address');
             }
