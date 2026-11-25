@@ -1882,6 +1882,90 @@ class RuleBrainService
     }
 
     /**
+     * A cancellation of the PENDING order flow (brain fix batch 7),
+     * honoured in every pre-order state — collecting, a summary on
+     * the table awaiting confirmation, mid-bargain. Until this batch
+     * the word list lived only inside handleCollect, so a cancel
+     * typed while a summary awaited confirmation fell through the
+     * whole reply chain (the no-rule fallback answered it with an
+     * unrelated price line), the summary stayed confirmable, and a
+     * later "order korte chai" silently placed the very order the
+     * customer had just dropped (live 2026-11-25 18:31: OB300 was
+     * created after "বাদ দিন").
+     *
+     * The guards are batch 5's, unchanged: a message carrying
+     * contact details is collection input, never an exit; one that
+     * asks a price or pushes the ladder is a negotiation, not an
+     * exit; one naming a figure is a counter, not an exit.
+     * Acceptance words are deliberately NOT in the list — a genuine
+     * confirmation of a live summary must still create the order
+     * (batch 3), and this check runs before that hook only for
+     * words that can never mean acceptance.
+     *
+     * Clearing is the full flow close-out: no pending summary, no
+     * collection, no cart, no ladder, no standing offer — and the
+     * details this flow collected are marked consumed (they stay on
+     * the record for the order-status lookup and the channel
+     * identity; they stop counting), so the next "order korte chai"
+     * asks again instead of resurrecting what was cancelled. A
+     * summary still sitting as a seller draft is rejected with it:
+     * the customer killed this summary, so the approval route must
+     * not be able to place the order either.
+     */
+    private function flowCancellation(Conversation $conversation, string $text, string $mode): ?ChatMessage
+    {
+        $state = (array) ($conversation->state_data ?? []);
+        $flowActive = $conversation->state === 'collecting'
+            || ! empty($state['pending_summary'])
+            || (int) $conversation->neg_step >= 1
+            || $conversation->neg_offer !== null;
+        if (! $flowActive) {
+            return null;
+        }
+
+        $norm = $this->guard->normalizeDigits($text);
+        $phoneInMsg = $this->extractPhone($text);
+        $carriesDetails = $phoneInMsg !== null
+            || $this->extractLabelledAddress($norm, $phoneInMsg) !== null
+            || $this->extractName($norm) !== null;
+        if ($carriesDetails || $this->namedAmount($text) !== null) {
+            return null;
+        }
+        $intent = $this->detectIntent($text, $conversation);
+        if ($intent === 'price' || $intent === 'bargain') {
+            return null;
+        }
+
+        $hay = mb_strtolower($text);
+        foreach (['বাদ দেন', 'বাদ দিন', 'থামুন', 'cancel', 'ক্যান্সেল', 'লাগবে না', 'নিব না'] as $w) {
+            if (! str_contains($hay, $w)) {
+                continue;
+            }
+            $pending = (array) ($state['pending_summary'] ?? []);
+            if (! empty($pending['message_id'])) {
+                $summaryMsg = ChatMessage::find((int) $pending['message_id']);
+                if ($summaryMsg) {
+                    // No-op for a summary the customer already has
+                    // (sent); closes the approval route for a draft.
+                    $this->rejectDraft($summaryMsg);
+                }
+            }
+            unset($state['collect'], $state['cart'], $state['floor_repeats'], $state['pending_summary']);
+            $state['details_consumed'] = true;
+            $state['details_fresh'] = ['name' => false, 'phone' => false, 'address' => false];
+            $conversation->state_data = $state;
+            $conversation->state = null;
+            $conversation->neg_step = 0;
+            $conversation->neg_offer = null;
+            $conversation->save();
+
+            return $this->simpleOutgoing($conversation, $this->honorificPrefix((int) $conversation->business_id, $conversation->customer_name) . 'ঠিক আছে, অর্ডারটা রাখা হলো না।', 'collect_cancel', $mode);
+        }
+
+        return null;
+    }
+
+    /**
      * Guided order-data collection. One question at a time; a message that
      * carries several fields at once fills them all; two failed tries at
      * one field hand the conversation to a human. A message carrying no
@@ -1923,27 +2007,15 @@ class RuleBrainService
             }
         }
 
-        // Cancellation exits the flow — but only a message that is a
-        // cancellation and nothing else: one carrying contact details
-        // is an answer, not an exit (an address must never be misread
-        // as one), and one that pushes a price or names a figure is a
-        // negotiation, not an exit. "লাগবে না" / "নিব না" count as
-        // cancellations of the pending order in this state (batch 5);
-        // before, they fell through and were re-asked the question
-        // until the retries handed the thread to a human.
-        $hay = mb_strtolower($text);
-        if (! $carriesDetails && $sideIntent === null && $this->namedAmount($text) === null) {
-            foreach (['বাদ দেন', 'বাদ দিন', 'থামুন', 'cancel', 'ক্যান্সেল', 'লাগবে না', 'নিব না'] as $w) {
-                if (str_contains($hay, $w)) {
-                    $conversation->state = null;
-                    $state['collect'] = null;
-                    unset($state['pending_summary']);
-                    $conversation->state_data = $state;
-                    $conversation->save();
-
-                    return $this->simpleOutgoing($conversation, $this->honorificPrefix($biz, $conversation->customer_name) . 'ঠিক আছে, অর্ডারটা রাখা হলো না।', 'collect_cancel', $mode);
-                }
-            }
+        // Cancellation exits the flow (batch 5; shared since batch 7
+        // with the summary-pending and mid-bargain states — one word
+        // list, one guard set, one state clearing, in
+        // flowCancellation()). handleIncoming already ran it before
+        // dispatching here; this call keeps the contract if
+        // collection is ever entered another way.
+        $cancel = $this->flowCancellation($conversation, $text, $mode);
+        if ($cancel !== null) {
+            return $cancel;
         }
 
         // A phone number anywhere in the message counts, whatever step
@@ -2599,6 +2671,16 @@ class RuleBrainService
             return null;
         }
 
+        // A cancellation ends the pending order flow in EVERY
+        // pre-order state (batch 7) — checked here, before the
+        // collecting dispatch and before the summary-confirmation
+        // hook, so a summary the customer just dropped can never be
+        // confirmed by the next message.
+        $cancel = $this->flowCancellation($conversation, $text, $mode);
+        if ($cancel !== null) {
+            return $cancel;
+        }
+
         if ($conversation->state === 'collecting') {
             return $this->handleCollect($conversation, $text, $mode);
         }
@@ -2612,6 +2694,24 @@ class RuleBrainService
         $confirmation = $this->summaryConfirmation($conversation, $product, $biz, $mode, $rule, $intent, $text);
         if ($confirmation !== null) {
             return $confirmation['message'] ?? null;
+        }
+
+        // A summary is on the table and this message matched NOTHING
+        // the chain knows — no rule, no recognised question. Point at
+        // the pending summary instead of falling through to the
+        // no-rule fallback, which answers with an unrelated price
+        // line about the focused product (batch 7: that fallback is
+        // what answered a cancellation while a summary awaited its
+        // confirmation). The summary stays exactly as confirmable
+        // as it was; the customer is simply told where it stands.
+        $pendingState = (array) ($conversation->state_data ?? []);
+        if (! empty($pendingState['pending_summary']) && $rule === null && $intent !== 'order_status' && ! $unmatchedItem) {
+            $pending = (array) $pendingState['pending_summary'];
+            $body = $this->honorificPrefix($biz, $conversation->customer_name)
+                . 'আপনার অর্ডারের সারাংশটা উপরে দেওয়া আছে — মোট ' . number_format((float) ($pending['total'] ?? 0)) . ' টাকা। '
+                . 'কনফার্ম করতে চাইলে "কনফার্ম" লিখুন, আর অর্ডারটা না নিলে "বাদ দিন" লিখুন।';
+
+            return $this->simpleOutgoing($conversation, $body, 'summary_reminder', $mode, ['summary_message_id' => (int) ($pending['message_id'] ?? 0)]);
         }
 
         $kind = null;
