@@ -3,6 +3,8 @@
 use App\Models\AiRule;
 use App\Models\Business;
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 
 /**
  * Backfill the expanded Master Brain Rule Library (AiRule::catalog)
@@ -19,6 +21,15 @@ return new class extends Migration
 {
     public function up(): void
     {
+        // match_text was created as varchar(255), but keyword rules carry
+        // long comma-separated trigger lists (the longest library def is
+        // 314 chars) and learned rules key on full customer phrasings.
+        // On MySQL the backfill below fails with "Data too long" without
+        // this widen; SQLite never enforced the limit, so widen first.
+        Schema::table('ai_rules', function (Blueprint $table) {
+            $table->text('match_text')->nullable()->change();
+        });
+
         foreach (Business::pluck('id') as $bizId) {
             AiRule::ensureDefaults((int) $bizId);
         }
