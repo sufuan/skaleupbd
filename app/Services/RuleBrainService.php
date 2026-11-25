@@ -744,7 +744,7 @@ class RuleBrainService
             $conversation->state = null;
         }
         $state = (array) ($conversation->state_data ?? []);
-        foreach (['collect', 'cart', 'variant_pending', 'variant_id', 'floor_repeats', 'pending_summary', 'last_order', 'product_clarify', 'qty'] as $key) {
+        foreach (['collect', 'cart', 'variant_pending', 'variant_id', 'floor_repeats', 'pending_summary', 'last_order', 'product_clarify', 'qty', 'qty_offer'] as $key) {
             unset($state[$key]);
         }
         // Details are PER-FLOW (brain fix batch 3): the values a
@@ -1105,9 +1105,9 @@ class RuleBrainService
     }
 
     /**
-     * The variant in focus for this conversation: the one already chosen,
-     * or the one this message names ("L সাইজ", "লালটা"). A new choice is
-     * remembered on the conversation.
+     * The variant in focus for this conversation: the one this message
+     * names ("L সাইজ", "লালটা"), else the one already chosen. A new
+     * choice is remembered on the conversation.
      */
     public function variantFor(Conversation $conversation, Product $product, string $text): ?\App\Models\ProductVariant
     {
@@ -1115,14 +1115,21 @@ class RuleBrainService
         if ($variants->isEmpty()) {
             return null;
         }
-        $state = (array) ($conversation->state_data ?? []);
-        if (!empty($state['variant_id'])) {
-            $chosen = $variants->firstWhere('id', (int) $state['variant_id']);
-            if ($chosen) {
-                return $chosen;
-            }
-        }
-        $hay = mb_strtolower($text);
+        // A variant NAMED in this message wins — over the remembered
+        // choice too (batch 14, finding #13): the remembered choice
+        // used to be returned before the text was ever read, so once
+        // any variant was picked, naming a different one ("M ta den")
+        // switched nothing and the first choice priced, stocked and
+        // summarised the whole flow.
+        // The haystack is normalised for the Bengali definiteness
+        // suffixes first (batch 14, finding #14): "লালটা" / "লালটার"
+        // are the variant লাল wearing its suffix, and the boundary
+        // pattern below reads any Bengali letter after the token as
+        // "still inside a word", so the suffixed form could never
+        // match. Stripping the suffix from haystack words lets the
+        // plain stem match; Latin text is untouched (the suffixes
+        // are Bengali words themselves).
+        $hay = (string) preg_replace('/(টাকে|টার|টা|টি)(?=[\s,\x{0964}।?!]|$)/u', '', mb_strtolower($text));
         foreach ($variants as $v) {
             foreach (preg_split('/[\s:\/,]+/u', mb_strtolower($v->name)) ?: [] as $tok) {
                 $tok = trim($tok);
@@ -1130,16 +1137,36 @@ class RuleBrainService
                     continue;
                 }
                 if (preg_match('/(?<![a-z0-9\x{0980}-\x{09FF}])' . preg_quote($tok, '/') . '(?![a-z0-9\x{0980}-\x{09FF}])/iu', $hay)) {
-                    $state['variant_id'] = $v->id;
-                    $conversation->state_data = $state;
-                    $conversation->save();
+                    $state = (array) ($conversation->state_data ?? []);
+                    if ((int) ($state['variant_id'] ?? 0) !== (int) $v->id) {
+                        $state['variant_id'] = $v->id;
+                        $conversation->state_data = $state;
+                        $conversation->save();
+                    }
 
                     return $v;
                 }
             }
         }
+        // Nothing named: the choice already on the conversation stands.
+        $state = (array) ($conversation->state_data ?? []);
+        if (!empty($state['variant_id'])) {
+            $chosen = $variants->firstWhere('id', (int) $state['variant_id']);
+            if ($chosen) {
+                return $chosen;
+            }
+        }
 
         return null;
+    }
+
+    /** Do this product's variants disagree on price? (batch 14, #15) */
+    private function variantPricesDiffer(Product $product): bool
+    {
+        return $product->activeVariants()
+            ->map(fn (\App\Models\ProductVariant $v) => $v->effectivePrice())
+            ->unique()
+            ->count() > 1;
     }
 
     /** The shop's inside-Dhaka delivery charge (Business Profile). */
@@ -1554,6 +1581,26 @@ class RuleBrainService
     }
 
     /**
+     * Remember the reduced-quantity offer the brain is about to make
+     * (batch 14, finding #18): the insufficient-stock reply ends
+     * "Xটা নিলে বলুন, অর্ডার করে দিচ্ছি" — an explicit yes/no
+     * question — but until this batch nothing recorded that an offer
+     * was standing, so the customer's bare "হ্যাঁ" fell into the
+     * no-rule fallback and the offered order never started. The
+     * offer is product + variant + the available count, and
+     * handleIncoming's yes/no hook answers it. It dies with its
+     * flow: a product switch, a cancellation, a placed order, or a
+     * summary superseding it all clear it.
+     */
+    private function noteQtyOffer(Conversation $conversation, Product $product, ?\App\Models\ProductVariant $variant, int $avail): void
+    {
+        $state = (array) ($conversation->state_data ?? []);
+        $state['qty_offer'] = ['product_id' => (int) $product->id, 'variant_id' => $variant?->id, 'qty' => max(1, $avail)];
+        $conversation->state_data = $state;
+        $conversation->save();
+    }
+
+    /**
      * The honest answer when the flow asks for more pieces than the
      * shelf holds (batch 13): how many ARE available, and an
      * invitation to take those — never a summary, never a silently
@@ -1828,7 +1875,9 @@ class RuleBrainService
             // A new collection supersedes any summary an earlier flow
             // left pending: its data is no longer what this flow is
             // confirming, so it must not stay confirmable (batch 3).
-            unset($state['pending_summary']);
+            // A standing quantity offer dies with it for the same
+            // reason (batch 14).
+            unset($state['pending_summary'], $state['qty_offer']);
             $conversation->state = 'collecting';
             $conversation->state_data = $state;
             $conversation->save();
@@ -1847,6 +1896,8 @@ class RuleBrainService
         $wantQty = $this->flowQty($conversation);
         $availQty = $this->focusAvailable($product, $variant);
         if ($wantQty > 1 && $availQty !== null && $availQty < $wantQty) {
+            $this->noteQtyOffer($conversation, $product, $variant, (int) $availQty);
+
             return ['slottedBody' => $this->insufficientQtyBody($biz, $conversation->customer_name, $product, $variant, $wantQty, (int) $availQty), 'kind' => 'insufficient_stock', 'meta' => ['insufficient_stock' => true, 'qty' => $wantQty, 'available' => (int) $availQty], 'body' => null];
         }
         $summary = $this->buildSummary($conversation, $product, $variant);
@@ -2319,7 +2370,7 @@ class RuleBrainService
                 ];
             }
         }
-        unset($state['collect'], $state['cart'], $state['floor_repeats'], $state['pending_summary'], $state['qty']);
+        unset($state['collect'], $state['cart'], $state['floor_repeats'], $state['pending_summary'], $state['qty'], $state['qty_offer']);
         $conversation->state_data = $state;
         $conversation->state = null;
         $conversation->neg_step = 0;
@@ -2342,6 +2393,10 @@ class RuleBrainService
         $total = (float) ($meta['total'] ?? 0);
         $qty = (int) ($meta['qty'] ?? 1);
         $state = (array) ($conversation->state_data ?? []);
+        // A summary on the table supersedes a standing reduced-
+        // quantity offer (batch 14): the summary is now the thing
+        // a bare "হ্যাঁ" confirms.
+        unset($state['qty_offer']);
         $state['pending_summary'] = [
             'message_id' => (int) $msg->id,
             'product_id' => (int) ($meta['product_id'] ?? 0),
@@ -2444,6 +2499,66 @@ class RuleBrainService
      *    repeat confirmation gets that order's status.
      */
     /**
+     * A variant change while a summary is on the table (batch 14,
+     * finding #13): the customer named a DIFFERENT variant of the
+     * summarised product, so the old summary is retired (a draft is
+     * rejected, closing the seller approval route to the stale
+     * variant) and a fresh summary at the new variant takes its
+     * place — or the honest stock answer when the new variant
+     * cannot cover the order. The twin of qtyChangeRerender (batch
+     * 13): a message amending the order is never a confirmation of
+     * the summary it amends. Runs before the confirmation hook.
+     */
+    private function variantChangeRerender(Conversation $conversation, string $text, string $mode): ?ChatMessage
+    {
+        $state = (array) ($conversation->state_data ?? []);
+        $pending = (array) ($state['pending_summary'] ?? []);
+        if ($pending === [] || empty($pending['message_id'])) {
+            return null;
+        }
+        $biz = (int) $conversation->business_id;
+        $product = Product::where('business_id', $biz)->find((int) ($pending['product_id'] ?? 0));
+        if ($product === null || ! $product->hasVariants()) {
+            return null;
+        }
+        $named = $this->variantFor($conversation, $product, $text);
+        if ($named === null || (int) ($pending['variant_id'] ?? 0) === (int) $named->id) {
+            return null;
+        }
+        $oldMsg = ChatMessage::find((int) $pending['message_id']);
+        if ($oldMsg !== null) {
+            $this->rejectDraft($oldMsg);
+        }
+        unset($state['pending_summary']);
+        $conversation->state_data = $state;
+        $conversation->save();
+        $avail = $this->focusAvailable($product, $named);
+        if (($avail ?? 1) <= 0) {
+            return $this->simpleOutgoing($conversation, $this->outOfStockBody($biz, $conversation->customer_name, $product, $named), 'out_of_stock', $mode, ['out_of_stock' => true]);
+        }
+        $want = $this->flowQty($conversation);
+        if ($avail !== null && $avail < $want) {
+            $this->noteQtyOffer($conversation, $product, $named, (int) $avail);
+
+            return $this->simpleOutgoing($conversation, $this->insufficientQtyBody($biz, $conversation->customer_name, $product, $named, $want, (int) $avail), 'insufficient_stock', $mode, ['insufficient_stock' => true, 'qty' => $want, 'available' => (int) $avail]);
+        }
+        $summary = $this->buildSummary($conversation, $product, $named);
+        $msg = ChatMessage::create([
+            'business_id' => $biz,
+            'conversation_id' => $conversation->id,
+            'direction' => 'out',
+            'sender' => 'ai',
+            'body' => $summary['body'],
+            'status' => $mode === 'full_auto' ? 'sent' : 'draft',
+            'meta' => array_merge($summary['meta'], ['kind' => 'order_summary', 'variant_changed' => true]),
+        ]);
+        $this->markSummaryPending($conversation, $msg, $named);
+        $this->log($biz, $msg->status === 'sent' ? 'auto_sent' : 'draft_created', $conversation->customer_name . ' — Order summary (variant changed to ' . $named->name . ')', null, $conversation);
+
+        return $msg;
+    }
+
+    /**
      * A quantity change while a summary is on the table (batch 13):
      * the customer said how many they want and it differs from the
      * summarised quantity, so the old summary is retired (a draft is
@@ -2482,6 +2597,8 @@ class RuleBrainService
         $conversation->save();
         $avail = $this->focusAvailable($product, $variant);
         if ($avail !== null && $avail < $want) {
+            $this->noteQtyOffer($conversation, $product, $variant, (int) $avail);
+
             return $this->simpleOutgoing($conversation, $this->insufficientQtyBody($biz, $conversation->customer_name, $product, $variant, $want, (int) $avail), 'insufficient_stock', $mode, ['insufficient_stock' => true, 'qty' => $want, 'available' => (int) $avail]);
         }
         $summary = $this->buildSummary($conversation, $product, $variant);
@@ -2571,6 +2688,7 @@ class RuleBrainService
                 unset($state['pending_summary']);
                 $conversation->state_data = $state;
                 $conversation->save();
+                $this->noteQtyOffer($conversation, $product, $pVariant, (int) $pendAvail);
                 $msg = $this->simpleOutgoing($conversation, $this->insufficientQtyBody($biz, $conversation->customer_name, $product, $pVariant, $pendQty, (int) $pendAvail), 'insufficient_stock', $mode, ['insufficient_stock' => true, 'qty' => $pendQty, 'available' => (int) $pendAvail]);
 
                 return ['message' => $msg];
@@ -2827,7 +2945,7 @@ class RuleBrainService
                     $this->rejectDraft($summaryMsg);
                 }
             }
-            unset($state['collect'], $state['cart'], $state['floor_repeats'], $state['pending_summary'], $state['qty']);
+            unset($state['collect'], $state['cart'], $state['floor_repeats'], $state['pending_summary'], $state['qty'], $state['qty_offer']);
             $state['details_consumed'] = true;
             $state['details_fresh'] = ['name' => false, 'phone' => false, 'address' => false];
             $conversation->state_data = $state;
@@ -2960,6 +3078,28 @@ class RuleBrainService
         }
         $conversation->save();
 
+        // A variant named mid-collection replaces the one the
+        // collection started with (batch 14, finding #13): the
+        // collection's frozen variant_id used to be whatever
+        // orderTaking recorded, so "M ta diben" between the collect
+        // question and the details changed nothing and the summary
+        // came out for the first variant. variantFor reads the
+        // message (a named variant wins over the remembered
+        // choice); the collection follows it, and the local state
+        // is re-read afterwards because variantFor persists its
+        // own copy.
+        $collectProduct = Product::where('business_id', $biz)->find($collect['product_id'] ?? $conversation->product_id);
+        if ($collectProduct !== null && $collectProduct->hasVariants()) {
+            $namedVariant = $this->variantFor($conversation, $collectProduct, $text);
+            if ($namedVariant !== null && (int) ($collect['variant_id'] ?? 0) !== (int) $namedVariant->id) {
+                $collect['variant_id'] = $namedVariant->id;
+                $state = (array) ($conversation->state_data ?? []);
+                $state['collect'] = $collect;
+                $conversation->state_data = $state;
+                $conversation->save();
+            }
+        }
+
         // Sales Growth: a captured phone/address is stage-2 evidence.
         try {
             app(StageService::class)->noteContactShared($conversation);
@@ -3004,6 +3144,8 @@ class RuleBrainService
             $wantQty = $this->flowQty($conversation);
             $availQty = $this->focusAvailable($product, $variant);
             if ($wantQty > 1 && $availQty !== null && $availQty < $wantQty) {
+                $this->noteQtyOffer($conversation, $product, $variant, (int) $availQty);
+
                 return $this->simpleOutgoing($conversation, $this->insufficientQtyBody($biz, $conversation->customer_name, $product, $variant, $wantQty, (int) $availQty), 'insufficient_stock', $mode, ['insufficient_stock' => true, 'qty' => $wantQty, 'available' => (int) $availQty]);
             }
             $summary = $this->buildSummary($conversation, $product, $variant);
@@ -3544,10 +3686,16 @@ class RuleBrainService
         // clarify, or the not-available answer when a product is in
         // focus.)
         $clarifyWith = null;
+        $resolutionType = null;
         if ($pendingPick !== null) {
             $product = $pendingPick;
+            // A pick from a clarification is the customer naming the
+            // product themselves — an establishment, like an explicit
+            // mention (batch 14, Step 2 slot-binding reads this).
+            $resolutionType = 'explicit';
         } else {
             $resolution = $this->resolveProduct($conversation, $text, $rule);
+            $resolutionType = $resolution['type'];
             if ($resolution['type'] === 'category_multi') {
                 $clarifyWith = $resolution['candidates'];
             }
@@ -3577,6 +3725,9 @@ class RuleBrainService
                 }
                 if (!$product && $stage2['product']) {
                     $product = $stage2['product'];
+                    // The classifier's suggestion is a guess, not an
+                    // establishment (batch 14, Step 2 slot-binding).
+                    $resolutionType = 'guessed';
                     $conversation->product_id = $product->id;
                     $conversation->focus_at = now();
                     $conversation->save();
@@ -3668,7 +3819,16 @@ class RuleBrainService
 
         $variant = $product ? $this->variantFor($conversation, $product, $text) : null;
         $needsVariant = $product && $variant === null && $product->hasVariants()
-            && $rule && in_array($rule->match_text, ['stock', 'order_intent'], true);
+            && $rule && (in_array($rule->match_text, ['stock', 'order_intent'], true)
+                // A price question needs the variant too when the
+                // variants disagree on price (batch 14, finding
+                // #15): there is no single figure to quote, and the
+                // product's base price is not any variant's price.
+                // When every variant shares one price the question
+                // is answered directly with that figure (the slot
+                // override in the reply tail), so no question is
+                // needed.
+                || ($rule->match_text === 'price' && $this->variantPricesDiffer($product)));
 
         // A confirmation that names a figure at/above the floor settles
         // the negotiation at THAT figure before order taking reads
@@ -3807,6 +3967,70 @@ class RuleBrainService
             if ($conversation->state === 'collecting') {
                 return $this->handleCollect($conversation, $text, $mode);
             }
+        }
+
+        // A standing reduced-quantity offer gets its yes/no first
+        // (batch 14, finding #18): the insufficient-stock reply
+        // asked "Xটা নিলে বলুন" and this message may be the bare
+        // answer. A yes takes the offered count into order taking
+        // for the offered product (the chain below runs it as an
+        // order intent); a no closes the offer with a short
+        // acknowledgement. An answer naming a DIFFERENT product
+        // kills the offer instead — the switch at the top of this
+        // method already moved the focus — and a message that is
+        // not a yes/no leaves the offer standing, exactly like the
+        // photo confirmation's pending question.
+        $offerState = (array) ($conversation->state_data ?? []);
+        if (! empty($offerState['qty_offer']) && empty($offerState['pending_summary'])) {
+            $offer = (array) $offerState['qty_offer'];
+            $offerProduct = Product::where('business_id', $biz)->find((int) ($offer['product_id'] ?? 0));
+            $namedOther = $this->explicitProductFor($biz, $text);
+            if ($offerProduct === null || ($namedOther !== null && (int) $namedOther->id !== (int) $offerProduct->id)) {
+                unset($offerState['qty_offer']);
+                $conversation->state_data = $offerState;
+                $conversation->save();
+            } else {
+                $offerAnswer = $this->yesNo($text);
+                if ($offerAnswer === false) {
+                    unset($offerState['qty_offer']);
+                    $conversation->state_data = $offerState;
+                    $conversation->save();
+
+                    return $this->simpleOutgoing($conversation, $this->honorificPrefix($biz, $conversation->customer_name) . 'ঠিক আছে, কোনো সমস্যা নেই। অন্য কিছু জানতে চাইলে বলুন।', 'qty_offer_declined', $mode);
+                }
+                if ($offerAnswer === true) {
+                    // The repeat-confirmation guard must not swallow
+                    // this yes: it answers the offer, not the last
+                    // order, so that memory is cleared as the new
+                    // flow starts (the same reason batch 9 clears it
+                    // when the order it names is dead).
+                    unset($offerState['qty_offer'], $offerState['last_order']);
+                    $offerState['qty'] = max(1, (int) ($offer['qty'] ?? 1));
+                    $conversation->state_data = $offerState;
+                    $conversation->product_id = $offerProduct->id;
+                    $conversation->focus_at = now();
+                    $conversation->save();
+                    $product = $offerProduct;
+                    $variant = ! empty($offer['variant_id'])
+                        ? \App\Models\ProductVariant::find((int) $offer['variant_id'])
+                        : $this->variantFor($conversation, $offerProduct, $text);
+                    $intent = 'order_intent';
+                    $rule = AiRule::where('business_id', $biz)->where('active', true)
+                        ->where('trigger_type', 'intent')->where('match_text', 'order_intent')
+                        ->where(fn ($q) => $q->whereNull('channel')->orWhere('channel', $conversation->channel))
+                        ->first() ?? $rule;
+                }
+            }
+        }
+
+        // A variant change with a summary on the table re-renders
+        // the summary at the new variant (batch 14) — before the
+        // confirmation hook, like the quantity change below, so a
+        // "confirm" can never create an order for the variant the
+        // customer just replaced.
+        $variantChange = $this->variantChangeRerender($conversation, $text, $mode);
+        if ($variantChange !== null) {
+            return $variantChange;
         }
 
         // A quantity change with a summary on the table re-renders
@@ -3990,6 +4214,27 @@ class RuleBrainService
                 }
             }
             $slottedBody = $this->buildReply($rule, $product, $biz, true, $this->honorific($biz, $conversation->customer_name));
+            if ($product !== null
+                && in_array($resolutionType, ['scored', 'guessed'], true)
+                && ! in_array($rule->match_text, ['price', 'stock', 'bargain', 'order_intent'], true)
+                && str_contains((string) ($rule->reply_template ?? ''), '{product}')) {
+                // Slot-binding (batch 14, Step 2 remainder): a rule
+                // whose template speaks about {product} may only
+                // name a product the customer ESTABLISHED — named
+                // outright, picked from a clarification, or the
+                // fresh focus. A merely scored overlap (a shared
+                // name word) or the classifier's guess is not an
+                // establishment, so the product slots are struck
+                // from the slotted body here, where nothing
+                // downstream can refill them: the reply goes out
+                // product-free, or — when the template also carries
+                // the price — as the broken-figure clarification
+                // below. The four product intents keep batch 11's
+                // resolution semantics, scored winner included:
+                // there the scored match IS the resolution step's
+                // own answer.
+                $slottedBody = str_replace(['⟦product⟧', '⟦price⟧', '⟦stock⟧'], ['পণ্যটা', '', ''], $slottedBody);
+            }
             if ($rule->match_text === 'delivery') {
                 // A delivery-charge question that names its area is
                 // answered with THAT area's charge (batch 13 — the
@@ -4063,6 +4308,26 @@ class RuleBrainService
                 }
                 $kind = 'order_status';
             }
+        } elseif (! $rule && $intent === null && $product && $this->carriesDetails($text)) {
+            // Details with no bargain and no order words (batch 14,
+            // finding #16): the price reply told the customer to
+            // send name, address and phone — this message IS that
+            // answer. Batch 9 routed such messages into order
+            // taking from the bargain branch, but with no bargain
+            // started they matched no rule and no intent and fell
+            // into the no-rule fallback below (a draft, a human
+            // flag, no order), even though the details were already
+            // captured and a product stands in focus. They are
+            // order input here too: the summary when the details
+            // complete, the collection for what is missing.
+            $o = $this->orderTaking($conversation, $product, $variant, $biz, $conversation->neg_offer !== null ? (float) $conversation->neg_offer : null);
+            $slottedBody = $o['slottedBody'];
+            $kind = $o['kind'];
+            $meta = $o['meta'];
+            $body = $o['body'];
+            if (isset($o['meta']['offer'])) {
+                $slotValues = ['offer' => $o['meta']['offer']];
+            }
         } else {
             // No rule matched. First try the shop's own Knowledge — the AI
             // may answer policy questions only from what the shop wrote.
@@ -4094,6 +4359,14 @@ class RuleBrainService
         }
         if ($variant && $rule && $rule->match_text === 'price') {
             $slotValues['price'] = $variant->effectivePrice();
+        }
+        if (! $variant && $product && $rule && $rule->match_text === 'price' && $product->hasVariants()
+            && ! $this->variantPricesDiffer($product)) {
+            // Every variant costs the same (batch 14, finding #15):
+            // that shared figure is the honest quote — the product's
+            // own base price may be a different number nothing
+            // actually sells at.
+            $slotValues['price'] = $product->activeVariants()->first()->effectivePrice();
         }
 
         // The talker only phrases what was decided above, working on the
