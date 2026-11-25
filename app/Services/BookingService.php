@@ -128,7 +128,7 @@ class BookingService
         $order->consignment_id = $result['consignment_id'] ?? null;
         $order->booking_status = 'booked';
         $order->courier_status = 'Booked';
-        $order->delivery_method = $method->label() . ' - ' . (strtolower((string) $order->effectiveDistrict()) === 'dhaka' ? 'Inside Dhaka' : 'Outside Dhaka');
+        $order->delivery_method = $method->label() . ' - ' . (CourierMethod::isInsideDhaka($order->effectiveDistrict()) ? 'Inside Dhaka' : 'Outside Dhaka');
         $order->shipped_at = now();
         $order->save();
         $this->orders->changeStatus($order, 'Shipped', $actor, 'Sent via ' . $method->label() . ' · CN ' . ($order->consignment_id ?: $order->tracking_id));

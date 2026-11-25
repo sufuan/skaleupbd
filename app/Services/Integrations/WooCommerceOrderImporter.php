@@ -77,7 +77,19 @@ class WooCommerceOrderImporter
             $billing['address_2'] ?? '',
             $billing['city'] ?? '',
         ])));
-        $district = (string) ($billing['state'] ?? $billing['city'] ?? '');
+        // Woo sends "state" on every payload, very often as an EMPTY
+        // string (no states configured for the country) - a plain ??
+        // chain keeps that empty string and throws the city away, so
+        // the order landed with no district and every zone decision
+        // (courier charge shown and committed) fell to Outside Dhaka
+        // for a Dhaka customer. Take the first NON-EMPTY of the two.
+        $district = '';
+        foreach ([$billing['state'] ?? null, $billing['city'] ?? null] as $candidate) {
+            if (trim((string) $candidate) !== '') {
+                $district = trim((string) $candidate);
+                break;
+            }
+        }
 
         // --- Create through the real OrderService: fraud snapshot, stock,
         // activity log, notification and the point deduction all happen

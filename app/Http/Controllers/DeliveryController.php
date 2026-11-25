@@ -7,6 +7,9 @@ use App\Models\CourierMethod;
 use App\Models\Order;
 use App\Models\ScanEvent;
 use App\Services\BookingService;
+use App\Services\Couriers\DriverFactory;
+use App\Services\Couriers\ManualDriver;
+use App\Services\Couriers\MockDriver;
 use App\Support\DhakaTime;
 use App\Services\OrderService;
 use App\Services\SuggestCourierService;
@@ -25,6 +28,25 @@ class DeliveryController extends Controller
     private function methods(int $biz)
     {
         return CourierMethod::where('business_id', $biz)->where('is_active', true)->with('pickupStores')->orderBy('name')->get();
+    }
+
+    /**
+     * True when the order's courier has no status feed of its own, so a
+     * human scan is the only way its delivery can ever be recorded: no
+     * courier at all (hand delivery), a manual courier (ManualDriver),
+     * or an API courier running on the mock driver in test mode. A real
+     * API courier reports delivery itself (webhook / status pull) and
+     * must never be completed by hand.
+     */
+    private function deliverableByHand(Order $order): bool
+    {
+        $method = $order->courierMethod;
+        if (! $method) {
+            return true;
+        }
+        $driver = DriverFactory::for($method);
+
+        return $driver instanceof ManualDriver || $driver instanceof MockDriver;
     }
 
     private function methodOptions(int $biz, ?Order $order = null): array
@@ -77,7 +99,7 @@ class DeliveryController extends Controller
                 'id' => $o->id, 'invoice' => $o->invoice, 'customer_name' => $o->customer_name,
                 'customer_phone' => $o->customer_phone, 'district' => $district, 'area' => $o->area,
                 'date' => DhakaTime::fmt($o->created_at, 'j M, g:i a'),
-                'zone' => strtolower((string) $district) === 'dhaka' ? 'Inside Dhaka' : 'Outside Dhaka',
+                'zone' => CourierMethod::isInsideDhaka($district) ? 'Inside Dhaka' : 'Outside Dhaka',
                 'items_count' => (int) $o->items->sum('qty'),
                 'items_label' => $o->items->map(fn ($i) => $i->name . ' × ' . $i->qty)->implode(', '),
                 'cod' => $o->codAmount(), 'status' => $o->status,
@@ -321,7 +343,7 @@ class DeliveryController extends Controller
     {
         $data = $request->validate([
             'code' => 'required|string|max:120',
-            'type' => 'required|in:shipping,return,rts',
+            'type' => 'required|in:shipping,delivery,return,rts',
             'return_tag' => 'nullable|string|max:120',
             'all_biz' => 'nullable|boolean',
         ]);
@@ -370,6 +392,30 @@ class DeliveryController extends Controller
                 $orders->changeStatus($order, 'Shipped', $request->user(), 'Scanned to shipping');
 
                 return $done('Shipped');
+            case 'delivery':
+                // The completion path for couriers with no status feed
+                // (manual / mock): their parcels could be booked and
+                // shipped but never marked Delivered anywhere - the
+                // order page offers no Delivered for them and the
+                // courier never reports one. API couriers keep their
+                // webhook-driven lifecycle and are refused here.
+                if ($order->status === 'Delivered') {
+                    ScanEvent::create(['business_id' => $biz, 'order_id' => $order->id, 'scan_type' => 'delivery', 'result' => 'duplicate', 'code' => $code, 'note' => 'Already delivered', 'actor_id' => $request->user()->id]);
+
+                    return response()->json(['ok' => false, 'duplicate' => true, 'note' => 'Already delivered']);
+                }
+                if ($order->status !== 'Shipped') {
+                    return $fail('Order is ' . $order->status . ' - only a shipped parcel can be marked delivered');
+                }
+                if (! $this->deliverableByHand($order)) {
+                    return $fail('This courier confirms delivery itself - it cannot be marked delivered by a scan');
+                }
+                $order->delivered_at = now();
+                $order->courier_status = 'Delivered';
+                $order->save();
+                $orders->changeStatus($order, 'Delivered', $request->user(), 'Scanned as delivered');
+
+                return $done('Delivered');
             case 'return':
                 if (! in_array($order->status, ['Shipped', 'Delivered'], true)) {
                     return $fail('Only a shipped or delivered parcel can be returned');

@@ -5,6 +5,7 @@ import { t } from '@/lib/i18n';
 
 const MODES = [
     ['shipping', 'Scan To Shipping'],
+    ['delivery', 'Scan To Delivery'],
     ['return', 'Scan To Return'],
     ['rts', 'Scan To RTS'],
 ];

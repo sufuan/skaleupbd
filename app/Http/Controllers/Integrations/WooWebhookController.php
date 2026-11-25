@@ -14,7 +14,15 @@
 //   3. We answer 200 IMMEDIATELY after storing the raw payload. All processing is queued.
 //      This prevents WooCommerce from auto-disabling the webhook after 5 delivery failures.
 //   4. Zero-points rule: the event is STORED even at zero points; a job checks balance when it runs.
-//   5. Deduplication: dedupe_key = sha1(token + topic + X-WC-Delivery-ID).
+//   5. Deduplication: dedupe_key = sha1(connection + topic + sha256(raw body)).
+//      The key is built from the FULL payload, never from the
+//      X-WC-Webhook-ID header: that header carries the webhook's CONFIG
+//      id (one small integer per topic), not a per-delivery id, and
+//      event_uuid is UNIQUE - keying dedupe on it silently discarded
+//      every delivery after the first per topic (Phase 3, Defect 1).
+//      An identical re-delivery hashes to the same key and is dropped
+//      as a true duplicate; any changed payload (a new order, a status
+//      update) hashes differently and is processed.
 //
 // CSRF: routes/web.php puts this under api/webhooks/* which is already CSRF-exempt (bootstrap/app.php).
 
@@ -30,6 +38,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class WooWebhookController extends Controller
 {
@@ -69,10 +78,11 @@ class WooWebhookController extends Controller
             return response('', 200);
         }
 
-        // --- Build topic
-        $topic    = $type . '.' . $event; // e.g. "order.created"
-        $deliveryId = (string) $request->header('X-WC-Webhook-ID', '');   // WC webhook delivery ID
-        $dedupeKey  = 'woo:in:' . sha1($conn->id . '|' . $topic . '|' . $deliveryId . '|' . substr($rawBody, 0, 32));
+        // --- Build topic + the per-delivery dedupe key (see header note 5:
+        // X-WC-Webhook-ID is the webhook's config id, NOT a delivery id,
+        // so it plays no part in dedupe or in the unique event_uuid).
+        $topic     = $type . '.' . $event; // e.g. "order.created"
+        $dedupeKey = 'woo:in:' . sha1($conn->id . '|' . $topic . '|' . hash('sha256', $rawBody));
 
         // --- Store the event (even at zero points)
         try {
@@ -80,7 +90,7 @@ class WooWebhookController extends Controller
                 'connection_id'  => $conn->id,
                 'direction'      => 'in',
                 'topic'          => $topic,
-                'event_uuid'     => $deliveryId ?: null,
+                'event_uuid'     => (string) Str::uuid(),
                 'subject_id'     => null, // filled by the processing job
                 'dedupe_key'     => $dedupeKey,
                 'payload'        => $rawBody,

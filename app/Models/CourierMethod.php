@@ -105,9 +105,15 @@ class CourierMethod extends Model
         return $this->name ?: (self::LABELS[$this->courier_type] ?? $this->courier_type);
     }
 
+    /** The one inside-Dhaka test every charge and zone label reads. */
+    public static function isInsideDhaka(?string $district): bool
+    {
+        return strtolower(trim((string) $district)) === 'dhaka';
+    }
+
     public function chargeFor(?string $district): float
     {
-        return (float) (strtolower(trim((string) $district)) === 'dhaka' ? $this->charge_inside_dhaka : $this->charge_outside_dhaka);
+        return (float) (self::isInsideDhaka($district) ? $this->charge_inside_dhaka : $this->charge_outside_dhaka);
     }
 
     public function business(): BelongsTo
