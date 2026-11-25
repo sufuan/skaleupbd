@@ -548,7 +548,7 @@ class RuleBrainService
             $conversation->state = null;
         }
         $state = (array) ($conversation->state_data ?? []);
-        foreach (['collect', 'cart', 'variant_pending', 'variant_id', 'floor_repeats', 'pending_summary', 'last_order'] as $key) {
+        foreach (['collect', 'cart', 'variant_pending', 'variant_id', 'floor_repeats', 'pending_summary', 'last_order', 'product_clarify'] as $key) {
             unset($state[$key]);
         }
         // Details are PER-FLOW (brain fix batch 3): the values a
@@ -615,7 +615,37 @@ class RuleBrainService
         // strongest signal of all. An exact tie keeps the legacy
         // first-by-id order - the reply always names the product it
         // matched, so the customer can correct it, and its figures are
-        // that product's own live figures.
+        // that product's own live figures. (Callers that must never
+        // guess — the price/bargain flow — check ambiguousProductsFor()
+        // first: on an exact tie there is no winner, only candidates.)
+        $best = null;
+        $bestCoverage = -1.0;
+        $bestScore = -1.0;
+        foreach ($this->wordMatchRows($businessId, $text) as $row) {
+            if ($row['coverage'] > $bestCoverage + 1e-9
+                || (abs($row['coverage'] - $bestCoverage) <= 1e-9 && $row['score'] > $bestScore + 1e-9)) {
+                $best = $row['product'];
+                $bestCoverage = $row['coverage'];
+                $bestScore = $row['score'];
+            }
+        }
+
+        return $best;
+    }
+
+    /**
+     * Word-match scores for every product whose name shares a word
+     * (>= 4 chars) with the text, in product-id order. Coverage is how
+     * much of the product's name the customer actually said; the score
+     * rewards DISTINCTIVE words (a word appearing in many product
+     * names is weak evidence) and a full-name mention (+100).
+     *
+     * @return array<int, array{product: Product, coverage: float, score: float}>
+     */
+    private function wordMatchRows(int $businessId, string $text): array
+    {
+        $hay = mb_strtolower($text);
+        $products = Product::where('business_id', $businessId)->orderBy('id')->get();
         $freq = [];
         $wordsOf = [];
         foreach ($products as $p) {
@@ -628,9 +658,7 @@ class RuleBrainService
                 $freq[$w] = ($freq[$w] ?? 0) + 1;
             }
         }
-        $best = null;
-        $bestCoverage = -1.0;
-        $bestScore = -1.0;
+        $rows = [];
         foreach ($products as $p) {
             $words = $wordsOf[$p->id];
             if ($words === []) {
@@ -640,7 +668,6 @@ class RuleBrainService
             if ($matched === []) {
                 continue;
             }
-            $coverage = count($matched) / count($words);
             $score = 0.0;
             foreach ($matched as $w) {
                 $score += 1.0 / max(1, $freq[$w] ?? 1);
@@ -648,15 +675,132 @@ class RuleBrainService
             if (str_contains($hay, mb_strtolower($p->name))) {
                 $score += 100.0; // the customer said the whole name
             }
-            if ($coverage > $bestCoverage + 1e-9
-                || (abs($coverage - $bestCoverage) <= 1e-9 && $score > $bestScore + 1e-9)) {
-                $best = $p;
-                $bestCoverage = $coverage;
-                $bestScore = $score;
+            $rows[] = ['product' => $p, 'coverage' => count($matched) / count($words), 'score' => $score];
+        }
+
+        return $rows;
+    }
+
+    /**
+     * The products a message AMBIGUOUSLY points at (brain fix batch 8):
+     * two or more products tied at the top of the word scoring — the
+     * customer said a word several products share ("Panjabi" when the
+     * shop sells "CRUD Test Panjabi" AND "CRUD Test Panjabi 2") and
+     * nothing in the message separates them. productFor() would break
+     * the tie by product id and silently quote one product's price;
+     * this returns the tied candidates instead so the caller can ask.
+     * An explicit mention (SKU / alias / full name / every name word)
+     * is never ambiguous, and neither is a clear scoring winner (the
+     * customer said more of one product's name than of any other) or
+     * a tie among products that all share one price.
+     *
+     * @return Product[]|null the tied candidates (id order), or null
+     */
+    public function ambiguousProductsFor(int $businessId, string $text): ?array
+    {
+        if ($this->explicitProductFor($businessId, $text) !== null) {
+            return null;
+        }
+        $rows = $this->wordMatchRows($businessId, $text);
+        if (count($rows) < 2) {
+            return null;
+        }
+        $best = null;
+        foreach ($rows as $row) {
+            if ($best === null || $row['coverage'] > $best['coverage'] + 1e-9
+                || (abs($row['coverage'] - $best['coverage']) <= 1e-9 && $row['score'] > $best['score'] + 1e-9)) {
+                $best = $row;
+            }
+        }
+        $tied = array_values(array_filter(
+            $rows,
+            fn ($r) => abs($r['coverage'] - $best['coverage']) <= 1e-9 && abs($r['score'] - $best['score']) <= 1e-9
+        ));
+        if (count($tied) < 2) {
+            return null;
+        }
+        // A tie among products that all carry the SAME price cannot
+        // misquote: the figure is identical whichever one the customer
+        // meant, so the legacy scored answer stands (the golden suite
+        // pins this for the Demo Shop's colour pair, "Cotton Panjabi -
+        // White" / "- Blue", both 1,250). The guess the owner banned
+        // is a tie across DIFFERENT prices — quoting one product's
+        // 1,300 when the customer may mean the other's 850.
+        $prices = array_unique(array_map(fn ($r) => (float) $r['product']->price, $tied));
+        if (count($prices) === 1) {
+            return null;
+        }
+
+        return array_map(fn ($r) => $r['product'], $tied);
+    }
+
+    /**
+     * Resolve a customer's answer to a product clarification against
+     * the candidates that were listed: an explicit mention of one of
+     * them, an ordinal ("2", "২", "দ্বিতীয়টা", "second"), or a word
+     * that appears in exactly ONE candidate's name (the token that
+     * separates "CRUD Test Panjabi 2" from "CRUD Test Panjabi").
+     * Anything else resolves nothing — the message is then judged on
+     * its own by the normal flow.
+     *
+     * @param  \Illuminate\Support\Collection<int, Product>  $candidates
+     */
+    private function resolveClarifiedPick(int $businessId, string $text, $candidates): ?Product
+    {
+        if ($candidates->isEmpty()) {
+            return null;
+        }
+        $explicit = $this->explicitProductFor($businessId, $text);
+        if ($explicit !== null && $candidates->contains('id', (int) $explicit->id)) {
+            return $explicit;
+        }
+        $hay = mb_strtolower($this->guard->normalizeDigits($text));
+        $ordinals = [
+            1 => ['প্রথম', 'first', '1st', 'prothom'],
+            2 => ['দ্বিতীয়', 'second', '2nd', 'ditiyo', 'ditiya'],
+            3 => ['তৃতীয়', 'third', '3rd', 'tritiyo', 'tritiya'],
+            4 => ['চতুর্থ', 'fourth', '4th', 'choturtho'],
+            5 => ['পঞ্চম', 'fifth', '5th', 'ponchom'],
+        ];
+        foreach ($ordinals as $n => $words) {
+            if ($n > $candidates->count()) {
+                break;
+            }
+            $hit = (bool) preg_match('/(?<!\d)' . $n . '(?!\d)/u', $hay);
+            if (! $hit) {
+                foreach ($words as $w) {
+                    if (str_contains($hay, $w)) {
+                        $hit = true;
+                        break;
+                    }
+                }
+            }
+            if ($hit) {
+                return $candidates->values()[$n - 1];
+            }
+        }
+        // Distinguishing tokens: a name token exactly one candidate has.
+        $tokenSets = [];
+        $freq = [];
+        foreach ($candidates as $p) {
+            $tokens = array_values(array_unique(preg_split('/\s+/', mb_strtolower($p->name)) ?: []));
+            $tokenSets[$p->id] = $tokens;
+            foreach ($tokens as $t) {
+                $freq[$t] = ($freq[$t] ?? 0) + 1;
+            }
+        }
+        $hayTokens = array_values(array_unique(preg_split('/[\s,\x{0964}]+/u', $hay) ?: []));
+        $hits = [];
+        foreach ($candidates as $p) {
+            foreach ($tokenSets[$p->id] as $t) {
+                if (($freq[$t] ?? 0) === 1 && in_array($t, $hayTokens, true)) {
+                    $hits[] = $p;
+                    break;
+                }
             }
         }
 
-        return $best;
+        return count($hits) === 1 ? $hits[0] : null;
     }
 
     /**
@@ -1228,6 +1372,50 @@ class RuleBrainService
      * "আরেকটা", ...). Only then may the brain say "not available"
      * instead of quoting the context product's price at the customer.
      */
+    /**
+     * The message names an item noun (জামা, শাড়ি, panjabi, ...) that
+     * appears in NO product name or alias of this shop — the customer
+     * is asking about something the shop does not sell. Such a message
+     * is not a bare question, so the product-listing clarification
+     * (batch 8) must not fire for it; it keeps the existing path.
+     * The noun test mirrors unmatchedItemRequest(): Latin nouns match
+     * on word boundaries, Bangla nouns by containment.
+     */
+    private function namesUnstockedItem(int $businessId, string $text): bool
+    {
+        $hay = mb_strtolower($text);
+        $catalogueWords = Product::where('business_id', $businessId)->get(['name', 'aliases'])
+            ->map(fn ($p) => mb_strtolower($p->name . ' ' . (string) $p->aliases))->implode(' ');
+        foreach (self::ITEM_NOUNS as $noun) {
+            $hit = preg_match('/^[a-z]+$/', $noun)
+                ? (bool) preg_match('/\b' . preg_quote($noun, '/') . '\b/u', $hay)
+                : str_contains($hay, $noun);
+            if (! $hit || str_contains($catalogueWords, $noun)) {
+                continue;
+            }
+            // Script does not decide stock: a Bangla noun whose
+            // romanised group-mate names a catalogue product
+            // (পাঞ্জাবি vs "Panjabi") is a stocked item asked about
+            // in the other script, not an unstocked one.
+            $stocked = false;
+            foreach (self::ITEM_NOUN_GROUPS as $group) {
+                if (in_array($noun, $group, true)) {
+                    foreach ($group as $mate) {
+                        if ($mate !== $noun && str_contains($catalogueWords, $mate)) {
+                            $stocked = true;
+                            break 2;
+                        }
+                    }
+                }
+            }
+            if (! $stocked) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private function unmatchedItemRequest(int $businessId, string $text, Conversation $conversation): bool
     {
         if (! $conversation->product_id) {
@@ -2502,7 +2690,70 @@ class RuleBrainService
 
         $rule = $this->matchRule($biz, $text, $conversation->channel, $conversation);
         $intent = $this->detectIntent($text, $conversation);
-        $product = $this->productFor($biz, $text, $conversation);
+
+        // A pending product clarification gets its answer first
+        // (batch 8): the previous reply listed candidate products and
+        // asked which one — this message may be the pick (a name, a
+        // SKU, an ordinal, or the one word that separates the
+        // candidates). The pending question is consumed either way;
+        // an answer that resolves nothing is judged on its own below.
+        $pendingPick = null;
+        $clarifyState = (array) ($conversation->state_data ?? []);
+        if (! empty($clarifyState['product_clarify'])) {
+            $pendingClarify = (array) $clarifyState['product_clarify'];
+            $candidates = Product::where('business_id', $biz)
+                ->whereIn('id', (array) ($pendingClarify['product_ids'] ?? []))
+                ->orderBy('id')->get();
+            $picked = $this->resolveClarifiedPick($biz, $text, $candidates);
+            $clarifyState['product_clarify'] = null;
+            $conversation->state_data = $clarifyState;
+            $conversation->save();
+            if ($picked !== null) {
+                $pendingPick = $picked;
+                if (! $rule && ! empty($pendingClarify['intent'])) {
+                    // The pick itself carries no intent ("2", "ওটা") —
+                    // resume the question that was actually asked.
+                    $rule = AiRule::where('business_id', $biz)->where('active', true)
+                        ->where('trigger_type', 'intent')
+                        ->where('match_text', (string) $pendingClarify['intent'])
+                        ->where(fn ($q) => $q->whereNull('channel')->orWhere('channel', $conversation->channel))
+                        ->first() ?? $rule;
+                    $intent = $intent ?? (string) $pendingClarify['intent'];
+                }
+            }
+        }
+
+        // Product ambiguity (batch 8): with no product in focus and a
+        // product-dependent question (price / stock / bargain / order),
+        // never let the word scoring silently guess. When several
+        // products tie for the words the customer used — or the
+        // message points at no product at all in a multi-product shop —
+        // the reply lists the candidates and asks which one (the
+        // clarification branch in the reply chain below); no product
+        // is put in focus until the customer picks.
+        $clarifyWith = null;
+        if ($pendingPick !== null) {
+            $product = $pendingPick;
+        } else {
+            if (! $conversation->product_id && $rule && $rule->trigger_type === 'intent'
+                && in_array($rule->match_text, ['price', 'stock', 'bargain', 'order_intent'], true)) {
+                $tied = $this->ambiguousProductsFor($biz, $text);
+                if ($tied !== null) {
+                    $clarifyWith = array_slice($tied, 0, 5);
+                } elseif ($this->productFor($biz, $text, null) === null && ! $this->namesUnstockedItem($biz, $text)) {
+                    // Bare question ("দাম কত?") — the message names
+                    // nothing at all. (A message naming an item the
+                    // shop does not sell keeps the existing path: the
+                    // generic clarify, or the not-available answer
+                    // when a product is in focus.)
+                    $all = Product::where('business_id', $biz)->orderBy('id')->get();
+                    if ($all->count() >= 2) {
+                        $clarifyWith = $all->take(5)->all();
+                    }
+                }
+            }
+            $product = $clarifyWith !== null ? null : $this->productFor($biz, $text, $conversation);
+        }
         if ($product && (int) $conversation->product_id !== (int) $product->id) {
             // Remember the product for this conversation — follow-up
             // messages ("আরেকটু কমান", "স্টকে আছে?") rarely repeat its name.
@@ -2715,7 +2966,24 @@ class RuleBrainService
         }
 
         $kind = null;
-        if ($needsVariant) {
+        if ($clarifyWith !== null) {
+            // Never guess a product (batch 8): list the candidates by
+            // name — names only, rendered by code from live data, no
+            // figures the talker could garble — and ask which one.
+            // Nothing is put in focus and no order state is created;
+            // the candidates are remembered so the customer's pick
+            // ("2", the separating word, the name) resumes the flow.
+            $names = collect($clarifyWith)->map(fn (Product $p) => $p->name)->implode(', ');
+            $slottedBody = $this->honorificPrefix($biz, $conversation->customer_name)
+                . 'কোন পণ্যটার কথা বলছেন? আমাদের পণ্য: ' . $names . '। কোনটা, সেটা বলুন — তাহলেই দাম জানিয়ে দিচ্ছি।';
+            $kind = 'product_clarify';
+            $meta = ['clarify' => true, 'candidates' => collect($clarifyWith)->map(fn (Product $p) => (int) $p->id)->all()];
+            $state = (array) ($conversation->state_data ?? []);
+            $state['product_clarify'] = ['product_ids' => $meta['candidates'], 'intent' => $rule->match_text];
+            $conversation->state_data = $state;
+            $conversation->save();
+            $this->log($biz, 'product_clarify', $conversation->customer_name . ' — ambiguous product, asked which one: ' . $names, $rule, $conversation);
+        } elseif ($needsVariant) {
             // Never quote stock or build an order for "the product" when
             // only some variants exist — ask ONE short question first.
             $names = $product->activeVariants()->pluck('name')->implode(', ');
@@ -2884,7 +3152,7 @@ class RuleBrainService
         $slotValues = $slotValues ?? [];
         if ($kind === 'order_summary') {
             $draftRendered = $body;
-        } elseif ($kind === 'variant_question' || $kind === 'collect_question' || $kind === 'out_of_stock') {
+        } elseif ($kind === 'variant_question' || $kind === 'collect_question' || $kind === 'out_of_stock' || $kind === 'product_clarify') {
             // Fixed questions and the out-of-stock answer must reach the
             // customer word-for-word — no phrasing.
             $draftRendered = $this->renderSlots($slottedBody, $product, $biz, $slotValues);
