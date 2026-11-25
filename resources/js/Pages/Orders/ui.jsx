@@ -5,7 +5,7 @@ export const fmt = (n) => '৳' + Math.round(Number(n) || 0).toLocaleString('en-
 export const STATUS_PILL = {
     Pending: 'amber', Processing: 'blue', Shipped: '', Delivered: 'green',
     Returned: 'red', Cancelled: '', Incomplete: 'amber', 'Pending Return': 'red',
-    'Pending Cancel': 'red', Partial: 'blue', Lost: 'red',
+    'Pending Cancel': 'red', Lost: 'red',
 };
 
 export function StatusPill({ status }) {

@@ -691,9 +691,11 @@ class OrderService
             }
             // M3: leaving a reserved state back to Pending releases the
             // hold - the goods never left. S-F2: the same release applies
-            // to Incomplete, and to orders leaving Partial: a reservation
-            // may only live in Processing/Partial (and the Pending
-            // Cancel/Pending Return on-ramps, which keep it on purpose).
+            // to Incomplete, and to orders leaving legacy Partial (the
+            // status is no longer selectable; these from-guards only keep
+            // a pre-removal row's reservation accounting exact): a
+            // reservation may only live in Processing/Partial (and the
+            // Pending Cancel/Pending Return on-ramps, which keep it).
             if (in_array($from, ['Processing', 'Partial'], true) && in_array($to, ['Pending', 'Incomplete'], true)) {
                 $this->releaseReservations($order, 'release_reserve', 'Released on status change');
             }
@@ -714,7 +716,7 @@ class OrderService
             // rows for stock that never left (R1a).
             if ($to === 'Returned' && $from !== 'Returned') {
                 // Restock what actually shipped, then release whatever
-                // reservation is still held (the mixed Partial case: part
+                // reservation is still held (the mixed case: part
                 // shipped, part still held - the old either/or left the
                 // held remainder behind forever). Both halves are
                 // ledger-exact, so a pure case runs only its own half.
@@ -725,7 +727,7 @@ class OrderService
             // -> Shipped (a direct delivery never passed a Shipped state).
             // S-F2: the consume runs for a landing in Shipped/Delivered
             // from ANY origin state, not just Processing - a jump that
-            // skips Processing (Pending -> Shipped, Partial -> Shipped)
+            // skips Processing (Pending -> Shipped, legacy Partial -> Shipped)
             // used to leave the goods on the books forever (and leak the
             // reservation). The body below already nets the units that
             // are already out per the ledger, so a repeat landing

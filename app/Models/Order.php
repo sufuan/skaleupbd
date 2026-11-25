@@ -29,7 +29,7 @@ class Order extends Model
     ];
 
     public const STATUSES = ['Pending', 'Processing', 'Shipped', 'Delivered', 'Returned', 'Cancelled'];
-    public const EXTRA_STATUSES = ['Incomplete', 'Pending Return', 'Pending Cancel', 'Partial', 'Lost'];
+    public const EXTRA_STATUSES = ['Incomplete', 'Pending Return', 'Pending Cancel', 'Lost'];
     public const PROCESSING_STATUSES = ['Processing', 'Good But No Response', 'No Response', 'Advance Payment', 'On Hold', 'Stock Out', 'Cancel'];
     public const CANCEL_REASONS = ['Customer Request', 'Wrong Number', 'Phone Off', 'No Answer', 'Out of Stock', 'Duplicate Order', 'Fraud', 'Price Issue', 'Advance Payment Issue', 'Other'];
 
