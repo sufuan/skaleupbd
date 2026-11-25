@@ -29,11 +29,11 @@ class RuleBrainService
 {
     /** Intent name => words that mean it (Bangla + English + common romanised). */
     public const INTENTS = [
-        'price' => ['দাম', 'price', 'কত', 'koto', 'dam koto', 'দামটা'],
+        'price' => ['দাম', 'price', 'কত', 'koto', 'dam koto', 'দামটা', 'dam ki', 'dam bolen', 'koto taka', 'কত টাকা', 'মূল্য', 'রেট'],
         'delivery' => ['delivery', 'ডেলিভারি', 'চার্জ', 'charge', 'shipping', 'পাঠাতে কত'],
         'stock' => ['স্টক', 'stock', 'আছে কি', 'available', 'ache ki', 'আছেনি'],
         'greeting' => ['আসসালামু', 'salam', 'hello', 'hi', 'হ্যালো', 'আদাব'],
-        'bargain' => ['কমান', 'কমাতে', 'discount', 'কম হবে', 'কম রাখেন', 'dam kom', 'less hobe', 'kom hobe', 'ektu kom', 'komano', 'শেষ দাম', 'কম দাম', 'কমে দেন', 'দিলে নিব', 'টাকায় দিলে'],
+        'bargain' => ['কমান', 'কমাতে', 'কম হবে', 'কম রাখেন', 'dam kom', 'less hobe', 'kom hobe', 'ektu kom', 'komano', 'শেষ দাম', 'কম দাম', 'কমে দেন', 'দিলে নিব', 'টাকায় দিলে', 'discount hobe', 'discount হবে', 'ডিসকাউন্ট হবে'],
         'spam' => ['follower', 'ফলোয়ার', 'সস্তায় follower', 'cheap follower', 'like কিনুন', 'free money', 'click here', 'click link', 'scam', 'earn money', 'make money', 'casino', 'ক্যাসিনো', 'betting', 'বাজি', 'ফ্রি টাকা', 'টাকা ইনকাম', 'লিংকে ক্লিক', 'crypto', 'double investment', 'lottery', 'লটারি'],
         'angry' => ['পাইনি', 'পাই নাই', 'রেগে', 'complain', 'অভিযোগ', 'দুই দিন হলো', 'এখনো আসেনি', 'প্রতারক', 'প্রতারণা', 'টাকা মেরে', 'ভুয়া', 'মামলা', 'পুলিশ', 'কোর্ট', 'ভোক্তা অধিকার', 'ঠকিয়ে'],
         'order_intent' => ['order confirm', 'অর্ডার কনফার্ম', 'কনফার্ম', 'confirm korlam', 'confirm korun', 'confirm koren', 'confirm korchi', 'নিতে চাই', 'order korte chai', 'অর্ডার করতে চাই', 'কনফার্ম করেন', 'কনফার্ম করুন', 'কনফার্ম করে দেন', 'অর্ডার করলাম', 'অর্ডার দিলাম'],
@@ -302,6 +302,117 @@ class RuleBrainService
         return false;
     }
 
+    /**
+     * Weak order words (batch 12, review finding #19): everyday verbs
+     * that mean "I'll take it" — 'নিব', 'nibo', 'লাগবে', 'কিনব'. They
+     * are deliberately NOT in INTENTS['order_intent']: matchRule's
+     * keyword fallback re-checks that list, and a bare 'নিব' there
+     * would outrank the specific keyword rules these words live
+     * inside ("পরে নিব" = decide later, "আজকেই লাগবে" = urgent
+     * delivery). detectIntent is the only reader, and it applies the
+     * guards below before believing them.
+     */
+    private const WEAK_ORDER_WORDS = ['নিব', 'নিবো', 'nibo', 'লাগবে', 'lagbe', 'কিনব', 'kinbo'];
+
+    /**
+     * Phrases that disarm the weak order words (batch 12): a decline
+     * ("লাগবে না", "নিব না"), a deferral ("পরে নিব") or an urgency
+     * ask ("আজকেই লাগবে") contains an order verb but is not an order.
+     * When one is present, the weak words are ignored and the
+     * message falls through to the keyword rules written for it.
+     */
+    private const ORDER_GUARD_PHRASES = [
+        'নিব না', 'নিবো না', 'নেব না', 'লাগবে না', 'কিনব না', 'nibo na', 'lagbe na', 'kinbo na',
+        'পরে নিব', 'পরে নিবো', 'পরে জানাব', 'পরে অর্ডার', 'পরে কিনব', 'ভেবে দেখি', 'ভেবে জানাব', 'pore nibo', 'pore janabo',
+        'আজকেই লাগবে', 'আজকের মধ্যে', 'কালকের মধ্যে', 'কালকেই লাগবে', 'ajkei lagbe',
+        // "কত লাগবে" asks what something will COST ("পাঠাতে কত লাগবে?"
+        // is the delivery-charge question), it does not place an order.
+        'কত লাগবে', 'koto lagbe',
+    ];
+
+    /**
+     * Is this message asking ABOUT a product attribute — its weight,
+     * size, material, warranty, colour — rather than its price?
+     * (Batch 12, finding #8.) 'কত' is a price word, so "ওজন কত?"
+     * used to get a price answer even though the catalog carries
+     * attribute rules for exactly these questions. The boundary is
+     * the price signal itself: a message that names the price
+     * ("সাইজ L এর দাম কত?") IS a price question about a variant and
+     * stays one; an attribute word in question shape with no price
+     * signal is the attribute's own question.
+     */
+    private function isAttributeQuestion(string $hay): bool
+    {
+        if (str_contains($hay, 'দাম') || preg_match('/\bprice\b/', $hay) || preg_match('/\bdam\b/', $hay)) {
+            return false;
+        }
+        $attribute = false;
+        foreach (['ওজন', 'weight', 'সাইজ', 'size', 'মাপ', 'ম্যাটেরিয়াল', 'material', 'ওয়ারেন্টি', 'warranty', 'গ্যারান্টি', 'guarantee', 'কালার', 'colour', 'color', 'কাপড়', 'fabric'] as $w) {
+            if (str_contains($hay, $w)) {
+                $attribute = true;
+                break;
+            }
+        }
+        if (! $attribute) {
+            return false;
+        }
+
+        return str_contains($hay, 'কত') || str_contains($hay, '?')
+            || str_contains($hay, 'কী') || str_contains($hay, 'কি')
+            || str_contains($hay, 'কেমন') || str_contains($hay, 'আছে');
+    }
+
+    /**
+     * Coupon/offer vocabulary (batch 12, finding #9): the customer is
+     * asking about a code, coupon or running offer — the catalog's
+     * Offer rule's case, never a bargain push. Bare 'discount' used
+     * to sit in the bargain word list, so "discount code ache?"
+     * opened the price ladder instead of reaching that rule.
+     */
+    private function hasOfferVocabulary(string $hay): bool
+    {
+        foreach (['কোড', 'কুপন', 'প্রোমো', 'ভাউচার', 'অফার', 'কম্বো', 'coupon', 'promo', 'voucher', 'offer', 'combo', 'discount code'] as $w) {
+            if (str_contains($hay, $w)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /** Does this conversation's customer have an order with the shop? */
+    private function conversationHasOrder(?Conversation $conversation): bool
+    {
+        if ($conversation === null) {
+            return false;
+        }
+        $state = (array) ($conversation->state_data ?? []);
+        if (! empty($state['last_order'])) {
+            return true;
+        }
+        $phone = trim((string) ($conversation->customer_phone ?? ''));
+
+        return $phone !== '' && \App\Models\Order::where('business_id', (int) $conversation->business_id)
+            ->where('customer_phone', $phone)->exists();
+    }
+
+    /**
+     * The invoice/order number a message quotes, if any (batch 12,
+     * finding #20): a letter prefix plus digits — "OB299", "OB 299",
+     * "OB-299", Bengali digits included — compacted to the stored
+     * shape (prefix + number, upper-cased). A bare figure (a price,
+     * a phone) is not an invoice mention: the prefix is required.
+     */
+    public function invoiceMention(string $text): ?string
+    {
+        $t = $this->guard->normalizeDigits($text);
+        if (preg_match('/([A-Za-z]{1,8})[-\s]?(\d{2,})/', $t, $m)) {
+            return strtoupper($m[1] . $m[2]);
+        }
+
+        return null;
+    }
+
     public function detectIntent(string $text, ?Conversation $conversation = null): ?string
     {
         if ($this->isReaction($text)) {
@@ -356,16 +467,80 @@ class RuleBrainService
                 return 'bargain';
             }
         }
+        // Attribute questions beat price (batch 12, finding #8): "ওজন
+        // কত?" carries the price word 'কত' but asks about the product,
+        // not its price — the catalog's attribute rules answer it.
+        // Returning null hands the message to matchRule's keyword
+        // competition, where those rules live; a message that names
+        // the price ("সাইজ L এর দাম কত?") never reaches here as an
+        // attribute question (isAttributeQuestion excludes it).
+        if ($this->isAttributeQuestion($hay)) {
+            return null;
+        }
+        // Coupon/offer vocabulary is the Offer rule's case, never a
+        // bargain push (batch 12, finding #9). No intent rule carries
+        // the name 'offer', so matchRule falls through to its keyword
+        // competition and the Offer rule wins there on its own words.
+        if ($this->hasOfferVocabulary($hay)) {
+            return 'offer';
+        }
         if ($this->intentMatches('bargain', $hay)) {
             return 'bargain';
         }
         if ($this->intentMatches('order_intent', $hay)) {
             return 'order_intent';
         }
-        foreach (['অর্ডার কোথায়', 'অর্ডারটা কোথায়', 'কোথায় আছে', 'পৌঁছেছে', 'ট্র্যাকিং', 'tracking', 'স্ট্যাটাস', 'কবে পাব', 'কবে পৌঁছাবে'] as $w) {
+        // Weak order words (batch 12, finding #19): "নিব", "লাগবে",
+        // "কিনব" mean the customer wants the product — unless a guard
+        // phrase makes them a decline, a deferral or an urgency ask,
+        // in which case the keyword rules written for those cases
+        // decide instead.
+        $guarded = false;
+        foreach (self::ORDER_GUARD_PHRASES as $g) {
+            if (str_contains($hay, $g)) {
+                $guarded = true;
+                break;
+            }
+        }
+        if (! $guarded) {
+            foreach (self::WEAK_ORDER_WORDS as $w) {
+                if (str_contains($hay, $w)) {
+                    // A request naming an item the shop does not sell
+                    // is not an order for whatever is in focus (batch
+                    // 1's not-available doctrine): "লাল জামা XL লাগবে"
+                    // in a panjabi shop must reach the unmatched-item
+                    // branch below, not order taking — the weak verb
+                    // alone cannot override it.
+                    if ($conversation !== null && $this->namesUnstockedItem((int) $conversation->business_id, $text)) {
+                        break;
+                    }
+
+                    return 'order_intent';
+                }
+            }
+        }
+        // Order status. The delivery-time phrasings inside the old
+        // word list ("কবে পাব?") are only a status question when
+        // there IS an order to track (batch 12, finding #21): asked
+        // before ordering, they are the delivery_time question the
+        // catalog already carries a rule for.
+        foreach (['অর্ডার কোথায়', 'অর্ডারটা কোথায়', 'কোথায় আছে', 'পৌঁছেছে', 'ট্র্যাকিং', 'tracking', 'স্ট্যাটাস'] as $w) {
             if (str_contains($hay, $w)) {
                 return 'order_status';
             }
+        }
+        foreach (['কবে পাব', 'কবে পৌঁছাবে'] as $w) {
+            if (str_contains($hay, $w)) {
+                return $this->conversationHasOrder($conversation) ? 'order_status' : 'delivery_time';
+            }
+        }
+        // A quoted invoice number with a where-is-it question is a
+        // status question even when the number splits the usual
+        // phrases ("OB299 কোথায়?") — the number is looked up in
+        // handleIncoming's status branch (batch 12, finding #20).
+        if ($this->invoiceMention($text) !== null
+            && (str_contains($hay, 'কোথায়') || str_contains($hay, 'কই') || str_contains($hay, 'স্ট্যাটাস') || str_contains($hay, 'status'))) {
+            return 'order_status';
         }
         // Delivery sub-questions (COD? how long? do you deliver here?)
         // before the coarse delivery intent swallows them — they are
@@ -388,7 +563,15 @@ class RuleBrainService
         if ($deliveryCharge && !$asksPrice) {
             return 'delivery';
         }
-        if ($this->intentMatches('price', $hay)) {
+        // Price, plus the two vocabulary additions that cannot live
+        // in the word list (batch 12, finding #19): 'rate' only as a
+        // whole English word (never inside 'separate' or 'generate'),
+        // and 'দর' only as a standalone Bengali word — 'দরকার' (need)
+        // and 'দরজা' (door) carry a Bengali letter right after it, so
+        // the separator-bounded pattern never fires on them.
+        if ($this->intentMatches('price', $hay)
+            || preg_match('/\brate\b/', $hay)
+            || preg_match('/(?:^|[\s,।?!])দর(?:[\s,।?!]|$)/u', $hay)) {
             return 'price';
         }
         if ($this->intentMatches('stock', $hay)) {
@@ -3349,21 +3532,45 @@ class RuleBrainService
             }
         } elseif (!$rule && $intent === 'order_status') {
             // "আমার অর্ডারটা কোথায়?" — answered from the real order record.
+            // A quoted invoice number is looked up FIRST (batch 12,
+            // finding #20): the old reply told the customer to give
+            // the number, but only the phone was ever searched. The
+            // lookup is scoped to THIS shop — another shop's number
+            // is simply "not found" — and the number itself is the
+            // credential, as in normal shop practice, so the answer
+            // carries status only, never names, addresses or items.
             $order = null;
-            if (!empty($conversation->customer_phone)) {
+            $mention = $this->invoiceMention($text);
+            if ($mention !== null) {
+                $order = \App\Models\Order::where('business_id', $biz)
+                    ->whereRaw("UPPER(REPLACE(invoice_no, '-', '')) = ?", [$mention])
+                    ->first();
+                if ($order) {
+                    $slottedBody = $this->honorificPrefix($biz, $conversation->customer_name) . 'আপনার অর্ডার (⟦invoice⟧) এখন ⟦status⟧ অবস্থায় আছে।';
+                    $slotValues = ['invoice' => $order->invoice_no, 'status' => (string) $order->status];
+                    $meta = ['order_status' => $order->id];
+                } else {
+                    $slottedBody = $this->honorificPrefix($biz, $conversation->customer_name) . 'দুঃখিত, ⟦invoice⟧ নম্বরের কোনো অর্ডার আমাদের এখানে খুঁজে পাইনি। নম্বরটা ঠিক আছে কিনা একটু দেখুন — অথবা যে ফোন নম্বর দিয়ে অর্ডার করেছিলেন, সেটা দিলে সেই নম্বর দিয়ে খুঁজে দিচ্ছি।';
+                    $slotValues = ['invoice' => $mention];
+                    $meta = ['order_status' => null, 'invoice_not_found' => $mention];
+                }
+                $kind = 'order_status';
+            } elseif (!empty($conversation->customer_phone)) {
                 $order = \App\Models\Order::where('business_id', $biz)
                     ->where('customer_phone', $conversation->customer_phone)
                     ->latest('id')->first();
             }
-            if ($order) {
-                $slottedBody = $this->honorificPrefix($biz, $conversation->customer_name) . 'আপনার অর্ডার (⟦invoice⟧) এখন ⟦status⟧ অবস্থায় আছে।';
-                $slotValues = ['invoice' => $order->invoice_no, 'status' => (string) $order->status];
-                $meta = ['order_status' => $order->id];
-            } else {
-                $slottedBody = $this->honorificPrefix($biz, $conversation->customer_name) . 'আপনার নামে কোনো অর্ডার খুঁজে পাইনি। অর্ডারের নম্বরটা দিলে দেখে দিচ্ছি।';
-                $meta = ['order_status' => null];
+            if ($mention === null) {
+                if ($order) {
+                    $slottedBody = $this->honorificPrefix($biz, $conversation->customer_name) . 'আপনার অর্ডার (⟦invoice⟧) এখন ⟦status⟧ অবস্থায় আছে।';
+                    $slotValues = ['invoice' => $order->invoice_no, 'status' => (string) $order->status];
+                    $meta = ['order_status' => $order->id];
+                } else {
+                    $slottedBody = $this->honorificPrefix($biz, $conversation->customer_name) . 'আপনার নামে কোনো অর্ডার খুঁজে পাইনি। অর্ডারের নম্বরটা দিলে দেখে দিচ্ছি।';
+                    $meta = ['order_status' => null];
+                }
+                $kind = 'order_status';
             }
-            $kind = 'order_status';
         } else {
             // No rule matched. First try the shop's own Knowledge — the AI
             // may answer policy questions only from what the shop wrote.
