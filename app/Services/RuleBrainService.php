@@ -1047,6 +1047,31 @@ class RuleBrainService
     }
 
     /**
+     * One holding line where a flow hands over to a human and the
+     * customer would otherwise hear NOTHING (brain fix batch 10): the
+     * bargain floor, collection giving up on incomplete order data, a
+     * handover rule with no acknowledgement template. The line goes
+     * through simpleOutgoing like every fixed text, so the channel
+     * mode decides sent vs draft exactly as elsewhere. Throttled like
+     * holdingLine() — at most one 'holding' message per conversation
+     * per 24 hours, a budget shared with the angry-customer line
+     * (same meta kind), so a thread can never be spammed with them.
+     */
+    private function holdingReply(Conversation $conversation, string $mode): ?ChatMessage
+    {
+        $recent = ChatMessage::where('conversation_id', $conversation->id)
+            ->where('direction', 'out')
+            ->where('created_at', '>=', now()->subDay())
+            ->get()
+            ->contains(fn ($m) => ($m->meta['kind'] ?? null) === 'holding');
+        if ($recent) {
+            return null;
+        }
+
+        return $this->simpleOutgoing($conversation, $this->honorificPrefix((int) $conversation->business_id, $conversation->customer_name) . 'একটু অপেক্ষা করুন, আমাদের প্রতিনিধি দেখে জানাচ্ছেন।', 'holding', $mode);
+    }
+
+    /**
      * The context package: what the AI layers (stage-2 classifier and
      * the talker) are allowed to SEE so they judge and phrase the
      * message IN CONTEXT instead of blind. The last ~10 messages in
@@ -2346,12 +2371,13 @@ class RuleBrainService
             if (!$product) {
                 // The product vanished mid-collection: never a silent
                 // drop (batch 2's no-silence invariant) — a human takes
-                // the thread and the handover is on the record.
+                // the thread and the handover is on the record. The
+                // customer hears the one holding line too (batch 10).
                 $conversation->needs_human = true;
                 $conversation->save();
                 $this->log($biz, 'handed_human', $conversation->customer_name . ' — collection product no longer exists', null, $conversation);
 
-                return null;
+                return $this->holdingReply($conversation, $mode);
             }
             $variant = !empty($collect['variant_id']) ? \App\Models\ProductVariant::find($collect['variant_id']) : null;
             // Stock 0 = NO order (owner addendum, Round 6 P1): if the item
@@ -2398,7 +2424,10 @@ class RuleBrainService
                 $conversation->save();
                 $this->log($biz, 'handed_human', $conversation->customer_name . ' — order data incomplete', null, $conversation);
 
-                return null;
+                // The flow gives up here; the customer used to hear
+                // nothing at exactly that moment (batch 10) — one
+                // holding line goes out before the thread goes quiet.
+                return $this->holdingReply($conversation, $mode);
             }
         } else {
             $collect['retries'] = 0;
@@ -2444,13 +2473,14 @@ class RuleBrainService
             $quote = $this->negotiation->quote($conversation, $product, $this->namedAmount($text));
             if ($quote === null) {
                 // The floor already had its last word: the main chain
-                // hands over at exactly this point too — logged, and
-                // the thread stays flagged for the human.
+                // hands over at exactly this point too — logged, the
+                // thread stays flagged for the human, and the customer
+                // hears the one holding line (batch 10), never silence.
                 $conversation->needs_human = true;
                 $conversation->save();
                 $this->log($biz, 'handed_human', $conversation->customer_name . ' — দাম floor-এ পৌঁছেছে', null, $conversation);
 
-                return null;
+                return $this->holdingReply($conversation, $mode);
             }
             $h = $this->honorific($biz, $conversation->customer_name);
             $sentence = match ($quote['kind']) {
@@ -2706,6 +2736,11 @@ class RuleBrainService
             $logged = AiActivity::where('conversation_id', $conversation->id)
                 ->where('id', '>', $activityBefore)->exists();
             if (! $answered && ! $logged) {
+                // A message nobody answered is a thread a human must
+                // see (batch 10): the log alone left the flag down, so
+                // the inbox never surfaced the waiting customer.
+                $conversation->needs_human = true;
+                $conversation->save();
                 $this->log((int) $conversation->business_id, 'unanswered', $conversation->customer_name . ' — message produced no reply, draft or logged handover', null, $conversation);
             }
         }
@@ -2717,6 +2752,12 @@ class RuleBrainService
     {
         $startedAt = microtime(true);
         $biz = (int) $conversation->business_id;
+        // The media pipeline's high-confidence pass-through (a photo
+        // whose caption/focus/hash already identified the product)
+        // invokes the brain with the bare caption as its text; its
+        // no-rule product answer is that flow's designed reply, not
+        // an unreviewed conversational fallback (batch 10 scoping).
+        $mediaMatch = ! empty($opts['media_match']);
         $attachment = (array) ($opts['attachment'] ?? []);
         if (!empty($opts['prestored_ids'])) {
             // The messages are already stored (burst intake) — work on the
@@ -2986,8 +3027,16 @@ class RuleBrainService
             // that one line through the normal guarded path below —
             // silence after a customer sends money proof reads as
             // broken — and the conversation stays flagged for the
-            // human either way. A template-less handover stays silent.
+            // human either way. A template-less handover (legal_threat)
+            // used to stay silent; it now sends the one holding line
+            // instead (batch 10), throttled like every holding line,
+            // and the flag above stays up either way.
             if (mb_strlen(trim((string) $rule->reply_template)) < 10) {
+                $hMode = $this->applyWorkingHours($biz, $auto[$conversation->channel] ?? 'draft');
+                if ($hMode !== 'off') {
+                    return $this->holdingReply($conversation, $hMode);
+                }
+
                 return null;
             }
             $handoverAck = true;
@@ -3082,6 +3131,10 @@ class RuleBrainService
             if (!$product) {
                 // Never silent (batch 2): the burst was already claimed,
                 // so an unlogged return would lose the message for good.
+                // And never unflagged (batch 10): an unanswered customer
+                // is a thread a human must see in the inbox.
+                $conversation->needs_human = true;
+                $conversation->save();
                 $this->log($biz, 'unanswered', $conversation->customer_name . ' — bargain message with no product in focus', $rule, $conversation);
 
                 return null;
@@ -3110,7 +3163,11 @@ class RuleBrainService
                     $conversation->save();
                     $this->log($biz, 'handed_human', $conversation->customer_name . ' — দাম floor-এ পৌঁছেছে', $rule, $conversation);
 
-                    return null;
+                    // The handover is on the record and the thread is
+                    // flagged — but the customer used to hear NOTHING
+                    // at this point (batch 10): one holding line goes
+                    // out first, throttled to one per day.
+                    return $this->holdingReply($conversation, $mode);
                 }
                 if ($quote['kind'] === 'accept') {
                     // AGREED — the negotiation is over. The offer is never
@@ -3143,6 +3200,8 @@ class RuleBrainService
             }
         } elseif ($rule && $rule->match_text === 'order_intent') {
             if (!$product) {
+                $conversation->needs_human = true;
+                $conversation->save();
                 $this->log($biz, 'unanswered', $conversation->customer_name . ' — order message with no product in focus', $rule, $conversation);
 
                 return null;
@@ -3175,6 +3234,8 @@ class RuleBrainService
             }
             $slottedBody = $this->buildReply($rule, $product, $biz, true, $this->honorific($biz, $conversation->customer_name));
             if (trim($slottedBody) === '') {
+                $conversation->needs_human = true;
+                $conversation->save();
                 $this->log($biz, 'unanswered', $conversation->customer_name . ' — matched rule has an empty reply template', $rule, $conversation);
 
                 return null;
@@ -3218,12 +3279,16 @@ class RuleBrainService
                 $slottedBody = (string) $knowledge->body;
                 $meta = ['knowledge_id' => $knowledge->id];
             } elseif (!$product) {
+                $conversation->needs_human = true;
+                $conversation->save();
                 $this->log($biz, 'unanswered', $conversation->customer_name . ' — no rule matched and no product in focus', null, $conversation);
 
                 return null;
             } else {
                 // Draft from the product description; a human always checks
-                // a no-rule draft before it goes out (mode decides below).
+                // a no-rule draft before it goes out — batch 10 makes that
+                // literally true below, where a no-rule reply is forced to
+                // draft in every mode and the thread is flagged.
                 $desc = trim((string) ($product->short_description ?? ''));
                 $slottedBody = $desc !== ''
                     ? $this->honorificPrefix($biz, $conversation->customer_name) . $desc
@@ -3320,6 +3385,25 @@ class RuleBrainService
             $status = 'sent';
         } else {
             $status = 'draft';
+        }
+        if (! empty($meta['no_rule']) && ! $mediaMatch) {
+            // A no-rule fallback — the focus product's description or
+            // price line, composed for a message NOTHING matched —
+            // never auto-sends, whatever the mode (batch 10): in Full
+            // auto (and plain Auto, since it commits nothing) the
+            // status above was 'sent', so a customer's "ওকে" was
+            // answered with a product description nobody had checked.
+            // It is always a draft, and the thread is flagged so the
+            // human the draft waits for actually comes. Guard findings
+            // stay on the draft's meta, and approval re-runs the
+            // guards at send time exactly as before. The media
+            // pipeline's high-confidence pass-through is exempt: there
+            // the product was identified by the customer's own photo
+            // caption, and this product answer is that flow's designed
+            // reply (its gate pins "no human flag for a matched photo").
+            $status = 'draft';
+            $conversation->needs_human = true;
+            $conversation->save();
         }
 
         $msg = ChatMessage::create([

@@ -150,7 +150,13 @@ class ProcessMediaMessageJob implements ShouldQueue
         $conv->focus_at = now();
         $conv->save();
         $text = $caption !== '' ? $caption : 'এটার দাম কত? স্টকে আছে?';
-        $reply = $brain->handleIncoming($conv, $text, ['prestored_ids' => [$msg->id]]);
+        // media_match: the product was identified at high confidence
+        // by this pipeline (the customer's own caption, the focus, or
+        // the image hash), so a bare caption reaching the brain's
+        // no-rule product answer is this flow's designed reply — the
+        // batch-10 no-rule draft+flag safety for conversational text
+        // must not hold it or flag a matched photo.
+        $reply = $brain->handleIncoming($conv, $text, ['prestored_ids' => [$msg->id], 'media_match' => true]);
         if ($reply) {
             $graph->dispatch($reply);
         }
