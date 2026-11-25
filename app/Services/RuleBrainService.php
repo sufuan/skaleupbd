@@ -744,7 +744,7 @@ class RuleBrainService
             $conversation->state = null;
         }
         $state = (array) ($conversation->state_data ?? []);
-        foreach (['collect', 'cart', 'variant_pending', 'variant_id', 'floor_repeats', 'pending_summary', 'last_order', 'product_clarify'] as $key) {
+        foreach (['collect', 'cart', 'variant_pending', 'variant_id', 'floor_repeats', 'pending_summary', 'last_order', 'product_clarify', 'qty'] as $key) {
             unset($state[$key]);
         }
         // Details are PER-FLOW (brain fix batch 3): the values a
@@ -1142,10 +1142,29 @@ class RuleBrainService
         return null;
     }
 
+    /** The shop's inside-Dhaka delivery charge (Business Profile). */
+    private function insideDeliveryCost(int $businessId): float
+    {
+        return (float) $this->settings->bizGet($businessId, "business.{$businessId}.default_delivery_cost", 'business.default_delivery_cost', 60);
+    }
+
+    /**
+     * The shop's outside-Dhaka delivery charge (brain fix batch 13,
+     * finding #7): a Business Profile setting of its own since this
+     * batch — before it, the figure the rules quote and the guard
+     * allows was a hardcoded 120 in the brain that no shop could
+     * change. The default stays 120, so a shop that never sets it
+     * sees no change.
+     */
+    private function outsideDeliveryCost(int $businessId): float
+    {
+        return (float) $this->settings->bizGet($businessId, "business.{$businessId}.default_delivery_cost_outside", 'business.default_delivery_cost_outside', 120);
+    }
+
     public function buildReply(AiRule $rule, ?Product $product, int $businessId, bool $slots = false, ?string $honorific = null): string
     {
         $tpl = (string) ($rule->reply_template ?? '');
-        $inside = (float) $this->settings->bizGet($businessId, "business.{$businessId}.default_delivery_cost", 'business.default_delivery_cost', 60);
+        $inside = $this->insideDeliveryCost($businessId);
         // With $slots, every figure stays a ⟦token⟧ until AFTER the talker
         // has phrased the text — the model never sees or writes a number,
         // and code renders the real values from the database at the end.
@@ -1165,7 +1184,7 @@ class RuleBrainService
             '{price}' => $product ? number_format($product->effectivePrice()) : '',
             '{stock}' => $product ? (string) max(0, $product->available()) : '',
             '{delivery_inside}' => number_format($inside),
-            '{delivery_outside}' => number_format(120),
+            '{delivery_outside}' => number_format($this->outsideDeliveryCost($businessId)),
             '{honorific}' => $honorific ?? '',
         ];
 
@@ -1186,13 +1205,13 @@ class RuleBrainService
     /** Fill ⟦slot⟧ tokens with the real figures from the database. */
     public function renderSlots(string $text, ?Product $product, int $businessId, array $extra = []): string
     {
-        $inside = (float) $this->settings->bizGet($businessId, "business.{$businessId}.default_delivery_cost", 'business.default_delivery_cost', 60);
+        $inside = $this->insideDeliveryCost($businessId);
         $map = [
             '⟦product⟧' => $product ? $product->name : 'পণ্যটা',
             '⟦price⟧' => $product ? number_format($product->effectivePrice()) : '',
             '⟦stock⟧' => $product ? (string) max(0, $product->available()) : '',
             '⟦delivery_inside⟧' => number_format($inside),
-            '⟦delivery_outside⟧' => number_format(120),
+            '⟦delivery_outside⟧' => number_format($this->outsideDeliveryCost($businessId)),
         ];
         foreach ($extra as $k => $v) {
             $map['⟦' . $k . '⟧'] = is_numeric($v) ? number_format((float) $v) : (string) $v;
@@ -1459,18 +1478,232 @@ class RuleBrainService
         return $best;
     }
 
+    /**
+     * The quantity a message states, if it states one (brain fix
+     * batch 13, finding #6): a number tied to a piece word — "২টা",
+     * "2 ta", "৩ পিস", "3 pcs", "২টাই" — or a written-out Bengali
+     * number ("তিনটা", "dui ta"). The unit word is what makes it a
+     * quantity: a bare figure is a price, a phone or an address
+     * number, and "টাকায়" must never read as "টা" (the টা may not
+     * be followed by another Bengali letter, so টাকা/টাকায় fail,
+     * while the emphatic টাই is a unit of its own).
+     */
+    public function extractQuantity(string $text): ?int
+    {
+        $t = $this->guard->normalizeDigits($text);
+        $words = ['এক' => 1, 'দুই' => 2, 'তিন' => 3, 'চার' => 4, 'পাঁচ' => 5, 'ছয়' => 6, 'সাত' => 7, 'আট' => 8, 'নয়' => 9, 'দশ' => 10];
+        foreach ($words as $word => $n) {
+            if (preg_match('/' . $word . '\s*(?:টাই|টা|টি|পিস)(?![\x{0980}-\x{09FF}])/u', $t)) {
+                return $n;
+            }
+        }
+        $roman = ['ek' => 1, 'dui' => 2, 'tin' => 3, 'char' => 4, 'pach' => 5, 'chhoy' => 6, 'sat' => 7, 'at' => 8, 'noy' => 9, 'dosh' => 10];
+        if (preg_match('/\b(' . implode('|', array_keys($roman)) . ')\s+(?:ta|ti|pcs?|pieces?)\b/iu', $t, $m)) {
+            return $roman[mb_strtolower($m[1])];
+        }
+        // The digits must be a STANDALONE number: digits glued to a
+        // product code are the code, not a quantity — "CRUD-102 ta"
+        // is "that CRUD-102" (the demonstrative), and reading it as
+        // 102 pieces would poison the flow (found by BrainFix3Test).
+        if (preg_match('/(?<![\dA-Za-z\-_\x{0980}-\x{09FF}])(\d{1,3})(?!\d)\s*(?:টাই|টা|টি|পিস)(?![\x{0980}-\x{09FF}])/u', $t, $m)) {
+            $n = (int) $m[1];
+            if ($n >= 1) {
+                return $n;
+            }
+        }
+        if (preg_match('/(?<![\dA-Za-z\-_])(\d{1,3})(?!\d)\s*(?:ta|ti|pcs?|pieces?)\b/iu', $t, $m)) {
+            $n = (int) $m[1];
+            if ($n >= 1) {
+                return $n;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * A quantity the customer states rides the order flow (batch
+     * 13): it is remembered on the conversation's state, so the
+     * collection, the summary and the eventual order all read the
+     * same figure, and a later message can change it before
+     * confirmation. It is cleared with the rest of the flow's state
+     * when the flow closes (an order is placed, a cancellation, a
+     * product switch) — never silently inherited by the next order.
+     */
+    private function captureQuantityFromText(Conversation $conversation, string $text): void
+    {
+        $qty = $this->extractQuantity($text);
+        if ($qty === null) {
+            return;
+        }
+        $state = (array) ($conversation->state_data ?? []);
+        if ((int) ($state['qty'] ?? 0) === $qty) {
+            return;
+        }
+        $state['qty'] = $qty;
+        $conversation->state_data = $state;
+        $conversation->save();
+    }
+
+    /** The quantity the current flow is buying (default x1). */
+    private function flowQty(Conversation $conversation): int
+    {
+        $qty = (int) (($conversation->state_data ?? [])['qty'] ?? 1);
+
+        return $qty >= 1 ? min($qty, 999) : 1;
+    }
+
+    /**
+     * The honest answer when the flow asks for more pieces than the
+     * shelf holds (batch 13): how many ARE available, and an
+     * invitation to take those — never a summary, never a silently
+     * shortened order. Counts are not money figures, so the guard
+     * passes the text as written.
+     */
+    private function insufficientQtyBody(int $businessId, ?string $customerName, Product $product, ?\App\Models\ProductVariant $variant, int $want, int $avail): string
+    {
+        return $this->honorificPrefix($businessId, $customerName)
+            . $product->name . ($variant ? ' (' . $variant->name . ')' : '')
+            . ' এখন স্টকে ' . $avail . 'টা আছে। ' . $want . 'টা দেওয়া যাচ্ছে না। '
+            . $avail . 'টা নিলে বলুন, অর্ডার করে দিচ্ছি।';
+    }
+
+    /** Bengali district names a customer writes, to their canonical English form. */
+    private const DISTRICTS_BN = [
+        'চট্টগ্রাম' => 'Chattogram', 'ময়মনসিংহ' => 'Mymensingh', 'নারায়ণগঞ্জ' => 'Narayanganj',
+        'কক্সবাজার' => "Cox's Bazar", 'ব্রাহ্মণবাড়িয়া' => 'Brahmanbaria', 'কিশোরগঞ্জ' => 'Kishoreganj',
+        'মুন্সীগঞ্জ' => 'Munshiganj', 'লক্ষ্মীপুর' => 'Lakshmipur', 'খাগড়াছড়ি' => 'Khagrachari',
+        'লালমনিরহাট' => 'Lalmonirhat', 'পটুয়াখালী' => 'Patuakhali', 'নীলফামারী' => 'Nilphamari',
+        'ঠাকুরগাঁও' => 'Thakurgaon', 'সিরাজগঞ্জ' => 'Sirajganj', 'মৌলভীবাজার' => 'Moulvibazar',
+        'নেত্রকোনা' => 'Netrokona', 'গোপালগঞ্জ' => 'Gopalganj', 'মাদারীপুর' => 'Madaripur',
+        'শরীয়তপুর' => 'Shariatpur', 'ঝালকাঠি' => 'Jhalokati', 'কুড়িগ্রাম' => 'Kurigram',
+        'গাইবান্ধা' => 'Gaibandha', 'জয়পুরহাট' => 'Joypurhat', 'দিনাজপুর' => 'Dinajpur',
+        'রাজশাহী' => 'Rajshahi', 'মানিকগঞ্জ' => 'Manikganj', 'নরসিংদী' => 'Narsingdi',
+        'সুনামগঞ্জ' => 'Sunamganj', 'জামালপুর' => 'Jamalpur', 'টাঙ্গাইল' => 'Tangail',
+        'ফরিদপুর' => 'Faridpur', 'নোয়াখালী' => 'Noakhali', 'কুষ্টিয়া' => 'Kushtia',
+        'ঝিনাইদহ' => 'Jhenaidah', 'বান্দরবান' => 'Bandarban', 'পঞ্চগড়' => 'Panchagarh',
+        'রাঙামাটি' => 'Rangamati', 'সাতক্ষীরা' => 'Satkhira', 'চুয়াডাঙ্গা' => 'Chuadanga',
+        'মেহেরপুর' => 'Meherpur', 'গাজীপুর' => 'Gazipur', 'কুমিল্লা' => 'Cumilla',
+        'বরিশাল' => 'Barishal', 'খুলনা' => 'Khulna', 'সিলেট' => 'Sylhet', 'রংপুর' => 'Rangpur',
+        'বগুড়া' => 'Bogura', 'যশোর' => 'Jashore', 'পাবনা' => 'Pabna', 'নাটোর' => 'Natore',
+        'নওগাঁ' => 'Naogaon', 'মাগুরা' => 'Magura', 'রাজবাড়ী' => 'Rajbari', 'নড়াইল' => 'Narail',
+        'বাগেরহাট' => 'Bagerhat', 'বরগুনা' => 'Barguna', 'ভোলা' => 'Bhola', 'ফেনী' => 'Feni',
+        'চাঁদপুর' => 'Chandpur', 'হবিগঞ্জ' => 'Habiganj', 'শেরপুর' => 'Sherpur', 'ঢাকা' => 'Dhaka',
+    ];
+
+    /** English district names (the same canonical list OrderService derives order districts from). */
+    private const DISTRICTS_EN = [
+        'Bandarban', 'Barguna', 'Barishal', 'Bhola', 'Bogura', 'Brahmanbaria', 'Chandpur', 'Chattogram',
+        'Chuadanga', 'Comilla', "Cox's Bazar", 'Dhaka', 'Dinajpur', 'Faridpur', 'Feni', 'Gaibandha',
+        'Gazipur', 'Gopalganj', 'Habiganj', 'Jamalpur', 'Jashore', 'Jhalokati', 'Jhenaidah', 'Joypurhat',
+        'Khagrachari', 'Khulna', 'Kishoreganj', 'Kurigram', 'Kushtia', 'Lakshmipur', 'Lalmonirhat',
+        'Madaripur', 'Magura', 'Manikganj', 'Meherpur', 'Moulvibazar', 'Munshiganj', 'Mymensingh',
+        'Naogaon', 'Narail', 'Narayanganj', 'Narsingdi', 'Natore', 'Netrokona', 'Nilphamari', 'Noakhali',
+        'Pabna', 'Panchagarh', 'Patuakhali', 'Pirojpur', 'Rajbari', 'Rajshahi', 'Rangamati', 'Rangpur',
+        'Satkhira', 'Shariatpur', 'Sherpur', 'Sirajganj', 'Sunamganj', 'Sylhet', 'Tangail', 'Thakurgaon',
+        'Chapai Nawabganj', 'Bagerhat', 'Chittagong', 'Jessore', 'Nawabganj',
+    ];
+
+    /**
+     * The district a text names, if it names one (batch 13): the
+     * canonical name, whether it is inside Dhaka, and the display
+     * form the customer used. "ঢাকার বাইরে" (outside Dhaka) is a
+     * named area too — the outside one. Longest names match first,
+     * so "Chapai Nawabganj" never reads as "Nawabganj".
+     *
+     * @return array{name: string, inside: bool, display: string}|null
+     */
+    private function districtMention(?string $text): ?array
+    {
+        $t = trim((string) $text);
+        if ($t === '') {
+            return null;
+        }
+        if (preg_match('/ঢাকার বাইরে|ঢাকার বাহিরে|outside\s+dhaka/iu', $t)) {
+            return ['name' => 'Outside Dhaka', 'inside' => false, 'display' => 'ঢাকার বাইরে'];
+        }
+        $bn = self::DISTRICTS_BN;
+        uksort($bn, fn ($a, $b) => mb_strlen($b) <=> mb_strlen($a));
+        foreach ($bn as $name => $canonical) {
+            if (str_contains($t, $name)) {
+                return ['name' => $canonical, 'inside' => $canonical === 'Dhaka', 'display' => $name];
+            }
+        }
+        $en = self::DISTRICTS_EN;
+        usort($en, fn ($a, $b) => strlen($b) <=> strlen($a));
+        foreach ($en as $name) {
+            if (preg_match('/(?<![A-Za-z])' . preg_quote($name, '/') . '(?![A-Za-z])/i', $t)) {
+                $canonical = $name === 'Chittagong' ? 'Chattogram' : ($name === 'Jessore' ? 'Jashore' : ($name === 'Comilla' ? 'Cumilla' : $name));
+
+                return ['name' => $canonical, 'inside' => $canonical === 'Dhaka', 'display' => $name];
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * The delivery charge a summary quotes for this conversation
+     * (batch 13, finding #7): the zone test is the platform's one
+     * definition — CourierMethod::isInsideDhaka() over the district
+     * the customer's stated address names — and each side charges
+     * its own Business Profile figure. An address that names no
+     * district at all is not inside Dhaka by that test, so it
+     * charges the outside figure, exactly as the courier charge for
+     * an order with no district already does.
+     */
+    private function summaryDeliveryCharge(int $businessId, ?string $address): float
+    {
+        $mention = $this->districtMention($address);
+        $district = $mention['name'] ?? null;
+
+        return \App\Models\CourierMethod::isInsideDhaka($district)
+            ? $this->insideDeliveryCost($businessId)
+            : $this->outsideDeliveryCost($businessId);
+    }
+
+    /**
+     * A delivery-charge question that names its area is answered
+     * with THAT area's charge (batch 13 — the reviewer's catalog
+     * 'Area charge' case, implemented here once): the slotted body
+     * for the delivery rule, or null when the message names no area
+     * and the rule's own both-charges template should answer.
+     */
+    private function areaChargeBody(int $businessId, string $text, ?string $customerName): ?string
+    {
+        $mention = $this->districtMention($text);
+        if ($mention === null) {
+            return null;
+        }
+        $prefix = $this->honorificPrefix($businessId, $customerName);
+        if ($mention['name'] === 'Outside Dhaka') {
+            return $prefix . 'ঢাকার বাইরে ডেলিভারি চার্জ ⟦delivery_outside⟧ টাকা।';
+        }
+        $slot = $mention['inside'] ? '⟦delivery_inside⟧' : '⟦delivery_outside⟧';
+
+        return $prefix . $mention['display'] . ' এলাকায় ডেলিভারি চার্জ ' . $slot . ' টাকা।';
+    }
+
     /** The order summary text + meta, shared by the direct and guided-collection paths. */
     private function buildSummary(Conversation $conversation, Product $product, ?\App\Models\ProductVariant $variant): array
     {
-        // The shop's own delivery charge, through the same bizGet fallback
-        // chain the delivery answer uses (Round 6, P6) - never a flat 60
-        // the shop never set.
         $biz = (int) $conversation->business_id;
-        $delivery = (float) $this->settings->bizGet($biz, "business.{$biz}.default_delivery_cost", 'business.default_delivery_cost', 60);
+        // The delivery charge follows the customer's area (batch 13,
+        // finding #7): the zone is read from the stated address with
+        // the platform's one zone test, and each side charges the
+        // shop's own Business Profile figure — before this batch the
+        // inside figure was charged to every district.
+        $delivery = $this->summaryDeliveryCharge($biz, $conversation->customer_address);
         // A price agreed in bargaining is the price the customer pays —
         // the summary must not jump back to the full price.
         $unit = $conversation->neg_offer !== null ? (float) $conversation->neg_offer : ($variant ? $variant->effectivePrice() : $product->effectivePrice());
-        $total = $unit + $delivery;
+        // The quantity the flow is buying (batch 13, finding #6):
+        // bargaining settles the PIECE price; the line total is that
+        // price times the quantity, and the delivery charge is added
+        // once for the parcel, never per piece.
+        $qty = $this->flowQty($conversation);
+        $line = $unit * $qty;
+        $total = $line + $delivery;
         $itemName = $product->name . ($variant ? ' (' . $variant->name . ')' : '');
         // The quantity sits in parentheses, never "×1 - price": the
         // money guard reads "1 - 3,400 টাকা" as a price RANGE and the
@@ -1482,16 +1715,16 @@ class RuleBrainService
         $body = $conversation->customer_name . "\n"
             . 'ফোন: ' . ($conversation->customer_phone ?: 'ফোন বাকি') . "\n"
             . 'ঠিকানা: ' . ($conversation->customer_address ?: 'ঠিকানা বাকি') . "\n"
-            . $itemName . ' (×1) ' . number_format($unit) . ' টাকা' . "\n"
+            . $itemName . ' (×' . $qty . ') ' . number_format($line) . ' টাকা' . "\n"
             . 'ডেলিভারি চার্জ: ' . number_format($delivery) . ' টাকা' . "\n"
             . 'মোট: ' . number_format($total) . ' টাকা (Cash on Delivery)';
         // Cart snapshot: what this conversation is currently buying.
         $state = (array) ($conversation->state_data ?? []);
-        $state['cart'] = [['product_id' => $product->id, 'variant_id' => $variant?->id, 'variant_name' => $variant?->name, 'qty' => 1, 'agreed_price' => $unit]];
+        $state['cart'] = [['product_id' => $product->id, 'variant_id' => $variant?->id, 'variant_name' => $variant?->name, 'qty' => $qty, 'agreed_price' => $unit]];
         $conversation->state_data = $state;
         $conversation->save();
 
-        return ['body' => $body, 'meta' => ['product_id' => $product->id, 'total' => $total, 'unit_price' => $unit, 'variant_name' => $variant?->name]];
+        return ['body' => $body, 'meta' => ['product_id' => $product->id, 'total' => $total, 'unit_price' => $unit, 'variant_name' => $variant?->name, 'qty' => $qty, 'delivery' => $delivery]];
     }
 
     /**
@@ -1607,6 +1840,14 @@ class RuleBrainService
             }
 
             return ['slottedBody' => $body, 'kind' => 'collect_question', 'meta' => $meta, 'body' => null];
+        }
+        // More pieces wanted than the shelf holds (batch 13): the
+        // honest count is the whole reply — no summary quoting a
+        // quantity the shop cannot ship, and no short order later.
+        $wantQty = $this->flowQty($conversation);
+        $availQty = $this->focusAvailable($product, $variant);
+        if ($wantQty > 1 && $availQty !== null && $availQty < $wantQty) {
+            return ['slottedBody' => $this->insufficientQtyBody($biz, $conversation->customer_name, $product, $variant, $wantQty, (int) $availQty), 'kind' => 'insufficient_stock', 'meta' => ['insufficient_stock' => true, 'qty' => $wantQty, 'available' => (int) $availQty], 'body' => null];
         }
         $summary = $this->buildSummary($conversation, $product, $variant);
         $meta = $summary['meta'];
@@ -2078,7 +2319,7 @@ class RuleBrainService
                 ];
             }
         }
-        unset($state['collect'], $state['cart'], $state['floor_repeats'], $state['pending_summary']);
+        unset($state['collect'], $state['cart'], $state['floor_repeats'], $state['pending_summary'], $state['qty']);
         $conversation->state_data = $state;
         $conversation->state = null;
         $conversation->neg_step = 0;
@@ -2099,6 +2340,7 @@ class RuleBrainService
         $meta = (array) ($msg->meta ?? []);
         $unit = (float) ($meta['unit_price'] ?? 0);
         $total = (float) ($meta['total'] ?? 0);
+        $qty = (int) ($meta['qty'] ?? 1);
         $state = (array) ($conversation->state_data ?? []);
         $state['pending_summary'] = [
             'message_id' => (int) $msg->id,
@@ -2106,7 +2348,12 @@ class RuleBrainService
             'variant_id' => $variant?->id,
             'variant_name' => $meta['variant_name'] ?? null,
             'unit_price' => $unit,
-            'delivery' => $total - $unit,
+            // The charge the summary quoted for the customer's area
+            // (batch 13): with a quantity the delivery is no longer
+            // total minus ONE unit, so it is snapshotted from the
+            // summary itself, never re-derived.
+            'delivery' => isset($meta['delivery']) ? (float) $meta['delivery'] : $total - $unit * $qty,
+            'qty' => $qty,
             'total' => $total,
             'name' => (string) ($conversation->customer_name ?? ''),
             'phone' => (string) ($conversation->customer_phone ?? ''),
@@ -2147,18 +2394,27 @@ class RuleBrainService
         if (str_starts_with($name, '+')) {
             $name = 'Karim Sheikh';
         }
+        // The delivery charge the summary quoted (batch 13): the
+        // snapshot on the summary itself — the area's figure at the
+        // rate in force when the customer saw it — so the order's
+        // total equals the summary's exactly. Summaries written
+        // before the snapshot existed fall back to the pending
+        // state's own record of the quote, and only then to the
+        // shop's configured inside cost, as before (Hunt V1).
+        $pendingNow = (array) (($conversation->state_data ?? [])['pending_summary'] ?? []);
+        $quotedDelivery = isset($summary->meta['delivery'])
+            ? (float) $summary->meta['delivery']
+            : (isset($pendingNow['delivery']) ? (float) $pendingNow['delivery'] : $this->insideDeliveryCost($biz));
         $order = app(OrderService::class)->create($biz, [
             'customer_name' => $name,
             'customer_phone' => $conversation->customer_phone ?: '01712345678',
             'customer_address' => $conversation->customer_address,
             'source' => $source,
             'status' => 'Pending',
-            // The delivery charge the summary quoted: the shop's
-            // configured cost, read the same way buildSummary reads
-            // it — never a hardcoded 60 the shop may not charge
-            // (Hunt V1).
-            'delivery_charge' => (float) $this->settings->bizGet($biz, "business.{$biz}.default_delivery_cost", 'business.default_delivery_cost', 60),
-            'items' => [['product_id' => $product->id, 'qty' => 1, 'price' => isset($summary->meta['unit_price']) ? (float) $summary->meta['unit_price'] : null, 'variant_name' => $summary->meta['variant_name'] ?? null]],
+            'delivery_charge' => $quotedDelivery,
+            // The quantity the summary sold (batch 13): the line is
+            // qty pieces at the summarised per-piece price.
+            'items' => [['product_id' => $product->id, 'qty' => (int) ($summary->meta['qty'] ?? $pendingNow['qty'] ?? 1), 'price' => isset($summary->meta['unit_price']) ? (float) $summary->meta['unit_price'] : null, 'variant_name' => $summary->meta['variant_name'] ?? null]],
         ], $actor, 'Chat order intake');
 
         // The order consumed the collected details (batch 2): the
@@ -2187,6 +2443,63 @@ class RuleBrainService
      *  - no summary pending but an order was just placed here: a bare
      *    repeat confirmation gets that order's status.
      */
+    /**
+     * A quantity change while a summary is on the table (batch 13):
+     * the customer said how many they want and it differs from the
+     * summarised quantity, so the old summary is retired (a draft is
+     * rejected, closing the seller approval route to a stale figure)
+     * and a fresh summary at the new quantity takes its place — or
+     * the honest count when the shelf cannot cover the new quantity.
+     * Runs before the confirmation hook: a message carrying a new
+     * quantity is a correction to the order, never a confirmation
+     * of the old one.
+     */
+    private function qtyChangeRerender(Conversation $conversation, string $mode): ?ChatMessage
+    {
+        $state = (array) ($conversation->state_data ?? []);
+        $pending = (array) ($state['pending_summary'] ?? []);
+        if ($pending === [] || empty($pending['message_id'])) {
+            return null;
+        }
+        $want = $this->flowQty($conversation);
+        if ($want === (int) ($pending['qty'] ?? 1)) {
+            return null;
+        }
+        $biz = (int) $conversation->business_id;
+        $product = Product::where('business_id', $biz)->find((int) ($pending['product_id'] ?? 0));
+        $oldMsg = ChatMessage::find((int) $pending['message_id']);
+        if ($product === null) {
+            // The product is gone: leave the pending summary to the
+            // confirmation hook's own handling of that case.
+            return null;
+        }
+        $variant = ! empty($pending['variant_id']) ? \App\Models\ProductVariant::find((int) $pending['variant_id']) : null;
+        if ($oldMsg !== null) {
+            $this->rejectDraft($oldMsg);
+        }
+        unset($state['pending_summary']);
+        $conversation->state_data = $state;
+        $conversation->save();
+        $avail = $this->focusAvailable($product, $variant);
+        if ($avail !== null && $avail < $want) {
+            return $this->simpleOutgoing($conversation, $this->insufficientQtyBody($biz, $conversation->customer_name, $product, $variant, $want, (int) $avail), 'insufficient_stock', $mode, ['insufficient_stock' => true, 'qty' => $want, 'available' => (int) $avail]);
+        }
+        $summary = $this->buildSummary($conversation, $product, $variant);
+        $msg = ChatMessage::create([
+            'business_id' => $biz,
+            'conversation_id' => $conversation->id,
+            'direction' => 'out',
+            'sender' => 'ai',
+            'body' => $summary['body'],
+            'status' => $mode === 'full_auto' ? 'sent' : 'draft',
+            'meta' => array_merge($summary['meta'], ['kind' => 'order_summary', 'qty_changed' => true]),
+        ]);
+        $this->markSummaryPending($conversation, $msg, $variant);
+        $this->log($biz, $msg->status === 'sent' ? 'auto_sent' : 'draft_created', $conversation->customer_name . ' — Order summary (quantity changed to ' . $want . ')', null, $conversation);
+
+        return $msg;
+    }
+
     private function summaryConfirmation(Conversation $conversation, ?Product $product, int $biz, string $mode, ?AiRule $rule, ?string $intent, string $text): ?array
     {
         if ($rule && $rule->action === 'handover') {
@@ -2246,6 +2559,19 @@ class RuleBrainService
                 $conversation->state_data = $state;
                 $conversation->save();
                 $msg = $this->simpleOutgoing($conversation, $this->outOfStockBody($biz, $conversation->customer_name, $product, $pVariant), 'out_of_stock', $mode, ['out_of_stock' => true]);
+
+                return ['message' => $msg];
+            }
+            $pendQty = (int) ($pending['qty'] ?? 1);
+            $pendAvail = $this->focusAvailable($product, $pVariant);
+            if ($pendQty > 1 && $pendAvail !== null && $pendAvail < $pendQty) {
+                // The shelf dropped below the summarised quantity
+                // after the summary was shown (batch 13): no order —
+                // the honest count instead, never a short order.
+                unset($state['pending_summary']);
+                $conversation->state_data = $state;
+                $conversation->save();
+                $msg = $this->simpleOutgoing($conversation, $this->insufficientQtyBody($biz, $conversation->customer_name, $product, $pVariant, $pendQty, (int) $pendAvail), 'insufficient_stock', $mode, ['insufficient_stock' => true, 'qty' => $pendQty, 'available' => (int) $pendAvail]);
 
                 return ['message' => $msg];
             }
@@ -2501,7 +2827,7 @@ class RuleBrainService
                     $this->rejectDraft($summaryMsg);
                 }
             }
-            unset($state['collect'], $state['cart'], $state['floor_repeats'], $state['pending_summary']);
+            unset($state['collect'], $state['cart'], $state['floor_repeats'], $state['pending_summary'], $state['qty']);
             $state['details_consumed'] = true;
             $state['details_fresh'] = ['name' => false, 'phone' => false, 'address' => false];
             $conversation->state_data = $state;
@@ -2671,6 +2997,14 @@ class RuleBrainService
             // stops here with the honest answer - no summary, no order.
             if ($this->focusAvailable($product, $variant) <= 0) {
                 return $this->simpleOutgoing($conversation, $this->outOfStockBody($biz, $conversation->customer_name, $product, $variant), 'out_of_stock', $mode, ['out_of_stock' => true]);
+            }
+            // Fewer pieces on the shelf than the flow is buying
+            // (batch 13): the honest count stops the summary the
+            // same way — the customer can still take what IS there.
+            $wantQty = $this->flowQty($conversation);
+            $availQty = $this->focusAvailable($product, $variant);
+            if ($wantQty > 1 && $availQty !== null && $availQty < $wantQty) {
+                return $this->simpleOutgoing($conversation, $this->insufficientQtyBody($biz, $conversation->customer_name, $product, $variant, $wantQty, (int) $availQty), 'insufficient_stock', $mode, ['insufficient_stock' => true, 'qty' => $wantQty, 'available' => (int) $availQty]);
             }
             $summary = $this->buildSummary($conversation, $product, $variant);
             $msg = ChatMessage::create([
@@ -2886,8 +3220,9 @@ class RuleBrainService
      */
     public function allowedFigures(int $businessId, ?Product $product): array
     {
-        $inside = (float) $this->settings->bizGet($businessId, "business.{$businessId}.default_delivery_cost", 'business.default_delivery_cost', 60);
-        $figures = [$inside, 120.0, $this->negotiation->config($businessId)['free_delivery_min']];
+        $inside = $this->insideDeliveryCost($businessId);
+        $outside = $this->outsideDeliveryCost($businessId);
+        $figures = [$inside, $outside, $this->negotiation->config($businessId)['free_delivery_min']];
         if ($product) {
             $prices = [(float) $product->price, $product->effectivePrice()];
             foreach ($product->activeVariants() as $v) {
@@ -2902,7 +3237,7 @@ class RuleBrainService
             foreach (array_unique($prices) as $p) {
                 $figures[] = $p;
                 $figures[] = $p + $inside;
-                $figures[] = $p + 120.0;
+                $figures[] = $p + $outside;
             }
 
             return $figures;
@@ -2920,7 +3255,7 @@ class RuleBrainService
             foreach ($this->negotiation->ladder($p) as $rung) {
                 $figures[] = (float) $rung;
                 $figures[] = (float) $rung + 60.0;
-                $figures[] = (float) $rung + 120.0;
+                $figures[] = (float) $rung + $outside;
             }
         }
 
@@ -3156,6 +3491,11 @@ class RuleBrainService
         // conversation to it (with the negotiation reset) BEFORE any
         // intent or rule reads the old product's state.
         $this->switchProductIfNamed($conversation, $text);
+
+        // A quantity stated anywhere in the message rides the flow
+        // (batch 13) — captured after the switch, so a quantity in
+        // the switch message itself counts for the NEW product.
+        $this->captureQuantityFromText($conversation, $text);
 
         $rule = $this->matchRule($biz, $text, $conversation->channel, $conversation);
         $intent = $this->detectIntent($text, $conversation);
@@ -3469,6 +3809,15 @@ class RuleBrainService
             }
         }
 
+        // A quantity change with a summary on the table re-renders
+        // the summary at the new quantity (batch 13) — before the
+        // confirmation hook, so "না, ৩টা করেন" never confirms the
+        // old x1 summary.
+        $qtyChange = $this->qtyChangeRerender($conversation, $mode);
+        if ($qtyChange !== null) {
+            return $qtyChange;
+        }
+
         // A confirmation of a summary already on the table is handled
         // before the reply chain (batch 3): it creates the order (Full
         // auto), marks the order draft (Draft modes), or answers with
@@ -3641,6 +3990,17 @@ class RuleBrainService
                 }
             }
             $slottedBody = $this->buildReply($rule, $product, $biz, true, $this->honorific($biz, $conversation->customer_name));
+            if ($rule->match_text === 'delivery') {
+                // A delivery-charge question that names its area is
+                // answered with THAT area's charge (batch 13 — the
+                // reviewer's catalog 'Area charge' case): the rule's
+                // both-charges template would not answer the question
+                // that was asked. No area named: the template stands.
+                $areaBody = $this->areaChargeBody($biz, $text, $conversation->customer_name);
+                if ($areaBody !== null) {
+                    $slottedBody = $areaBody;
+                }
+            }
             if (trim($slottedBody) === '') {
                 $conversation->needs_human = true;
                 $conversation->save();
@@ -3744,7 +4104,7 @@ class RuleBrainService
         $slotValues = $slotValues ?? [];
         if ($kind === 'order_summary') {
             $draftRendered = $body;
-        } elseif ($kind === 'variant_question' || $kind === 'collect_question' || $kind === 'out_of_stock' || $kind === 'product_clarify') {
+        } elseif ($kind === 'variant_question' || $kind === 'collect_question' || $kind === 'out_of_stock' || $kind === 'product_clarify' || $kind === 'insufficient_stock') {
             // Fixed questions and the out-of-stock answer must reach the
             // customer word-for-word — no phrasing.
             $draftRendered = $this->renderSlots($slottedBody, $product, $biz, $slotValues);
@@ -3795,8 +4155,21 @@ class RuleBrainService
         }
         if ($conversation->neg_offer !== null) {
             $neg = (float) $conversation->neg_offer;
-            $insideNow = (float) $this->settings->bizGet($biz, "business.{$biz}.default_delivery_cost", 'business.default_delivery_cost', 60);
-            $extraFigures = array_merge($extraFigures, [$neg, $neg + $insideNow, $neg + 120.0]);
+            $insideNow = $this->insideDeliveryCost($biz);
+            $extraFigures = array_merge($extraFigures, [$neg, $neg + $insideNow, $neg + $this->outsideDeliveryCost($biz)]);
+        }
+        if (($kind ?? null) === 'order_summary' && isset($meta['total'])) {
+            // The summary's own totals (batch 13): the line total is
+            // unit x qty and the grand total adds the delivery charge
+            // for the customer's area — both are honest for THIS
+            // conversation only, derived from the summary snapshot
+            // the customer is looking at, so the guard must allow
+            // exactly them (a x3 summary's 3,900 line is in no
+            // per-product figure set).
+            $extraFigures[] = (float) $meta['total'];
+            if (isset($meta['unit_price'])) {
+                $extraFigures[] = (float) $meta['unit_price'] * (int) ($meta['qty'] ?? 1);
+            }
         }
         // The guards run over EVERY auto-send, whatever produced the text
         // (template, keyword rule or talker) - claimViolations no longer
@@ -3930,13 +4303,22 @@ class RuleBrainService
         $extras = [];
         if ($conv && $conv->neg_offer !== null) {
             $neg = (float) $conv->neg_offer;
-            $insideNow = (float) $this->settings->bizGet($biz, "business.{$biz}.default_delivery_cost", 'business.default_delivery_cost', 60);
-            $extras = [$neg, $neg + $insideNow, $neg + 120.0];
+            $insideNow = $this->insideDeliveryCost($biz);
+            $extras = [$neg, $neg + $insideNow, $neg + $this->outsideDeliveryCost($biz)];
         }
         if (!empty($msg->meta['unit_price'])) {
             $unit = (float) $msg->meta['unit_price'];
-            $insideNow = (float) $this->settings->bizGet($biz, "business.{$biz}.default_delivery_cost", 'business.default_delivery_cost', 60);
-            $extras = array_merge($extras, [$unit, $unit + $insideNow, $unit + 120.0]);
+            $insideNow = $this->insideDeliveryCost($biz);
+            $extras = array_merge($extras, [$unit, $unit + $insideNow, $unit + $this->outsideDeliveryCost($biz)]);
+            if (!empty($msg->meta['total'])) {
+                // A summary draft's own figures (batch 13): its line
+                // total is unit x qty and its grand total adds the
+                // area's delivery charge — both quoted to the
+                // customer in this very draft, so approval must not
+                // hold it for figures it honestly carries.
+                $extras[] = (float) $msg->meta['total'];
+                $extras[] = $unit * (int) ($msg->meta['qty'] ?? 1);
+            }
         }
         $slotValues = [];
         if ($focus && !empty($msg->meta['variant_name'])) {

@@ -132,6 +132,7 @@ function BusinessProfileForm({ m2 }) {
             <div className="frow"><label className="fl">{t('Invoice Prefix')}</label><input className="inp" style={{ maxWidth: 140 }} value={form.data.invoice_slug} onChange={(e) => form.setData('invoice_slug', e.target.value)} />
                 <div className="sm mut mt8">{t('Invoice numbers look like')} {form.data.invoice_slug || 'OB'}287 - {t('changing the prefix only affects new orders')}</div></div>
             <div className="frow"><label className="fl">{t('Default Delivery Charge (৳)')}</label><input className="inp" type="number" min="0" style={{ maxWidth: 180 }} value={form.data.default_delivery_cost} onChange={(e) => form.setData('default_delivery_cost', e.target.value)} /></div>
+            <div className="frow"><label className="fl">{t('Default Delivery Charge Outside Dhaka (৳)')}</label><input className="inp" type="number" min="0" style={{ maxWidth: 180 }} value={form.data.default_delivery_cost_outside ?? ''} onChange={(e) => form.setData('default_delivery_cost_outside', e.target.value)} /></div>
             <div className="flex mt16"><span className="spacer" /><button type="submit" className="btn pri" disabled={form.processing}>{t('Save Changes')}</button></div>
         </form>
     );

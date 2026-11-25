@@ -564,6 +564,7 @@
  "Invoice numbers look like": "Invoice numbers look like",
  "changing the prefix only affects new orders": "changing the prefix only affects new orders",
  "Default Delivery Charge (৳)": "Default Delivery Charge (৳)",
+ "Default Delivery Charge Outside Dhaka (৳)": "Default Delivery Charge Outside Dhaka (৳)",
  "Which places orders may enter from - hidden sources do not appear on the New Order form": "Which places orders may enter from - hidden sources do not appear on the New Order form",
  "Reset to Default": "Reset to Default",
  "The invoice design and the SMS texts used by the order actions Send Reminder SMS and Send Advance SMS": "The invoice design and the SMS texts used by the order actions Send Reminder SMS and Send Advance SMS",

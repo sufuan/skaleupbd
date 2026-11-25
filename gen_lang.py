@@ -365,7 +365,7 @@ BN = collections.OrderedDict([
     ('Returned', 'ফেরত এসেছে'),
     ('Pending Return', 'ফেরত অপেক্ষমাণ'),
     ('Pending Cancel', 'বাতিল অপেক্ষমাণ'),
-    ('Partial', 'আংশিক'),
+
     ('Lost', 'হারিয়ে গেছে'),
     ('All', 'সব'),
     ('New', 'নতুন'),
@@ -581,6 +581,7 @@ BN = collections.OrderedDict([
     ('Invoice numbers look like', 'ইনভয়েস নম্বর দেখতে এমন'),
     ('changing the prefix only affects new orders', 'প্রিফিক্স বদলালে শুধু নতুন অর্ডারে কাজ করবে'),
     ('Default Delivery Charge (৳)', 'ডিফল্ট ডেলিভারি চার্জ (৳)'),
+    ('Default Delivery Charge Outside Dhaka (৳)', 'ঢাকার বাইরে ডিফল্ট ডেলিভারি চার্জ (৳)'),
     ('Which places orders may enter from - hidden sources do not appear on the New Order form', 'কোন কোন জায়গা থেকে অর্ডার আসতে পারবে - লুকানো উৎস New Order ফর্মে দেখায় না'),
     ('Reset to Default', 'ডিফল্টে ফেরত নিন'),
     ('The invoice design and the SMS texts used by the order actions Send Reminder SMS and Send Advance SMS', 'ইনভয়েসের ডিজাইন আর অর্ডারের Send Reminder SMS ও Send Advance SMS অ্যাকশনে ব্যবহৃত SMS-এর লেখা'),

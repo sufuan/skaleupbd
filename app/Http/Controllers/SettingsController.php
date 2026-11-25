@@ -190,6 +190,10 @@ class SettingsController extends Controller
                     'address' => $this->settings->shopContact($biz, 'address'),
                     'invoice_slug' => (string) $this->settings->bizGet($biz, "business.{$biz}.invoice_slug", 'business.invoice_slug', 'OB'),
                     'default_delivery_cost' => (float) $this->settings->bizGet($biz, "business.{$biz}.default_delivery_cost", 'business.default_delivery_cost', 60),
+                    // The chat summary's outside-Dhaka charge (brain
+                    // fix batch 13): its own setting since this batch —
+                    // before it the figure was hardcoded in the brain.
+                    'default_delivery_cost_outside' => (float) $this->settings->bizGet($biz, "business.{$biz}.default_delivery_cost_outside", 'business.default_delivery_cost_outside', 120),
                 ],
                 // Merchant Profile: the shop's own verification details,
                 // stored per business like the profile above (the tab
@@ -368,6 +372,10 @@ class SettingsController extends Controller
             'address' => ['nullable', 'string', 'max:300'],
             'invoice_slug' => ['required', 'string', 'max:10'],
             'default_delivery_cost' => ['required', 'numeric', 'min:0'],
+            // Optional so a caller that predates the field keeps
+            // saving the form untouched; when it IS sent it must be
+            // a sane figure.
+            'default_delivery_cost_outside' => ['nullable', 'numeric', 'min:0'],
         ]);
         // One source (Hunt Z4-M3): the businesses row carries the
         // shop's name, phone and address - the seller header, the
@@ -387,6 +395,9 @@ class SettingsController extends Controller
         $this->setLogged($request, "business.{$biz}.address", $data['address'] ?? '');
         $this->setLoggedBiz($request, $biz, "business.{$biz}.invoice_slug", 'business.invoice_slug', strtoupper($data['invoice_slug']));
         $this->setLoggedBiz($request, $biz, "business.{$biz}.default_delivery_cost", 'business.default_delivery_cost', (float) $data['default_delivery_cost']);
+        if (isset($data['default_delivery_cost_outside']) && $data['default_delivery_cost_outside'] !== null && $data['default_delivery_cost_outside'] !== '') {
+            $this->setLoggedBiz($request, $biz, "business.{$biz}.default_delivery_cost_outside", 'business.default_delivery_cost_outside', (float) $data['default_delivery_cost_outside']);
+        }
 
         return back()->with('success', __('Business settings saved'));
     }
