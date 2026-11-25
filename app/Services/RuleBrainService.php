@@ -2693,6 +2693,20 @@ class RuleBrainService
         }
 
         if ($sideIntent !== null) {
+            // Resolution before the side answer (batch 11b): batch
+            // 11's resolveProduct() never ran inside collect mode,
+            // so a side question naming a CATEGORY ("Panjabi tar dam
+            // koto?" while collecting one of two Panjabis) was
+            // answered about the collect product — a silent guess,
+            // live 2026-11-25 20:26. A category tie now clarifies
+            // from here too; the pick is then resolved by the
+            // existing machinery at the top of handleIncoming and
+            // routed at the collecting dispatch.
+            $clarify = $this->collectClarification($conversation, $collect, $sideIntent, $text, $mode);
+            if ($clarify !== null) {
+                return $clarify;
+            }
+
             // The question is answered and the reminder appended; the
             // collection itself is untouched — same step, same retries,
             // still waiting for the same pieces.
@@ -2724,6 +2738,62 @@ class RuleBrainService
         $conversation->save();
 
         return $this->simpleOutgoing($conversation, $this->collectQuestion($biz, $this->collectMissing($conversation), $conversation->customer_name), 'collect_question', $mode, ['collect' => $next]);
+    }
+
+    /**
+     * The clarification a mid-collection side question can owe
+     * (brain fix batch 11b): the customer is collecting one product
+     * but asks about a category that ties two or more ("Panjabi tar
+     * dam koto?" while collecting one of two Panjabis). Batch 11's
+     * resolution runs here exactly as in the main chain — the side
+     * question is resolved, and only a genuine category tie
+     * (ambiguousProductsFor) clarifies: the candidates are listed by
+     * name, no prices, and NO collect reminder is appended (the
+     * clarification is a question of its own, not a side answer).
+     * The collection state is left exactly as it was; the pending
+     * pick is remembered with the collect product's id, so the
+     * collecting dispatch in handleIncoming can tell a pick of the
+     * collect product (answer + keep collecting) from a pick of a
+     * different one (a product switch). Anything that is not a tie
+     * — the collect product itself, an explicit name, a bare
+     * follow-up to the fresh focus — returns null and the batch-5
+     * side answer proceeds untouched. (resolveProduct's bare-
+     * question listing is deliberately not imported: mid-collection
+     * the collect product IS the referent of a bare question, and
+     * the resolution's FOCUS_REF outcome already says so whenever
+     * the focus is fresh; the tie check keeps the listing from
+     * leaking in through a stale focus timestamp.)
+     */
+    private function collectClarification(Conversation $conversation, array $collect, string $sideIntent, string $text, string $mode): ?ChatMessage
+    {
+        $biz = (int) $conversation->business_id;
+        $rule = AiRule::where('business_id', $biz)->where('active', true)
+            ->where('trigger_type', 'intent')->where('match_text', $sideIntent)
+            ->where(fn ($q) => $q->whereNull('channel')->orWhere('channel', $conversation->channel))
+            ->first();
+        if ($rule === null) {
+            return null;
+        }
+        $resolution = $this->resolveProduct($conversation, $text, $rule);
+        if ($resolution['type'] !== 'category_multi' || $this->ambiguousProductsFor($biz, $text) === null) {
+            return null;
+        }
+        $candidates = $resolution['candidates'];
+        $names = collect($candidates)->map(fn (Product $p) => $p->name)->implode(', ');
+        $body = $this->honorificPrefix($biz, $conversation->customer_name)
+            . 'কোন পণ্যটার কথা বলছেন? আমাদের পণ্য: ' . $names . '। কোনটা, সেটা বলুন — তাহলেই দাম জানিয়ে দিচ্ছি।';
+        $ids = collect($candidates)->map(fn (Product $p) => (int) $p->id)->all();
+        $state = (array) ($conversation->state_data ?? []);
+        $state['product_clarify'] = [
+            'product_ids' => $ids,
+            'intent' => $sideIntent,
+            'collect_product_id' => (int) ($collect['product_id'] ?? $conversation->product_id),
+        ];
+        $conversation->state_data = $state;
+        $conversation->save();
+        $this->log($biz, 'product_clarify', $conversation->customer_name . ' — ambiguous product mid-collection, asked which one: ' . $names, $rule, $conversation);
+
+        return $this->simpleOutgoing($conversation, $body, 'product_clarify', $mode, ['clarify' => true, 'candidates' => $ids]);
     }
 
     /**
@@ -3334,7 +3404,69 @@ class RuleBrainService
         }
 
         if ($conversation->state === 'collecting') {
-            return $this->handleCollect($conversation, $text, $mode);
+            // A clarification raised INSIDE collection (batch 11b)
+            // gets its pick here: the pick resolution at the top of
+            // this method has already identified the product, and
+            // handleCollect would only read the bare pick ("2") as
+            // a non-answer and re-ask the collect question — the
+            // second half of the live 20:26 failure.
+            if ($pendingPick !== null && ! empty($pendingClarify['collect_product_id'] ?? null)) {
+                if ((int) $pendingPick->id === (int) $pendingClarify['collect_product_id']
+                    && ! $this->carriesDetails($text)) {
+                    // The collect product itself: the pending
+                    // question is answered the batch-5 way (its
+                    // price, or the ladder for a bargain — the
+                    // pick text names no figure, so quote() reads
+                    // it as the original push) and the collection
+                    // continues untouched. A pick carrying details
+                    // stays collection input instead (batch 5/9
+                    // doctrine) and falls to handleCollect below.
+                    $pickCollect = (array) (($conversation->state_data ?? [])['collect'] ?? []);
+                    $pickIntent = in_array((string) ($pendingClarify['intent'] ?? ''), ['price', 'bargain'], true)
+                        ? (string) $pendingClarify['intent'] : 'price';
+
+                    return $this->collectSideAnswer($conversation, $pickCollect, $pickIntent, $text, $mode);
+                }
+                if ((int) $pendingPick->id !== (int) $pendingClarify['collect_product_id']) {
+                    // A different product: a switch, with the same
+                    // close-out switchProductIfNamed performs — the
+                    // old collection ends, its ladder dies, and the
+                    // details it collected are marked consumed (they
+                    // stay on the record for the order-status lookup
+                    // and the channel identity; they stop counting
+                    // for the new product). A detail stated in the
+                    // pick message itself belongs to the new flow.
+                    // The focus already moved to the pick above; the
+                    // chain below then answers the pending question
+                    // for the new product.
+                    $pickState = (array) ($conversation->state_data ?? []);
+                    foreach (['collect', 'cart', 'variant_pending', 'variant_id', 'floor_repeats', 'pending_summary', 'last_order'] as $key) {
+                        unset($pickState[$key]);
+                    }
+                    $pickState['details_consumed'] = true;
+                    $fresh = ['name' => false, 'phone' => false, 'address' => false];
+                    if ($this->extractName($this->guard->normalizeDigits($text)) !== null) {
+                        $fresh['name'] = true;
+                    }
+                    $pickPhone = $this->extractPhone($text);
+                    if ($pickPhone !== null) {
+                        $fresh['phone'] = true;
+                    }
+                    if ($this->extractLabelledAddress($this->guard->normalizeDigits($text), $pickPhone) !== null) {
+                        $fresh['address'] = true;
+                    }
+                    $pickState['details_fresh'] = $fresh;
+                    $conversation->state_data = $pickState;
+                    $conversation->state = null;
+                    $conversation->neg_step = 0;
+                    $conversation->neg_offer = null;
+                    $conversation->save();
+                    $this->log($biz, 'product_switched', $conversation->customer_name . ' — clarification pick switched the collection to: ' . $pendingPick->name, null, $conversation);
+                }
+            }
+            if ($conversation->state === 'collecting') {
+                return $this->handleCollect($conversation, $text, $mode);
+            }
         }
 
         // A confirmation of a summary already on the table is handled
