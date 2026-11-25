@@ -6,6 +6,7 @@ use App\Models\ChannelConnection;
 use App\Models\ChatMessage;
 use App\Models\Comment;
 use App\Models\Conversation;
+use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -131,6 +132,69 @@ class MetaGraphService
         ])->save();
     }
 
+    /**
+     * The full Graph error payload of a failed call, extracted in ONE
+     * place for every send path (Messenger, WhatsApp, Instagram,
+     * comments, images). 'message' keeps the historical behaviour
+     * (error.message, else the HTTP status); the machine fields ride
+     * along so a failed send can be diagnosed from our own records —
+     * the bare message text ("Application does not have permission
+     * for this action") does not say WHICH permission is missing,
+     * the code / subcode / fbtrace_id do.
+     *
+     * @return array{message: string, code: mixed, subcode: mixed, type: mixed, fbtrace_id: mixed}
+     */
+    private function graphError(Response $res): array
+    {
+        return [
+            'message' => (string) ($res->json('error.message') ?? ('HTTP ' . $res->status())),
+            'code' => $res->json('error.code'),
+            'subcode' => $res->json('error.error_subcode'),
+            'type' => $res->json('error.type'),
+            'fbtrace_id' => $res->json('error.fbtrace_id') ?? $res->json('fbtrace_id'),
+        ];
+    }
+
+    /**
+     * Persist a failed send's full Meta error on the message row:
+     * send_error keeps holding ONLY the message text (the inbox
+     * "Failed to send" display reads it), the machine fields land in
+     * their own meta keys, null when Meta did not send them.
+     *
+     * @param  array<string, mixed>  $meta
+     * @param  array{code: mixed, subcode: mixed, type: mixed, fbtrace_id: mixed}|null  $detail
+     * @return array<string, mixed>
+     */
+    private function metaWithSendError(array $meta, string $error, ?array $detail): array
+    {
+        $meta['send_error'] = $error;
+        $meta['send_error_code'] = $detail['code'] ?? null;
+        $meta['send_error_subcode'] = $detail['subcode'] ?? null;
+        $meta['send_error_type'] = $detail['type'] ?? null;
+        $meta['send_fbtrace_id'] = $detail['fbtrace_id'] ?? null;
+
+        return $meta;
+    }
+
+    /**
+     * Log context for a failed send: the message text plus the
+     * machine fields, so the log line alone identifies the cause.
+     *
+     * @param  array{code: mixed, subcode: mixed, type: mixed, fbtrace_id: mixed}|null  $detail
+     * @return array<string, mixed>
+     */
+    private function sendFailureLogContext(ChatMessage $msg, string $error, ?array $detail): array
+    {
+        return [
+            'message_id' => $msg->id,
+            'error' => $error,
+            'error_code' => $detail['code'] ?? null,
+            'error_subcode' => $detail['subcode'] ?? null,
+            'error_type' => $detail['type'] ?? null,
+            'fbtrace_id' => $detail['fbtrace_id'] ?? null,
+        ];
+    }
+
     public function isConnected(string $channel): bool
     {
         $cfg = $this->channelConfig($channel);
@@ -148,11 +212,11 @@ class MetaGraphService
         if (! $conv || ! $conv->external_id) {
             return [true, null]; // not a live channel conversation
         }
-        [$ok, $error, $sentId] = $this->sendText($conv, (string) $msg->body);
+        [$ok, $error, $sentId, $detail] = $this->sendText($conv, (string) $msg->body);
         $meta = (array) ($msg->meta ?? []);
         $meta['send_status'] = $ok ? 'delivered_to_meta' : 'failed';
         if ($error) {
-            $meta['send_error'] = $error;
+            $meta = $this->metaWithSendError($meta, $error, $detail);
         }
         $msg->meta = $meta;
         if ($ok && $sentId) {
@@ -162,18 +226,18 @@ class MetaGraphService
         }
         $msg->save();
         if (! $ok) {
-            Log::warning('Meta send failed', ['message_id' => $msg->id, 'error' => $error]);
+            Log::warning('Meta send failed', $this->sendFailureLogContext($msg, (string) $error, $detail));
         }
 
         return [$ok, $error];
     }
 
-    /** @return array{0: bool, 1: ?string, 2: ?string} ok, error, Meta message id */
+    /** @return array{0: bool, 1: ?string, 2: ?string, 3: ?array} ok, error, Meta message id, Meta error detail */
     public function sendText(Conversation $conv, string $text): array
     {
         [$cfg, $conn] = $this->resolveForConversation($conv);
         if (empty($cfg['token']) || empty($cfg['account_id'])) {
-            return [false, self::NOT_CONNECTED, null];
+            return [false, self::NOT_CONNECTED, null, null];
         }
         try {
             if ($conv->channel === 'whatsapp') {
@@ -198,15 +262,15 @@ class MetaGraphService
                     ? (string) ($res->json('messages.0.id') ?? '')
                     : (string) ($res->json('message_id') ?? '');
 
-                return [true, null, $mid !== '' ? $mid : null];
+                return [true, null, $mid !== '' ? $mid : null, null];
             }
 
-            $error = (string) ($res->json('error.message') ?? ('HTTP ' . $res->status()));
-            $this->noteConnectionFailure($conn, $res->json('error.code'), $error);
+            $detail = $this->graphError($res);
+            $this->noteConnectionFailure($conn, $detail['code'], $detail['message']);
 
-            return [false, $error, null];
+            return [false, $detail['message'], null, $detail];
         } catch (\Throwable $e) {
-            return [false, $e->getMessage(), null];
+            return [false, $e->getMessage(), null, null];
         }
     }
 
@@ -214,13 +278,13 @@ class MetaGraphService
      * Send a message with Messenger/Instagram quick-reply buttons.
      * $options: list of ['title' => ..., 'payload' => ...] (max 13, title ≤ 20 chars).
      *
-     * @return array{0: bool, 1: ?string, 2: ?string} ok, error, Meta message id
+     * @return array{0: bool, 1: ?string, 2: ?string, 3: ?array} ok, error, Meta message id, Meta error detail
      */
     public function sendQuickReplies(Conversation $conv, string $text, array $options): array
     {
         [$cfg, $conn] = $this->resolveForConversation($conv);
         if (empty($cfg['token']) || empty($cfg['account_id'])) {
-            return [false, self::NOT_CONNECTED, null];
+            return [false, self::NOT_CONNECTED, null, null];
         }
         if ($conv->channel === 'whatsapp') {
             // WhatsApp has no quick replies in this shape — plain text.
@@ -239,15 +303,15 @@ class MetaGraphService
             if ($res->successful()) {
                 $mid = (string) ($res->json('message_id') ?? '');
 
-                return [true, null, $mid !== '' ? $mid : null];
+                return [true, null, $mid !== '' ? $mid : null, null];
             }
 
-            $error = (string) ($res->json('error.message') ?? ('HTTP ' . $res->status()));
-            $this->noteConnectionFailure($conn, $res->json('error.code'), $error);
+            $detail = $this->graphError($res);
+            $this->noteConnectionFailure($conn, $detail['code'], $detail['message']);
 
-            return [false, $error, null];
+            return [false, $detail['message'], null, $detail];
         } catch (\Throwable $e) {
-            return [false, $e->getMessage(), null];
+            return [false, $e->getMessage(), null, null];
         }
     }
 
@@ -264,11 +328,11 @@ class MetaGraphService
         if ($conv->channel === 'whatsapp') {
             return $this->dispatch($msg);
         }
-        [$ok, $error, $sentId] = $this->sendQuickReplies($conv, (string) $msg->body, $options);
+        [$ok, $error, $sentId, $detail] = $this->sendQuickReplies($conv, (string) $msg->body, $options);
         $meta = (array) ($msg->meta ?? []);
         $meta['send_status'] = $ok ? 'delivered_to_meta' : 'failed';
         if ($error) {
-            $meta['send_error'] = $error;
+            $meta = $this->metaWithSendError($meta, $error, $detail);
         }
         $msg->meta = $meta;
         if ($ok && $sentId) {
@@ -276,7 +340,7 @@ class MetaGraphService
         }
         $msg->save();
         if (! $ok) {
-            Log::warning('Meta quick-reply send failed', ['message_id' => $msg->id, 'error' => $error]);
+            Log::warning('Meta quick-reply send failed', $this->sendFailureLogContext($msg, (string) $error, $detail));
         }
 
         return [$ok, $error];
@@ -299,10 +363,10 @@ class MetaGraphService
             if ($res->successful()) {
                 return [true, null];
             }
-            $error = (string) ($res->json('error.message') ?? ('HTTP ' . $res->status()));
-            $this->noteConnectionFailure($conn, $res->json('error.code'), $error);
+            $detail = $this->graphError($res);
+            $this->noteConnectionFailure($conn, $detail['code'], $detail['message']);
 
-            return [false, $error];
+            return [false, $detail['message']];
         } catch (\Throwable $e) {
             return [false, $e->getMessage()];
         }
@@ -337,10 +401,10 @@ class MetaGraphService
             if ($res->successful()) {
                 return [true, null];
             }
-            $error = (string) ($res->json('error.message') ?? ('HTTP ' . $res->status()));
-            $this->noteConnectionFailure($conn, $res->json('error.code'), $error);
+            $detail = $this->graphError($res);
+            $this->noteConnectionFailure($conn, $detail['code'], $detail['message']);
 
-            return [false, $error];
+            return [false, $detail['message']];
         } catch (\Throwable $e) {
             return [false, $e->getMessage()];
         }
@@ -362,10 +426,10 @@ class MetaGraphService
             if ($res->successful()) {
                 return [true, null];
             }
-            $error = (string) ($res->json('error.message') ?? ('HTTP ' . $res->status()));
-            $this->noteConnectionFailure($conn, $res->json('error.code'), $error);
+            $detail = $this->graphError($res);
+            $this->noteConnectionFailure($conn, $detail['code'], $detail['message']);
 
-            return [false, $error];
+            return [false, $detail['message']];
         } catch (\Throwable $e) {
             return [false, $e->getMessage()];
         }
@@ -449,10 +513,10 @@ class MetaGraphService
             if ($res->successful()) {
                 return [true, null];
             }
-            $error = (string) ($res->json('error.message') ?? ('HTTP ' . $res->status()));
-            $this->noteConnectionFailure($conn, $res->json('error.code'), $error);
+            $detail = $this->graphError($res);
+            $this->noteConnectionFailure($conn, $detail['code'], $detail['message']);
 
-            return [false, $error];
+            return [false, $detail['message']];
         } catch (\Throwable $e) {
             return [false, $e->getMessage()];
         }
