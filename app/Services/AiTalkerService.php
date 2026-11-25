@@ -295,6 +295,7 @@ class AiTalkerService
             'Rewrite the draft so it sounds natural, warm and human, in the SAME language the customer used (Bangla, Banglish or English).',
             'STRICT RULES:',
             '- The draft may contain tokens like ⟦price⟧. Keep every such token EXACTLY as written — never replace it with a number, never remove it.',
+            '- The token ⟦product⟧ stands for the product\'s name. Keep it exactly as written and never substitute your own word for the product — do not call it a pant, shirt, dress or any other item word. If the draft does not name the product, do not add a name or item word for it either.',
             '- Never write any number yourself, in any script (Latin or Bangla digits) or as words. Numbers only ever come from the tokens.',
             '- Do not promise anything the draft does not say — no extra discount, no new delivery promise, no claim about stock, quality or gifts.',
             '- Address the customer exactly as the draft does. Never add আপু, ভাইয়া, apu, bhaiya or any other gendered address word that is not already in the draft.',

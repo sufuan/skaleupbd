@@ -261,41 +261,24 @@ class MessagesController extends Controller
             $c = $message->conversation;
             $product = \App\Models\Product::where('business_id', $message->business_id)->find($message->meta['product_id'] ?? 0);
             if ($c && $product) {
-                $source = ['facebook' => 'FB', 'whatsapp' => 'WA', 'instagram' => 'IG'][$c->channel] ?? 'FB';
-                $name = $c->customer_name;
-                if (str_starts_with($name, '+')) {
-                    $name = 'Karim Sheikh';
-                }
                 try {
-                    $order = $orders->create((int) $message->business_id, [
-                        'customer_name' => $name,
-                        'customer_phone' => $c->customer_phone ?: '01712345678',
-                        'customer_address' => $c->customer_address,
-                        'source' => $source,
-                        'status' => 'Pending',
-                        // The delivery charge the approved summary quoted:
-                        // the shop's configured cost, read the same way
-                        // RuleBrainService::buildSummary reads it - never a
-                        // hardcoded 60 the shop may not charge (Hunt V1).
-                        'delivery_charge' => (float) $this->settings->bizGet((int) $message->business_id, "business.{$message->business_id}.default_delivery_cost", 'business.default_delivery_cost', 60),
-                        'items' => [['product_id' => $product->id, 'qty' => 1, 'price' => isset($message->meta['unit_price']) ? (float) $message->meta['unit_price'] : null, 'variant_name' => $message->meta['variant_name'] ?? null]],
-                    ], $request->user(), 'Chat order intake');
+                    // THE one chat order-creation path (brain fix
+                    // batch 3): the Full-auto chat confirmation route
+                    // builds the identical order through the same
+                    // method — the payload, the points deduction and
+                    // the details-consumed close-out live there now.
+                    $order = $this->brain->createOrderFromSummary($c, $message, $request->user());
                 } catch (\App\Exceptions\InsufficientTokensException $e) {
                     return back()->with('error', $e->getMessage());
                 }
 
-                // The order consumed the collected details (brain fix
-                // batch 2): the conversation's negotiation closes and
-                // its name/phone/address stop counting for the NEXT
-                // order flow, so a later purchase in this thread asks
-                // again instead of silently reusing this order's data.
-                $this->brain->consumeCollectedDetails($c, (int) $order->id);
+                if ($order) {
+                    if (! $sentOk) {
+                        return back()->with('error', __('Order created, but the confirmation message could not be sent - Meta did not accept it: :error', ['error' => $sendErr]));
+                    }
 
-                if (! $sentOk) {
-                    return back()->with('error', __('Order created, but the confirmation message could not be sent - Meta did not accept it: :error', ['error' => $sendErr]));
+                    return back()->with('success', __('Order created from chat'));
                 }
-
-                return back()->with('success', __('Order created from chat'));
             }
         }
 

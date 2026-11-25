@@ -548,9 +548,31 @@ class RuleBrainService
             $conversation->state = null;
         }
         $state = (array) ($conversation->state_data ?? []);
-        foreach (['collect', 'cart', 'variant_pending', 'variant_id', 'floor_repeats'] as $key) {
+        foreach (['collect', 'cart', 'variant_pending', 'variant_id', 'floor_repeats', 'pending_summary', 'last_order'] as $key) {
             unset($state[$key]);
         }
+        // Details are PER-FLOW (brain fix batch 3): the values a
+        // previous product's flow collected stay on the record (the
+        // order-status lookup and the channel identity read them) but
+        // they stop COUNTING for the new product — its summary may
+        // only be built from details the customer states in THIS
+        // flow. Live 2026-11-25 15:52: an acceptance for a switched
+        // product summarised instantly with the phone and address a
+        // shipped order from days earlier had left behind, because
+        // the switch reset the negotiation but not the details flag.
+        // A detail stated in the switch message itself ("CRUD-101
+        // order korte chai, phone 01..., address ...") belongs to the
+        // NEW flow, so it is marked fresh as it is consumed.
+        $state['details_consumed'] = true;
+        $fresh = ['phone' => false, 'address' => false];
+        $switchPhone = $this->extractPhone($text);
+        if ($switchPhone !== null) {
+            $fresh['phone'] = true;
+        }
+        if ($this->extractLabelledAddress($this->guard->normalizeDigits($text), $switchPhone) !== null) {
+            $fresh['address'] = true;
+        }
+        $state['details_fresh'] = $fresh;
         $conversation->state_data = $state;
         $conversation->save();
         $this->log((int) $conversation->business_id, 'product_switched', $conversation->customer_name . ' — customer named a different product: ' . $named->name, null, $conversation);
@@ -679,8 +701,12 @@ class RuleBrainService
         // With $slots, every figure stays a ⟦token⟧ until AFTER the talker
         // has phrased the text — the model never sees or writes a number,
         // and code renders the real values from the database at the end.
+        // The product NAME is a slot too (brain fix batch 3): as literal
+        // text the talker treated it as rewritable prose and paraphrased
+        // the item noun — a Panjabi became "এই প্যান্টটি" live — so the
+        // name now travels as ⟦product⟧ and code renders it verbatim.
         $replace = $slots ? [
-            '{product}' => $product?->name ?? 'পণ্যটা',
+            '{product}' => '⟦product⟧',
             '{price}' => '⟦price⟧',
             '{stock}' => '⟦stock⟧',
             '{delivery_inside}' => '⟦delivery_inside⟧',
@@ -714,6 +740,7 @@ class RuleBrainService
     {
         $inside = (float) $this->settings->bizGet($businessId, "business.{$businessId}.default_delivery_cost", 'business.default_delivery_cost', 60);
         $map = [
+            '⟦product⟧' => $product ? $product->name : 'পণ্যটা',
             '⟦price⟧' => $product ? number_format($product->effectivePrice()) : '',
             '⟦stock⟧' => $product ? (string) max(0, $product->available()) : '',
             '⟦delivery_inside⟧' => number_format($inside),
@@ -1032,6 +1059,10 @@ class RuleBrainService
         if ($missing !== []) {
             $state = (array) ($conversation->state_data ?? []);
             $state['collect'] = ['step' => $missing[0], 'retries' => 0, 'product_id' => $product->id, 'variant_id' => $variant?->id];
+            // A new collection supersedes any summary an earlier flow
+            // left pending: its data is no longer what this flow is
+            // confirming, so it must not stay confirmable (batch 3).
+            unset($state['pending_summary']);
             $conversation->state = 'collecting';
             $conversation->state_data = $state;
             $conversation->save();
@@ -1055,6 +1086,72 @@ class RuleBrainService
 
     /** Item nouns a customer names when asking for a kind of product. */
     private const ITEM_NOUNS = ['জামা', 'শাড়ি', 'শাড়ী', 'প্যান্ট', 'শার্ট', 'টি-শার্ট', 'টিশার্ট', 'কুর্তি', 'বোরকা', 'হিজাব', 'জুতা', 'স্যান্ডেল', 'ঘড়ি', 'ব্যাগ', 'পাঞ্জাবি', 'পাঞ্জাবী', 'থ্রি-পিস', 'থ্রিপিস', 'ওড়না', 'কামিজ', 'গেঞ্জি', 'জ্যাকেট', 'সোয়েটার', 'শাল', 'টুপি', 'বেল্ট', 'সানগ্লাস', 'মোবাইল', 'হেডফোন', 'চার্জার', 'লিপস্টিক', 'পারফিউম', 'jama', 'sharee', 'saree', 'pant', 'shirt', 'shoe', 'watch', 'bag', 'kurti', 'hijab', 'burqa', 'borka', 'panjabi'];
+
+    /**
+     * Item-noun equivalence groups for the product-name guard (batch
+     * 3): the Bangla and romanised/English forms of ONE kind of item.
+     * The মোবাইল/mobile group is deliberately absent — in a reply it
+     * almost always means the customer's phone number, not a product.
+     */
+    private const ITEM_NOUN_GROUPS = [
+        ['জামা', 'jama'], ['শাড়ি', 'শাড়ী', 'sharee', 'saree'], ['প্যান্ট', 'pant', 'pants'],
+        ['শার্ট', 'shirt'], ['টি-শার্ট', 'টিশার্ট', 't-shirt', 'tshirt'], ['কুর্তি', 'kurti'],
+        ['বোরকা', 'burqa', 'borka'], ['হিজাব', 'hijab'], ['জুতা', 'shoe', 'shoes'],
+        ['স্যান্ডেল', 'sandal'], ['ঘড়ি', 'watch'], ['ব্যাগ', 'bag'],
+        ['পাঞ্জাবি', 'পাঞ্জাবী', 'panjabi'], ['থ্রি-পিস', 'থ্রিপিস', 'three piece', 'three-piece'],
+        ['ওড়না', 'orna'], ['কামিজ', 'kameez'], ['গেঞ্জি', 'genji'], ['জ্যাকেট', 'jacket'],
+        ['সোয়েটার', 'sweater'], ['শাল', 'shawl'], ['টুপি', 'cap'], ['বেল্ট', 'belt'],
+        ['সানগ্লাস', 'sunglass', 'sunglasses'], ['হেডফোন', 'headphone'],
+        ['চার্জার', 'charger'], ['লিপস্টিক', 'lipstick'], ['পারফিউম', 'perfume'],
+    ];
+
+    /** Does $text use an item noun from this group? Latin forms need word boundaries; Bangla forms match as substrings (the টা/টি suffix rides on the stem). */
+    private function nounGroupInText(array $group, string $text): bool
+    {
+        $hay = mb_strtolower($text);
+        foreach ($group as $form) {
+            if (preg_match('/^[a-z0-9\- ]+$/', $form)) {
+                if (preg_match('/(?<![a-z0-9])' . preg_quote($form, '/') . '(?![a-z0-9])/u', $hay)) {
+                    return true;
+                }
+            } elseif (str_contains($hay, $form)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * The item noun a phrased reply RENAMED the focus product with, or
+     * null (brain fix batch 3). A noun is a rename when it names a
+     * DIFFERENT kind of item than the product — its group appears
+     * neither in the product's name/aliases nor in the brain's own
+     * draft — so the talker invented it: live, a bargain reply for a
+     * Panjabi said "এই প্যান্টটি" (this pant). The product's own noun
+     * in the customer's script (পাঞ্জাবি for a "Panjabi") is the
+     * product's own group and always passes. The caller discards the
+     * phrasing and sends the code-written draft instead.
+     */
+    private function productNounViolation(?Product $product, string $draftRendered, string $body): ?string
+    {
+        if (! $product) {
+            return null;
+        }
+        $catalogue = $product->name . ' ' . (string) ($product->aliases ?? '');
+        foreach (self::ITEM_NOUN_GROUPS as $group) {
+            if (! $this->nounGroupInText($group, $body)) {
+                continue;
+            }
+            if ($this->nounGroupInText($group, $catalogue) || $this->nounGroupInText($group, $draftRendered)) {
+                continue;
+            }
+
+            return $group[0];
+        }
+
+        return null;
+    }
 
     /**
      * Is this message a request for an item the shop does not sell?
@@ -1295,6 +1392,18 @@ class RuleBrainService
                 }
             }
         }
+        if ($phone !== null || $labelled !== null) {
+            // (Re)stating contact details begins a NEW order flow: the
+            // previous order's "already confirmed" memory (batch 3)
+            // must not answer this customer's next confirmation as if
+            // it were about that old order.
+            $st = (array) ($conversation->state_data ?? []);
+            if (isset($st['last_order'])) {
+                unset($st['last_order']);
+                $conversation->state_data = $st;
+                $changed = true;
+            }
+        }
         if (! $changed) {
             return;
         }
@@ -1326,13 +1435,279 @@ class RuleBrainService
         $state['details_fresh'] = ['phone' => false, 'address' => false];
         if ($orderId !== null) {
             $state['last_order_id'] = $orderId;
+            // The placed order's public facts, snapshotted for the
+            // already-confirmed reply (batch 3): a repeat "confirm"
+            // after this point is answered with THIS order's number
+            // and total, never with a new summary or a second order.
+            $order = \App\Models\Order::find($orderId);
+            if ($order) {
+                $state['last_order'] = [
+                    'id' => (int) $order->id,
+                    'invoice' => (string) $order->invoice_no,
+                    'total' => (float) $order->grand_total,
+                ];
+            }
         }
-        unset($state['collect'], $state['cart'], $state['floor_repeats']);
+        unset($state['collect'], $state['cart'], $state['floor_repeats'], $state['pending_summary']);
         $conversation->state_data = $state;
         $conversation->state = null;
         $conversation->neg_step = 0;
         $conversation->neg_offer = null;
         $conversation->save();
+    }
+
+    /**
+     * Record the summary that was just shown as PENDING CONFIRMATION
+     * (brain fix batch 3): its message, product, variant, figures and
+     * the exact contact details it was built from. A later customer
+     * confirmation creates the order from THIS snapshot — and only
+     * while the record still matches it; details edited since then
+     * re-summarise instead of ordering stale data.
+     */
+    private function markSummaryPending(Conversation $conversation, ChatMessage $msg, ?\App\Models\ProductVariant $variant): void
+    {
+        $meta = (array) ($msg->meta ?? []);
+        $unit = (float) ($meta['unit_price'] ?? 0);
+        $total = (float) ($meta['total'] ?? 0);
+        $state = (array) ($conversation->state_data ?? []);
+        $state['pending_summary'] = [
+            'message_id' => (int) $msg->id,
+            'product_id' => (int) ($meta['product_id'] ?? 0),
+            'variant_id' => $variant?->id,
+            'variant_name' => $meta['variant_name'] ?? null,
+            'unit_price' => $unit,
+            'delivery' => $total - $unit,
+            'total' => $total,
+            'name' => (string) ($conversation->customer_name ?? ''),
+            'phone' => (string) ($conversation->customer_phone ?? ''),
+            'address' => (string) ($conversation->customer_address ?? ''),
+            'customer_confirmed' => false,
+        ];
+        $conversation->state_data = $state;
+        $conversation->save();
+    }
+
+    /**
+     * THE one chat order-creation path (brain fix batch 3): build the
+     * order an order summary stands for, through OrderService — the
+     * points gate and the exactly-one deduction live inside its
+     * transaction — then close the conversation's flow out via
+     * consumeCollectedDetails. Used by BOTH creation routes: the
+     * seller approval route (MessagesController::approveDraft, a
+     * human approving the summary draft) and the Full-auto chat route
+     * (summaryConfirmation below, the customer confirming a summary
+     * the AI already sent). Before batch 3 only the approval route
+     * existed, so a customer confirming a sent summary in Full-auto
+     * chat just got the summary re-rendered — four times live — and
+     * no order was ever created.
+     *
+     * Returns null when the summarised product no longer exists.
+     *
+     * @throws \App\Exceptions\InsufficientTokensException
+     */
+    public function createOrderFromSummary(Conversation $conversation, ChatMessage $summary, ?\App\Models\User $actor = null): ?\App\Models\Order
+    {
+        $biz = (int) $conversation->business_id;
+        $product = Product::where('business_id', $biz)->find($summary->meta['product_id'] ?? 0);
+        if (! $product) {
+            return null;
+        }
+        $source = ['facebook' => 'FB', 'whatsapp' => 'WA', 'instagram' => 'IG'][$conversation->channel] ?? 'FB';
+        $name = (string) ($conversation->customer_name ?? '');
+        if (str_starts_with($name, '+')) {
+            $name = 'Karim Sheikh';
+        }
+        $order = app(OrderService::class)->create($biz, [
+            'customer_name' => $name,
+            'customer_phone' => $conversation->customer_phone ?: '01712345678',
+            'customer_address' => $conversation->customer_address,
+            'source' => $source,
+            'status' => 'Pending',
+            // The delivery charge the summary quoted: the shop's
+            // configured cost, read the same way buildSummary reads
+            // it — never a hardcoded 60 the shop may not charge
+            // (Hunt V1).
+            'delivery_charge' => (float) $this->settings->bizGet($biz, "business.{$biz}.default_delivery_cost", 'business.default_delivery_cost', 60),
+            'items' => [['product_id' => $product->id, 'qty' => 1, 'price' => isset($summary->meta['unit_price']) ? (float) $summary->meta['unit_price'] : null, 'variant_name' => $summary->meta['variant_name'] ?? null]],
+        ], $actor, 'Chat order intake');
+
+        // The order consumed the collected details (batch 2): the
+        // negotiation closes and the name/phone/address stop counting
+        // for the NEXT order flow in this thread.
+        $this->consumeCollectedDetails($conversation, (int) $order->id);
+
+        return $order;
+    }
+
+    /**
+     * The summary-confirmation step (brain fix batch 3): the customer
+     * is answering a summary that is already on the table. Returns
+     * null when this message is not a summary confirmation (the reply
+     * chain decides it), ['message' => ChatMessage] when a reply was
+     * produced, and ['stop' => true] when the step was handled with a
+     * logged handover only. A confirmed summary NEVER just re-sends
+     * the summary:
+     *  - summary SENT (Full auto): the order is created now, through
+     *    the one creation path, and the reply carries its number.
+     *  - summary still a DRAFT (Draft-only / plain Auto, or held
+     *    flagged): the customer never saw it, so nothing is created
+     *    from chat — the confirmation is recorded on the summary
+     *    draft (the existing order draft the seller approves) and a
+     *    draft acknowledgement answers the customer.
+     *  - no summary pending but an order was just placed here: a bare
+     *    repeat confirmation gets that order's status.
+     */
+    private function summaryConfirmation(Conversation $conversation, ?Product $product, int $biz, string $mode, ?AiRule $rule, ?string $intent, string $text): ?array
+    {
+        if ($rule && $rule->action === 'handover') {
+            return null; // the shop wants a human on this intent — their rule wins
+        }
+        $hay = mb_strtolower($text);
+        if ($intent !== 'order_intent' && ! $this->isAcceptance($hay)) {
+            return null;
+        }
+        $state = (array) ($conversation->state_data ?? []);
+        $pending = (array) ($state['pending_summary'] ?? []);
+
+        if ($pending !== []) {
+            if (! $product || (int) ($pending['product_id'] ?? 0) !== (int) $product->id) {
+                return null;
+            }
+            // A figure that is NOT the summarised price is a counter,
+            // not a confirmation of THIS summary — the negotiation
+            // chain re-settles and re-summarises it (the 13:59 case:
+            // a summary at 1,170, the customer settling at the 1,105
+            // floor he named).
+            $named = $this->namedAmount($text);
+            if ($named !== null && abs($named - (float) ($pending['unit_price'] ?? 0)) >= 1.0) {
+                return null;
+            }
+            // The order is created from EXACTLY the summarised data:
+            // if the record's details moved since the summary (the
+            // customer corrected them in this very message — capture
+            // already ran), that summary is stale; fall through and
+            // let order taking re-summarise with the new data.
+            if (trim((string) ($conversation->customer_name ?? '')) !== trim((string) ($pending['name'] ?? ''))
+                || trim((string) ($conversation->customer_phone ?? '')) !== trim((string) ($pending['phone'] ?? ''))
+                || trim((string) ($conversation->customer_address ?? '')) !== trim((string) ($pending['address'] ?? ''))) {
+                return null;
+            }
+            if (! $this->detailCollected($conversation, 'phone') || ! $this->detailCollected($conversation, 'address')) {
+                return null;
+            }
+            $summaryMsg = ! empty($pending['message_id']) ? ChatMessage::find((int) $pending['message_id']) : null;
+            if (! $summaryMsg) {
+                return null;
+            }
+            if ($summaryMsg->status === 'rejected') {
+                // The seller killed this summary: the flow is dead and
+                // a fresh order intent starts over through the chain.
+                unset($state['pending_summary']);
+                $conversation->state_data = $state;
+                $conversation->save();
+
+                return null;
+            }
+            $pVariant = ! empty($pending['variant_id']) ? \App\Models\ProductVariant::find((int) $pending['variant_id']) : null;
+            if (($this->focusAvailable($product, $pVariant) ?? 1) <= 0) {
+                // Sold out after the summary was shown: no order, the
+                // honest answer instead (owner rule: stock 0 = NO order).
+                unset($state['pending_summary']);
+                $conversation->state_data = $state;
+                $conversation->save();
+                $msg = $this->simpleOutgoing($conversation, $this->outOfStockBody($biz, $conversation->customer_name, $product, $pVariant), 'out_of_stock', $mode, ['out_of_stock' => true]);
+
+                return ['message' => $msg];
+            }
+            if ($summaryMsg->status === 'sent') {
+                // The customer HAS this summary (Full auto sent it):
+                // their confirmation creates the order now — exactly
+                // one order, exactly one point, details consumed,
+                // flow reset (all inside the creation path).
+                try {
+                    $order = $this->createOrderFromSummary($conversation, $summaryMsg);
+                } catch (\App\Exceptions\InsufficientTokensException $e) {
+                    $conversation->needs_human = true;
+                    $conversation->save();
+                    $this->log($biz, 'handed_human', $conversation->customer_name . ' — confirmed order could not be created: ' . $e->getMessage(), null, $conversation);
+
+                    return ['stop' => true];
+                }
+                if ($order === null) {
+                    $conversation->needs_human = true;
+                    $conversation->save();
+                    $this->log($biz, 'handed_human', $conversation->customer_name . ' — confirmed summary product no longer exists', null, $conversation);
+
+                    return ['stop' => true];
+                }
+                $body = $this->honorificPrefix($biz, $conversation->customer_name)
+                    . 'আপনার অর্ডারটি কনফার্ম হয়েছে। অর্ডার নম্বর: ' . $order->invoice_no
+                    . '। মোট: ' . number_format((float) $order->grand_total) . ' টাকা (Cash on Delivery)। ধন্যবাদ!';
+                $msg = $this->simpleOutgoing($conversation, $body, 'order_confirmed', $mode, [
+                    'order_id' => (int) $order->id, 'invoice' => (string) $order->invoice_no, 'total' => (float) $order->grand_total,
+                ]);
+                $conversation->last_message_at = now();
+                $conversation->needs_human = false;
+                $conversation->save();
+
+                return ['message' => $msg];
+            }
+
+            // The summary is still a draft (Draft-only / plain Auto)
+            // or held flagged: the summary draft IS the order draft.
+            // Record the customer's confirmation on it for the seller,
+            // answer with a draft acknowledgement — never a second
+            // summary, never a direct order.
+            if (empty($pending['customer_confirmed'])) {
+                $meta = (array) ($summaryMsg->meta ?? []);
+                $meta['customer_confirmed'] = true;
+                $summaryMsg->meta = $meta;
+                $summaryMsg->save();
+                $pending['customer_confirmed'] = true;
+                $state['pending_summary'] = $pending;
+                $conversation->state_data = $state;
+                $conversation->save();
+                $msg = ChatMessage::create([
+                    'business_id' => $biz,
+                    'conversation_id' => $conversation->id,
+                    'direction' => 'out',
+                    'sender' => 'ai',
+                    'body' => $this->honorificPrefix($biz, $conversation->customer_name) . 'ধন্যবাদ! আপনার কনফার্মেশন পেয়েছি — অর্ডারটি প্রসেস করা হচ্ছে।',
+                    'status' => 'draft',
+                    'meta' => ['kind' => 'order_confirm_ack', 'summary_message_id' => (int) $summaryMsg->id],
+                ]);
+                $this->log($biz, 'draft_created', $conversation->customer_name . ' — customer confirmed the pending summary draft', null, $conversation);
+
+                return ['message' => $msg];
+            }
+            $this->log($biz, 'order_confirm_repeat', $conversation->customer_name . ' — customer confirmed again; the summary draft is already marked confirmed', null, $conversation);
+
+            return ['stop' => true];
+        }
+
+        // No summary pending: a bare repeat confirmation about the
+        // order this conversation JUST placed gets that order's
+        // status — never a new summary, never a second order. A
+        // message that names a product, names a figure, or (re)states
+        // contact details is a NEW flow starting, not a repeat: the
+        // chain handles those.
+        $last = (array) ($state['last_order'] ?? []);
+        if ($last !== []
+            && $this->namedAmount($text) === null
+            && $this->extractPhone($text) === null
+            && $this->extractLabelledAddress($this->guard->normalizeDigits($text), null) === null
+            && $this->explicitProductFor($biz, $text) === null) {
+            $body = $this->honorificPrefix($biz, $conversation->customer_name)
+                . 'আপনার অর্ডারটি ইতিমধ্যে কনফার্ম হয়েছে। অর্ডার নম্বর: ' . ($last['invoice'] ?? '')
+                . '। মোট: ' . number_format((float) ($last['total'] ?? 0)) . ' টাকা (Cash on Delivery)।';
+            $msg = $this->simpleOutgoing($conversation, $body, 'order_already_confirmed', $mode, [
+                'order_id' => (int) ($last['id'] ?? 0), 'invoice' => (string) ($last['invoice'] ?? ''),
+            ]);
+
+            return ['message' => $msg];
+        }
+
+        return null;
     }
 
     /** A short yes/no answer, or null when the message is neither. */
@@ -1496,6 +1871,7 @@ class RuleBrainService
                 'meta' => array_merge($summary['meta'], ['kind' => 'order_summary']),
             ]);
             $this->log($biz, $msg->status === 'sent' ? 'auto_sent' : 'draft_created', $conversation->customer_name . ' — Order summary (collected)', null, $conversation);
+            $this->markSummaryPending($conversation, $msg, $variant);
 
             return $msg;
         }
@@ -1973,6 +2349,17 @@ class RuleBrainService
             return $this->handleCollect($conversation, $text, $mode);
         }
 
+        // A confirmation of a summary already on the table is handled
+        // before the reply chain (batch 3): it creates the order (Full
+        // auto), marks the order draft (Draft modes), or answers with
+        // the placed order's status — it never re-renders the summary.
+        // Live, a confirmed summary looped four times and no order was
+        // ever created, because orderTaking could only re-summarise.
+        $confirmation = $this->summaryConfirmation($conversation, $product, $biz, $mode, $rule, $intent, $text);
+        if ($confirmation !== null) {
+            return $confirmation['message'] ?? null;
+        }
+
         $kind = null;
         if ($needsVariant) {
             // Never quote stock or build an order for "the product" when
@@ -2163,7 +2550,20 @@ class RuleBrainService
             ]);
             if ($phrased) {
                 $body = $this->renderSlots($phrased['text'], $product, $biz, $slotValues);
-                $talkerMeta = ['talker' => $phrased['provider'], 'talker_model' => $phrased['model'], 'talker_tier' => $phrased['tier']];
+                $renamed = $this->productNounViolation($product, $draftRendered, $body);
+                if ($renamed !== null) {
+                    // The talker renamed the product (batch 3): the
+                    // phrasing is discarded and the code-written draft
+                    // goes out instead — the product's name is
+                    // code-rendered from the ⟦product⟧ slot, never
+                    // paraphrased, and a noun the draft never used
+                    // cannot be invented for it. Logged like every
+                    // talker failure, so the degradation is visible.
+                    $this->log($biz, 'talker_failed', $conversation->customer_name . ' — talker renamed the product (' . $renamed . ' for ' . ($product?->name ?? '') . '); the unphrased template was used instead', $rule, $conversation, null, ['source' => 'talker']);
+                    $body = $draftRendered;
+                } else {
+                    $talkerMeta = ['talker' => $phrased['provider'], 'talker_model' => $phrased['model'], 'talker_tier' => $phrased['tier']];
+                }
             } else {
                 $body = $draftRendered;
             }
@@ -2221,6 +2621,12 @@ class RuleBrainService
             'source' => $talkerMeta !== [] ? 'talker' : 'template',
             'latency_ms' => (int) round((microtime(true) - $startedAt) * 1000),
         ]);
+        if ($kind === 'order_summary') {
+            // The summary is now on the table: a customer confirmation
+            // of it creates the order (batch 3), so remember exactly
+            // what was summarised.
+            $this->markSummaryPending($conversation, $msg, $variant);
+        }
         if ($status === 'sent') {
             $conversation->last_message_at = now();
             // One message, one outcome: the AI just answered this
