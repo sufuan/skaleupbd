@@ -964,8 +964,10 @@ class RuleBrainService
      * generic word, a partial name) must never yank the conversation
      * off the product it is about, so it is not enough here — the
      * scored matching in productFor() handles those messages. When two
-     * products qualify equally (names differing only by a digit the
-     * word split drops), the mention is ambiguous and null wins.
+     * products qualify equally and nothing in the message separates
+     * them, the mention is ambiguous and null wins; a separating
+     * token the customer actually said (the digit in "… Panjabi 2")
+     * does separate them (batch 18, RC1).
      */
     public function explicitProductFor(int $businessId, string $text): ?Product
     {
@@ -994,6 +996,42 @@ class RuleBrainService
                 return $best;
             }
         }
+        // Code tokens (brain fix batch 18, RC2): the code a customer
+        // quotes — "CRUD-101" — was honoured only as a verbatim
+        // substring of the sku/aliases above, so the same code stored
+        // as "CRUD101" or "CRUD 101", or typed with Bengali digits,
+        // named nothing and an explicit mention fell back to a
+        // clarification (live 2026-11-27: "Cotton Panjabi (CRUD-101)"
+        // was asked "which product?"). Codes now compare as
+        // separator-free skeletons against the sku, the aliases, and
+        // any code-like token inside the product's own name. The
+        // longest skeleton wins, as in the passes above.
+        $codes = $this->codeTokensIn($text);
+        if ($codes !== []) {
+            $codeBest = null;
+            $codeBestLen = -1;
+            foreach ($products as $p) {
+                $skeletons = [$this->codeSkeleton((string) ($p->sku ?? ''))];
+                foreach (array_map('trim', explode(',', (string) ($p->aliases ?? ''))) as $alias) {
+                    $skeletons[] = $this->codeSkeleton($alias);
+                }
+                foreach (preg_split('/\s+/', mb_strtolower($p->name)) ?: [] as $tok) {
+                    $skel = $this->codeSkeleton($tok);
+                    if ($skel !== '' && preg_match('/[a-z]/', $skel) && preg_match('/\d/', $skel)) {
+                        $skeletons[] = $skel;
+                    }
+                }
+                foreach ($skeletons as $skel) {
+                    if ($skel !== '' && in_array($skel, $codes, true) && mb_strlen($skel) > $codeBestLen) {
+                        $codeBest = $p;
+                        $codeBestLen = mb_strlen($skel);
+                    }
+                }
+            }
+            if ($codeBest) {
+                return $codeBest;
+            }
+        }
         $best = null;
         $bestLen = -1;
         foreach ($products as $p) {
@@ -1006,18 +1044,39 @@ class RuleBrainService
         if ($best) {
             return $best;
         }
+        // Every-word pass, judged on DISTINCTIVE words (batch 18,
+        // RC1): a name word counts when it is long enough to mean
+        // something on its own (>= 4 chars) OR when it appears in
+        // exactly ONE product name in this shop — distinctiveness,
+        // not length, is the evidence. A short word the whole
+        // catalogue shares is still no evidence. Pure digits never
+        // take part in the word test itself: a bare digit in a
+        // message is as often a quantity as a name, so digits are
+        // judged by the separator check below instead.
+        $normHay = $this->guard->normalizeDigits($hay);
+        $allTokens = [];
+        $tokenFreq = [];
+        foreach ($products as $p) {
+            $tokens = array_values(array_unique(
+                preg_split('/\s+/', $this->guard->normalizeDigits(mb_strtolower($p->name))) ?: []
+            ));
+            $allTokens[$p->id] = $tokens;
+            foreach ($tokens as $t) {
+                $tokenFreq[$t] = ($tokenFreq[$t] ?? 0) + 1;
+            }
+        }
         $qualifiers = [];
         foreach ($products as $p) {
             $words = array_values(array_filter(
-                preg_split('/\s+/', mb_strtolower($p->name)) ?: [],
-                fn ($w) => mb_strlen($w) >= 4
+                $allTokens[$p->id],
+                fn ($w) => ! ctype_digit($w) && (mb_strlen($w) >= 4 || ($tokenFreq[$w] ?? 0) === 1)
             ));
             if ($words === []) {
                 continue;
             }
             $all = true;
             foreach ($words as $w) {
-                if (! str_contains($hay, $w)) {
+                if (! str_contains($normHay, $w)) {
                     $all = false;
                     break;
                 }
@@ -1026,8 +1085,113 @@ class RuleBrainService
                 $qualifiers[] = $p;
             }
         }
+        if (count($qualifiers) === 1) {
+            return $qualifiers[0];
+        }
+        if (count($qualifiers) > 1) {
+            // Separator check: the qualifiers tie on every
+            // distinctive word — they differ only in tokens the word
+            // test cannot judge (the digit in "CRUD Test Panjabi
+            // 2"). A qualifier whose OWN separating tokens are all
+            // said in the message is the one the customer means;
+            // when none is separated, the mention stays ambiguous
+            // and null wins, exactly as before.
+            $separated = [];
+            foreach ($qualifiers as $p) {
+                $own = $allTokens[$p->id];
+                foreach ($qualifiers as $q) {
+                    if ((int) $q->id !== (int) $p->id) {
+                        $own = array_values(array_diff($own, $allTokens[$q->id]));
+                    }
+                }
+                if ($own === []) {
+                    continue;
+                }
+                $allPresent = true;
+                foreach ($own as $tok) {
+                    if (! $this->nameTokenInText($tok, $text)) {
+                        $allPresent = false;
+                        break;
+                    }
+                }
+                if ($allPresent) {
+                    $separated[] = $p;
+                }
+            }
+            if (count($separated) === 1) {
+                return $separated[0];
+            }
+        }
 
-        return count($qualifiers) === 1 ? $qualifiers[0] : null;
+        return null;
+    }
+
+    /**
+     * Code-like tokens quoted in a message (batch 18, RC2): a run of
+     * letters joined to digits — "CRUD-101", "crud 101", "CRUD101" —
+     * returned as separator-free skeletons ("crud101"). Digits are
+     * normalised first, so a code typed with Bengali digits still
+     * reads. A bare word or a bare figure is not a code.
+     *
+     * @return string[]
+     */
+    private function codeTokensIn(string $text): array
+    {
+        $norm = $this->guard->normalizeDigits(mb_strtolower($text));
+        if (! preg_match_all('/[a-z]+\s*-?\s*\d+|\d+\s*-?\s*[a-z]+/u', $norm, $m)) {
+            return [];
+        }
+        $out = [];
+        foreach ($m[0] as $tok) {
+            $skel = $this->codeSkeleton($tok);
+            if (mb_strlen($skel) >= 4 && preg_match('/[a-z]/', $skel) && preg_match('/\d/', $skel)) {
+                $out[$skel] = true;
+            }
+        }
+
+        return array_keys($out);
+    }
+
+    /** A value reduced to its code skeleton: lowercase, Latin digits, letters and digits only. */
+    private function codeSkeleton(string $value): string
+    {
+        return (string) preg_replace('/[^a-z0-9]+/u', '', $this->guard->normalizeDigits(mb_strtolower($value)));
+    }
+
+    /**
+     * Quantity phrases stripped from a text (batch 18): a digit glued
+     * to a quantity suffix ("১টা", "2টা") or followed by a romanised
+     * quantity word ("1 ta", "2 pcs") is a COUNT, not a name — the
+     * same read extractQuantity() makes. A digit followed by a
+     * spaced Bengali suffix is NOT stripped: "Panjabi 2 টাই" is the
+     * product's name wearing the demonstrative, not a count.
+     */
+    private function stripQuantityPhrases(string $text): string
+    {
+        $t = $this->guard->normalizeDigits($text);
+        $t = (string) preg_replace('/\d+(?:টা|টি|পিস|খানা)/u', ' ', $t);
+        $t = (string) preg_replace('/\b\d+\s+(?:ta|ti|pcs?|pieces?|khana)\b/iu', ' ', $t);
+
+        return $t;
+    }
+
+    /**
+     * Is this product-name token actually SAID in the message? Digit
+     * tokens must stand alone as their own number — quantity phrases
+     * stripped first, so the "১টা" in "১টা অর্ডার করতে চাই" is a
+     * count, never the "1" of a product named "... 1" (batch 18,
+     * RC1/RC5 share this read). Any other token matches as a
+     * substring, as the word machinery has always read them.
+     */
+    private function nameTokenInText(string $token, string $text): bool
+    {
+        if (ctype_digit($token)) {
+            $hay = $this->stripQuantityPhrases(mb_strtolower($text));
+
+            return (bool) preg_match('/(?<![0-9A-Za-z\x{0980}-\x{09FF}])' . preg_quote($token, '/') . '(?![0-9A-Za-z\x{0980}-\x{09FF}])/u', $hay);
+        }
+
+        return str_contains($this->guard->normalizeDigits(mb_strtolower($text)), $token);
     }
 
     /**
@@ -1181,7 +1345,8 @@ class RuleBrainService
 
     /**
      * Word-match scores for every product whose name shares a word
-     * (>= 4 chars) with the text, in product-id order. Coverage is how
+     * with the text — a word counts when it is at least 4 chars or
+     * distinctive to one product name (batch 18, RC1). Coverage is how
      * much of the product's name the customer actually said; the score
      * rewards DISTINCTIVE words (a word appearing in many product
      * names is weak evidence) and a full-name mention (+100).
@@ -1207,36 +1372,63 @@ class RuleBrainService
             }
         }
         $products = Product::where('business_id', $businessId)->orderBy('id')->get();
+        // Token frequency runs over EVERY name token (batch 18, RC1):
+        // distinctiveness is computed against the whole catalogue,
+        // not against the words long enough to survive a length
+        // filter — the old filter dropped the digit "2" from both
+        // "CRUD Test Panjabi" and "CRUD Test Panjabi 2", leaving the
+        // pair with identical word sets that no message could ever
+        // separate.
         $freq = [];
-        $wordsOf = [];
+        $tokensOf = [];
         foreach ($products as $p) {
-            $words = array_values(array_filter(
-                preg_split('/\s+/', mb_strtolower($p->name)) ?: [],
-                fn ($w) => mb_strlen($w) >= 4
+            $tokens = array_values(array_unique(
+                preg_split('/\s+/', $this->guard->normalizeDigits(mb_strtolower($p->name))) ?: []
             ));
-            $wordsOf[$p->id] = $words;
-            foreach (array_unique($words) as $w) {
-                $freq[$w] = ($freq[$w] ?? 0) + 1;
+            $tokensOf[$p->id] = $tokens;
+            foreach ($tokens as $t) {
+                $freq[$t] = ($freq[$t] ?? 0) + 1;
             }
         }
+        $matchHay = $this->guard->normalizeDigits($matchHay);
         $rows = [];
         foreach ($products as $p) {
-            $words = $wordsOf[$p->id];
-            if ($words === []) {
-                continue;
+            $words = [];
+            $digits = [];
+            foreach ($tokensOf[$p->id] as $t) {
+                if (ctype_digit($t)) {
+                    $digits[] = $t;
+                } elseif (mb_strlen($t) >= 4 || ($freq[$t] ?? 0) === 1) {
+                    $words[] = $t;
+                }
             }
             $matched = array_values(array_filter($words, fn ($w) => str_contains($matchHay, $w)));
-            if ($matched === []) {
-                continue;
-            }
             $score = 0.0;
             foreach ($matched as $w) {
                 $score += 1.0 / max(1, $freq[$w] ?? 1);
             }
+            // A digit appearing in exactly ONE product's name is the
+            // strongest separator the shop has (batch 18, RC1): said
+            // standalone — quantity phrases stripped, so "১টা" is a
+            // count and never a name — it breaks a coverage tie on
+            // score. It never enters coverage: a product must not
+            // lose a tie merely for carrying an extra digit in its
+            // name, and a product named only by a digit still needs
+            // a said word to be scored at all.
+            $digitHit = false;
+            foreach ($digits as $d) {
+                if (($freq[$d] ?? 0) === 1 && $this->nameTokenInText($d, $text)) {
+                    $score += 10.0;
+                    $digitHit = true;
+                }
+            }
+            if ($matched === [] && ! $digitHit) {
+                continue;
+            }
             if (str_contains($hay, mb_strtolower($p->name))) {
                 $score += 100.0; // the customer said the whole name
             }
-            $rows[] = ['product' => $p, 'coverage' => count($matched) / count($words), 'score' => $score];
+            $rows[] = ['product' => $p, 'coverage' => $words === [] ? 0.0 : count($matched) / count($words), 'score' => $score];
         }
 
         return $rows;
@@ -1363,11 +1555,12 @@ class RuleBrainService
     /**
      * Resolve a customer's answer to a product clarification against
      * the candidates that were listed: an explicit mention of one of
-     * them, an ordinal ("2", "২", "দ্বিতীয়টা", "second"), or a word
-     * that appears in exactly ONE candidate's name (the token that
-     * separates "CRUD Test Panjabi 2" from "CRUD Test Panjabi").
-     * Anything else resolves nothing — the message is then judged on
-     * its own by the normal flow.
+     * them, a word that appears in exactly ONE candidate's name (the
+     * token that separates "CRUD Test Panjabi 2" from "CRUD Test
+     * Panjabi" — judged before ordinals since batch 18, RC5), or an
+     * ordinal ("2", "২", "দ্বিতীয়টা", "second") whose digits are not
+     * quantity-bound. Anything else resolves nothing — the message
+     * is then judged on its own by the normal flow.
      *
      * @param  \Illuminate\Support\Collection<int, Product>  $candidates
      */
@@ -1381,35 +1574,17 @@ class RuleBrainService
             return $explicit;
         }
         $hay = mb_strtolower($this->guard->normalizeDigits($text));
-        $ordinals = [
-            1 => ['প্রথম', 'first', '1st', 'prothom'],
-            2 => ['দ্বিতীয়', 'second', '2nd', 'ditiyo', 'ditiya'],
-            3 => ['তৃতীয়', 'third', '3rd', 'tritiyo', 'tritiya'],
-            4 => ['চতুর্থ', 'fourth', '4th', 'choturtho'],
-            5 => ['পঞ্চম', 'fifth', '5th', 'ponchom'],
-        ];
-        foreach ($ordinals as $n => $words) {
-            if ($n > $candidates->count()) {
-                break;
-            }
-            $hit = (bool) preg_match('/(?<!\d)' . $n . '(?!\d)/u', $hay);
-            if (! $hit) {
-                foreach ($words as $w) {
-                    if (str_contains($hay, $w)) {
-                        $hit = true;
-                        break;
-                    }
-                }
-            }
-            if ($hit) {
-                return $candidates->values()[$n - 1];
-            }
-        }
-        // Distinguishing tokens: a name token exactly one candidate has.
+        // Distinguishing tokens FIRST (batch 18, RC5): a name token
+        // exactly one candidate has. This pass used to run AFTER the
+        // bare-ordinal scan, so the scan's ascending digits won
+        // before the separating token was ever consulted — "Panjabi
+        // 2 টাই চাই, ১টা অর্ডার করতে চাই।" picked candidate #1 on
+        // the quantity digit ১টা, although the message names the
+        // token that separates the pair ("2") outright.
         $tokenSets = [];
         $freq = [];
         foreach ($candidates as $p) {
-            $tokens = array_values(array_unique(preg_split('/\s+/', mb_strtolower($p->name)) ?: []));
+            $tokens = array_values(array_unique(preg_split('/\s+/', $this->guard->normalizeDigits(mb_strtolower($p->name))) ?: []));
             $tokenSets[$p->id] = $tokens;
             foreach ($tokens as $t) {
                 $freq[$t] = ($freq[$t] ?? 0) + 1;
@@ -1425,8 +1600,40 @@ class RuleBrainService
                 }
             }
         }
+        if (count($hits) === 1) {
+            return $hits[0];
+        }
+        $ordinals = [
+            1 => ['প্রথম', 'first', '1st', 'prothom'],
+            2 => ['দ্বিতীয়', 'second', '2nd', 'ditiyo', 'ditiya'],
+            3 => ['তৃতীয়', 'third', '3rd', 'tritiyo', 'tritiya'],
+            4 => ['চতুর্থ', 'fourth', '4th', 'choturtho'],
+            5 => ['পঞ্চম', 'fifth', '5th', 'ponchom'],
+        ];
+        // Bare digits are read on the quantity-stripped text (batch
+        // 18, RC5): a digit bound to a quantity word ("১টা", "1 ta")
+        // is a count the customer is ordering, never the ordinal of
+        // the candidate they are picking.
+        $ordHay = $this->stripQuantityPhrases($hay);
+        foreach ($ordinals as $n => $words) {
+            if ($n > $candidates->count()) {
+                break;
+            }
+            $hit = (bool) preg_match('/(?<!\d)' . $n . '(?!\d)/u', $ordHay);
+            if (! $hit) {
+                foreach ($words as $w) {
+                    if (str_contains($hay, $w)) {
+                        $hit = true;
+                        break;
+                    }
+                }
+            }
+            if ($hit) {
+                return $candidates->values()[$n - 1];
+            }
+        }
 
-        return count($hits) === 1 ? $hits[0] : null;
+        return null;
     }
 
     /**
@@ -2585,7 +2792,7 @@ class RuleBrainService
         }
         if ($missing !== []) {
             $state = (array) ($conversation->state_data ?? []);
-            $collect = ['step' => $missing[0], 'retries' => 0, 'product_id' => $product->id, 'variant_id' => $variant?->id];
+            $collect = ['step' => $missing[0], 'retries' => 0, 'product_id' => $product->id, 'variant_id' => $variant?->id, 'touched_at' => now()->timestamp];
             // A returning customer whose previous DELIVERED order's
             // address is still on the record (batch 15, finding
             // #25): when the address is the ONLY piece missing, the
@@ -3784,6 +3991,40 @@ class RuleBrainService
     }
 
     /**
+     * An abandoned collection expires (batch 18, RC3): the collect
+     * state had no freshness window, so a collection opened in an
+     * earlier session intercepted later messages indefinitely — on
+     * the live CRUD thread a leftover collection for one product was
+     * still standing when a new conversation began, and its prompt
+     * answered a price question about another product. The window
+     * matches the focus expiry (six hours untouched): the state is
+     * dropped, the details it gathered are marked consumed like
+     * every other flow close-out (they stay on the record; they stop
+     * counting), and the message is judged fresh. A collection with
+     * no stamp (rows from before it was tracked) cannot be proven
+     * stale and stays in force — the freshFocusProduct doctrine.
+     */
+    private function expireStaleCollection(Conversation $conversation): void
+    {
+        if ($conversation->state !== 'collecting') {
+            return;
+        }
+        $state = (array) ($conversation->state_data ?? []);
+        $collect = (array) ($state['collect'] ?? []);
+        $touched = (int) ($collect['touched_at'] ?? 0);
+        if ($touched <= 0 || now()->timestamp - $touched <= 6 * 3600) {
+            return;
+        }
+        unset($state['collect']);
+        $state['details_consumed'] = true;
+        $state['details_fresh'] = ['name' => false, 'phone' => false, 'address' => false];
+        $conversation->state_data = $state;
+        $conversation->state = null;
+        $conversation->save();
+        $this->log((int) $conversation->business_id, 'collect_expired', $conversation->customer_name . ' — abandoned collection dropped after 6h untouched', null, $conversation);
+    }
+
+    /**
      * Guided order-data collection. One question at a time; a message that
      * carries several fields at once fills them all; two failed tries at
      * one field hand the conversation to a human. A message carrying no
@@ -3798,6 +4039,14 @@ class RuleBrainService
         $state = (array) ($conversation->state_data ?? []);
         $collect = (array) ($state['collect'] ?? []);
         $step = (string) ($collect['step'] ?? 'phone');
+
+        // The collection is alive and being worked on: stamp it, so
+        // the abandonment window in expireStaleCollection() measures
+        // from the last collect pass, not the first (batch 18, RC3).
+        $collect['touched_at'] = now()->timestamp;
+        $state['collect'] = $collect;
+        $conversation->state_data = $state;
+        $conversation->save();
 
         // What does THIS message itself carry? (Pure reads of the text —
         // the capture further down, and captureContactFromText before
@@ -3835,8 +4084,18 @@ class RuleBrainService
             $addressShaped = ! preg_match('/টাকা|taka|\btk\b|৳/iu', $text)
                 && ! $this->intentMatches('bargain', mb_strtolower($text))
                 && ($this->extractLabelledAddress($norm, $phoneInMsg) !== null
-                    || ($candidate !== null && (str_contains($candidate, ',')
-                        || (bool) preg_match('/বাসা|রোড|হোল্ডিং|থানা|জেলা|সেক্টর|ব্লক|গ্রাম/u', $candidate))));
+                    || ($candidate !== null && ((bool) preg_match('/বাসা|রোড|হোল্ডিং|থানা|জেলা|সেক্টর|ব্লক|গ্রাম/u', $candidate)
+                        // A comma alone is not address evidence
+                        // (batch 18, RC3): "আসসালামু আলাইকুম,
+                        // পাঞ্জাবিটার দাম কত?" carries one and is a
+                        // greeting with a price question — read as
+                        // an address answer, it suppressed the side
+                        // question entirely and the collection
+                        // re-asked its prompt at a customer who had
+                        // asked something else. A comma WITH a
+                        // house/road number is the address shape
+                        // batch 9 protects.
+                        || (str_contains($candidate, ',') && (bool) preg_match('/\d/u', $candidate)))));
             if (! $addressShaped) {
                 $intent = $this->detectIntent($text, $conversation);
                 if ($intent === 'price' || $intent === 'bargain') {
@@ -4878,6 +5137,12 @@ class RuleBrainService
             $handoverAck = true;
         }
 
+        // An abandoned collection expires before it can intercept
+        // this message (batch 18, RC3) — after the cancellation
+        // check above, so a cancel that closes the stale flow still
+        // gets its flow answer.
+        $this->expireStaleCollection($conversation);
+
         if ($conversation->state === 'collecting') {
             // A clarification raised INSIDE collection (batch 11b)
             // gets its pick here: the pick resolution at the top of
@@ -4945,6 +5210,38 @@ class RuleBrainService
                     $conversation->save();
                     $this->log($biz, 'product_switched', $conversation->customer_name . ' — clarification pick switched the collection to: ' . $pendingPick->name, null, $conversation);
                 }
+            }
+            // A category tie in THIS message outranks the collection
+            // (batch 18, RC3): the resolution at the top of this
+            // method already judged the message ambiguous between
+            // two or more products, but the collecting dispatch used
+            // to swallow it — handleCollect read a fresh question
+            // about the category as a non-answer to the collect
+            // prompt and re-asked the prompt verbatim, so a
+            // collection opened for one product hijacked a question
+            // about the other. The clarification is asked now, with
+            // the collection remembered on it (collect_product_id),
+            // so the pick machinery above resumes exactly as it does
+            // for a clarification raised inside collection (batch
+            // 11b): the collect product itself is answered alongside
+            // the collection; a different product switches out of
+            // it. A message carrying the customer's details is
+            // collection input, never a clarification trigger.
+            if ($clarifyWith !== null && $rule !== null && ! $this->carriesDetails($text)) {
+                $collectNow = (array) (($conversation->state_data ?? [])['collect'] ?? []);
+                $names = collect($clarifyWith)->map(fn (Product $p) => $p->name)->implode(', ');
+                $ids = collect($clarifyWith)->map(fn (Product $p) => (int) $p->id)->all();
+                $cState = (array) ($conversation->state_data ?? []);
+                $cState['product_clarify'] = [
+                    'product_ids' => $ids,
+                    'intent' => $rule->match_text,
+                    'collect_product_id' => (int) ($collectNow['product_id'] ?? $conversation->product_id),
+                ];
+                $conversation->state_data = $cState;
+                $conversation->save();
+                $this->log($biz, 'product_clarify', $conversation->customer_name . ' — ambiguous product during collection, asked which one: ' . $names, $rule, $conversation);
+
+                return $this->simpleOutgoing($conversation, $this->honorificPrefix($biz, $conversation->customer_name) . 'কোন পণ্যটার কথা বলছেন? আমাদের পণ্য: ' . $names . '। কোনটা, সেটা বলুন — তাহলেই দাম জানিয়ে দিচ্ছি।', 'product_clarify', $mode, ['clarify' => true, 'candidates' => $ids]);
             }
             if ($conversation->state === 'collecting') {
                 return $this->handleCollect($conversation, $text, $mode);
@@ -5376,6 +5673,29 @@ class RuleBrainService
             $slottedBody = $short['body'];
             $kind = $short['kind'];
             $meta = [$short['kind'] => true];
+        } elseif ($product && $this->carriesDetails($text)) {
+            // Details with no rule and no flow (batch 18, RC4): the
+            // batch-14 route into order taking above requires intent
+            // === null, so a details-bearing message whose intent the
+            // keyword layer read as SOMETHING (a figure inside the
+            // address, a word inside the name) but which matched no
+            // rule and holds no flow state fell past it into the
+            // no-rule fallback below — a bare price line about
+            // whatever product happened to stand in focus, quoting
+            // the WRONG product on the live CRUD thread while the
+            // customer's name, phone and address sat captured on the
+            // record. Details are order input wherever they land
+            // (batch 9's doctrine): take the order for the resolved
+            // product — the summary when they complete, the
+            // collection for what is missing.
+            $o = $this->orderTaking($conversation, $product, $variant, $biz, $conversation->neg_offer !== null ? (float) $conversation->neg_offer : null);
+            $slottedBody = $o['slottedBody'];
+            $kind = $o['kind'];
+            $meta = $o['meta'];
+            $body = $o['body'];
+            if (isset($o['meta']['offer'])) {
+                $slotValues = ['offer' => $o['meta']['offer']];
+            }
         } else {
             // No rule matched. First try the shop's own Knowledge — the AI
             // may answer policy questions only from what the shop wrote.
