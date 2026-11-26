@@ -52,7 +52,18 @@ class RuleBrainService
         'abuse' => ['হারামজাদা', 'হারামি', 'খানকি', 'বাইনচোদ', 'মাগির পোলা', 'কুত্তার বাচ্চা', 'fuck', 'motherfucker', 'asshole', 'bastard'],
         'payment_proof' => ['টাকা পাঠিয়েছি', 'টাকা পাঠালাম', 'পেমেন্ট করেছি', 'পেমেন্ট করলাম', 'ট্রানজেকশন', 'ট্রান্সফার করেছি', 'স্ক্রিনশট', 'TrxID', 'taka pathiyechi', 'taka pathalam', 'payment korechi', 'payment done', 'paid', 'sent money', 'transaction id', 'trx id', 'screenshot'],
         'payment_problem' => ['ভুল নম্বরে পাঠিয়েছি', 'ভুল নাম্বারে', 'টাকা কেটে নিয়েছে', 'টাকা কেটেছে কিন্তু', 'পেমেন্ট হয়নি', 'পেমেন্ট ফেইল', 'vul number e pathiyechi', 'taka kete niyeche', 'payment hoyni', 'payment failed', 'money deducted', 'wrong number'],
-        'cancel_order' => ['অর্ডার ক্যান্সেল', 'অর্ডার বাতিল', 'অর্ডারটা বাতিল', 'ক্যান্সেল করে দিন', 'বাতিল করে দিন', 'order cancel', 'cancel my order', 'cancel korun', 'cancel koren', 'cancel the order'],
+        // The bare words matter (batch-17 cancel fix, live
+        // 2026-11-26 09:13): "cancel kore den" matched NONE of the
+        // phrases above — "cancel koren" is not a substring of it —
+        // so with the talker rate-limited the message matched no
+        // rule at all and fell into the no-rule price draft. The
+        // bare 'cancel' covers the whole 'cancel kore den / din /
+        // korbo / korte chai' family, 'বাতিল'/'ক্যান্সেল'/'batil'
+        // their Bangla and romanised forms, and 'বাদ দিন'/'বাদ
+        // দেন' the dismissal family that previously lived only in
+        // flowCancellation — which only fires while a flow is live,
+        // so a cancel with no order in flight had no path at all.
+        'cancel_order' => ['অর্ডার ক্যান্সেল', 'অর্ডার বাতিল', 'অর্ডারটা বাতিল', 'ক্যান্সেল করে দিন', 'বাতিল করে দিন', 'order cancel', 'cancel my order', 'cancel korun', 'cancel koren', 'cancel the order', 'cancel', 'বাতিল', 'ক্যান্সেল', 'ক্যানসেল', 'batil', 'বাদ দিন', 'বাদ দেন', 'bad din', 'bad den'],
         'late_delivery' => ['এখনো পাইনি', 'এখনও পাইনি', 'এখনো আসেনি', 'পাচ্ছি না', 'অনেক দেরি', 'কতদিন আর', 'দেরি হচ্ছে', 'কুরিয়ার দিচ্ছে না', 'ekhono paini', 'ekhono ashe nai', 'pacchi na', 'onek deri', 'deri hocche', 'not received yet', 'still not received', 'delayed', 'courier not delivering'],
         // A missed delivery the customer wants sent AGAIN (batch 15):
         // distinct from a late-delivery complaint — the ask is a
@@ -343,6 +354,44 @@ class RuleBrainService
         }
 
         return false;
+    }
+
+    /**
+     * Is this message a cancellation in words the keyword list does
+     * not name? The second net for the no-rule path (batch-17
+     * cancel fix): "do not send", "আর পাঠাবেন না" and friends must
+     * never reach stage 2 or the fallback, which would invent a
+     * price draft — or, on a duplicate delivery, misread the cancel
+     * as an order intent and start collection. The keyword list
+     * itself (INTENTS['cancel_order']) is the first net; this is
+     * the second, read only when no rule matched.
+     */
+    private function isCancelSignal(string $text): bool
+    {
+        $hay = mb_strtolower($text);
+        if ($this->intentMatches('cancel_order', $hay)) {
+            return true;
+        }
+        foreach (['do not send', "don't send", 'dont send', 'stop the order', 'stop my order', 'পাঠাবেন না', 'পাঠাতে হবে না', 'পাঠানো লাগবে না', 'বন্ধ করেন', 'bondho koren', 'order bondho'] as $w) {
+            if (str_contains($hay, $w)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Raise the human flag for a handover rule, with the record to
+     * match (batch-17 cancel fix: the Cancel order rule's flag is
+     * deferred until flowCancellation has had its say, so the flag
+     * is raised from three call sites, not one).
+     */
+    private function flagHandover(Conversation $conversation, AiRule $rule): void
+    {
+        $conversation->needs_human = true;
+        $conversation->save();
+        $this->log((int) $conversation->business_id, 'handed_human', $conversation->customer_name . ' — ' . $rule->name, $rule, $conversation);
     }
 
     /**
@@ -4561,6 +4610,30 @@ class RuleBrainService
             $conversation->save();
         }
 
+        // A cancel-like message with no rule matched must never
+        // reach stage 2 or the no-rule fallback (batch-17 cancel
+        // fix, live 2026-11-26 09:13): with the model rate-limited,
+        // stage 2 returns nothing and the fallback invents a price
+        // draft — and when stage 2 does answer, it can misread the
+        // cancel as an order intent and start collection. The
+        // shop's Cancel order rule answers it instead, with the
+        // human flag the handover branch raises below. The guard
+        // runs after the clarification resume (a pick is never a
+        // cancel) and only when no rule matched, so a polite
+        // decline, a bargain push and every other ruled case keep
+        // their own answer. When the shop has no Cancel order rule
+        // row at all, behaviour is unchanged.
+        if (! $rule && $this->isCancelSignal($text)) {
+            $cancelRule = AiRule::where('business_id', $biz)->where('active', true)
+                ->where('trigger_type', 'intent')->where('match_text', 'cancel_order')
+                ->where(fn ($q) => $q->whereNull('channel')->orWhere('channel', $conversation->channel))
+                ->first();
+            if ($cancelRule !== null) {
+                $rule = $cancelRule;
+                $intent = 'cancel_order';
+            }
+        }
+
         // The context package for the AI layers (stage-2 classifier and
         // the talker): recent history + the state code has decided, so
         // neither of them has to judge or phrase this message blind.
@@ -4719,10 +4792,21 @@ class RuleBrainService
         }
 
         $handoverAck = false;
+        $deferCancelHandover = false;
         if ($rule && $rule->action === 'handover') {
-            $conversation->needs_human = true;
-            $conversation->save();
-            $this->log($biz, 'handed_human', $conversation->customer_name . ' — ' . $rule->name, $rule, $conversation);
+            if ($rule->match_text === 'cancel_order') {
+                // Deferred (batch-17 cancel fix): a cancel that
+                // closes a live flow is answered by
+                // flowCancellation below with the plain
+                // collect_cancel and NO human flag (batch 16's pin)
+                // — so the flag this block raises for the rule must
+                // wait until that check has had its say. When there
+                // is no flow to close, the flag and the
+                // acknowledgement are applied right after it.
+                $deferCancelHandover = true;
+            } else {
+                $this->flagHandover($conversation, $rule);
+            }
             if ($rule->match_text === 'angry') {
                 return $this->holdingLine($conversation, $auto);
             }
@@ -4752,11 +4836,19 @@ class RuleBrainService
 
                 return null;
             }
-            $handoverAck = true;
+            if (! $deferCancelHandover) {
+                $handoverAck = true;
+            }
         }
 
         $mode = $this->applyWorkingHours($biz, $auto[$conversation->channel] ?? 'draft');
         if ($mode === 'off') {
+            if ($deferCancelHandover) {
+                // The AI is off, so flowCancellation never runs —
+                // the cancel still needs a human to see it.
+                $this->flagHandover($conversation, $rule);
+            }
+
             return null;
         }
 
@@ -4775,6 +4867,15 @@ class RuleBrainService
         $cancel = $this->flowCancellation($conversation, $text, $mode);
         if ($cancel !== null) {
             return $cancel;
+        }
+        if ($deferCancelHandover) {
+            // No flow to close: the cancel is the Cancel order
+            // rule's own case — the human flag goes up, and the
+            // rule's acknowledgement template goes out through the
+            // guarded path below. $handoverAck keeps the flag up
+            // when that acknowledgement is sent.
+            $this->flagHandover($conversation, $rule);
+            $handoverAck = true;
         }
 
         if ($conversation->state === 'collecting') {

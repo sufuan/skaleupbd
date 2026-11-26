@@ -32,8 +32,9 @@ use Tests\TestCase;
  *     that flowCancellation()'s flow-active test finds nothing left
  *     to cancel — yet the customer IS closing the conversation the
  *     switch just re-aimed. The close-out now leaves a one-message
- *     arm the cancellation can attach to; a cancel with no recent
- *     flow keeps today's behaviour (pinned below).
+ *     arm the cancellation can attach to. (A cancel with no recent
+ *     flow at all is the batch-17 cancel fix's case: the Cancel
+ *     order rule answers it — pinned below.)
  * (2) The photo no-match fallback still did not fire live (third
  *     attempt): ProcessMediaMessageJob treated the conversation's
  *     FOCUS product as a high-confidence identification, so the
@@ -172,19 +173,24 @@ class BrainFix16Test extends TestCase
         $this->assertNotSame('collect_cancel', $price->meta['kind'] ?? null);
 
         // The cancel that arrives now has no flow left to attach
-        // to: today's focus-only behaviour (the no-rule draft +
-        // flag), NOT the cancel acknowledgement.
+        // to: the Cancel order rule answers it (batch-17 cancel
+        // fix), NOT the flow-close acknowledgement.
         $cancel = $this->send($brain, $conv, 'বাদ দিন');
         $this->assertNotSame('collect_cancel', $cancel?->meta['kind'] ?? null);
     }
 
     /**
-     * Pin: a cancel word with NO recent flow at all keeps today's
-     * behaviour — with no focus it is silence + the human flag;
-     * with a mere focus product it is the no-rule price draft.
-     * The switch arm must not widen to either case.
+     * Pin, UPDATED by the batch-17 cancel fix (live 2026-11-26
+     * 09:13): a cancel word with NO recent flow at all used to fall
+     * into the no-rule fallback — with a focus product, a price
+     * draft; with none, silence — and the Cancel order rule never
+     * ran (0 runs / Never). It now gets the rule's acknowledgement,
+     * sent in Full auto, flagged for the human confirmation either
+     * way. The switch arm still must not widen: this is the rule
+     * answering, not the flow-close acknowledgement, so the kind
+     * is never collect_cancel.
      */
-    public function test_a_cancel_with_no_recent_flow_keeps_todays_behaviour(): void
+    public function test_a_cancel_with_no_recent_flow_gets_the_cancel_rule_ack(): void
     {
         [$biz, $p1, $p2, $p3, $conv] = $this->shop();
         $brain = app(RuleBrainService::class);
@@ -193,7 +199,8 @@ class BrainFix16Test extends TestCase
         $r = $this->send($brain, $conv, 'বাদ দিন');
         $this->assertNotNull($r);
         $this->assertNotSame('collect_cancel', $r->meta['kind'] ?? null);
-        $this->assertSame('draft', $r->status, 'the no-rule fallback drafts, as today');
+        $this->assertSame('sent', $r->status, 'Full auto sends the Cancel order acknowledgement');
+        $this->assertStringContainsString('আপনার বাতিলের অনুরোধ পেয়েছি', (string) $r->body);
         $this->assertTrue((bool) $conv->fresh()->needs_human);
 
         // No focus, no flow.
@@ -202,7 +209,9 @@ class BrainFix16Test extends TestCase
             'customer_name' => 'Bare Customer',
         ]);
         $r2 = $this->send($brain, $bare, 'বাদ দিন');
-        $this->assertNull($r2, 'no reply today, and still none');
+        $this->assertNotNull($r2, 'no longer dropped');
+        $this->assertSame('sent', $r2->status);
+        $this->assertStringContainsString('আপনার বাতিলের অনুরোধ পেয়েছি', (string) $r2->body);
         $this->assertTrue((bool) $bare->fresh()->needs_human);
     }
 
