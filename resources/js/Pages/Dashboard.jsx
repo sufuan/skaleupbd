@@ -107,6 +107,12 @@ function MyDashboard({ my, onBasis, onHourlyToday }) {
                     <div className="val">{my.pending_web}</div>
                     <div className="sub">&nbsp;</div>
                 </div>
+                <div className="card kpi">
+                    <div className="kpi-top"><span className="kpi-lbl">{t('Total Revenue')}</span>
+                        <span className="kpi-controls"><TodayPill label={t('All time')} /></span></div>
+                    <div className="val">{fmt(my.revenue_all_time)}</div>
+                    <div className="sub">{t('Delivered orders only')}</div>
+                </div>
             </div>
 
             <div className="dash-2col">

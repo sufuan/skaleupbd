@@ -15,20 +15,21 @@ export function TodayTable({ rows }) {
     return (
         <table className="x-table">
             <thead>
-                <tr><th>{t('Name')}</th><th>{t('Department')}</th><th>{t('Check-in')}</th><th>{t('Check-out')}</th><th>{t('Status')}</th></tr>
+                <tr><th>{t('Name')}</th><th>{t('Department')}</th><th>{t('Shift')}</th><th>{t('Check-in')}</th><th>{t('Check-out')}</th><th>{t('Status')}</th></tr>
             </thead>
             <tbody>
                 {rows.map((r) => (
                     <tr key={r.user_id}>
                         <td>{r.name}</td>
                         <td>{r.department || '-'}</td>
+                        <td>{r.shift || t('No shift assigned')}</td>
                         <td>{r.check_in || '-'}</td>
                         <td>{r.check_out || '-'}</td>
                         <td><StatusChip row={r} /></td>
                     </tr>
                 ))}
                 {rows.length === 0 && (
-                    <tr><td colSpan={5} style={{ color: '#94A3B8' }}>{t('No staff added yet - Admin logins are not counted as staff.')}</td></tr>
+                    <tr><td colSpan={6} style={{ color: '#94A3B8' }}>{t('No staff added yet - Admin logins are not counted as staff.')}</td></tr>
                 )}
             </tbody>
         </table>

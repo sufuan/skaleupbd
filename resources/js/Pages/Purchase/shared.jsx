@@ -1,6 +1,7 @@
 import { Link, useForm } from '@inertiajs/react';
 import { useMemo, useState } from 'react';
 import { t } from '@/lib/i18n';
+import Spinner from '@/Components/Spinner';
 
 // Money exactly as EcomDrive prints it: Indian-style grouping (3,44,850).
 export const fmt = (n) => '৳' + Number(Math.round(Number(n) || 0)).toLocaleString('en-IN');
@@ -150,7 +151,7 @@ export function PayModal({ title, due, accounts, today, action, onClose }) {
                     <div className="flex" style={{ gap: 8, marginTop: 6 }}>
                         <span className="spacer" />
                         <button type="button" className="btn" onClick={onClose}>{t('Cancel')}</button>
-                        <button type="submit" className="btn pri" disabled={form.processing || accounts.length === 0}>{t('Pay')}</button>
+                        <button type="submit" className="btn pri" disabled={form.processing || accounts.length === 0}>{form.processing && <Spinner color="#fff" />}{form.processing ? t('Saving...') : t('Pay')}</button>
                     </div>
                 </form>
             </div>

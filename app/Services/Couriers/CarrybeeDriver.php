@@ -45,7 +45,7 @@ class CarrybeeDriver implements CourierDriver
             'recipient_name' => $order->customer_name,
             'recipient_phone' => $order->customer_phone,
             // The API accepts 10–200 characters of recipient address.
-            'recipient_address' => mb_substr(trim(($order->address ?? '') . ' ' . ($order->area ?? '') . ' ' . ($order->district ?? '')), 0, 200),
+            'recipient_address' => mb_substr(\App\Services\OrderService::composeAddress($order->address ?? null, $order->area ?? null, $order->district ?? null), 0, 200),
             'collectable_amount' => (int) round($order->codAmount()),
             // The API wants item_weight in GRAMS (integer, 1–25,000); the Settings field is kg.
             'item_weight' => max(1, (int) round(((float) ($c['default_weight'] ?? 0.5)) * 1000)),

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, router } from '@inertiajs/react';
 import { t } from '@/lib/i18n';
+import Spinner from '@/Components/Spinner';
 
 /**
  * The Send to Courier modal (§10.7b) - shared by Ready to Ship and the
@@ -89,7 +90,7 @@ export default function SendCourierModal({ order, methods, suggestedId = null, s
                         <div className="frow" style={{ gap: 8, marginTop: 18, justifyContent: 'flex-end' }}>
                             <button type="button" className="btn" onClick={onClose}>{t('Cancel')}</button>
                             <button type="button" className="btn pri" disabled={sending || !selected || (selected?.booking_mode === 'manual' && !cn.trim())} onClick={send}>
-                                {sending ? t('Sending…') : t('Send')}
+                                {sending && <Spinner color="#fff" />}{sending ? t('Sending…') : t('Send')}
                             </button>
                         </div>
                     </>

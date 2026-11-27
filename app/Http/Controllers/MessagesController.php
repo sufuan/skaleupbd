@@ -41,6 +41,27 @@ class MessagesController extends Controller
         $conversations = Conversation::where('business_id', $biz)
             ->orderByDesc('last_message_at')->orderByDesc('id')->limit(100)->get();
 
+        // One thread, one list entry (Round 2 finding 6): the same
+        // channel thread can exist as two conversation rows (an older
+        // row and a re-created one sharing the channel's external id),
+        // which showed the customer twice in the list under two names.
+        // The list is freshest-first, so the first row per
+        // channel+external_id wins and later duplicates are dropped
+        // from the LIST only — no rows are merged or deleted.
+        $seenThreads = [];
+        $conversations = $conversations->filter(function ($c) use (&$seenThreads) {
+            if (empty($c->external_id)) {
+                return true;
+            }
+            $key = $c->channel . '|' . $c->external_id;
+            if (isset($seenThreads[$key])) {
+                return false;
+            }
+            $seenThreads[$key] = true;
+
+            return true;
+        })->values();
+
         $selected = null;
         $selId = (int) $request->query('c', 0);
         $sel = $selId
@@ -125,6 +146,10 @@ class MessagesController extends Controller
                     'kind' => $m->meta['kind'] ?? null,
                     'no_rule' => (bool) ($m->meta['no_rule'] ?? false),
                     'ladder_step' => $m->meta['ladder_step'] ?? null,
+                    // Every draft card carries its creation time (Round
+                    // 2 finding 1): without it a stale card in the stack
+                    // reads as the newest one.
+                    'time' => DhakaTime::fmt($m->created_at, 'd M, h:i A'),
                 ])->values()->all(),
             ];
         }

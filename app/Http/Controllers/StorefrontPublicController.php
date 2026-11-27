@@ -277,6 +277,9 @@ class StorefrontPublicController extends Controller
             'sf' => $sf,
             'brand' => $this->brand($sf),
             'order' => $order,
+            // The success page recaps where the order is going (Round
+            // 2 finding 26), composed without repeating the district.
+            'deliveryAddress' => \App\Services\OrderService::composeAddress($order->address, $order->area, $order->district),
             'purchaseEventId' => (string) $request->query('pe', ''),
             // This shop's OWN payment numbers (seller scope) — never
             // another shop's, never the platform's.

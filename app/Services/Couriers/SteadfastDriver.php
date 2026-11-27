@@ -28,7 +28,7 @@ class SteadfastDriver implements CourierDriver
             'invoice' => $order->invoice,
             'recipient_name' => $order->customer_name,
             'recipient_phone' => $order->customer_phone,
-            'recipient_address' => trim(($order->address ?? '') . ' ' . ($order->area ?? '') . ' ' . ($order->district ?? '')),
+            'recipient_address' => \App\Services\OrderService::composeAddress($order->address ?? null, $order->area ?? null, $order->district ?? null),
             'cod_amount' => $order->codAmount(),
             'note' => $order->delivery_note ?? $method->default_shipping_note,
         ];

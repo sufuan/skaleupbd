@@ -564,6 +564,14 @@ class OrderController extends Controller
             'sources' => OrderSource::where('business_id', $biz)->where('is_visible', true)->orderBy('sort')->get(['code', 'label']),
             'products' => $this->catalogue($biz),
             'processingStatuses' => Order::PROCESSING_STATUSES,
+            // The Change Status set for THIS order, computed on the
+            // server as a pure function of its status (Round 2
+            // finding 9) — the page no longer assembles its own set.
+            'changeStatusOptions' => $order->changeStatusOptions(),
+            // Mark as Delivered shows only when the courier has no
+            // status feed of its own (Round 2 finding 12) — the same
+            // guard Scan To Delivery applies.
+            'deliverableByHand' => $order->deliverableByHand(),
             'cancelReasons' => Order::CANCEL_REASONS,
             'pendingCount' => Order::where('business_id', $biz)->where('status', 'Pending')->count(),
         ]);

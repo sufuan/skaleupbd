@@ -72,6 +72,11 @@ class HrmController extends Controller
                 'user_id' => $u->id,
                 'name' => $u->name,
                 'department' => $dept?->name,
+                // The staffer's shift, when one is assigned — the page
+                // shows "No shift assigned" without one (Round 2
+                // finding 22) instead of a bare dash that reads as a
+                // loading gap.
+                'shift' => $u->shift()?->name,
                 // Attendance times are stored as Dhaka wall-clock
                 // (AttendanceService::nowDhaka) - display as stored.
                 'check_in' => DhakaTime::fmtWall($r?->check_in_at, 'h:i A'),

@@ -1,11 +1,12 @@
 import AppLayout from '@/Layouts/AppLayout';
 import { t } from '@/lib/i18n';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { StatusPill, fmt } from './ui';
 import SendCourierModal from '@/Components/SendCourierModal';
+import Spinner from '@/Components/Spinner';
 
-export default function Show({ order, customer, couriers, courierMethods = [], sources, products, processingStatuses, cancelReasons, pendingCount }) {
+export default function Show({ order, customer, couriers, courierMethods = [], sources, products, processingStatuses, cancelReasons, pendingCount, changeStatusOptions = null, deliverableByHand = false }) {
     const [approveOpen, setApproveOpen] = useState(false);
     const [sendOpen, setSendOpen] = useState(false);
     const [changeMethodId, setChangeMethodId] = useState('');
@@ -33,7 +34,39 @@ export default function Show({ order, customer, couriers, courierMethods = [], s
     const saveMethod = () => { if (newMethod.trim()) router.post('/settings/courier-methods', { name: newMethod.trim() }, { preserveScroll: true, preserveState: true, onSuccess: () => { form.setData('delivery_method', newMethod.trim()); setAddingMethod(false); setNewMethod(''); } }); };
     const risky = order.fraud.verdict === 'risky';
     const canApprove = canEdit && ['Pending', 'Incomplete'].includes(order.status);
-    const verdictLabel = order.fraud.verdict === 'safe' ? 'Safe' : risky ? 'Risky - take advance' : 'Not checked';
+    const verdictLabel = order.fraud.verdict === 'safe' ? 'Safe' : risky ? 'Risky - take advance' : order.fraud.verdict === 'low_sample' ? 'Too few orders to judge' : 'Not checked';
+    const [smsBusy, setSmsBusy] = useState(false);
+    const [marking, setMarking] = useState(false);
+    const [markNote, setMarkNote] = useState('');
+    // Mark as Delivered (finding 12): the same hand-delivery path Scan
+    // To Delivery uses — POST the scan endpoint with this order's
+    // invoice; the server applies the deliverableByHand guard again.
+    const markDelivered = async () => {
+        setMarking(true);
+        setMarkNote('');
+        try {
+            const res = await fetch('/delivery/scan', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '', 'X-Requested-With': 'XMLHttpRequest' },
+                body: JSON.stringify({ code: order.invoice, type: 'delivery' }),
+            });
+            const data = await res.json();
+            if (data.ok) {
+                router.reload({ preserveScroll: true });
+            } else {
+                setMarkNote(data.note || 'Could not mark as delivered.');
+            }
+        } catch {
+            setMarkNote('Network error. Please try again.');
+        } finally {
+            setMarking(false);
+        }
+    };
+    // The address already ends with the district for many chat orders
+    // (finding 13): show the district once, not twice.
+    const districtName = (order.district || '').trim();
+    const addressTail = (order.address || '').trim().replace(/[,\s.]+$/, '').toLowerCase();
+    const showDistrict = districtName !== '' && !addressTail.endsWith(districtName.toLowerCase());
 
     // The Change Status dropdown must show the order's CURRENT status.
     // While the order is in the processing flow that is its processing
@@ -53,15 +86,30 @@ export default function Show({ order, customer, couriers, courierMethods = [], s
     });
     const [tagInput, setTagInput] = useState('');
     const [statusSel, setStatusSel] = useState(inFlow ? (order.processing_status || 'Processing') : order.status);
+    // The option set comes from the server (Order::changeStatusOptions)
+    // as a pure function of the order's status (finding 9); the local
+    // fallback mirrors the same rule if the prop is ever absent.
     // Outside the Pending/Processing flow (Shipped, Delivered, Returned,
     // Cancelled) Cancel is not offered: a delivered order cannot be
     // cancelled (M4, refused server-side too) - goods back means Return.
-    const statusOptions = inFlow ? processingStatuses : [order.status, ...processingStatuses.filter((s) => s !== order.status && s !== 'Cancel')];
+    const statusOptions = changeStatusOptions || (inFlow ? processingStatuses : [order.status, ...processingStatuses.filter((s) => s !== order.status && s !== 'Cancel')]);
     const onStatusSel = (v) => { setStatusSel(v); form.setData('processing_status', processingStatuses.includes(v) ? v : ''); };
+
+    // Resync the local controls whenever the server state moves
+    // (finding 7): after shipping or a status change the page reloads
+    // with fresh props, but useForm/useState keep their first values,
+    // so the dropdown and the Delivery Method kept showing the old
+    // state until a full navigation.
+    useEffect(() => {
+        setStatusSel(inFlow ? (order.processing_status || 'Processing') : order.status);
+        form.setData('delivery_method', order.delivery_method || '');
+        if (inFlow) form.setData('processing_status', order.processing_status || 'Processing');
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [order.id, order.status, order.processing_status, order.delivery_method]);
 
     const save = (e) => { e.preventDefault(); form.patch(`/orders/${order.id}`, { preserveScroll: true, onSuccess: () => form.reset('note', 'advance_payment') }); };
     const approve = (next) => router.post(`/orders/${order.id}/approve`, { next }, { preserveScroll: false });
-    const sms = (type) => router.post(`/orders/${order.id}/sms`, { type }, { preserveScroll: true });
+    const sms = (type) => router.post(`/orders/${order.id}/sms`, { type }, { preserveScroll: true, onFinish: () => setSmsBusy(false) });
     const block = (type) => router.post(`/orders/${order.id}/block`, { type }, { preserveScroll: true });
     const historyRows = [...order.history.map((h) => ({ text: h.text, date: h.date, time: h.time })), ...order.activities.map((a) => ({ text: a.text, date: a.date, time: a.time }))];
 
@@ -76,7 +124,12 @@ export default function Show({ order, customer, couriers, courierMethods = [], s
                     </div>
                     <span style={{ marginLeft: 'auto', display: 'flex', gap: 10, alignItems: 'center' }}>
                         <StatusPill status={order.status} />
-                        {canApprove && <button className="btn-primary" onClick={() => setApproveOpen(true)}>{t('Approve Order')} ({fmt(order.total)})</button>}
+                        {canApprove && (
+                            <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+                                <button className="btn-primary" onClick={() => setApproveOpen(true)}>{t('Approve Order')} ({fmt(order.total)})</button>
+                                <span className="sm mut">{t('Stock is reserved when you approve this order.')}</span>
+                            </span>
+                        )}
                     </span>
                 </div>
 
@@ -88,7 +141,7 @@ export default function Show({ order, customer, couriers, courierMethods = [], s
                             <div className="sum-row"><span>{t('Phone')}</span><b>{order.phone}</b></div>
                             {order.alt_phone && <div className="sum-row"><span>{t('Alternative Number')}</span><b>{order.alt_phone}</b></div>}
                             {order.email && <div className="sum-row"><span>{t('Email')}</span><b>{order.email}</b></div>}
-                            <div className="sum-row"><span>{t('Address')}</span><b style={{ textAlign: 'right' }}>{order.address}{order.district ? `, ${order.district}` : ''}</b></div>
+                            <div className="sum-row"><span>{t('Address')}</span><b style={{ textAlign: 'right' }}>{order.address}{showDistrict ? `, ${order.district}` : ''}</b></div>
                             <div className="sum-row"><span>{t('Customer History')}</span><b style={{ textAlign: 'right', whiteSpace: 'normal' }}>{customer.orders} {customer.orders === 1 ? t('order') : t('orders')} · {t('Success rate')}: {customer.rate === null ? '-' : `${customer.rate}%`} · {t(verdictLabel)}</b></div>
                             <div className="sum-row"><span>{customer.is_returning ? t('Returning customer') : t('New customer')}</span><b>{customer.delivered} {t('delivered')} · {customer.returned} {t('returned')}</b></div>
                             <h3 style={{ fontSize: 13.5, margin: '14px 0 2px' }}>{t('Success Rate')}</h3>
@@ -187,8 +240,11 @@ export default function Show({ order, customer, couriers, courierMethods = [], s
                                         <option value="">-</option>
                                         {couriers.map((c) => <option key={c} value={c}>{c}</option>)}
                                     </select>
-                                    {canEdit && <button type="button" className="ctl-btn" style={{ marginTop: 6 }} onClick={() => setAddingMethod(!addingMethod)}>{t('Add Delivery Method')}</button>}
+                                    {canEdit && <button type="button" className="ctl-btn" style={{ marginTop: 6 }} onClick={() => setAddingMethod(!addingMethod)}>{t('Add New Method')}</button>}
                                 </span>
+                                {form.data.delivery_method === '' && (order.delivery_method || order.courier_label) && (
+                                    <span className="sm mut" style={{ display: 'block', marginTop: 4 }}>{t('Booked with')}: {order.delivery_method || order.courier_label}</span>
+                                )}
                                 {addingMethod && canEdit && (
                                     <span style={{ display: 'flex', gap: 8, marginTop: 8 }}>
                                         <input className="fld" style={{ flex: 1, marginTop: 0 }} value={newMethod} onChange={(e) => setNewMethod(e.target.value)} placeholder={t('New delivery method name')} />
@@ -224,9 +280,9 @@ export default function Show({ order, customer, couriers, courierMethods = [], s
                                 <textarea className="fld" rows="2" value={form.data.note} onChange={(e) => form.setData('note', e.target.value)} placeholder={t('Write a note for your team…')} />
                             </label>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 16 }}>
-                                {canEdit && <button type="submit" className="ctl-btn w100" disabled={form.processing}>{t('Save Changes')}</button>}
-                                {canEdit && <button type="button" className="ctl-btn w100" onClick={() => sms('reminder')}>{t('Send Reminder SMS')}</button>}
-                                {canEdit && <button type="button" className="ctl-btn w100" onClick={() => sms('advance')}>{t('Send Advance SMS')}</button>}
+                                {canEdit && <button type="submit" className="ctl-btn w100" disabled={form.processing}>{form.processing && <Spinner />}{form.processing ? t('Saving...') : t('Save Changes')}</button>}
+                                {canEdit && <button type="button" className="ctl-btn w100" disabled={smsBusy} onClick={() => { setSmsBusy(true); sms('reminder'); }}>{smsBusy && <Spinner />}{t('Send Reminder SMS')}</button>}
+                                {canEdit && <button type="button" className="ctl-btn w100" disabled={smsBusy} onClick={() => { setSmsBusy(true); sms('advance'); }}>{smsBusy && <Spinner />}{t('Send Advance SMS')}</button>}
                                 <Link href="/orders" className="ctl-btn w100">{t('Back to List')}</Link>
                             </div>
                             <div style={{ display: 'flex', gap: 14, marginTop: 12 }}>
@@ -276,8 +332,16 @@ export default function Show({ order, customer, couriers, courierMethods = [], s
                                     </div>
                                 </>
                             )}
-                            {order.status === 'Pending' && <p className="sm mut">{t('Approve the order first - then it waits in Ready to Ship for the courier.')}</p>}
-                            {['Shipped', 'Delivered', 'Returned'].includes(order.status) && !order.tracking_id && !order.consignment_id && (
+                            {order.status === 'Pending' && <p className="sm mut">{t('Approve the order first - then it waits in Ready to Ship for the courier. Stock is reserved at that approval step, not before.')}</p>}
+                            {order.status === 'Shipped' && deliverableByHand && (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                    {(order.delivery_method || order.courier_label) && <div className="sum-row"><span>{t('Delivery Method')}</span><b style={{ textAlign: 'right', whiteSpace: 'normal', wordBreak: 'break-word' }}>{order.delivery_method || order.courier_label}</b></div>}
+                                    {canEdit && <button className="btn-primary" style={{ width: '100%' }} disabled={marking} onClick={markDelivered}>{marking && <Spinner color="#fff" />}{t('Mark as Delivered')}</button>}
+                                    {markNote && <p className="sm" style={{ color: 'var(--bad)' }}>{t(markNote)}</p>}
+                                    <p className="sm mut">{t('Use this when the parcel was delivered by hand or by a courier that does not report delivery itself.')}</p>
+                                </div>
+                            )}
+                            {['Shipped', 'Delivered', 'Returned'].includes(order.status) && !order.tracking_id && !order.consignment_id && !(order.status === 'Shipped' && deliverableByHand) && (
                                 <p className="sm mut">{t('This order was shipped before courier booking was tracked here.')}</p>
                             )}
                         </div>
@@ -304,7 +368,7 @@ export default function Show({ order, customer, couriers, courierMethods = [], s
                     <div className="modal" onClick={(e) => e.stopPropagation()}>
                         <h3>{t('Approve this order?')}</h3>
                         <p className="sm" style={{ marginTop: 8 }}>
-                            {order.invoice} {t('will move to Ready to Ship (Delivery). Stock for')} {order.items.reduce((a, i) => a + i.qty, 0)} {t('item(s) will be reserved, and packing can begin.')}
+                            {order.invoice} {t('will move to Ready to Ship (Delivery). Stock for')} {order.items.length} {t('product(s)')} ({order.items.reduce((a, i) => a + i.qty, 0)} {t('pcs in total')}) {t('will be reserved, and packing can begin.')}
                         </p>
                         {risky && <p className="sm" style={{ color: 'var(--bad)', fontWeight: 700, marginTop: 8 }}>{t('Red alert: the courier network flags this customer as risky. Consider taking advance payment first.')}</p>}
                         <div className="kv mt16"><span>{t('Customer')}</span><b>{order.name}</b></div>

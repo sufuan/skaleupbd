@@ -656,7 +656,7 @@ class RouteRegistry
                 ['label' => 'Warranty', 'href' => '/inventory/warranty'],
             ]],
             ['label' => 'Messages', 'icon' => 'chat', 'href' => '/messages/inbox', 'key' => 'messages', 'children' => [
-                ['label' => 'Inbox', 'href' => '/messages/inbox', 'badgeKey' => 'messages_inbox'],
+                ['label' => 'Inbox', 'href' => '/messages/inbox', 'badgeKey' => 'messages_inbox', 'badgeTitle' => 'AI drafts waiting for your approval'],
                 ['label' => 'Comments', 'href' => '/messages/comments'],
                 ['label' => 'AI Activity', 'href' => '/messages/activity'],
             ]],

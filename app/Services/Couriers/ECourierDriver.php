@@ -35,7 +35,7 @@ class ECourierDriver implements CourierDriver
                 'recipient_city' => (string) ($order->district ?? ''),
                 'recipient_thana' => (string) ($order->area ?: $order->district ?: ''),
                 'recipient_area' => (string) ($order->area ?: $order->district ?: ''),
-                'recipient_address' => trim(($order->address ?? '') . ' ' . ($order->area ?? '') . ' ' . ($order->district ?? '')),
+                'recipient_address' => \App\Services\OrderService::composeAddress($order->address ?? null, $order->area ?? null, $order->district ?? null),
                 'recipient_zip' => '',
                 'package_code' => $c['package_code'] ?? '#2505',
                 'product_price' => $order->codAmount(),

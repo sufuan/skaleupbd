@@ -20,7 +20,7 @@ use Illuminate\Support\Facades\Schema;
  *
  *   orders_list          → Orders → Order List        (watermarked)
  *   delivery_ready       → Delivery → Ready to Ship   (watermarked)
- *   messages_inbox       → Messages → Inbox           (real unread, no watermark)
+ *   messages_inbox       → Messages → Inbox           (AI drafts waiting for approval, no watermark)
  *   purchases_toreceive  → Purchase → Purchases       (watermarked)
  *   work_control         → Work Inbox → Work Control  (watermarked)
  *   sellers_pending      → Sellers → Seller Verification, platform only (watermarked)
@@ -93,9 +93,15 @@ class SidebarCountsService
             'notifications_unread' => $user && Schema::hasTable('app_notifications') && Schema::hasColumn('app_notifications', 'business_id')
                 ? AppNotification::visibleTo($user)->whereNull('read_at')->count()
                 : 0,
-            'messages_inbox' => $biz && Schema::hasTable('conversations')
-                ? (int) Conversation::where('business_id', $biz)->sum('unread_count')
-                    + ChatMessage::where('business_id', $biz)->whereIn('status', ['draft', 'flagged'])->count()
+            // ONE meaning (Round 2 finding 3): the badge counts the
+            // AI drafts waiting for the seller's approval — the same
+            // figure the Inbox page calls "Drafts waiting". It used to
+            // also add unread customer messages, so the number moved
+            // for two different reasons and meant neither. Unread
+            // customer messages still show per conversation in the
+            // inbox list itself.
+            'messages_inbox' => $biz && Schema::hasTable('chat_messages')
+                ? ChatMessage::where('business_id', $biz)->whereIn('status', ['draft', 'flagged'])->count()
                 : 0,
             'purchases_toreceive' => $biz && Schema::hasTable('purchases')
                 ? $this->afterWatermark(

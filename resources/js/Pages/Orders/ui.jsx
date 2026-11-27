@@ -26,7 +26,7 @@ export function SuccessCell({ fraud }) {
     const pct = has ? Math.round(rate) : null;
     const color = !has ? '#CBD5E1' : pct >= 70 ? '#16A34A' : pct >= 40 ? '#F59E0B' : '#EF4444';
     const off = has ? (69.1 * (1 - pct / 100)).toFixed(1) : 69.1;
-    const vLabel = verdict === 'safe' ? 'Safe' : verdict === 'risky' ? 'Risky - take advance' : 'Not checked';
+    const vLabel = verdict === 'safe' ? 'Safe' : verdict === 'risky' ? 'Risky - take advance' : verdict === 'low_sample' ? 'Too few orders to judge' : 'Not checked';
     const vColor = verdict === 'safe' ? '#16A34A' : verdict === 'risky' ? '#DC2626' : '#64748B';
     return (
         <span style={{ display: 'inline-block' }}>
@@ -52,7 +52,7 @@ export function SuccessRing({ fraud, size = 44 }) {
     const color = verdict === 'safe' ? 'var(--ok)' : verdict === 'risky' ? 'var(--bad)' : '#b8a8d4';
     const r = (size - 6) / 2, c = 2 * Math.PI * r;
     const frac = rate === null || rate === undefined ? 0 : rate / 100;
-    const label = verdict === 'safe' ? 'Safe' : verdict === 'risky' ? 'Risky - take advance' : 'Not checked';
+    const label = verdict === 'safe' ? 'Safe' : verdict === 'risky' ? 'Risky - take advance' : verdict === 'low_sample' ? 'Too few orders to judge' : 'Not checked';
     return (
         <div className="flex" style={{ gap: 9 }}>
             <svg width={size} height={size} style={{ transform: 'rotate(-90deg)', flexShrink: 0 }}>

@@ -41,7 +41,7 @@ class PaperflyDriver implements CourierDriver
             'merchantReference' => $order->invoice, // must be unique per order
             'receiverName' => $order->customer_name,
             'receiverPhone' => $order->customer_phone,
-            'receiverAddress' => trim(($order->address ?? '') . ' ' . ($order->area ?? '') . ' ' . ($order->district ?? '')),
+            'receiverAddress' => \App\Services\OrderService::composeAddress($order->address ?? null, $order->area ?? null, $order->district ?? null),
             'receiverDistrict' => $order->district,
             'receiverThana' => $order->area,
             'packagePrice' => (int) round($order->grand_total),

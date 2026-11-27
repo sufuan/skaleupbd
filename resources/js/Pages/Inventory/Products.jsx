@@ -144,7 +144,7 @@ export default function Products({ products, summary, inactive, combos, wraps, v
                                     </div>
                                     <button type="button" className="text-xs text-primary font-medium" onClick={() => setAdjustFor(p)}>{t('Adjust')}</button>
                                 </div>
-                                {p.reserved_qty > 0 && <div className="text-[11px] text-muted-foreground">{t('Reserved')}: {p.reserved_qty}</div>}
+                                <div className="text-[11px] text-muted-foreground">{t('Reserved')}: {p.reserved_qty} · {t('Available')}: {p.available}</div>
                             </td>
                             <td className={TD}><div className="font-medium">{Number(p.price || 0).toLocaleString('en-IN')}</div></td>
                             <td className={TD}><Switch checked={p.is_active} label={t('Active')} onClick={() => toggle(p, 'is_active')} /></td>
@@ -225,6 +225,7 @@ export default function Products({ products, summary, inactive, combos, wraps, v
                                 <div key={c.id} className="rounded-xl border bg-card p-4 space-y-2">
                                     <div className="font-semibold">{c.name}</div>
                                     <div className="text-xs text-muted-foreground">{c.sku} · {money(c.price)}</div>
+                                    <div className="text-sm">{t('Available')}: <b>{c.available}</b> {t('combos can be made from the parts in stock')}</div>
                                     <div className="text-sm space-y-1">
                                         {c.components.map((comp, i) => <div key={i} className="flex justify-between"><span>{nameOf(comp.product_id)}</span><span>× {comp.qty}</span></div>)}
                                         {c.components.length === 0 && <div className="text-muted-foreground">{t('No components yet')}</div>}
@@ -287,7 +288,7 @@ function VariantRow({ v }) {
         <div className="border-t pt-2">
             <div className="flex items-center justify-between text-sm">
                 <span>{v.name}</span>
-                <span className="text-muted-foreground">{v.sku || ''} · {v.price ? money(v.price) : ''} · {t('Stock')}: {v.stock_qty}{v.reserved_qty > 0 ? ` · ${t('Reserved')}: ${v.reserved_qty}` : ''}</span>
+                <span className="text-muted-foreground">{v.sku || ''} · {v.price ? money(v.price) : ''} · {t('Stock')}: {v.stock_qty} · {t('Reserved')}: {v.reserved_qty} · {t('Available')}: {v.stock_qty - v.reserved_qty}</span>
                 <span className="flex items-center gap-3">
                     <button type="button" className="text-xs text-primary font-medium" onClick={open}>{t('Edit')}</button>
                     <button type="button" className="text-xs text-red-600" onClick={() => router.delete(`/inventory/variants/${v.id}`, { preserveScroll: true })}>{t('Delete')}</button>

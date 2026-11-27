@@ -49,13 +49,20 @@ function urlBase64ToUint8Array(base64String) {
     return out;
 }
 
+// Turns push on for this browser. Returns 'on' | 'denied' | 'off'
+// (prompt dismissed). Every failure THROWS with a seller-readable
+// message: the old version swallowed errors and returned 'off', so a
+// blocked key fetch or a failed subscribe looked exactly like
+// nothing happening at all (Round 2, item 25).
 export async function enablePush() {
     const reg = (await registerPushWorker()) || (await navigator.serviceWorker.ready);
     const keyRes = await fetch('/push/public-key', { headers: { Accept: 'application/json' }, credentials: 'same-origin' });
+    if (!keyRes.ok) throw new Error('Could not reach the notification service. Please try again.');
     const { key } = await keyRes.json();
-    if (!key) return 'off';
+    if (!key) throw new Error('Notifications are not set up on the server yet.');
     const permission = await Notification.requestPermission();
-    if (permission !== 'granted') return pushState();
+    if (permission === 'denied') return 'denied';
+    if (permission !== 'granted') return 'off';
     let sub = await reg.pushManager.getSubscription();
     if (!sub) {
         sub = await reg.pushManager.subscribe({
@@ -63,12 +70,13 @@ export async function enablePush() {
             applicationServerKey: urlBase64ToUint8Array(key),
         });
     }
-    await fetch('/push/subscribe', {
+    const res = await fetch('/push/subscribe', {
         method: 'POST',
         headers: csrfHeaders(),
         credentials: 'same-origin',
         body: JSON.stringify(sub.toJSON()),
     });
+    if (!res.ok) throw new Error('Could not save your notification setting. Please try again.');
     return 'on';
 }
 

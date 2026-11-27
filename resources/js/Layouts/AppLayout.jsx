@@ -10,7 +10,7 @@ const CountsContext = createContext({});
 
 // Badge keys backed by the server-side seen watermark (visiting the
 // owning sub-menu page clears the badge until something new arrives).
-// messages_inbox is NOT here: it is the real unread count.
+// messages_inbox is NOT here: it counts AI drafts waiting for approval.
 const WATERMARKED_KEYS = ['orders_list', 'delivery_ready', 'purchases_toreceive', 'work_control', 'sellers_pending'];
 
 const I = ({ d, size = 17 }) => (
@@ -161,7 +161,7 @@ function NavGroup({ item, current, winHref }) {
                             <Link key={c.g} href={`/settings?group=${c.g}`} className={`nav-item ${activeSettingsChild === c ? 'act' : ''}`}>{t(c.label)}</Link>
                         )
                     ) : typeof c === 'object' ? (
-                        <Link key={c.label} href={c.href} className={`nav-item ${childIsWinner(c) ? 'act' : ''}`}>{t(c.label)}{childVal(c) > 0 && <span className="badge">{childVal(c)}</span>}</Link>
+                        <Link key={c.label} href={c.href} title={c.badgeTitle ? t(c.badgeTitle) : undefined} className={`nav-item ${childIsWinner(c) ? 'act' : ''}`}>{t(c.label)}{childVal(c) > 0 && <span className="badge">{childVal(c)}</span>}</Link>
                     ) : (
                         <Link key={c} href={item.href} className="nav-item">{t(c)}</Link>
                     ))}

@@ -2,6 +2,7 @@ import { Head, Link, useForm } from '@inertiajs/react';
 import AppLayout from '@/Layouts/AppLayout';
 import { t } from '@/lib/i18n';
 import { PageHead, fmtDate } from './shared';
+import Spinner from '@/Components/Spinner';
 
 // Receive form - no source HTML in the EcomDrive saves (only the queue
 // exists); built in the same table language: per line Ordered /
@@ -50,7 +51,7 @@ export default function Receive({ purchase }) {
                         <div className="note-box sm" style={{ margin: '14px 0' }}>{t('Damaged / missing goods never enter stock. Anything left stays in To receive.')}</div>
                         <div className="flex">
                             <span className="spacer" />
-                            <button type="submit" className="btn pri" disabled={form.processing}>{t('Save Receive')}</button>
+                            <button type="submit" className="btn pri" disabled={form.processing}>{form.processing && <Spinner color="#fff" />}{form.processing ? t('Saving...') : t('Save Receive')}</button>
                         </div>
                     </form>
                 </div>

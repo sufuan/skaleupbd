@@ -69,8 +69,12 @@ export default function WooConnectSection({ t }) {
 
     useEffect(() => {
         load();
+        // The event list loads on its own (Round 2 finding 25): a
+        // seller checking a stalled import must see whether the event
+        // arrived without having to discover a Load button first.
+        loadEvents();
         return () => clearInterval(poll.current);
-    }, [load]);
+    }, [load, loadEvents]);
 
     const run = async (fn) => {
         setBusy(true);

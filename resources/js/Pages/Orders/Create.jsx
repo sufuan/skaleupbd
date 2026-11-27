@@ -3,6 +3,7 @@ import { t } from '@/lib/i18n';
 import { Head, useForm } from '@inertiajs/react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { fmt } from './ui';
+import Spinner from '@/Components/Spinner';
 
 const LAYOUTS = [
     ['v2', 'V2 Default', 'Two columns with the calculation details pinned in a sticky rail on the right, so the total and the submit button stay on screen.'],
@@ -317,7 +318,7 @@ export default function Create({ sources, products, couriers, defaults, toggles,
                                         </div>
                                     </div>
                                     <div style={{ border: '1px solid #EEF2F7', borderRadius: 12, padding: 16 }}>
-                                        <h3>{t('Ordered Products')} <span className="muted-sm">{itemCount} {t('item(s)')}</span></h3>
+                                        <h3>{t('Ordered Products')} <span className="muted-sm">{picked.length} {t('product(s)')} · {itemCount} {t('pcs')}</span></h3>
                                         {picked.length === 0 && <div id="ordEmpty" className="empty-note" style={{ marginTop: 10 }}>{t('Search and add products from the "Click To Add Products" panel.')}</div>}
                                         {picked.map((i, ix) => (
                                             <div className="ord-row" key={ix}>
@@ -360,7 +361,7 @@ export default function Create({ sources, products, couriers, defaults, toggles,
                                     <div className="sum-row grand"><span>{t('Grand Total')}</span><b>{fmt(grand)}</b></div>
                                     <div className="sum-row"><span>{t('Advance')}</span><b className="grn">{fmt(form.data.advance)}</b></div>
                                     <div className="sum-row total"><span>{t('Due Amount')}</span><b>{fmt(due)}</b></div>
-                                    <button type="submit" className="btn-primary" style={{ width: '100%', marginTop: 16, height: 44, fontSize: 14 }} disabled={form.processing || picked.length === 0}>{submitLabel}</button>
+                                    <button type="submit" className="btn-primary" style={{ width: '100%', marginTop: 16, height: 44, fontSize: 14 }} disabled={form.processing || picked.length === 0}>{form.processing && <Spinner color="#fff" />}{form.processing ? t('Saving...') : submitLabel}</button>
                                     <p className="empty-note" style={{ textAlign: 'center', marginTop: 8 }}>{t('Order will be saved as soon as you click.')}</p>
                                 </div>
                             </div>

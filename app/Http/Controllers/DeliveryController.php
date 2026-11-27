@@ -40,13 +40,9 @@ class DeliveryController extends Controller
      */
     private function deliverableByHand(Order $order): bool
     {
-        $method = $order->courierMethod;
-        if (! $method) {
-            return true;
-        }
-        $driver = DriverFactory::for($method);
-
-        return $driver instanceof ManualDriver || $driver instanceof MockDriver;
+        // One definition, on the model — the order page's Mark as
+        // Delivered action uses the same guard.
+        return $order->deliverableByHand();
     }
 
     private function methodOptions(int $biz, ?Order $order = null): array

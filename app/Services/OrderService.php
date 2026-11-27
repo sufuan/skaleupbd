@@ -235,8 +235,13 @@ class OrderService
             // M19: spend the order's tokens now (idempotent per order).
             $this->tokens->deductForOrder($order);
 
-            $order->logHistory(null, $order->status, $actor, 'Order created');
-            $order->logActivity('system', "Order created via {$createdVia}", $actor);
+            // One action, one entry (Round 2 finding 8): creation is
+            // a single history row carrying the via in its note (the
+            // order page renders it as "Order created - {via}") — a
+            // matching "Order created via …" activity made the
+            // timeline show creation twice, the second time as the
+            // doubled text "Order created - Order created".
+            $order->logHistory(null, $order->status, $actor, $createdVia);
             $verdictText = $check['verdict'] === 'safe' ? "Fraud check - Safe (success rate {$check['rate']}%)"
                 : ($check['verdict'] === 'risky' ? "Fraud check - Risky (success rate ".($check['rate'] ?? 0)."%) - {$check['note']}" : 'Fraud check - Not checked (no delivery history)');
             $order->logActivity('system', $verdictText, $actor);
@@ -612,8 +617,11 @@ class OrderService
             $order->approved_at = now();
             $order->save();
 
+            // One action, one timeline entry (Round 2 finding 8): the
+            // history row is the canonical record of the approval — a
+            // matching activity row made the order page render the
+            // approval twice.
             $order->logHistory($from, 'Processing', $actor, 'Approved');
-            $order->logActivity('action', "Approved by {$actor->name} - {$from} → Processing", $actor);
 
             $this->pushStockToWoo($order);
 
@@ -800,8 +808,11 @@ class OrderService
                 $order->cancellation_reason = $reason;
             }
             $order->save();
+            // One action, one timeline entry (Round 2 finding 8): the
+            // history row above is the canonical status-change record —
+            // a matching activity row made the order page render every
+            // shipping/delivery move twice.
             $order->logHistory($from, $to, $actor, $reason);
-            $order->logActivity('action', "Status changed by {$actor->name} - {$from} → {$to}".($reason ? " ({$reason})" : ''), $actor);
 
             try {
                 $auto = app(\App\Services\AutomationService::class);
@@ -867,6 +878,32 @@ class OrderService
         'Satkhira', 'Shariatpur', 'Sherpur', 'Sirajganj', 'Sunamganj', 'Sylhet', 'Tangail', 'Thakurgaon',
         'Chapai Nawabganj', 'Bagerhat', 'Barisal', 'Chittagong', 'Jessore', 'Nawabganj',
     ];
+
+    /**
+     * Compose the full postal address from its parts without repeating
+     * a part the text already ends with (Round 2 finding 13: a chat
+     * address saved as "House 5, Road 2, Dhanmondi, Dhaka" plus the
+     * district column "Dhaka" displayed and shipped as "…, Dhaka,
+     * Dhaka"). Each extra segment (area, then district) is appended
+     * only when the text composed so far does not already end with it.
+     */
+    public static function composeAddress(?string $address, ?string $area = null, ?string $district = null): string
+    {
+        $out = trim((string) $address);
+        foreach ([$area, $district] as $part) {
+            $part = trim((string) $part);
+            if ($part === '') {
+                continue;
+            }
+            $tail = mb_strtolower(rtrim($out, " \t\n\r\0\x0B,.-"));
+            if ($tail !== '' && str_ends_with($tail, mb_strtolower($part))) {
+                continue;
+            }
+            $out = $out === '' ? $part : $out . ', ' . $part;
+        }
+
+        return $out;
+    }
 
     /** Best-effort district from a free-text address (a name appearing in it). */
     /** The district an address text names, if any (shared: the external API's zone charge reads it too). */

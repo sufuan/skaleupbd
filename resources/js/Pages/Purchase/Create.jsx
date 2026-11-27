@@ -3,6 +3,7 @@ import { useRef, useState } from 'react';
 import AppLayout from '@/Layouts/AppLayout';
 import { t } from '@/lib/i18n';
 import { GuideBtn, ItemsTable, PageHead, ProductPicker } from './shared';
+import Spinner from '@/Components/Spinner';
 
 // New Purchase - exact copy of EcomDrive's New Purchase: the
 // "Click To Add Products" picker card beside the purchase form
@@ -71,7 +72,7 @@ export default function Create({ products, suppliers, today }) {
                                 )}
                             </div>
                             <button type="submit" className="btn pri" disabled={form.processing || lines.length === 0} style={{ width: '100%', justifyContent: 'center' }}>
-                                {t('Save Purchase')}
+                                {form.processing && <Spinner color="#fff" />}{form.processing ? t('Saving...') : t('Save Purchase')}
                             </button>
                             {lines.length === 0 && <div className="sm mut" style={{ marginTop: 6 }}>{t('Add at least one product')}</div>}
                         </div>

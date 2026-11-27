@@ -62,12 +62,28 @@ class SuccessRateService
             $headline = 'network';
         }
 
+        // Minimum sample for a rate-based red flag (Round 2 finding
+        // 23): one returned order made a brand-new customer "0% -
+        // RED ALERT". A rate only earns the risky verdict once at
+        // least 3 completed outcomes stand behind the headline figure
+        // (own delivered+returned for a history headline, the summed
+        // network outcomes for a network headline). Below that the
+        // rate still shows, under the low_sample verdict — never the
+        // red alert. A deliberate block/blacklist stays risky at any
+        // sample: that is a human decision, not a statistic.
+        $sample = $headline === 'network'
+            ? (int) $networkRates->sum(fn ($n) => (int) ($n['delivered'] ?? 0) + (int) ($n['returned'] ?? 0))
+            : $outcomes;
+
         if ($blocked || $blacklisted) {
             $verdict = 'risky';
             $note = 'This number is on the block list';
         } elseif ($headlineRate === null) {
             $verdict = 'not_checked';
             $note = 'No delivery history yet';
+        } elseif ($headlineRate < 60 && $sample < 3) {
+            $verdict = 'low_sample';
+            $note = __(':orders orders · :delivered delivered · :returned returned', ['orders' => $orders, 'delivered' => $delivered, 'returned' => $returned]);
         } elseif ($headlineRate >= 60) {
             $verdict = 'safe';
             // Y3-F11: this note used to be a hardcoded English string -
@@ -81,7 +97,7 @@ class SuccessRateService
             $note = __('Courier network :rate% · this shop: :note', ['rate' => $headlineRate, 'note' => $note]);
         }
 
-        return ['rate' => $headlineRate, 'verdict' => $verdict, 'note' => $note,
+        return ['rate' => $headlineRate, 'verdict' => $verdict, 'note' => $note, 'sample' => $sample,
             'orders' => $orders, 'delivered' => $delivered, 'returned' => $returned,
             'blocked' => $blocked || $blacklisted,
             'network' => $network, 'headline' => $headline, 'network_pending' => $networkPending];

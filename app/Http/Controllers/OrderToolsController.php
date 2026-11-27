@@ -40,8 +40,11 @@ class OrderToolsController extends Controller
                 : $q->where('processing_status', $s)->count();
             $queues[] = ['status' => $s, 'count' => $count];
         }
-        $today = OrderActivity::whereHas('order', fn ($q) => $q->where('business_id', $biz))
-            ->where('kind', 'action')->where('text', 'like', 'Approved by%')->whereDate('created_at', today())
+        // Approvals are counted from the status history — the one
+        // canonical record of an approval since the duplicate activity
+        // row was removed (Round 2 finding 8).
+        $today = \App\Models\OrderStatusHistory::whereIn('order_id', Order::where('business_id', $biz)->select('id'))
+            ->where('note', 'Approved')->where('to_status', 'Processing')->whereDate('created_at', today())
             ->where('actor_name', $request->user()->name)->count();
 
         return Inertia::render('Orders/AutoPick', [

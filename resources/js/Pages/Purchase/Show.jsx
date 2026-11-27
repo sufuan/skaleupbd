@@ -8,6 +8,7 @@ import { PageHead, PayModal, dhakaToday, fmt, fmtDate } from './shared';
 // their received state, payments so far, and the bill attachments.
 export default function Show({ purchase, accounts }) {
     const [paying, setPaying] = useState(false);
+    const toReceive = purchase.items.some((i) => i.left > 0);
     return (
         <AppLayout>
             <Head title={t('Purchase')} />
@@ -16,6 +17,14 @@ export default function Show({ purchase, accounts }) {
                     <Link href="/purchases" className="btn">{t('Purchase List')}</Link>
                     {purchase.due > 0 && <button type="button" className="btn pri" onClick={() => setPaying(true)}>{t('Pay')}</button>}
                 </PageHead>
+
+                {toReceive && (
+                    <div className="card" style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', borderColor: '#F0D48A', background: '#FFF6E0' }}>
+                        <span style={{ fontSize: 13.5 }}><b>{t('Next step: receive the items.')}</b> {t('This purchase is not in your stock yet. Receive the items when they arrive and the stock will be added.')}</span>
+                        <span className="spacer" />
+                        <Link href={`/purchases/${purchase.id}/receive`} className="btn pri">{t('Receive items')}</Link>
+                    </div>
+                )}
 
                 <div className="stat-grid c3" style={{ marginBottom: 16 }}>
                     <div className="stat-card2"><div className="lb">{t('Amount')}</div><div className="vl">{fmt(purchase.total)}</div></div>

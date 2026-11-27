@@ -53,7 +53,7 @@ class RedXDriver implements CourierDriver
             $payload = [
                 'customer_name' => $order->customer_name,
                 'customer_phone' => $order->customer_phone,
-                'customer_address' => trim(($order->address ?? '') . ' ' . ($order->area ?? '') . ' ' . ($order->district ?? '')),
+                'customer_address' => \App\Services\OrderService::composeAddress($order->address ?? null, $order->area ?? null, $order->district ?? null),
                 'delivery_area' => $area['name'],
                 'delivery_area_id' => $area['id'],
                 'merchant_invoice_id' => $order->invoice,

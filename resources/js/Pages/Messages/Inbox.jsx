@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, router, useForm, usePage } from '@inertiajs/react';
 import AppLayout from '@/Layouts/AppLayout';
+import Spinner from '@/Components/Spinner';
 import { t } from '@/lib/i18n';
 
 // Inbox - copied from the prototype messages.html msg-inbox panel:
@@ -22,14 +23,28 @@ const PILL = (bg, tx) => ({ display: 'inline-block', fontSize: 11, fontWeight: 7
 // once instead of waiting for its next poll.
 const refreshCounts = () => window.dispatchEvent(new Event('skaleup:counts-refresh'));
 
-function DraftCard({ draft }) {
+function DraftCard({ draft, isNewest }) {
     const [editing, setEditing] = useState(false);
     const [body, setBody] = useState(draft.body);
+    const [busy, setBusy] = useState(false);
     const isOrder = draft.kind === 'order_summary';
-    const approve = () => router.post(`/messages/drafts/${draft.id}/approve`, editing ? { body } : {}, { preserveScroll: true, onSuccess: refreshCounts });
+    // After an approve/reject the card must leave the screen at once
+    // (Round 2 finding 4): reload the thread props from the response
+    // instead of waiting for the 8-second poll or a manual reload.
+    const afterAction = () => {
+        refreshCounts();
+        router.reload({ only: ['conversations', 'selected', 'report'], preserveState: true, preserveScroll: true });
+    };
+    const approve = () => { setBusy(true); router.post(`/messages/drafts/${draft.id}/approve`, editing ? { body } : {}, { preserveScroll: true, onSuccess: afterAction, onFinish: () => setBusy(false) }); };
+    const reject = () => { setBusy(true); router.post(`/messages/drafts/${draft.id}/reject`, {}, { preserveScroll: true, onSuccess: afterAction, onFinish: () => setBusy(false) }); };
     return (
-        <div style={{ background: 'var(--note-bg)', border: '1px solid var(--note-line)', borderRadius: 12, padding: 13, marginTop: 10 }}>
+        <div style={{
+            background: 'var(--note-bg)', borderRadius: 12, padding: 13, marginTop: 10,
+            border: isNewest ? '2px solid var(--acc-fill)' : '1px solid var(--note-line)',
+            boxShadow: isNewest ? '0 0 0 3px var(--sel-bg)' : 'none',
+        }}>
             <b style={{ fontSize: 13.5 }}>{isOrder ? t('AI Order Summary') : t('AI Suggested Reply')}</b>{' '}
+            {isNewest && <span style={PILL('#16a34a', '#ffffff')}>{t('New')}</span>}{' '}
             {draft.status === 'flagged'
                 ? <span style={PILL('#fee2e2', '#dc2626')}>{t('Money figures did not match - check before sending')}</span>
                 : <span style={PILL('#fef3c7', '#92400e')}>{t('Needs your approval')}</span>}
@@ -37,13 +52,14 @@ function DraftCard({ draft }) {
                 ? <textarea value={body} onChange={(e) => setBody(e.target.value)} rows={4} style={{ width: '100%', padding: '9px 11px', border: '1px solid var(--field-line)', borderRadius: 9, fontSize: 13.5, margin: '8px 0' }} />
                 : <p style={{ fontSize: 13.5, margin: '8px 0', whiteSpace: 'pre-wrap' }}>{draft.body}</p>}
             <div style={{ fontSize: 12, color: 'var(--note-ink)', marginBottom: 9 }}>
+                {draft.time && <>{draft.time} · </>}
                 {draft.no_rule
                     ? <>{t('No rule matched - the AI drafted this from the product description. Check it before sending.')}</>
                     : <>{t('Rule')}: {draft.rule}{draft.ladder_step ? ` - ${t('ladder step')} ${draft.ladder_step}` : ''} · <Link href="/settings?group=ai" style={{ color: 'var(--note-ink)', fontWeight: 700 }}>{t('Change the rule in Settings')}</Link></>}
             </div>
-            <button type="button" style={BTN} onClick={approve}>{isOrder ? t('Approve & Create Order') : t('Approve & Send')}</button>{' '}
-            {!isOrder && <><button type="button" style={BTN2} onClick={() => setEditing(!editing)}>{t('Edit')}</button>{' '}</>}
-            <button type="button" style={BTN2} onClick={() => router.post(`/messages/drafts/${draft.id}/reject`, {}, { preserveScroll: true, onSuccess: refreshCounts })}>{t('Reject')}</button>
+            <button type="button" style={BTN} onClick={approve} disabled={busy}>{busy && <Spinner color="#fff" />}{isOrder ? t('Approve & Create Order') : t('Approve & Send')}</button>{' '}
+            {!isOrder && <><button type="button" style={BTN2} onClick={() => setEditing(!editing)} disabled={busy}>{t('Edit')}</button>{' '}</>}
+            <button type="button" style={BTN2} onClick={reject} disabled={busy}>{t('Reject')}</button>
         </div>
     );
 }
@@ -227,11 +243,17 @@ export default function Inbox({ conversations, selected, report, aiMode, aiPanic
                                     {selected.messages.length === 0 && <div style={{ color: 'var(--mut-ink)', fontSize: 13 }}>{t('No messages yet')}</div>}
                                 </div>
                                 <div>
-                                    {selected.drafts.map((d) => <DraftCard key={d.id} draft={d} />)}
+                                    {/* Order Summary cards pin to the TOP of the stack (finding 2):
+                                        the most important card was buried under ordinary drafts.
+                                        The newest pending draft is marked so a fresh card is never
+                                        confused with a stale one (finding 1). */}
+                                    {[...selected.drafts]
+                                        .sort((a, b) => ((b.kind === 'order_summary') - (a.kind === 'order_summary')) || (a.id - b.id))
+                                        .map((d) => <DraftCard key={d.id} draft={d} isNewest={selected.drafts.length > 1 && d.id === Math.max(...selected.drafts.map((x) => x.id))} />)}
                                 </div>
                                 <form onSubmit={sendReply} style={{ display: 'flex', gap: 9, marginTop: 10 }}>
                                     <input placeholder={t('Type a message...')} value={reply.data.body} onChange={(e) => reply.setData('body', e.target.value)} style={{ flex: 1, minWidth: 0, padding: '10px 12px', border: '1px solid var(--field-line)', borderRadius: 9, background: 'var(--field-bg)', color: 'var(--ink)' }} />
-                                    <button type="submit" style={BTN} disabled={reply.processing}>{t('Send')}</button>
+                                    <button type="submit" style={BTN} disabled={reply.processing}>{reply.processing && <Spinner color="#fff" />}{t('Send')}</button>
                                 </form>
                             </div>
                         )}

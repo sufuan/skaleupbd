@@ -3864,7 +3864,7 @@ class RuleBrainService
             'status' => ($mode === 'auto' || $mode === 'full_auto') ? 'sent' : 'draft',
             'meta' => array_merge($meta, ['kind' => $kind]),
         ]);
-        $this->log((int) $conversation->business_id, $msg->status === 'sent' ? 'auto_sent' : 'draft_created', $conversation->customer_name . ' — ' . $kind, null, $conversation);
+        $this->log((int) $conversation->business_id, $msg->status === 'sent' ? 'auto_sent' : 'draft_created', $conversation->customer_name . ' — ' . self::outgoingLabel($kind, null), null, $conversation);
 
         return $msg;
     }
@@ -4568,6 +4568,36 @@ class RuleBrainService
         }
 
         return true;
+    }
+
+    /**
+     * Headline label for an outgoing AI message in the activity log
+     * (Round 2 finding 5): the log names WHAT WENT OUT (the message
+     * kind), not only the rule that matched — a clarification sent
+     * while the Price rule matched was logged as "Price answer" and
+     * read as a wrong price going out. When a kind is set it wins;
+     * the matched rule's name stays available in the log row's meta.
+     */
+    public static function outgoingLabel(?string $kind, ?string $ruleName): string
+    {
+        $byKind = match ($kind) {
+            'product_clarify' => 'Product clarification',
+            'order_summary' => 'Order summary',
+            'collect_question' => 'Order details question',
+            'acknowledgement' => 'Acknowledgement',
+            'presence' => 'Presence answer',
+            'order_status' => 'Order status answer',
+            'holding' => 'Holding reply',
+            'insufficient_stock' => 'Not enough stock answer',
+            'order_confirm_ack' => 'Order confirmation',
+            'variant_question' => 'Variant question',
+            'variant_list' => 'Variant list',
+            'out_of_stock' => 'Out of stock answer',
+            'public' => 'Public reply',
+            default => null,
+        };
+
+        return $byKind ?? $ruleName ?? 'No rule matched';
     }
 
     private function log(int $businessId, string $action, string $detail, ?AiRule $rule = null, ?Conversation $c = null, ?Comment $cm = null, ?array $extra = null): void
@@ -5875,16 +5905,15 @@ class RuleBrainService
         // hunting a failure that never happened (live 2026-11-26
         // 02:49). Only the genuine fallback — a product description
         // or price line composed for a message nothing matched —
-        // keeps the old label.
-        $answerLabel = $rule?->name ?? match ($kind ?? null) {
-            'order_status' => 'Order status answer',
-            'acknowledgement' => 'Acknowledgement',
-            'presence' => 'Presence answer',
-            default => 'No rule matched',
-        };
+        // keeps the old label. Round 2 finding 5: when a kind is
+        // set it names the headline even when a rule also matched
+        // (a clarification is not a "Price answer"); the rule name
+        // rides in the row's meta instead.
+        $answerLabel = self::outgoingLabel($kind ?? null, $rule?->name);
         $this->log($biz, $action, $conversation->customer_name . ' — ' . $answerLabel, $rule, $conversation, null, [
             'source' => $talkerMeta !== [] ? 'talker' : 'template',
             'latency_ms' => (int) round((microtime(true) - $startedAt) * 1000),
+            'meta' => json_encode(array_filter(['kind' => $kind ?? null, 'rule' => $rule?->name])),
         ]);
         if ($kind === 'order_summary') {
             // The summary is now on the table: a customer confirmation

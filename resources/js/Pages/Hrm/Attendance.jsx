@@ -196,6 +196,7 @@ export default function Attendance({ tab, can_checkin, my_record, today, pending
                 <div className="x-head">
                     <h3>{t('Attendance')}</h3>
                     <p>{t("The daily coming-and-going account. Lateness is counted from your own Shift's time.")}</p>
+                    <p>{t('Staff check in and check out themselves from their own login. This page only shows the record - you cannot check in for someone else here.')}</p>
                 </div>
 
                 <div className="tabs">

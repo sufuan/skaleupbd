@@ -38,7 +38,10 @@ export default function Scan({ todayEvents }) {
     const [volume, setVolume] = useState('High');
     const [allBiz, setAllBiz] = useState(false);
     const [cameraNote, setCameraNote] = useState('');
+    const [busy, setBusy] = useState(false);
+    const [lastResult, setLastResult] = useState(null); // {kind, note, invoice, code, at}
     const inputRef = useRef(null);
+    const manualRef = useRef(null);
     const videoRef = useRef(null);
     const audioRef = useRef(null);
 
@@ -62,6 +65,7 @@ export default function Scan({ todayEvents }) {
 
     const applyScan = async (scanCode, scanType) => {
         const at = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Dhaka' });
+        setBusy(true);
         try {
             const res = await fetch('/delivery/scan', {
                 method: 'POST',
@@ -71,28 +75,42 @@ export default function Scan({ todayEvents }) {
             const data = await res.json();
             const kind = data.ok ? 'success' : data.duplicate ? 'duplicate' : 'failed';
             beep(kind);
+            // The counters and the banner update from THIS response,
+            // in the same tick — never on a later reload (finding 10).
             setLog((l) => [{ code: scanCode, invoice: data.invoice, note: data.note, kind, at }, ...l]);
+            setLastResult({ kind, note: data.note, invoice: data.invoice, code: scanCode, at });
             return data.ok;
         } catch {
             beep('failed');
             setLog((l) => [{ code: scanCode, invoice: undefined, note: 'Network error', kind: 'failed', at }, ...l]);
+            setLastResult({ kind: 'failed', note: 'Network error', invoice: undefined, code: scanCode, at });
             return false;
+        } finally {
+            setBusy(false);
         }
     };
 
     const submit = async (e) => {
         e.preventDefault();
-        const value = code.trim();
+        // Read the DOM value as a fallback: a fill that bypassed
+        // React's onChange (scanner wedges, paste, autofill) must
+        // still submit what is visibly in the box (finding 10).
+        const value = (code || inputRef.current?.value || '').trim();
         if (!value) return;
         setCode('');
+        if (inputRef.current) inputRef.current.value = '';
         inputRef.current?.focus();
         await applyScan(value, mode);
     };
 
     const submitManual = async () => {
-        const value = manualCode.trim();
-        if (!value) return;
+        const value = (manualRef.current?.value ?? manualCode).trim();
+        if (!value) {
+            setLastResult({ kind: 'failed', note: 'Type or scan a code first', invoice: undefined, code: '', at: '' });
+            return;
+        }
         setManualCode('');
+        if (manualRef.current) manualRef.current.value = '';
         await applyScan(value, mode);
         inputRef.current?.focus();
     };
@@ -224,11 +242,22 @@ export default function Scan({ todayEvents }) {
                             <video ref={videoRef} style={{ width: '100%', maxWidth: 420, borderRadius: 12, marginTop: 10, display: inputMode === 'camera' ? 'block' : 'none' }} muted playsInline />
                             <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginTop: 14 }}>
                                 <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.03em' }}>{t('MANUAL OVERRIDE:')}</span>
-                                <input className="fld" style={{ flex: 1 }} placeholder={t('Enter invoice # manually...')} value={manualCode}
-                                    onChange={(e) => setManualCode(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') submitManual(); }} />
-                                <button className="btn-primary" disabled={!manualCode.trim()} onClick={submitManual}
-                                    style={!manualCode.trim() ? { background: '#9F8AA6', borderColor: '#9F8AA6', color: '#fff' } : undefined}>{t('Submit')}</button>
+                                <input ref={manualRef} className="fld" style={{ flex: 1 }} placeholder={t('Enter invoice # manually...')} value={manualCode}
+                                    onChange={(e) => setManualCode(e.target.value)} onInput={(e) => setManualCode(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') submitManual(); }} />
+                                <button className="btn-primary" disabled={busy} onClick={submitManual}>{busy ? t('Working...') : t('Submit')}</button>
                             </div>
+                            {lastResult && (
+                                <div role="status" style={{
+                                    marginTop: 14, borderRadius: 10, padding: '12px 14px', fontSize: 14.5, fontWeight: 600,
+                                    background: lastResult.kind === 'success' ? '#dcfce7' : lastResult.kind === 'duplicate' ? '#fef3c7' : '#fee2e2',
+                                    color: lastResult.kind === 'success' ? '#166534' : lastResult.kind === 'duplicate' ? '#92400e' : '#991b1b',
+                                    border: `1px solid ${lastResult.kind === 'success' ? '#86efac' : lastResult.kind === 'duplicate' ? '#fcd34d' : '#fca5a5'}`,
+                                }}>
+                                    {lastResult.kind === 'success' ? t('Done') : lastResult.kind === 'duplicate' ? t('Already done') : t('Failed')}
+                                    {lastResult.invoice || lastResult.code ? ` - ${lastResult.invoice || lastResult.code}` : ''}: {t(lastResult.note)}
+                                    {lastResult.at ? <span style={{ fontWeight: 400, marginLeft: 8 }}>{lastResult.at}</span> : null}
+                                </div>
+                            )}
                         </div>
 
                         <div style={{ border: '1.5px dashed var(--dash-line)', borderRadius: 12, padding: 16, marginTop: 16, background: 'var(--card)' }}>

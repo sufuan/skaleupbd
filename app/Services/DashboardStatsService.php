@@ -150,6 +150,11 @@ class DashboardStatsService
             'basis' => $basis,
             'kpis' => $kpis,
             'pending_web' => $this->base($biz)->where('status', 'Pending')->where('source', 'WEB')->count(),
+            // One cumulative figure (Round 2 finding 20): all-time
+            // Delivered revenue, so the seller never has to add the
+            // Today and Previous cards by hand. Same Delivered-only
+            // definition as every other revenue figure.
+            'revenue_all_time' => (float) $this->base($biz)->where('status', 'Delivered')->sum('grand_total'),
             'web_series' => $webSeries,
             'sources' => $srcRows,
             'channels' => $chanRows,

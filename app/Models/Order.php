@@ -33,6 +33,50 @@ class Order extends Model
     public const PROCESSING_STATUSES = ['Processing', 'Good But No Response', 'No Response', 'Advance Payment', 'On Hold', 'Stock Out', 'Cancel'];
     public const CANCEL_REASONS = ['Customer Request', 'Wrong Number', 'Phone Off', 'No Answer', 'Out of Stock', 'Duplicate Order', 'Fraud', 'Price Issue', 'Advance Payment Issue', 'Other'];
 
+    /**
+     * The Change Status dropdown options for this order — a pure
+     * function of the order's current status (Round 2 finding 9: the
+     * same order must never show a different set on a later load).
+     * Inside the Pending/Processing flow the dropdown works on the
+     * processing sub-statuses; outside it, the current status leads,
+     * followed by the sub-statuses it can still move to (Cancel is not
+     * offered there — a shipped/delivered order cannot be cancelled).
+     *
+     * @return list<string>
+     */
+    public function changeStatusOptions(): array
+    {
+        if (in_array($this->status, ['Pending', 'Processing'], true)) {
+            return self::PROCESSING_STATUSES;
+        }
+
+        return array_values(array_unique([
+            $this->status,
+            ...array_filter(self::PROCESSING_STATUSES, fn (string $s) => $s !== $this->status && $s !== 'Cancel'),
+        ]));
+    }
+
+    /**
+     * True when this order's courier has no status feed of its own, so
+     * a human action is the only way its delivery can ever be recorded:
+     * no courier method at all (hand delivery), a manual courier, or an
+     * API courier running on the mock driver in test mode. A real API
+     * courier reports delivery itself and must never be completed by
+     * hand. (The Scan To Delivery guard and the order page's Mark as
+     * Delivered action share this one definition.)
+     */
+    public function deliverableByHand(): bool
+    {
+        $method = $this->courierMethod;
+        if (! $method) {
+            return true;
+        }
+        $driver = \App\Services\Couriers\DriverFactory::for($method);
+
+        return $driver instanceof \App\Services\Couriers\ManualDriver
+            || $driver instanceof \App\Services\Couriers\MockDriver;
+    }
+
     public function items(): HasMany
     {
         return $this->hasMany(OrderItem::class);
