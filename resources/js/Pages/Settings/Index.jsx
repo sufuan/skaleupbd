@@ -160,7 +160,7 @@ function AutoApproveForm({ data }) {
     );
 }
 
-function Api({ tab, couriers, autoApprove, channels, myChannels, channelsPlatform, channelsReadOnly, paymentGateway, platformPaymentGateway, integration, hasShop = true }) {
+function Api({ tab, couriers, autoApprove, channels, myChannels, channelsPlatform, channelsReadOnly, paymentGateway, platformPaymentGateway, integration, woo = null, hasShop = true }) {
     if (tab === 'channels') return (
         <>
             {channelsPlatform && <ChannelsForm channels={channels} />}
@@ -204,12 +204,37 @@ function Api({ tab, couriers, autoApprove, channels, myChannels, channelsPlatfor
     }
     if (tab === 'website') {
         if (!hasShop) return <ShopScopeNotice />;
+        // The WooCommerce row tells the CONNECTION's truth (Round 2
+        // follow-up 23b): a connected store is Connected here even
+        // when the shop holds no API key — the key below is a separate
+        // thing, only for a website or plugin sending orders through
+        // the API endpoint, and the Woo connection never uses it.
+        const wooPill = woo ? ({
+            active: [t('Connected'), 'green'],
+            pending: [t('Connecting'), 'amber'],
+            failed: [t('Connection failed'), 'red'],
+            disabled: [t('Disconnected'), 'amber'],
+            paused: [t('Paused - no points'), 'amber'],
+        }[woo.status] || [woo.status, 'amber']) : null;
         return (
         <div className="card"><h3>{t('Website Integration')}</h3><div className="card-sub">{t('Orders will come in from your own website / WooCommerce')}</div>
+            {woo ? (
+                <>
+                    <ConnRow name="WooCommerce" desc={`${t('Connected store')}: ${woo.site_url}${woo.last_event_at ? ` · ${t('Last order received')} ${woo.last_event_at}` : ''}`}
+                        status={wooPill[0]} pillCls={wooPill[1]} />
+                    <div className="sm" style={{ margin: '8px 0 14px' }}><Link href="/storefront/connect">{t('View the connection and its recent events')}</Link></div>
+                </>
+            ) : (
+                <>
+                    <ConnRow name="WooCommerce" desc={t('Not connected yet. Connect your WooCommerce store and its orders will arrive here automatically.')}
+                        status={t('Not connected')} pillCls="amber" />
+                    <div className="sm" style={{ margin: '8px 0 14px' }}><Link href="/storefront/connect">{t('Connect WooCommerce')}</Link></div>
+                </>
+            )}
             <Field label="Order endpoint" value={integration?.endpoint || ''} />
             <Field label="Platform" value="WooCommerce / WordPress" />
-            <ConnRow name="WooCommerce" desc={integration?.api_key ? t('Your shop API key is active - the plugin can send orders to the endpoint above') : t('No API key yet - the plugin cannot send orders until a key is issued')}
-                status={integration?.api_key ? (integration.api_key.last_used_at ? t('Connected') : t('Key active')) : t('Not connected')} pillCls={integration?.api_key ? 'green' : 'amber'} /></div>
+            <ConnRow name="Website API key" desc={integration?.api_key ? t('A key is active - your own website or plugin can send orders to the endpoint above with it') : t('No API key yet. A key is only needed if your own website or a plugin sends orders through the API endpoint above. Your WooCommerce connection does not use this key.')}
+                status={integration?.api_key ? (integration.api_key.last_used_at ? t('In use') : t('Key active')) : t('No key')} pillCls={integration?.api_key ? 'green' : 'amber'} /></div>
         );
     }
     if (!hasShop) return <ShopScopeNotice />;
@@ -1115,7 +1140,7 @@ function RegistrationVerificationForm({ registration }) {
     );
 }
 
-export default function SettingsIndex({ group: initial = 'home', totpEnabled = false, totpEnrolled = false, m2, couriers, autoApprove = null, ai, isPlatform = false, hasShop = true, packagesData = null, channels = null, myChannels = null, channelsPlatform = false, paymentGateway = null, platformPaymentGateway = null, home = null, integration = null, staffRoles = null }) {
+export default function SettingsIndex({ group: initial = 'home', totpEnabled = false, totpEnrolled = false, m2, couriers, autoApprove = null, ai, isPlatform = false, hasShop = true, packagesData = null, channels = null, myChannels = null, channelsPlatform = false, paymentGateway = null, platformPaymentGateway = null, home = null, integration = null, woo = null, staffRoles = null }) {
     const viewing = !!usePage().props.viewAs;
     const groups = [
         ...GROUPS,
@@ -1146,7 +1171,7 @@ export default function SettingsIndex({ group: initial = 'home', totpEnabled = f
                     )}
                     {group === 'home' && (hasShop ? <Home home={home} onSetup={(label) => { const [gid, tid] = SETUP_TARGETS[label] || []; if (gid) { setGroup(gid); setTab(tid); } }} /> : <ShopScopeNotice />)}
                     {group === 'business' && (hasShop ? <Business tab={tab} m2={m2} /> : <ShopScopeNotice />)}
-                    {group === 'api' && <Api tab={tab} couriers={couriers} autoApprove={autoApprove} channels={channels} myChannels={myChannels} channelsPlatform={channelsPlatform} channelsReadOnly={viewing} paymentGateway={paymentGateway} platformPaymentGateway={platformPaymentGateway} integration={integration} hasShop={hasShop} />}
+                    {group === 'api' && <Api tab={tab} couriers={couriers} autoApprove={autoApprove} channels={channels} myChannels={myChannels} channelsPlatform={channelsPlatform} channelsReadOnly={viewing} paymentGateway={paymentGateway} platformPaymentGateway={platformPaymentGateway} integration={integration} woo={woo} hasShop={hasShop} />}
                     {group === 'calls' && (hasShop ? <Calls tab={tab} m2={m2} /> : <ShopScopeNotice />)}
                     {group === 'ai' && <Ai tab={tab} ai={ai} hasShop={hasShop} />}
                     {group === 'security' && <Security tab={tab} totpEnabled={totpEnabled} totpEnrolled={totpEnrolled} m2={m2} hasShop={hasShop} isPlatform={isPlatform} viewing={viewing} />}

@@ -34,7 +34,24 @@ export default function PushControl() {
 
     useEffect(() => {
         registerPushWorker();
-        pushState().then(setState);
+        let live = true;
+        const refresh = () => {
+            pushState().then((s) => { if (live) setState(s); }).catch(() => {});
+        };
+        refresh();
+        // The browser's permission can settle after first paint, and
+        // the seller may change it in the browser settings or another
+        // tab: re-read it whenever the page comes back into view, so
+        // the control always converges to the browser's true state
+        // without needing a click (Round 2 follow-up 25b).
+        const onVisible = () => { if (document.visibilityState === 'visible') refresh(); };
+        document.addEventListener('visibilitychange', onVisible);
+        window.addEventListener('focus', refresh);
+        return () => {
+            live = false;
+            document.removeEventListener('visibilitychange', onVisible);
+            window.removeEventListener('focus', refresh);
+        };
     }, []);
 
     useEffect(() => {

@@ -27,12 +27,20 @@ export async function registerPushWorker() {
 }
 
 // 'unsupported' | 'off' (can ask) | 'on' (subscribed) | 'denied'
+// The permission is a synchronous read and is answered FIRST, so a
+// browser that has notifications blocked shows Blocked on the very
+// first paint after a reload, with no click needed (Round 2
+// follow-up 25b). The subscription check reads the page's existing
+// registration via getRegistration(): serviceWorker.ready stays
+// pending forever when no registration is active yet, which used to
+// leave the control stuck on its placeholder instead of a state.
 export async function pushState() {
     if (!pushSupported()) return 'unsupported';
     if (Notification.permission === 'denied') return 'denied';
     if (Notification.permission !== 'granted') return 'off';
     try {
-        const reg = await navigator.serviceWorker.ready;
+        const reg = await navigator.serviceWorker.getRegistration();
+        if (!reg) return 'off';
         const sub = await reg.pushManager.getSubscription();
         return sub ? 'on' : 'off';
     } catch {

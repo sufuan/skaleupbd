@@ -481,6 +481,13 @@ class OrderController extends Controller
 
         $suggestion = app(\App\Services\SuggestCourierService::class)->suggest($order);
 
+        // Delivery Method presentation for the Process Order panel
+        // (Round 2 follow-up 7b): the value its select can truthfully
+        // hold from the shop's own name list, plus the recorded
+        // courier line for when no list name fits — so a courier
+        // booking is never hidden behind a "-" select.
+        $deliveryPresentation = $order->deliveryMethodPresentation(app(\App\Services\DeliveryMethodList::class)->forBusiness($biz));
+
         // Collected-advance state: on a cancelled or returned order the
         // advance money is still sitting in Finance until the seller
         // refunds it from here.
@@ -514,6 +521,8 @@ class OrderController extends Controller
                 'txn_id' => $order->txn_id,
                 'alt_phone' => $order->alt_phone,
                 'delivery_method' => $order->delivery_method,
+                'delivery_method_select' => $deliveryPresentation['select'],
+                'booked_courier' => $deliveryPresentation['booked_with'],
                 'delivery_note' => $order->delivery_note,
                 'shipping_note' => $order->shipping_note,
                 'processing_status' => $order->processing_status,

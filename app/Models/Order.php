@@ -77,6 +77,74 @@ class Order extends Model
             || $driver instanceof \App\Services\Couriers\MockDriver;
     }
 
+    /**
+     * How the Process Order panel must present this order's delivery
+     * method (Round 2 follow-up 7b). The panel's select can only hold
+     * a name from the shop's own delivery-method list, while a courier
+     * booking records its facts on the order itself: the method row,
+     * the CN, and a free-text delivery_method written at booking time.
+     * When that text is not one of the list's names — the shop's list
+     * was saved with different wording, or the booking never wrote the
+     * text at all (live OB301: Pathao connection booking, CN recorded,
+     * delivery_method empty) — the select sat on "-" and the booking
+     * was invisible in the panel.
+     *
+     * Returns the value the select must hold ('select': a list name,
+     * derived from the booking when the stored text does not match)
+     * and, when no list name fits, the recorded courier line to show
+     * under the select instead ('booked_with', e.g. "Pathao · CN
+     * DS261126F9NZVC"). Names compare dash- and case-insensitively:
+     * the same name written with a hyphen or an em-dash is one name.
+     *
+     * @param  list<string>  $list  the shop's delivery-method names
+     * @return array{select: string, booked_with: ?string}
+     */
+    public function deliveryMethodPresentation(array $list): array
+    {
+        $match = function (?string $candidate) use ($list): ?string {
+            if ($candidate === null || trim($candidate) === '') {
+                return null;
+            }
+            foreach ($list as $name) {
+                if (self::methodNameKey($name) === self::methodNameKey($candidate)) {
+                    return $name;
+                }
+            }
+
+            return null;
+        };
+
+        $select = $match($this->delivery_method);
+        if ($select === null && $this->courierMethod) {
+            // The booking's own record: the method's zone name, exactly
+            // as BookingService would have written it, then (for manual
+            // methods, whose list name carries no zone) the bare label.
+            $label = $this->courierMethod->label();
+            $zone = $label . ' - ' . (CourierMethod::isInsideDhaka($this->effectiveDistrict()) ? 'Inside Dhaka' : 'Outside Dhaka');
+            $select = $match($zone) ?? $match($label);
+        }
+        if ($select !== null) {
+            return ['select' => $select, 'booked_with' => null];
+        }
+
+        $bookedWith = null;
+        $cn = $this->consignment_id ?: $this->tracking_id;
+        if ($this->courier_method_id || $cn || $this->delivery_method) {
+            $name = $this->delivery_method ?: $this->courierMethod?->label();
+            $bookedWith = ($name ?: 'Courier') . ($cn ? ' · CN ' . $cn : '');
+        }
+
+        return ['select' => '', 'booked_with' => $bookedWith];
+    }
+
+    /** One comparison key for delivery-method names (dash/case drift-proof). */
+    private static function methodNameKey(string $name): string
+    {
+        $name = str_replace(['—', '–'], '-', $name);
+
+        return mb_strtolower(preg_replace('/\s+/u', ' ', trim($name)) ?? trim($name));
+    }
+
     public function items(): HasMany
     {
         return $this->hasMany(OrderItem::class);

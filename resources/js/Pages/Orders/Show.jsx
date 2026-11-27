@@ -77,7 +77,7 @@ export default function Show({ order, customer, couriers, courierMethods = [], s
         source: order.source || '',
         processing_status: inFlow ? (order.processing_status || 'Processing') : '',
         cancellation_reason: cancelReasons[0],
-        delivery_method: order.delivery_method || '',
+        delivery_method: order.delivery_method_select ?? order.delivery_method ?? '',
         delivery_note: order.delivery_note || '',
         shipping_note: order.shipping_note || '',
         tags: order.tags || [],
@@ -102,10 +102,10 @@ export default function Show({ order, customer, couriers, courierMethods = [], s
     // state until a full navigation.
     useEffect(() => {
         setStatusSel(inFlow ? (order.processing_status || 'Processing') : order.status);
-        form.setData('delivery_method', order.delivery_method || '');
+        form.setData('delivery_method', order.delivery_method_select ?? order.delivery_method ?? '');
         if (inFlow) form.setData('processing_status', order.processing_status || 'Processing');
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [order.id, order.status, order.processing_status, order.delivery_method]);
+    }, [order.id, order.status, order.processing_status, order.delivery_method, order.delivery_method_select]);
 
     const save = (e) => { e.preventDefault(); form.patch(`/orders/${order.id}`, { preserveScroll: true, onSuccess: () => form.reset('note', 'advance_payment') }); };
     const approve = (next) => router.post(`/orders/${order.id}/approve`, { next }, { preserveScroll: false });
@@ -242,8 +242,8 @@ export default function Show({ order, customer, couriers, courierMethods = [], s
                                     </select>
                                     {canEdit && <button type="button" className="ctl-btn" style={{ marginTop: 6 }} onClick={() => setAddingMethod(!addingMethod)}>{t('Add New Method')}</button>}
                                 </span>
-                                {form.data.delivery_method === '' && (order.delivery_method || order.courier_label) && (
-                                    <span className="sm mut" style={{ display: 'block', marginTop: 4 }}>{t('Booked with')}: {order.delivery_method || order.courier_label}</span>
+                                {form.data.delivery_method === '' && (order.booked_courier || order.delivery_method || order.courier_label) && (
+                                    <span className="sm mut" style={{ display: 'block', marginTop: 4 }}>{t('Booked with')}: {order.booked_courier || order.delivery_method || order.courier_label}</span>
                                 )}
                                 {addingMethod && canEdit && (
                                     <span style={{ display: 'flex', gap: 8, marginTop: 8 }}>

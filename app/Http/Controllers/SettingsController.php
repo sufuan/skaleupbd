@@ -50,10 +50,23 @@ class SettingsController extends Controller
         $waOn = $ownRow('whatsapp') || $legacyOn('whatsapp');
         $igOn = ! empty(((array) $this->settings->get('channels.instagram', []))['token_enc']);
         $apiKey = \App\Models\ApiKey::where('business_id', $biz)->latest('id')->first();
+        // The shop's WooCommerce CONNECTION (Round 2 follow-up 23b):
+        // a row here means the store is connected and its webhooks
+        // arrive, whether or not the shop also holds an External API
+        // key. The Website Integration tab and the home count read
+        // this row too — keyed to the API key alone, the tab called a
+        // fully connected Woo shop "Not connected". The paused state
+        // mirrors WooConnectController's own derivation.
+        $wooConn = $biz > 0 ? \App\Models\IntegrationConnection::forBusiness($biz)->where('platform', 'woo')->first() : null;
+        $wooSummary = $wooConn ? [
+            'status' => $wooConn->status !== 'disabled' && ! app(\App\Services\Integrations\IntegrationHost::class)->hasPoints($biz) ? 'paused' : $wooConn->status,
+            'site_url' => $wooConn->site_url,
+            'last_event_at' => $wooConn->last_event_at ? DhakaTime::fmt($wooConn->last_event_at, 'd M Y, h:i A') : null,
+        ] : null;
         $gw = app(\App\Services\PaymentGatewayService::class)->view($biz);
         $gatewayOn = ($gw['bkash_enabled'] && $gw['bkash_number'] !== '') || ($gw['nagad_enabled'] && $gw['nagad_number'] !== '')
             || ($gw['rocket_enabled'] && $gw['rocket_number'] !== '') || $gw['ssl_enabled'] || $gw['shurjo_enabled'];
-        $connCount = (int) $courierOn + (int) $fbOn + (int) $waOn + (int) $igOn + (int) ($apiKey !== null) + (int) $gatewayOn;
+        $connCount = (int) $courierOn + (int) $fbOn + (int) $waOn + (int) $igOn + (int) ($apiKey !== null || $wooConn !== null) + (int) $gatewayOn;
         $visibleSources = OrderSource::where('business_id', $biz)->where('is_visible', true)->count();
         $autonomy = app(\App\Services\RuleBrainService::class)->autonomy($biz > 0 ? $biz : null);
         $aiModeLabel = ['auto' => 'Auto reply on', 'draft' => 'Draft only', 'off' => 'Auto reply off'][$autonomy['facebook'] ?? 'draft'] ?? 'Draft only';
@@ -88,6 +101,10 @@ class SettingsController extends Controller
                 'endpoint' => url('/api/external/v1/orders'),
                 'api_key' => $apiKey ? ['last4' => (string) $apiKey->last4, 'label' => (string) $apiKey->label, 'last_used_at' => DhakaTime::fmt($apiKey->last_used_at, 'd M Y, h:i A')] : null,
             ],
+            // The WooCommerce connection's own truth for the Website
+            // Integration tab (23b): null when the shop has no Woo
+            // connection row at all.
+            'woo' => $wooSummary,
             'group' => $request->query('group', 'home'),
             'couriers' => [
                 'methods' => \App\Models\CourierMethod::where('business_id', $biz)->with('pickupStores')->orderBy('name')->get()
