@@ -1,6 +1,7 @@
 import AppLayout from '@/Layouts/AppLayout';
 import { t } from '@/lib/i18n';
-import { Head, Link, router } from '@inertiajs/react';
+import { confirmDialog } from '@/lib/confirm';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import { useRef, useState } from 'react';
 import { StatusPill, SuccessCell, fmt } from './ui';
 
@@ -14,9 +15,17 @@ const I = {
     dl: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>,
     open: <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /><path d="M15 3h6v6" /><path d="M10 14L21 3" /></svg>,
     plus: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M12 5v14" /><path d="M5 12h14" /></svg>,
+    trash: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" /><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /><line x1="10" y1="11" x2="10" y2="17" /><line x1="14" y1="11" x2="14" y2="17" /></svg>,
 };
 
 export default function Index({ rows, counts, filters, pagination, pendingCount, filterOptions }) {
+    // Round 3 fix batch: the Orders Delete tick existed with no list
+    // control behind it (the only delete lived on the order detail
+    // page, and only for Pending / Cancelled). The list now offers
+    // the same action under the same two conditions the server
+    // enforces: the delete tick, and a Pending or Cancelled status -
+    // OrderController::destroy refuses every other status.
+    const canDelete = !!usePage().props.auth?.permission_ticks?.orders?.delete;
     const [search, setSearch] = useState(filters.search || '');
     const [showFilter, setShowFilter] = useState(false);
     const [adv, setAdv] = useState({ from: filters.from || '', to: filters.to || '', source: filters.source || '', processed_by: filters.processed_by || '', product_code: filters.product_code || '', tag: filters.tag || '' });
@@ -115,6 +124,10 @@ export default function Index({ rows, counts, filters, pagination, pendingCount,
                                         <td><span style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}>
                                             <a className="mini-btn" title={t('Download Invoice')} href={`/orders/${o.id}/invoice`}>{I.dl}</a>
                                             <Link className="open-btn" href={`/orders/${o.id}`}>{t('Open')} {I.open}</Link>
+                                            {canDelete && ['Pending', 'Cancelled'].includes(o.status) && (
+                                                <button className="mini-btn" title={t('Delete Order')} style={{ color: '#DC2626' }}
+                                                    onClick={async () => { if (await confirmDialog(t('Delete this order?'))) router.delete(`/orders/${o.id}`, { data: { reason: 'Deleted from order list' }, preserveScroll: true }); }}>{I.trash}</button>
+                                            )}
                                         </span></td>
                                     </tr>
                                 ))}

@@ -492,16 +492,23 @@ Route::middleware(['auth', 'verified', 'totp'])->group(function () {
     Route::post('/push/subscribe', [\App\Http\Controllers\PushSubscriptionController::class, 'subscribe'])->name('push.subscribe');
     Route::post('/push/unsubscribe', [\App\Http\Controllers\PushSubscriptionController::class, 'unsubscribe'])->name('push.unsubscribe');
 
-    // Placeholder shells for the deferred modules. Only the slugs
-    // the menu actually links to render a shell — an arbitrary slug
-    // is a plain 404 (gap G-A).
-    Route::get('/module/{slug}', function (string $slug) {
-        abort_unless(in_array($slug, ['task', 'call-center', 'ads', 'support'], true), 404);
-
+    // Placeholder shells for the deferred modules. One named route
+    // per slug (Round 3 fix batch): the RouteRegistry gates by route
+    // name, so a single shared name left every shell open to any
+    // signed-in user - a staff member with NO ticks could open the
+    // Call Center, Task and Ads shells. Each shell now carries its
+    // own module key + view tick in the registry; Support has no
+    // module key (shell chrome for every signed-in user) and stays
+    // account-level.
+    $moduleShell = function (string $slug) {
         return Inertia::render('Module/Placeholder', [
             'title' => ucwords(str_replace('-', ' ', $slug)),
         ]);
-    })->name('module');
+    };
+    Route::get('/module/task', fn () => $moduleShell('task'))->name('module.task');
+    Route::get('/module/call-center', fn () => $moduleShell('call-center'))->name('module.call-center');
+    Route::get('/module/ads', fn () => $moduleShell('ads'))->name('module.ads');
+    Route::get('/module/support', fn () => $moduleShell('support'))->name('module.support');
 });
 
 Route::middleware('auth')->group(function () {

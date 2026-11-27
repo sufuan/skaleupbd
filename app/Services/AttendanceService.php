@@ -134,9 +134,17 @@ class AttendanceService
         }
 
         $now = $this->nowDhaka();
+        // Round 3 fix batch: lateness is counted from the staff
+        // member's own shift. With NO shift assigned there is nothing
+        // to be late for - the 09:00 fallback inside shiftStart() is
+        // only a display default, and using it here marked a 12:35
+        // check-in "Late" for a person who has no shift at all. A
+        // no-shift check-in is Present with zero late minutes; staff
+        // WITH a shift keep the exact same math as before.
+        $hasShift = $this->shiftFor($user) !== null;
         $start = $this->shiftStart($user, $today);
         $grace = (int) $this->setting($businessId, 'late_grace', 15);
-        $lateMinutes = $now->greaterThan($start) ? (int) $start->diffInMinutes($now) : 0;
+        $lateMinutes = $hasShift && $now->greaterThan($start) ? (int) $start->diffInMinutes($now) : 0;
         $status = $lateMinutes > $grace ? 'late' : 'present';
 
         $record ??= new AttendanceRecord(['business_id' => $businessId, 'user_id' => $user->id, 'date' => $today]);

@@ -35,13 +35,31 @@ class InventoryController extends Controller
         return \App\Support\ShopContext::id($request);
     }
 
+    /**
+     * The one sellable-stock figure, identical to the order pickers
+     * (OrderController::catalogue): a product with variants sells from
+     * its variants' own pools, so its figure is the sum of the
+     * variants' available; anything else is Product::available()
+     * (combo = what its components can still make, else own stock
+     * minus reservations). Round 3 fix batch: the Products list used
+     * the product row's own stock_qty for this, so combos and variant
+     * products showed 0 next to a correct derived Available.
+     */
     private function available(Product $p): int
     {
+        $variants = $p->activeVariants();
+        if ($variants->isNotEmpty()) {
+            return (int) $variants->sum(fn ($v) => $v->available());
+        }
+
         return $p->available();
     }
 
     private function productRow(Product $p): array
     {
+        $variants = $p->activeVariants();
+        $hasVariants = $variants->isNotEmpty();
+
         return [
             'id' => $p->id,
             'name' => $p->name,
@@ -57,8 +75,13 @@ class InventoryController extends Controller
             'ai_score' => $p->aiReadiness()['score'],
             'ai_missing' => $p->aiReadiness()['missing'],
             'stock_qty' => $p->stock_qty,
-            'reserved_qty' => $p->reserved_qty,
+            // For a variant product the reservations live on the
+            // variants, so the row reports their sum (its own
+            // reserved_qty row is always 0 and read as "nothing is
+            // reserved" next to a derived Available).
+            'reserved_qty' => $hasVariants ? (int) $variants->sum('reserved_qty') : $p->reserved_qty,
             'available' => $this->available($p),
+            'has_variants' => $hasVariants,
             'is_active' => (bool) $p->is_active,
             'manage_stock' => (bool) $p->manage_stock,
             'alert_qty' => $p->alert_qty,

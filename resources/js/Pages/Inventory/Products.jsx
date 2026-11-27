@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Link, router, useForm } from '@inertiajs/react';
+import { Link, router, useForm, usePage } from '@inertiajs/react';
 import { confirmDialog } from '@/lib/confirm';
 import AppLayout from '@/Layouts/AppLayout';
 import { t } from '@/lib/i18n';
@@ -48,6 +48,19 @@ export default function Products({ products, summary, inactive, combos, wraps, v
     const [adjustFor, setAdjustFor] = useState(null);
     const [ioOpen, setIoOpen] = useState(false);
     const allRows = products.data;
+
+    // Round 3 fix batch: the page adapts to the viewer's staff ticks -
+    // the same permission_ticks map the server gate enforces with.
+    // View-only staff used to see every write control on this page
+    // (Add Product, Sync, Import / Export, the stock steppers, the
+    // Active switch) and only met the refusal after clicking; the
+    // server refused the writes, but the controls should never have
+    // been offered. They now render only for the tick that can use
+    // them (delete behind the delete tick, export behind export).
+    const ticks = usePage().props.auth?.permission_ticks || {};
+    const canEdit = !!ticks.inventory?.edit;
+    const canDelete = !!ticks.inventory?.delete;
+    const canExport = !!ticks.inventory?.export;
 
     const openMenu = (e, p) => {
         if (menu && menu.p.id === p.id) { setMenu(null); return; }
@@ -133,23 +146,44 @@ export default function Products({ products, summary, inactive, combos, wraps, v
                                     </div>
                                 </div>
                             </td>
-                            <td className={TD}><div className="flex justify-center"><button type="button" onClick={() => toggle(p, 'manage_stock')}><Pill on={p.manage_stock} /></button></div></td>
+                            <td className={TD}><div className="flex justify-center">{canEdit
+                                ? <button type="button" onClick={() => toggle(p, 'manage_stock')}><Pill on={p.manage_stock} /></button>
+                                : <Pill on={p.manage_stock} />}</div></td>
                             <td className={TD}><div className="font-medium">{Number(p.cost || 0).toLocaleString('en-IN')}</div></td>
                             <td className={TD}>
-                                <div className="flex items-center gap-2">
-                                    <div className="flex items-center rounded-full bg-slate-100 p-0.5 shadow-sm">
-                                        <button type="button" aria-label={t('Decrease Stock')} className="inline-flex items-center justify-center h-6 w-6 rounded-full hover:bg-white text-sm" onClick={() => adjust(p, -1)}>−</button>
-                                        <span className="min-w-[2rem] text-center font-medium">{p.stock_qty + (pending[p.id] || 0)}</span>
-                                        <button type="button" aria-label={t('Increase Stock')} className="inline-flex items-center justify-center h-6 w-6 rounded-full hover:bg-white text-sm" onClick={() => adjust(p, 1)}>+</button>
+                                {(p.type === 'combo' || p.has_variants) ? (
+                                    // Round 3 fix batch: a combo's or a variant
+                                    // product's own stock row carries no sellable
+                                    // units (combos are made from their parts,
+                                    // variant stock lives on the variants), so
+                                    // the row's stock figure is the derived
+                                    // Available - the same figure the order
+                                    // pickers show - not a misleading 0 with a
+                                    // stepper that adjusts a number nothing
+                                    // reads.
+                                    <div className="font-medium">{p.available}</div>
+                                ) : canEdit ? (
+                                    <div className="flex items-center gap-2">
+                                        <div className="flex items-center rounded-full bg-slate-100 p-0.5 shadow-sm">
+                                            <button type="button" aria-label={t('Decrease Stock')} className="inline-flex items-center justify-center h-6 w-6 rounded-full hover:bg-white text-sm" onClick={() => adjust(p, -1)}>−</button>
+                                            <span className="min-w-[2rem] text-center font-medium">{p.stock_qty + (pending[p.id] || 0)}</span>
+                                            <button type="button" aria-label={t('Increase Stock')} className="inline-flex items-center justify-center h-6 w-6 rounded-full hover:bg-white text-sm" onClick={() => adjust(p, 1)}>+</button>
+                                        </div>
+                                        <button type="button" className="text-xs text-primary font-medium" onClick={() => setAdjustFor(p)}>{t('Adjust')}</button>
                                     </div>
-                                    <button type="button" className="text-xs text-primary font-medium" onClick={() => setAdjustFor(p)}>{t('Adjust')}</button>
-                                </div>
+                                ) : (
+                                    <div className="font-medium">{p.stock_qty}</div>
+                                )}
                                 <div className="text-[11px] text-muted-foreground">{t('Reserved')}: {p.reserved_qty} · {t('Available')}: {p.available}</div>
                             </td>
                             <td className={TD}><div className="font-medium">{Number(p.price || 0).toLocaleString('en-IN')}</div></td>
-                            <td className={TD}><Switch checked={p.is_active} label={t('Active')} onClick={() => toggle(p, 'is_active')} /></td>
+                            <td className={TD}>{canEdit
+                                ? <Switch checked={p.is_active} label={t('Active')} onClick={() => toggle(p, 'is_active')} />
+                                : <Pill on={p.is_active} />}</td>
                             <td className={TD}>
-                                <button type="button" data-row-menu-btn className={BTN_OUTLINE + ' h-8 px-2'} onClick={(e) => openMenu(e, p)}>•••</button>
+                                {(canEdit || canDelete) && (
+                                    <button type="button" data-row-menu-btn className={BTN_OUTLINE + ' h-8 px-2'} onClick={(e) => openMenu(e, p)}>•••</button>
+                                )}
                             </td>
                         </tr>
                     ))}
@@ -172,9 +206,9 @@ export default function Products({ products, summary, inactive, combos, wraps, v
                         </div>
                         <div className="flex flex-wrap items-center gap-2">
                             <span className={BTN_OUTLINE + ' h-9 px-3'}>{t('Guide')}</span>
-                            <button type="button" className={BTN_OUTLINE + ' h-9 px-3'} onClick={() => router.reload({ preserveScroll: true })}>{t('Sync Products')}</button>
-                            <button type="button" className={BTN_OUTLINE + ' h-9 px-3'} onClick={() => setIoOpen(true)}>{t('Import / Export')}</button>
-                            <Link href="/inventory/products/create" className={BTN_PRIMARY + ' h-9 px-3'}>{t('Add Product')}</Link>
+                            {canEdit && <button type="button" className={BTN_OUTLINE + ' h-9 px-3'} onClick={() => router.reload({ preserveScroll: true })}>{t('Sync Products')}</button>}
+                            {(canEdit || canExport) && <button type="button" className={BTN_OUTLINE + ' h-9 px-3'} onClick={() => setIoOpen(true)}>{t('Import / Export')}</button>}
+                            {canEdit && <Link href="/inventory/products/create" className={BTN_PRIMARY + ' h-9 px-3'}>{t('Add Product')}</Link>}
                         </div>
                     </div>
 
@@ -238,19 +272,19 @@ export default function Products({ products, summary, inactive, combos, wraps, v
 
                     {tab === 'Wraps' && table(wraps, t('No wraps yet'))}
 
-                    {tab === 'Variations' && <Variations allRows={allRows} variants={variants} />}
+                    {tab === 'Variations' && <Variations allRows={allRows} variants={variants} canEdit={canEdit} canDelete={canDelete} />}
 
-                    {tab === 'Categories & Brands' && <Taxonomy categories={categories} brands={brands} />}
+                    {tab === 'Categories & Brands' && <Taxonomy categories={categories} brands={brands} canEdit={canEdit} canDelete={canDelete} />}
                 </div>
             </div>
 
             {menu && createPortal((
                 <div data-row-menu className="fixed z-50 w-44 rounded-md border bg-white p-1 shadow-md text-sm"
                     style={{ right: menu.right, top: menu.top, bottom: menu.bottom }}>
-                    <button type="button" className="block w-full rounded px-2 py-1.5 text-left hover:bg-accent" onClick={() => { setEditFor(menu.p); setMenu(null); }}>{t('Edit')}</button>
-                    <button type="button" className="block w-full rounded px-2 py-1.5 text-left hover:bg-accent" onClick={() => { router.post(`/inventory/products/${menu.p.id}/copy`, {}, { preserveScroll: true }); setMenu(null); }}>{t('Copy')}</button>
-                    <button type="button" className="block w-full rounded px-2 py-1.5 text-left hover:bg-accent" onClick={() => { setTab('Variations'); setMenu(null); }}>{t('Variant')}</button>
-                    <button type="button" className="block w-full rounded px-2 py-1.5 text-left text-red-600 hover:bg-red-50" onClick={async () => { const p = menu.p; setMenu(null); if (await confirmDialog(t('Delete this product?'))) router.delete(`/inventory/products/${p.id}`, { preserveScroll: true }); }}>{t('Delete')}</button>
+                    {canEdit && <button type="button" className="block w-full rounded px-2 py-1.5 text-left hover:bg-accent" onClick={() => { setEditFor(menu.p); setMenu(null); }}>{t('Edit')}</button>}
+                    {canEdit && <button type="button" className="block w-full rounded px-2 py-1.5 text-left hover:bg-accent" onClick={() => { router.post(`/inventory/products/${menu.p.id}/copy`, {}, { preserveScroll: true }); setMenu(null); }}>{t('Copy')}</button>}
+                    {canEdit && <button type="button" className="block w-full rounded px-2 py-1.5 text-left hover:bg-accent" onClick={() => { setTab('Variations'); setMenu(null); }}>{t('Variant')}</button>}
+                    {canDelete && <button type="button" className="block w-full rounded px-2 py-1.5 text-left text-red-600 hover:bg-red-50" onClick={async () => { const p = menu.p; setMenu(null); if (await confirmDialog(t('Delete this product?'))) router.delete(`/inventory/products/${p.id}`, { preserveScroll: true }); }}>{t('Delete')}</button>}
                 </div>
             ), document.body)}
 
@@ -258,12 +292,12 @@ export default function Products({ products, summary, inactive, combos, wraps, v
                 productVariants={variants[editFor.id] || []}
                 initialComponents={(combos.find((c) => c.id === editFor.id) || {}).components || []} close={() => setEditFor(null)} />}
             {adjustFor && <AdjustModal product={adjustFor} close={() => setAdjustFor(null)} />}
-            {ioOpen && <ImportExportModal close={() => setIoOpen(false)} />}
+            {ioOpen && <ImportExportModal close={() => setIoOpen(false)} canEdit={canEdit} canExport={canExport} />}
         </AppLayout>
     );
 }
 
-function VariantRow({ v }) {
+function VariantRow({ v, canEdit = true, canDelete = true }) {
     // Z4-M1: an existing variant can be corrected in place - name and
     // price are plain field saves; a stock correction is sent as a
     // delta and booked in the Stock Ledger by the server (never a
@@ -290,11 +324,11 @@ function VariantRow({ v }) {
                 <span>{v.name}</span>
                 <span className="text-muted-foreground">{v.sku || ''} · {v.price ? money(v.price) : ''} · {t('Stock')}: {v.stock_qty} · {t('Reserved')}: {v.reserved_qty} · {t('Available')}: {v.stock_qty - v.reserved_qty}</span>
                 <span className="flex items-center gap-3">
-                    <button type="button" className="text-xs text-primary font-medium" onClick={open}>{t('Edit')}</button>
-                    <button type="button" className="text-xs text-red-600" onClick={() => router.delete(`/inventory/variants/${v.id}`, { preserveScroll: true })}>{t('Delete')}</button>
+                    {canEdit && <button type="button" className="text-xs text-primary font-medium" onClick={open}>{t('Edit')}</button>}
+                    {canDelete && <button type="button" className="text-xs text-red-600" onClick={() => router.delete(`/inventory/variants/${v.id}`, { preserveScroll: true })}>{t('Delete')}</button>}
                 </span>
             </div>
-            {editing && (
+            {editing && canEdit && (
                 <div className="mt-2 space-y-2">
                     <div className="flex flex-wrap gap-2">
                         <input className={INPUT + ' flex-1 min-w-[160px]'} placeholder={t('e.g. Size: L / Color: Red')} value={name} onChange={(e) => setName(e.target.value)} />
@@ -310,7 +344,7 @@ function VariantRow({ v }) {
     );
 }
 
-function Variations({ allRows, variants }) {
+function Variations({ allRows, variants, canEdit = true, canDelete = true }) {
     const [formFor, setFormFor] = useState(null);
     const [vname, setVname] = useState('');
     const [vprice, setVprice] = useState('');
@@ -321,13 +355,13 @@ function Variations({ allRows, variants }) {
                 <div key={p.id} className="rounded-xl border bg-card p-4 space-y-2">
                     <div className="flex items-center justify-between">
                         <div className="font-semibold text-sm">{p.name} <span className="text-muted-foreground font-normal">({p.sku})</span></div>
-                        <button type="button" className="text-xs text-primary font-medium" onClick={() => setFormFor(formFor === p.id ? null : p.id)}>+ {t('Add Variant')}</button>
+                        {canEdit && <button type="button" className="text-xs text-primary font-medium" onClick={() => setFormFor(formFor === p.id ? null : p.id)}>+ {t('Add Variant')}</button>}
                     </div>
                     {(variants[p.id] || []).map((v) => (
-                        <VariantRow key={v.id} v={v} />
+                        <VariantRow key={v.id} v={v} canEdit={canEdit} canDelete={canDelete} />
                     ))}
                     {(variants[p.id] || []).length === 0 && <div className="text-xs text-muted-foreground">{t('No variants')}</div>}
-                    {formFor === p.id && (
+                    {formFor === p.id && canEdit && (
                         <div className="flex flex-wrap gap-2 border-t pt-3">
                             <input className={INPUT + ' flex-1 min-w-[160px]'} placeholder={t('e.g. Size: L / Color: Red')} value={vname} onChange={(e) => setVname(e.target.value)} />
                             <input className={INPUT + ' w-28'} type="number" placeholder={t('Price')} value={vprice} onChange={(e) => setVprice(e.target.value)} />
@@ -341,7 +375,7 @@ function Variations({ allRows, variants }) {
     );
 }
 
-function Taxonomy({ categories, brands }) {
+function Taxonomy({ categories, brands, canEdit = true, canDelete = true }) {
     const [cat, setCat] = useState('');
     const [brand, setBrand] = useState('');
     return (
@@ -351,26 +385,30 @@ function Taxonomy({ categories, brands }) {
                 {categories.map((c) => (
                     <div key={c.id} className="flex items-center justify-between text-sm border-t pt-2">
                         <span>{c.name}</span>
-                        <button type="button" className="text-xs text-red-600" onClick={async () => { if (await confirmDialog(t('Delete this category?'))) router.delete(`/inventory/categories/${c.id}`, { preserveScroll: true }); }}>{t('Delete')}</button>
+                        {canDelete && <button type="button" className="text-xs text-red-600" onClick={async () => { if (await confirmDialog(t('Delete this category?'))) router.delete(`/inventory/categories/${c.id}`, { preserveScroll: true }); }}>{t('Delete')}</button>}
                     </div>
                 ))}
-                <div className="flex gap-2">
-                    <input className={INPUT} placeholder={t('New category')} value={cat} onChange={(e) => setCat(e.target.value)} />
-                    <button type="button" className={BTN_PRIMARY + ' h-10'} onClick={() => { if (cat.trim()) { router.post('/inventory/categories', { name: cat.trim() }, { preserveScroll: true }); setCat(''); } }}>{t('Add')}</button>
-                </div>
+                {canEdit && (
+                    <div className="flex gap-2">
+                        <input className={INPUT} placeholder={t('New category')} value={cat} onChange={(e) => setCat(e.target.value)} />
+                        <button type="button" className={BTN_PRIMARY + ' h-10'} onClick={() => { if (cat.trim()) { router.post('/inventory/categories', { name: cat.trim() }, { preserveScroll: true }); setCat(''); } }}>{t('Add')}</button>
+                    </div>
+                )}
             </div>
             <div className="rounded-xl border bg-card p-4 space-y-3">
                 <div className="font-semibold">{t('Brands')} ({brands.length})</div>
                 {brands.map((b) => (
                     <div key={b.id} className="flex items-center justify-between text-sm border-t pt-2">
                         <span>{b.name}</span>
-                        <button type="button" className="text-xs text-red-600" onClick={async () => { if (await confirmDialog(t('Delete this brand?'))) router.delete(`/inventory/brands/${b.id}`, { preserveScroll: true }); }}>{t('Delete')}</button>
+                        {canDelete && <button type="button" className="text-xs text-red-600" onClick={async () => { if (await confirmDialog(t('Delete this brand?'))) router.delete(`/inventory/brands/${b.id}`, { preserveScroll: true }); }}>{t('Delete')}</button>}
                     </div>
                 ))}
-                <div className="flex gap-2">
-                    <input className={INPUT} placeholder={t('New brand')} value={brand} onChange={(e) => setBrand(e.target.value)} />
-                    <button type="button" className={BTN_PRIMARY + ' h-10'} onClick={() => { if (brand.trim()) { router.post('/inventory/brands', { name: brand.trim() }, { preserveScroll: true }); setBrand(''); } }}>{t('Add')}</button>
-                </div>
+                {canEdit && (
+                    <div className="flex gap-2">
+                        <input className={INPUT} placeholder={t('New brand')} value={brand} onChange={(e) => setBrand(e.target.value)} />
+                        <button type="button" className={BTN_PRIMARY + ' h-10'} onClick={() => { if (brand.trim()) { router.post('/inventory/brands', { name: brand.trim() }, { preserveScroll: true }); setBrand(''); } }}>{t('Add')}</button>
+                    </div>
+                )}
             </div>
         </div>
     );
@@ -448,7 +486,7 @@ function EditModal({ product, categories, brands, close, allProducts = [], initi
     );
 }
 
-function ImportExportModal({ close }) {
+function ImportExportModal({ close, canEdit = true, canExport = true }) {
     const { data, setData, post, processing, errors } = useForm({ file: null });
     const submit = (e) => { e.preventDefault(); post('/inventory/products/import', { forceFormData: true, onSuccess: close }); };
     return (
@@ -459,21 +497,25 @@ function ImportExportModal({ close }) {
                     <button type="button" className="text-xl leading-none" onClick={close}>×</button>
                 </div>
                 <div className="p-5 space-y-5">
-                    <form onSubmit={submit} className="space-y-3">
-                        <div className="font-semibold text-sm">{t('Import products')}</div>
-                        <input type="file" accept=".xlsx,.xls,.csv" className={INPUT} onChange={(e) => setData('file', e.target.files[0] || null)} />
-                        {errors.file && <div className="text-sm text-red-600">{errors.file}</div>}
-                        <div className="text-sm text-muted-foreground">{t('Name your product photos by SKU (like SP-001.jpg) and upload them all at once to the import-images folder on your server. Then either paste the photo link in the sheet, or leave it blank - the photo is matched by SKU on its own. Extra photos: SP-001_1.jpg, SP-001_2.jpg.')}</div>
-                        <button type="submit" className={BTN_PRIMARY + ' h-9 px-3'} disabled={processing || !data.file}>{t('Import')}</button>
-                    </form>
-                    <div className="border-t pt-4 space-y-2">
-                        <div className="font-semibold text-sm">{t('Export & template')}</div>
-                        <div className="flex flex-wrap gap-2">
-                            <a className={BTN_OUTLINE + ' h-9 px-3 inline-flex items-center'} href="/inventory/products/export?format=xlsx">{t('Export Excel')}</a>
-                            <a className={BTN_OUTLINE + ' h-9 px-3 inline-flex items-center'} href="/inventory/products/export?format=csv">{t('Export CSV')}</a>
-                            <a className={BTN_OUTLINE + ' h-9 px-3 inline-flex items-center'} href="/inventory/products/template">{t('Download template')}</a>
+                    {canEdit && (
+                        <form onSubmit={submit} className="space-y-3">
+                            <div className="font-semibold text-sm">{t('Import products')}</div>
+                            <input type="file" accept=".xlsx,.xls,.csv" className={INPUT} onChange={(e) => setData('file', e.target.files[0] || null)} />
+                            {errors.file && <div className="text-sm text-red-600">{errors.file}</div>}
+                            <div className="text-sm text-muted-foreground">{t('Name your product photos by SKU (like SP-001.jpg) and upload them all at once to the import-images folder on your server. Then either paste the photo link in the sheet, or leave it blank - the photo is matched by SKU on its own. Extra photos: SP-001_1.jpg, SP-001_2.jpg.')}</div>
+                            <button type="submit" className={BTN_PRIMARY + ' h-9 px-3'} disabled={processing || !data.file}>{t('Import')}</button>
+                        </form>
+                    )}
+                    {canExport && (
+                        <div className="border-t pt-4 space-y-2">
+                            <div className="font-semibold text-sm">{t('Export & template')}</div>
+                            <div className="flex flex-wrap gap-2">
+                                <a className={BTN_OUTLINE + ' h-9 px-3 inline-flex items-center'} href="/inventory/products/export?format=xlsx">{t('Export Excel')}</a>
+                                <a className={BTN_OUTLINE + ' h-9 px-3 inline-flex items-center'} href="/inventory/products/export?format=csv">{t('Export CSV')}</a>
+                                <a className={BTN_OUTLINE + ' h-9 px-3 inline-flex items-center'} href="/inventory/products/template">{t('Download template')}</a>
+                            </div>
                         </div>
-                    </div>
+                    )}
                 </div>
             </div>
         </div>

@@ -86,8 +86,16 @@ class DashboardStatsService
         }
 
         $sourceLabels = OrderSource::where('business_id', $biz)->pluck('label', 'code');
+        // One "booked value" definition everywhere (Round 3 fix
+        // batch): a source/channel row's value is the grand_total of
+        // its orders with Cancelled EXCLUDED - the same definition
+        // PlatformHomeService uses for the platform's Booked figure.
+        // Counting Cancelled here made the seller's Orders by Source
+        // total higher than the platform's number for the same shop.
+        // The count stays the count of orders received.
+        $bookedValue = fn ($g) => (float) $g->where('status', '!=', 'Cancelled')->sum('grand_total');
         $srcRows = $cohort($day)->groupBy('source')
-            ->map(fn ($g, $code) => ['label' => $sourceLabels[$code] ?? $code, 'count' => $g->count(), 'value' => (float) $g->sum('grand_total')])
+            ->map(fn ($g, $code) => ['label' => $sourceLabels[$code] ?? $code, 'count' => $g->count(), 'value' => $bookedValue($g)])
             ->sortByDesc('count')->values();
         $channelOf = fn (string $code) => match (true) {
             in_array($code, ['FB', 'MESSENGER', 'INSTAGRAM', 'WHATSAPP', 'TIKTOK'], true) => 'Social',
@@ -96,7 +104,7 @@ class DashboardStatsService
             default => 'Other',
         };
         $chanRows = $cohort($day)->groupBy(fn ($o) => $channelOf($o->source))
-            ->map(fn ($g, $name) => ['label' => $name, 'count' => $g->count(), 'value' => (float) $g->sum('grand_total')])
+            ->map(fn ($g, $name) => ['label' => $name, 'count' => $g->count(), 'value' => $bookedValue($g)])
             ->sortByDesc('count')->values();
 
         // Inflow charts stay created-based by definition.

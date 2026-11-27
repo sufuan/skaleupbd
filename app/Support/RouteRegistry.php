@@ -111,9 +111,16 @@ class RouteRegistry
         'push.unsubscribe' => ['account', null, 'edit'],
         'account.status' => ['account', null, 'view'],
         // Placeholder shells for the deferred modules (Task & Follow-up,
-        // Call Center, Ads, Support). The route itself whitelists the
-        // slugs; any signed-in user may open a shell, as today.
-        'module' => ['account', null, 'view'],
+        // Call Center, Ads). Round 3 fix batch: each shell is declared
+        // under its own module key with the view tick, so a staff
+        // member without that tick gets the gate's 403 like every
+        // other module page; ticked users (and owners) still see the
+        // shell. Support has no module key - it is shell chrome for
+        // every signed-in user and stays account-level.
+        'module.task' => ['shop', 'tasks', 'view'],
+        'module.call-center' => ['shop', 'callcenter', 'view'],
+        'module.ads' => ['shop', 'ads', 'view'],
+        'module.support' => ['account', null, 'view'],
 
         // ------------------------------------------------ platform
         'platform.dashboard' => ['platform', null, 'view'],
@@ -388,7 +395,11 @@ class RouteRegistry
         // ------------------------------------------------ shop: inventory
         'inventory.dashboard' => ['shop', 'inventory', 'view'],
         'inventory.products' => ['shop', 'inventory', 'view'],
-        'inventory.products.create' => ['shop', 'inventory', 'view'],
+        // The create FORM page carries the edit tick (Round 3 fix
+        // batch): declared as view it rendered the full form for
+        // view-only staff, who then hit a silent refusal on submit
+        // (the store endpoint below was always edit-gated).
+        'inventory.products.create' => ['shop', 'inventory', 'edit'],
         'inventory.products.store' => ['shop', 'inventory', 'edit'],
         'inventory.products.import' => ['shop', 'inventory', 'edit'],
         'inventory.products.export' => ['shop', 'inventory', 'export'],
